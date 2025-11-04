@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+    <style>
+        .holiday-card {
+            margin-bottom: 10px;
+            padding: 2px;
+            border-radius: 6px;
+            color: white;
+            margin-left: 8px;
+            margin-right: 8px;
+        }
+    </style>
+    <main id="main" class="main">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-secondary alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        <div class="pagetitle">
+            <h1>Dashboard</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href={% url "dashboard" %}>Home</a></li>
+                    <li class="breadcrumb-item active">Dashboard</li>
+                </ol>
+            </nav>
+        </div><!-- End Page Title -->
+
+    </main><!-- End #main -->
+
+{% endblock body %}
