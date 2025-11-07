@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+# -------------------------
+# Client Base Table
+# -------------------------
 class Client(models.Model):
     CLIENT_TYPE_CHOICES = [
         ('Individual', 'Individual'),
@@ -42,13 +45,17 @@ class Client(models.Model):
     business_structure = models.CharField(max_length=50, choices=BUSINESS_STRUCTURE_CHOICES)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Prospect')
     remarks = models.TextField(blank=True, null=True)
-    din_no = models.TextField(blank=True, null=True)
+    din_no = models.CharField(max_length=50, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.client_name
 
+
+# -------------------------
+# Entity-Specific Details
+# -------------------------
 class CompanyDetails(models.Model):
     COMPANY_TYPE_CHOICES = [
         ('Private Limited', 'Private Limited'),
@@ -56,9 +63,7 @@ class CompanyDetails(models.Model):
         ('One Person Company', 'One Person Company'),
     ]
 
-    client = models.OneToOneField(
-        'Client', on_delete=models.CASCADE, related_name='company_details'
-    )
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='company_details')
     company_type = models.CharField(max_length=50, choices=COMPANY_TYPE_CHOICES)
     proposed_company_name = models.CharField(max_length=255)
     cin = models.CharField(max_length=50, blank=True, null=True)
@@ -70,11 +75,10 @@ class CompanyDetails(models.Model):
     date_of_incorporation = models.DateField(blank=True, null=True)
     udyam_registration = models.CharField(max_length=100, blank=True, null=True)
     directors = models.ManyToManyField(
-        'Client', related_name='companies_as_director', limit_choices_to={'din_no__isnull': False}, blank=True
+        Client, related_name='companies_as_director', limit_choices_to={'din_no__isnull': False}, blank=True
     )
     moa_file = models.FileField(upload_to='company_docs/moa/', blank=True, null=True)
     aoa_file = models.FileField(upload_to='company_docs/aoa/', blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -83,22 +87,16 @@ class CompanyDetails(models.Model):
 
 
 class LLPDetails(models.Model):
-    client = models.OneToOneField(
-        'Client', on_delete=models.CASCADE, related_name='llp_details'
-    )
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='llp_details')
     llp_name = models.CharField(max_length=255)
     llp_registration_no = models.CharField(max_length=50, blank=True, null=True)
     registered_office_address_llp = models.TextField()
     designated_partners = models.ManyToManyField(
-        'Client',
-        related_name='llps_as_partner',
-        limit_choices_to={'din_no__isnull': False},
-        blank=True
+        Client, related_name='llps_as_partner', limit_choices_to={'din_no__isnull': False}, blank=True
     )
     paid_up_capital_llp = models.DecimalField(max_digits=15, decimal_places=2)
     date_of_registration_llp = models.DateField(blank=True, null=True)
     llp_agreement_file = models.FileField(upload_to='llp_docs/agreements/', blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -107,22 +105,14 @@ class LLPDetails(models.Model):
 
 
 class OPCDetails(models.Model):
-    client = models.OneToOneField(
-        'Client', on_delete=models.CASCADE, related_name='opc_details'
-    )
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='opc_details')
     opc_name = models.CharField(max_length=255)
     opc_cin = models.CharField(max_length=50, blank=True, null=True)
     registered_office_address_opc = models.TextField()
-    sole_member_name = models.ForeignKey(
-        'Client',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='opcs_as_member'
-    )
+    sole_member_name = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, related_name='opcs_as_member')
     nominee_member_name = models.CharField(max_length=255)
     paid_up_share_capital_opc = models.DecimalField(max_digits=15, decimal_places=2)
     date_of_incorporation_opc = models.DateField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -130,18 +120,14 @@ class OPCDetails(models.Model):
         return self.opc_name
 
 
-
 class Section8CompanyDetails(models.Model):
-    client = models.OneToOneField(
-        'Client', on_delete=models.CASCADE, related_name='section8_details'
-    )
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='section8_details')
     section8_company_name = models.CharField(max_length=255)
     registration_no_section8 = models.CharField(max_length=50, blank=True, null=True)
     registered_office_address_s8 = models.TextField()
     object_clause = models.TextField()
     whether_licence_obtained = models.BooleanField(default=False)
     date_of_registration_s8 = models.DateField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -150,17 +136,12 @@ class Section8CompanyDetails(models.Model):
 
 
 class HUFDetails(models.Model):
-    client = models.OneToOneField(
-        'Client', on_delete=models.CASCADE, related_name='huf_details'
-    )
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='huf_details')
     huf_name = models.CharField(max_length=255)
     pan_huf = models.CharField(max_length=20, unique=True)
     date_of_creation = models.DateField()
     karta_name = models.ForeignKey(
-        'Client',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='hufs_as_karta',
+        Client, on_delete=models.SET_NULL, null=True, related_name='hufs_as_karta',
         limit_choices_to={'client_type': 'Individual'}
     )
     number_of_coparceners = models.PositiveIntegerField()
@@ -170,7 +151,6 @@ class HUFDetails(models.Model):
     deed_of_declaration_file = models.FileField(upload_to='huf_docs/deeds/', blank=True, null=True)
     business_activity = models.CharField(max_length=255, blank=True, null=True)
     remarks = models.TextField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -178,6 +158,65 @@ class HUFDetails(models.Model):
         return self.huf_name
 
 
+# -------------------------
+# Service Master
+# -------------------------
+class ServiceType(models.Model):
+    FREQUENCY_CHOICES = [
+        ('One-time', 'One-time'),
+        ('Monthly', 'Monthly'),
+        ('Quarterly', 'Quarterly'),
+        ('Half-yearly', 'Half-yearly'),
+        ('Yearly', 'Yearly'),
+    ]
+
+    CATEGORY_CHOICES = [
+        ('Taxation', 'Taxation'),
+        ('Audit', 'Audit'),
+        ('Compliance', 'Compliance'),
+        ('Consulting', 'Consulting'),
+    ]
+
+    service_name = models.CharField(max_length=255)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES)
+    default_due_days = models.IntegerField()
+    description = models.TextField(blank=True, null=True)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.service_name
+
+
+# -------------------------
+# Client Services
+# -------------------------
+class ClientService(models.Model):
+    BILLING_CHOICES = [
+        ('Monthly', 'Monthly'),
+        ('Quarterly', 'Quarterly'),
+        ('Yearly', 'Yearly'),
+        ('Per Task', 'Per Task'),
+    ]
+
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='services')
+    service = models.ForeignKey(ServiceType, on_delete=models.CASCADE)
+    start_date = models.DateField()
+    end_date = models.DateField(blank=True, null=True)
+    billing_cycle = models.CharField(max_length=20, choices=BILLING_CHOICES)
+    agreed_fee = models.DecimalField(max_digits=12, decimal_places=2)
+    remarks = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.client} - {self.service}"
+
+
+# -------------------------
+# Financial & Compliance
+# -------------------------
 class GSTDetails(models.Model):
     REGISTRATION_TYPE_CHOICES = [
         ('Regular', 'Regular'),
@@ -193,21 +232,16 @@ class GSTDetails(models.Model):
     ]
 
     gst_id = models.AutoField(primary_key=True)
-    client_service = models.ForeignKey(
-        'ClientService',
-        on_delete=models.CASCADE,
-        related_name='gst_details'
-    )
+    client_service = models.ForeignKey(ClientService, on_delete=models.CASCADE, related_name='gst_details')
     gst_number = models.CharField(max_length=15, unique=True)
     date_of_registration = models.DateField(blank=True, null=True)
     type_of_registration = models.CharField(max_length=20, choices=REGISTRATION_TYPE_CHOICES)
     gst_username = models.CharField(max_length=100)
-    gst_password = models.CharField(max_length=255)  # store encrypted or hashed value
+    gst_password = models.CharField(max_length=255)
     principal_place_of_business = models.TextField()
     filing_frequency = models.CharField(max_length=20, choices=FILING_FREQUENCY_CHOICES)
     state_code = models.CharField(max_length=5)
     remarks = models.TextField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -232,11 +266,7 @@ class ITRDetails(models.Model):
     ]
 
     itr_id = models.AutoField(primary_key=True)
-    client_service = models.ForeignKey(
-        'ClientService',
-        on_delete=models.CASCADE,
-        related_name='itr_details'
-    )
+    client_service = models.ForeignKey(ClientService, on_delete=models.CASCADE, related_name='itr_details')
     pan_number = models.CharField(max_length=20)
     aadhaar_number = models.CharField(max_length=20, blank=True, null=True)
     itr_type = models.CharField(max_length=10, choices=ITR_TYPE_CHOICES)
@@ -245,13 +275,11 @@ class ITRDetails(models.Model):
     last_itr_ack_no = models.CharField(max_length=50, blank=True, null=True)
     filing_mode = models.CharField(max_length=20, choices=FILING_MODE_CHOICES)
     remarks = models.TextField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.pan_number} - {self.assessment_year}"
-
 
 
 class AuditDetails(models.Model):
@@ -264,11 +292,7 @@ class AuditDetails(models.Model):
     ]
 
     audit_id = models.AutoField(primary_key=True)
-    client_service = models.ForeignKey(
-        'ClientService',
-        on_delete=models.CASCADE,
-        related_name='audit_details'
-    )
+    client_service = models.ForeignKey(ClientService, on_delete=models.CASCADE, related_name='audit_details')
     audit_type = models.CharField(max_length=20, choices=AUDIT_TYPE_CHOICES)
     financial_year = models.CharField(max_length=9)  # e.g., "2023-24"
     auditor_name = models.CharField(max_length=255)
@@ -276,7 +300,6 @@ class AuditDetails(models.Model):
     audit_end_date = models.DateField(blank=True, null=True)
     report_upload = models.FileField(upload_to='audit_docs/reports/', blank=True, null=True)
     remarks = models.TextField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -284,7 +307,59 @@ class AuditDetails(models.Model):
         return f"{self.audit_type} Audit - {self.financial_year}"
 
 
+# -------------------------
+# Tasks & Activities
+# -------------------------
+class Task(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('In Progress', 'In Progress'),
+        ('Submitted', 'Submitted'),
+        ('Completed', 'Completed'),
+        ('Delayed', 'Delayed'),
+        ('Cancelled', 'Cancelled'),
+    ]
 
+    RECURRENCE_CHOICES = [
+        ('None', 'None'),
+        ('Monthly', 'Monthly'),
+        ('Quarterly', 'Quarterly'),
+        ('Yearly', 'Yearly'),
+    ]
+
+    client_service = models.ForeignKey(ClientService, on_delete=models.CASCADE, related_name='tasks')
+    task_title = models.CharField(max_length=255)
+    period_from = models.DateField(blank=True, null=True)
+    period_to = models.DateField(blank=True, null=True)
+    due_date = models.DateField()
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    task_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    completion_date = models.DateField(blank=True, null=True)
+    remarks = models.TextField(blank=True, null=True)
+    recurrence = models.CharField(max_length=20, choices=RECURRENCE_CHOICES, default='None')
+    parent_task = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
+    document_link = models.FileField(upload_to='task_documents/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.task_title
+
+
+class TaskActivityLog(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='activity_logs')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=255)
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.task.task_title} - {self.action}"
+
+
+# -------------------------
+# Legal Cases
+# -------------------------
 class IncomeTaxCaseDetails(models.Model):
     CASE_TYPE_CHOICES = [
         ('Scrutiny', 'Scrutiny'),
@@ -301,11 +376,7 @@ class IncomeTaxCaseDetails(models.Model):
     ]
 
     case_id = models.AutoField(primary_key=True)
-    client_service = models.ForeignKey(
-        'ClientService',
-        on_delete=models.CASCADE,
-        related_name='incometax_case_details'
-    )
+    client_service = models.ForeignKey(ClientService, on_delete=models.CASCADE, related_name='incometax_case_details')
     case_type = models.CharField(max_length=20, choices=CASE_TYPE_CHOICES)
     notice_number = models.CharField(max_length=100, blank=True, null=True)
     notice_date = models.DateField(blank=True, null=True)
@@ -316,7 +387,6 @@ class IncomeTaxCaseDetails(models.Model):
     next_hearing_date = models.DateField(blank=True, null=True)
     documents_link = models.FileField(upload_to='income_tax_cases/docs/', blank=True, null=True)
     remarks = models.TextField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -340,7 +410,7 @@ class GSTCaseDetails(models.Model):
     ]
 
     gst_case_id = models.AutoField(primary_key=True)
-    client_service = models.ForeignKey('ClientServices', on_delete=models.CASCADE)
+    client_service = models.ForeignKey(ClientService, on_delete=models.CASCADE, related_name='gst_case_details')
     case_type = models.CharField(max_length=50, choices=CASE_TYPE_CHOICES)
     gstin = models.CharField(max_length=15)
     case_number = models.CharField(max_length=100)
@@ -349,6 +419,8 @@ class GSTCaseDetails(models.Model):
     jurisdiction = models.CharField(max_length=100)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.case_type} - {self.case_number}"
