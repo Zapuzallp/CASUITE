@@ -46,6 +46,9 @@ class Client(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Prospect')
     remarks = models.TextField(blank=True, null=True)
     din_no = models.CharField(max_length=50, blank=True, null=True)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='clients_created'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
