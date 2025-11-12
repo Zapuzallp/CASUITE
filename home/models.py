@@ -1,6 +1,7 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 
+from django.utils import timezone
 # -------------------------
 # Client Base Table
 # -------------------------
@@ -424,3 +425,70 @@ class GSTCaseDetails(models.Model):
 
     def __str__(self):
         return f"{self.case_type} - {self.case_number}"
+
+
+class DocumentMaster(models.Model):
+    category = models.CharField(max_length=100)
+    document_name = models.CharField(max_length=200)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.category} - {self.document_name}"
+
+
+class DocumentRequest(models.Model):
+    # Represents a document collection cycle for one client (or optionally all clients)
+    client = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    due_date = models.DateField()
+    created_by = models.ForeignKey(User, related_name='created_requests', on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    for_all_clients = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.title} ({self.client}) - due {self.due_date}"
+
+    @property
+    def is_overdue(self):
+        return timezone.localdate() > self.due_date
+
+
+class RequestedDocument(models.Model):
+    document_request = models.ForeignKey(DocumentRequest, related_name='required_documents', on_delete=models.CASCADE)
+    document_master = models.ForeignKey(DocumentMaster, on_delete=models.PROTECT)
+
+    class Meta:
+        unique_together = ('document_request', 'document_master')
+
+    def __str__(self):
+        return f"{self.document_master.document_name} for request {self.document_request.id}"
+
+
+class ClientDocumentUpload(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Uploaded', 'Uploaded'),
+        ('Overdue', 'Overdue'),
+    ]
+
+    client = models.ForeignKey(User, on_delete=models.CASCADE)
+    requested_document = models.ForeignKey(RequestedDocument, related_name='uploads', on_delete=models.CASCADE)
+    uploaded_file = models.FileField(upload_to='client_documents/%Y/%m/%d/')
+    upload_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    remarks = models.TextField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.uploaded_file:
+            self.status = 'Uploaded'
+        try:
+            if self.requested_document.document_request.is_overdue and self.status != 'Uploaded':
+                self.status = 'Overdue'
+        except Exception:
+            pass
+        super().save(*args, **kwargs)
+
+        def __str__(self):
+            return f"Upload by {self.client} for {self.requested_document}"

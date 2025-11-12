@@ -1,65 +1,465 @@
 {% load static %}
-<header id="header" class="header fixed-top d-flex align-items-center">
+<style>
+    /* Enhanced Header Styles */
+    .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        border-bottom: 3px solid rgba(255, 255, 255, 0.1);
+    }
 
-    <div class="d-flex align-items-center justify-content-between">
-        <a href="{% url 'dashboard' %}" class="logo d-flex align-items-center">
-            <img src="{% static 'assets/img/logo.png' %}" alt="">
-            <span class="d-none d-lg-block">CA Suite 2.0</span>
-        </a>
-        <i class="bi bi-list toggle-sidebar-btn"></i>
-    </div><!-- End Logo -->
-    <style>
-        .notifications {
-            max-height: 400px;
-            overflow-y: auto;
+    .logo {
+        transition: all 0.3s ease;
+    }
+
+    .logo:hover {
+        transform: scale(1.05);
+    }
+
+    .logo img {
+        max-height: 40px;
+        transition: all 0.3s ease;
+    }
+
+    .logo span {
+        color: white;
+        font-weight: 700;
+        font-size: 1.25rem;
+        letter-spacing: 0.5px;
+    }
+
+    .toggle-sidebar-btn {
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .toggle-sidebar-btn:hover {
+        color: rgba(255, 255, 255, 0.8);
+        transform: scale(1.1);
+    }
+
+    .header-nav .nav-link {
+        color: white;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .header-nav .nav-link:hover {
+        color: rgba(255, 255, 255, 0.8);
+        transform: translateY(-2px);
+    }
+
+    .nav-icon {
+        font-size: 1.5rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .badge-notification {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        padding: 0.25em 0.5em;
+        font-size: 0.65rem;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
         }
-    </style>
+        50% {
+            transform: scale(1.1);
+        }
+    }
 
-    <nav class="header-nav ms-auto">
-        <ul class="d-flex align-items-center">
-            <li class="nav-item dropdown">
+    .profile-img {
+        width: 40px;
+        height: 40px;
+        border: 2px solid white;
+        transition: all 0.3s ease;
+    }
 
-                <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
-                    <i class="bi bi-plus-circle-fill"></i>
+    .profile-img:hover {
+        border-color: rgba(255, 255, 255, 0.8);
+        transform: scale(1.05);
+    }
+
+    .dropdown-menu {
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        border: none;
+        margin-top: 0.5rem;
+    }
+
+    .dropdown-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: 600;
+        border-radius: 12px 12px 0 0;
+        padding: 1rem;
+    }
+
+    .dropdown-item {
+        padding: 0.75rem 1.25rem;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+    }
+
+    .dropdown-item:hover {
+        background-color: rgba(102, 126, 234, 0.1);
+        border-left-color: #667eea;
+        transform: translateX(5px);
+    }
+
+    .dropdown-item i {
+        font-size: 1.1rem;
+        width: 25px;
+        margin-right: 10px;
+    }
+
+    .search-bar {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 25px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .search-bar:focus-within {
+        background: white;
+    }
+
+    .search-bar input {
+        background: transparent;
+        border: none;
+        color: white;
+        width: 200px;
+        transition: all 0.3s ease;
+    }
+
+    .search-bar input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .search-bar:focus-within input {
+        color: #333;
+        width: 300px;
+    }
+
+    .search-bar:focus-within input::placeholder {
+        color: #999;
+    }
+
+    .search-bar i {
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .search-bar:focus-within i {
+        color: #667eea;
+    }
+
+    .notification-item {
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+    }
+
+    .notification-item:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        border-left-color: #667eea;
+    }
+
+    .notifications {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .notifications::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .notifications::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .notifications::-webkit-scrollbar-thumb {
+        background: #667eea;
+        border-radius: 10px;
+    }
+
+    .quick-action-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        margin: 0 0.25rem;
+    }
+
+    .quick-action-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+</style>
+
+<header id="header" class="header fixed-top d-flex align-items-center">
+    <div class="container-fluid">
+        <div class="row align-items-center w-100">
+            <!-- Logo and Sidebar Toggle -->
+            <div class="col-auto d-flex align-items-center">
+                <a href="{% url 'dashboard' %}" class="logo d-flex align-items-center text-decoration-none me-3">
+                    <img src="{% static 'assets/img/logo.png' %}" alt="Logo" class="me-2">
+                    <span class="d-none d-lg-block">CA Suite 2.0</span>
                 </a>
+                <i class="bi bi-list toggle-sidebar-btn ms-2"></i>
+            </div>
 
-            </li>
+            <!-- Search Bar (Center) -->
+            <div class="col d-none d-md-flex justify-content-center">
+                <div class="search-bar d-flex align-items-center">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="ms-2" placeholder="Search clients, documents..." 
+                           title="Enter search keyword">
+                </div>
+            </div>
 
-            <li class="nav-item dropdown pe-3">
-                <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-                        <img src="{% static 'assets/img/profile-pic.jpg' %}" alt="Default Profile"
-                             class="rounded-circle">
-                </a><!-- End Profile Image Icon -->
+            <!-- Right Side Navigation -->
+            <div class="col-auto ms-auto">
+                <nav class="header-nav">
+                    <ul class="d-flex align-items-center mb-0 list-unstyled">
+                        <!-- Quick Actions Dropdown -->
+                        <li class="nav-item dropdown me-2">
+                            <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown" 
+                               title="Quick Actions">
+                                <i class="bi bi-plus-circle-fill"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li class="dropdown-header">Quick Actions</li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-person-plus text-primary"></i>
+                                        <span>Add New Client</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-list-check text-success"></i>
+                                        <span>Create Task</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-file-earmark-plus text-info"></i>
+                                        <span>Upload Document</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-calendar-plus text-warning"></i>
+                                        <span>Schedule Meeting</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
 
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
-                    <li class="dropdown-header">
-                        <span>Welcome {{ user.username }}</span>
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
-                    {% if request.user.is_superuser %}
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center"
-                               href="/admin ">
-                                <i class="bi bi-person-badge"></i>
-                                <span>Admin</span>
+                        <!-- Notifications Dropdown -->
+                        <li class="nav-item dropdown me-2">
+                            <a class="nav-link nav-icon position-relative" href="#" data-bs-toggle="dropdown" 
+                               title="Notifications">
+                                <i class="bi bi-bell-fill"></i>
+                                <span class="badge bg-danger badge-notification">5</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" style="width: 350px;">
+                                <li class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span>Notifications</span>
+                                    <span class="badge bg-danger rounded-pill">5 New</span>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <div class="notifications">
+                                        <div class="notification-item px-3 py-2">
+                                            <div class="d-flex">
+                                                <div class="flex-shrink-0">
+                                                    <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center" 
+                                                         style="width: 40px; height: 40px;">
+                                                        <i class="bi bi-exclamation-triangle"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <p class="mb-1 fw-semibold small">Document Overdue</p>
+                                                    <p class="mb-0 small text-muted">Tax documents past deadline</p>
+                                                    <small class="text-muted">2 hours ago</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="notification-item px-3 py-2">
+                                            <div class="d-flex">
+                                                <div class="flex-shrink-0">
+                                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" 
+                                                         style="width: 40px; height: 40px;">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <p class="mb-1 fw-semibold small">Task Completed</p>
+                                                    <p class="mb-0 small text-muted">GST filing completed</p>
+                                                    <small class="text-muted">3 hours ago</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="notification-item px-3 py-2">
+                                            <div class="d-flex">
+                                                <div class="flex-shrink-0">
+                                                    <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center" 
+                                                         style="width: 40px; height: 40px;">
+                                                        <i class="bi bi-person-plus"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <p class="mb-1 fw-semibold small">New Client Added</p>
+                                                    <p class="mb-0 small text-muted">Rajesh Kumar registered</p>
+                                                    <small class="text-muted">5 hours ago</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="notification-item px-3 py-2">
+                                            <div class="d-flex">
+                                                <div class="flex-shrink-0">
+                                                    <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center" 
+                                                         style="width: 40px; height: 40px;">
+                                                        <i class="bi bi-calendar-event"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <p class="mb-1 fw-semibold small">Upcoming Deadline</p>
+                                                    <p class="mb-0 small text-muted">ITR filing in 3 days</p>
+                                                    <small class="text-muted">1 day ago</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-center small text-primary fw-semibold" href="#">
+                                        View All Notifications
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Messages Dropdown -->
+                        <li class="nav-item dropdown me-2">
+                            <a class="nav-link nav-icon position-relative" href="#" data-bs-toggle="dropdown" 
+                               title="Messages">
+                                <i class="bi bi-chat-dots-fill"></i>
+                                <span class="badge bg-success badge-notification">3</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" style="width: 350px;">
+                                <li class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span>Messages</span>
+                                    <span class="badge bg-success rounded-pill">3 New</span>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <div class="notifications">
+                                        <div class="notification-item px-3 py-2">
+                                            <div class="d-flex">
+                                                <img src="{% static 'assets/img/profile-pic.jpg' %}" 
+                                                     class="rounded-circle me-3" style="width: 40px; height: 40px;">
+                                                <div class="flex-grow-1">
+                                                    <p class="mb-1 fw-semibold small">CA Priya Mehta</p>
+                                                    <p class="mb-0 small text-muted">Please review the ITR documents...</p>
+                                                    <small class="text-muted">10 min ago</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="notification-item px-3 py-2">
+                                            <div class="d-flex">
+                                                <img src="{% static 'assets/img/profile-pic.jpg' %}" 
+                                                     class="rounded-circle me-3" style="width: 40px; height: 40px;">
+                                                <div class="flex-grow-1">
+                                                    <p class="mb-1 fw-semibold small">Rajesh Kumar</p>
+                                                    <p class="mb-0 small text-muted">When is the next meeting?</p>
+                                                    <small class="text-muted">1 hour ago</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-center small text-primary fw-semibold" href="#">
+                                        View All Messages
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Help -->
+                        <li class="nav-item me-2">
+                            <a class="nav-link nav-icon" href="#" title="Help & Support">
+                                <i class="bi bi-question-circle-fill"></i>
                             </a>
                         </li>
-                    {% endif %}
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center" href="{% url 'logout' %}">
-                            <i class="bi bi-box-arrow-right"></i>
-                            <span>Logout</span>
-                        </a>
-                    </li>
-                </ul><!-- End Profile Dropdown Items -->
-            </li><!-- End Profile Nav -->
 
-        </ul>
-    </nav><!-- End Icons Navigation -->
-
-</header><!-- End Header -->
+                        <!-- Profile Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                                <img src="{% static 'assets/img/profile-pic.jpg' %}" 
+                                     alt="Profile" 
+                                     class="rounded-circle profile-img me-2">
+                                <span class="d-none d-lg-block text-white fw-semibold">{{ user.username }}</span>
+                                <i class="bi bi-chevron-down ms-2 text-white"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li class="dropdown-header">
+                                    <h6 class="mb-0">{{ user.username }}</h6>
+                                    <small>{{ user.email }}</small>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-person-circle text-primary"></i>
+                                        <span>My Profile</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-gear text-secondary"></i>
+                                        <span>Account Settings</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-bell text-warning"></i>
+                                        <span>Notification Settings</span>
+                                    </a>
+                                </li>
+                                {% if request.user.is_superuser %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="/admin">
+                                            <i class="bi bi-shield-lock text-danger"></i>
+                                            <span>Admin Panel</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'logout' %}">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                        <span>Logout</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</header>
