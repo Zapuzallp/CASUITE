@@ -5,21 +5,23 @@
 <main id="main" class="main">
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-secondary alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle-fill"></i>
+            {% if message.tags == 'error' or message.tags == 'warning' %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+            {% endif %}
         {% endfor %}
     {% endif %}
 
     <div class="pagetitle">
-        <h1>Add New Client</h1>
+        <h1>Onboard New Client</h1>
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{% url 'clients' %}">Clients</a></li>
-                <li class="breadcrumb-item active">Add Client</li>
+                <li class="breadcrumb-item active">Onboarding</li>
             </ol>
         </nav>
     </div><!-- End Page Title -->
@@ -38,12 +40,14 @@
                         <div class="mb-3">
                             <label for="{{ client_form.client_name.id_for_label }}" class="form-label">Client Name *</label>
                             {{ client_form.client_name }}
+                            <div class="invalid-feedback" id="client_name_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label for="{{ client_form.primary_contact_name.id_for_label }}" class="form-label">Primary Contact Name *</label>
                             {{ client_form.primary_contact_name }}
+                            <div class="invalid-feedback" id="primary_contact_name_error"></div>
                         </div>
                     </div>
                 </div>
@@ -54,12 +58,14 @@
                         <div class="mb-3">
                             <label for="{{ client_form.pan_no.id_for_label }}" class="form-label">PAN No. *</label>
                             {{ client_form.pan_no }}
+                            <div class="invalid-feedback" id="pan_no_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label for="{{ client_form.email.id_for_label }}" class="form-label">Email *</label>
                             {{ client_form.email }}
+                            <div class="invalid-feedback" id="email_error"></div>
                         </div>
                     </div>
                 </div>
@@ -70,12 +76,14 @@
                         <div class="mb-3">
                             <label for="{{ client_form.phone_number.id_for_label }}" class="form-label">Contact No. *</label>
                             {{ client_form.phone_number }}
+                            <div class="invalid-feedback" id="phone_number_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.aadhar.id_for_label }}" class="form-label">Aadhar No.</label>
+                            <label for="{{ client_form.aadhar.id_for_label }}" class="form-label">Aadhar No. *</label>
                             {{ client_form.aadhar }}
+                            <div class="invalid-feedback" id="aadhar_error"></div>
                         </div>
                     </div>
                 </div>
@@ -86,6 +94,7 @@
                         <div class="mb-3">
                             <label for="{{ client_form.address_line1.id_for_label }}" class="form-label">Address *</label>
                             {{ client_form.address_line1 }}
+                            <div class="invalid-feedback" id="address_line1_error"></div>
                         </div>
                     </div>
                 </div>
@@ -96,18 +105,21 @@
                         <div class="mb-3">
                             <label for="{{ client_form.city.id_for_label }}" class="form-label">City *</label>
                             {{ client_form.city }}
+                            <div class="invalid-feedback" id="city_error"></div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label for="{{ client_form.state.id_for_label }}" class="form-label">State *</label>
                             {{ client_form.state }}
+                            <div class="invalid-feedback" id="state_error"></div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label for="{{ client_form.postal_code.id_for_label }}" class="form-label">Postal Code *</label>
                             {{ client_form.postal_code }}
+                            <div class="invalid-feedback" id="postal_code_error"></div>
                         </div>
                     </div>
                 </div>
@@ -118,12 +130,14 @@
                         <div class="mb-3">
                             <label for="{{ client_form.country.id_for_label }}" class="form-label">Country *</label>
                             {{ client_form.country }}
+                            <div class="invalid-feedback" id="country_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.date_of_engagement.id_for_label }}" class="form-label">Date of Engagement</label>
+                            <label for="{{ client_form.date_of_engagement.id_for_label }}" class="form-label">Date of Engagement *</label>
                             {{ client_form.date_of_engagement }}
+                            <div class="invalid-feedback" id="date_of_engagement_error"></div>
                         </div>
                     </div>
                 </div>
@@ -134,12 +148,14 @@
                         <div class="mb-3">
                             <label for="{{ client_form.client_type.id_for_label }}" class="form-label">Client Type *</label>
                             {{ client_form.client_type }}
+                            <div class="invalid-feedback" id="client_type_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6" id="businessStructureField" style="display: none;">
                         <div class="mb-3">
                             <label for="{{ client_form.business_structure.id_for_label }}" class="form-label">Business Structure *</label>
                             {{ client_form.business_structure }}
+                            <div class="invalid-feedback" id="business_structure_error"></div>
                         </div>
                     </div>
                 </div>
@@ -148,14 +164,16 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.assigned_ca.id_for_label }}" class="form-label">Assigned CA</label>
+                            <label for="{{ client_form.assigned_ca.id_for_label }}" class="form-label">Assigned CA *</label>
                             {{ client_form.assigned_ca }}
+                            <div class="invalid-feedback" id="assigned_ca_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label for="{{ client_form.status.id_for_label }}" class="form-label">Status *</label>
                             {{ client_form.status }}
+                            <div class="invalid-feedback" id="status_error"></div>
                         </div>
                     </div>
                 </div>
@@ -166,6 +184,7 @@
                         <div class="mb-3">
                             <label for="{{ client_form.din_no.id_for_label }}" class="form-label">DIN No.</label>
                             {{ client_form.din_no }}
+                            <div class="invalid-feedback" id="din_no_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -179,6 +198,7 @@
                         <div class="mb-3">
                             <label for="{{ client_form.remarks.id_for_label }}" class="form-label">Remarks</label>
                             {{ client_form.remarks }}
+                            <div class="invalid-feedback" id="remarks_error"></div>
                         </div>
                     </div>
                 </div>
@@ -236,139 +256,17 @@
 </div>
 
 <style>
-    /* Reset and base styles */
-    * {
-        box-sizing: border-box;
+    /* Your existing CSS styles */
+    .is-invalid {
+        border-color: #dc3545 !important;
     }
 
-    /* Form structure fixes */
-    .row {
-        display: flex;
-        flex-wrap: wrap;
-        margin-right: -0.75rem;
-        margin-left: -0.75rem;
-    }
-
-    .col-md-6, .col-md-4, .col-12 {
-        padding-right: 0.75rem;
-        padding-left: 0.75rem;
-        flex: 0 0 auto;
-    }
-
-    .col-md-6 {
-        width: 50%;
-    }
-
-    .col-md-4 {
-        width: 33.333333%;
-    }
-
-    .col-12 {
-        width: 100%;
-    }
-
-    /* Form element styling */
-    .form-label {
-        font-weight: 500;
-        color: #5a5c69;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
-
-    .form-control, .form-select {
-        border-radius: 0.375rem;
-        border: 1px solid #d1d3e2;
-        width: 100%;
-        min-height: 38px;
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-        line-height: 1.5;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: #4154f1;
-        box-shadow: 0 0 0 0.2rem rgba(65, 84, 241, 0.25);
-        outline: 0;
-    }
-
-    /* Ensure all form elements have consistent styling */
-    input.form-control,
-    select.form-select,
-    textarea.form-control {
+    .invalid-feedback {
         display: block;
         width: 100%;
-        min-height: 38px;
-    }
-
-    textarea.form-control {
-        min-height: 80px;
-        resize: vertical;
-    }
-
-    /* Spacing and layout */
-    .mb-3 {
-        margin-bottom: 1rem !important;
-    }
-
-    .mt-4 {
-        margin-top: 1.5rem !important;
-    }
-
-    /* Card and container styling */
-    .card-body {
-        padding: 2rem;
-    }
-
-    /* Button styling */
-    .btn {
-        min-width: 120px;
-        padding: 0.5rem 1.5rem;
-        font-size: 0.875rem;
-    }
-
-    /* Ensure proper form display */
-    #clientBasicForm {
-        opacity: 1;
-        transition: opacity 0.3s ease;
-    }
-
-    #businessStructureForm {
-        opacity: 1;
-        transition: opacity 0.3s ease;
-    }
-
-    /* Modal fixes */
-    body.modal-open {
-        overflow: hidden;
-        padding-right: 0 !important;
-    }
-
-    /* Make sure form fields are properly aligned horizontally */
-    @media (min-width: 768px) {
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-        }
-
-        .col-md-6, .col-md-4 {
-            display: block;
-        }
-    }
-
-    /* Fix for small screens */
-    @media (max-width: 767.98px) {
-        .col-md-6, .col-md-4 {
-            width: 100%;
-        }
-
-        .card-body {
-            padding: 1rem;
-        }
-    }
-
-    /* Ensure form groups don't break the layout */
-    .form-group {
-        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
     }
 </style>
 
@@ -382,48 +280,247 @@ document.addEventListener('DOMContentLoaded', function() {
     const formTitle = document.getElementById('formTitle');
     const clearButton = document.getElementById('clearButton');
     const confirmClearButton = document.getElementById('confirmClearButton');
-    const loadingModalElement = document.getElementById('loadingModal');
-    const loadingModal = new bootstrap.Modal(loadingModalElement);
+    const loadingOverlay = document.getElementById('customLoadingOverlay'); // Changed to overlay
     const clearFormModal = new bootstrap.Modal(document.getElementById('clearFormModal'));
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
 
     let currentState = 'basic';
+
+    // Simple and reliable loading overlay functions
+    function showLoading() {
+        console.log('Showing loading overlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'block';
+            // Prevent body scrolling
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function hideLoading() {
+        console.log('Hiding loading overlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+            // Restore body scrolling
+            document.body.style.overflow = '';
+        }
+
+        // Additional safety - force hide after short delay
+        setTimeout(() => {
+            if (loadingOverlay && loadingOverlay.style.display !== 'none') {
+                loadingOverlay.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }, 100);
+    }
 
     // Initialize form
     initializeForm();
 
     function initializeForm() {
-        console.log('Initializing form layout...');
+        console.log('Initializing form...');
         currentState = 'basic';
-
-        // Ensure proper display
         clientBasicForm.style.display = 'block';
-        clientBasicForm.style.opacity = '1';
         businessStructureForm.style.display = 'none';
         businessStructureForm.innerHTML = '';
         formTitle.textContent = 'Client Basic Information';
-
-        // Initialize UI state
         toggleBusinessStructure();
         updateSubmitButtons();
-        cleanupModals();
-
-        // Force reflow to ensure proper rendering
-        setTimeout(() => {
-            clientBasicForm.style.visibility = 'visible';
-        }, 10);
+        setupRealTimeValidation();
     }
 
-    function cleanupModals() {
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        backdrops.forEach(backdrop => {
-            if (backdrop.parentNode) {
-                backdrop.parentNode.removeChild(backdrop);
+    function setupRealTimeValidation() {
+        const mandatoryFields = [
+            'client_name', 'primary_contact_name', 'pan_no', 'email',
+            'phone_number', 'address_line1', 'aadhar', 'city', 'state',
+            'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
+            'client_type', 'status'
+        ];
+
+        mandatoryFields.forEach(fieldName => {
+            const field = document.getElementById(`id_${fieldName}`);
+            if (field) {
+                field.removeEventListener('blur', validateField);
+                field.removeEventListener('input', clearFieldError);
+                field.addEventListener('blur', validateField);
+                field.addEventListener('input', clearFieldError);
             }
         });
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
+
+        const phoneField = document.getElementById('id_phone_number');
+        if (phoneField) {
+            phoneField.addEventListener('input', formatPhoneNumber);
+        }
+
+        const postalCodeField = document.getElementById('id_postal_code');
+        if (postalCodeField) {
+            postalCodeField.addEventListener('input', formatPostalCode);
+            postalCodeField.addEventListener('blur', validatePostalCode);
+        }
+
+        const aadharField = document.getElementById('id_aadhar');
+        if (aadharField) {
+            aadharField.addEventListener('input', formatAadhar);
+        }
+
+        const panField = document.getElementById('id_pan_no');
+        if (panField) {
+            panField.addEventListener('input', function(e) {
+                this.value = this.value.toUpperCase();
+                clearFieldError.call(this);
+            });
+        }
+    }
+
+    function formatPostalCode(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 6) value = value.substring(0, 6);
+        e.target.value = value;
+        clearFieldError.call(e.target);
+    }
+
+    function validatePostalCode(e) {
+        const field = e.target;
+        const value = field.value.trim();
+        clearFieldError.call(field);
+
+        if (!value) {
+            showFieldError(field, 'Postal code is required.');
+            return false;
+        }
+
+        if (value.length !== 6) {
+            showFieldError(field, 'Postal code must be exactly 6 digits.');
+            return false;
+        }
+
+        if (!/^\d{6}$/.test(value)) {
+            showFieldError(field, 'Postal code must contain only numbers.');
+            return false;
+        }
+
+        return true;
+    }
+
+    function formatPhoneNumber(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 10) value = value.substring(0, 10);
+        e.target.value = value;
+        clearFieldError.call(e.target);
+    }
+
+    function formatAadhar(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 12) value = value.substring(0, 12);
+        e.target.value = value;
+        clearFieldError.call(e.target);
+    }
+
+    function validateField(e) {
+        const field = e.target;
+        const fieldName = field.name;
+        const value = field.value.trim();
+        clearFieldError.call(field);
+
+        const mandatoryFields = [
+            'client_name', 'primary_contact_name', 'pan_no', 'email',
+            'phone_number', 'address_line1', 'aadhar', 'city', 'state',
+            'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
+            'client_type', 'status'
+        ];
+
+        if (mandatoryFields.includes(fieldName) && !value) {
+            showFieldError(field, 'This field is required.');
+            return false;
+        }
+
+        switch(fieldName) {
+            case 'phone_number':
+                const phoneDigits = value.replace(/\D/g, '');
+                if (phoneDigits.length !== 10) {
+                    showFieldError(field, 'Phone number must be exactly 10 digits.');
+                    return false;
+                }
+                break;
+
+            case 'pan_no':
+                if (value.length !== 10) {
+                    showFieldError(field, 'PAN number must be exactly 10 characters.');
+                    return false;
+                }
+                break;
+
+            case 'aadhar':
+                const aadharDigits = value.replace(/\D/g, '');
+                if (aadharDigits.length !== 12) {
+                    showFieldError(field, 'Aadhar number must be exactly 12 digits.');
+                    return false;
+                }
+                break;
+
+            case 'email':
+                if (value && !isValidEmail(value)) {
+                    showFieldError(field, 'Please enter a valid email address.');
+                    return false;
+                }
+                break;
+
+            case 'postal_code':
+                if (value.length !== 6) {
+                    showFieldError(field, 'Postal code must be exactly 6 digits.');
+                    return false;
+                }
+                if (!/^\d{6}$/.test(value)) {
+                    showFieldError(field, 'Postal code must contain only numbers.');
+                    return false;
+                }
+                break;
+        }
+
+        return true;
+    }
+
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    function showFieldError(field, message) {
+        field.classList.add('is-invalid');
+        const errorElement = document.getElementById(`${field.name}_error`);
+        if (errorElement) {
+            errorElement.textContent = message;
+        }
+    }
+
+    function clearFieldError() {
+        this.classList.remove('is-invalid');
+        const errorElement = document.getElementById(`${this.name}_error`);
+        if (errorElement) {
+            errorElement.textContent = '';
+        }
+    }
+
+    function validateForm() {
+        let isValid = true;
+        const mandatoryFields = [
+            'client_name', 'primary_contact_name', 'pan_no', 'email',
+            'phone_number', 'address_line1', 'aadhar', 'city', 'state',
+            'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
+            'client_type', 'status'
+        ];
+
+        mandatoryFields.forEach(fieldName => {
+            const field = document.getElementById(`id_${fieldName}`);
+            if (field) {
+                const event = new Event('blur', { bubbles: true });
+                field.dispatchEvent(event);
+                if (field.classList.contains('is-invalid')) {
+                    isValid = false;
+                }
+            }
+        });
+
+        return isValid;
     }
 
     function toggleBusinessStructure() {
@@ -457,6 +554,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function submitIndividualForm() {
+        if (!validateForm()) {
+            showTemporaryAlert('Please fix the validation errors before submitting.', 'error');
+            return;
+        }
+
+        showLoading();
+        const formData = new FormData(clientBasicForm);
+
+        fetch('{% url "save_client_basic" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                window.location.href = '{% url "clients" %}';
+            } else {
+                handleFormErrors(data);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            hideLoading();
+            alert('Network error occurred. Please try again.');
+        });
+    }
+
     // Clear form functionality
     clearButton.addEventListener('click', function() {
         clearFormModal.show();
@@ -480,6 +610,16 @@ document.addEventListener('DOMContentLoaded', function() {
             selects.forEach(select => {
                 select.selectedIndex = 0;
             });
+
+            const errorElements = clientBasicForm.querySelectorAll('.invalid-feedback');
+            errorElements.forEach(element => {
+                element.textContent = '';
+            });
+            const invalidFields = clientBasicForm.querySelectorAll('.is-invalid');
+            invalidFields.forEach(field => {
+                field.classList.remove('is-invalid');
+            });
+
             initializeForm();
             showTemporaryAlert('Form cleared successfully!', 'success');
         }).catch(error => {
@@ -491,7 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showTemporaryAlert(message, type) {
-        const alertClass = type === 'success' ? 'alert-success' : 'alert-info';
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
         const alertHtml = `
             <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
                 <i class="bi bi-check-circle-fill"></i>
@@ -503,49 +643,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const existingAlerts = main.querySelectorAll('.alert');
         existingAlerts.forEach(alert => alert.remove());
         main.insertAdjacentHTML('afterbegin', alertHtml);
+
         setTimeout(() => {
             const alert = main.querySelector('.alert');
-            if (alert) bootstrap.Alert.getOrCreateInstance(alert).close();
-        }, 3000);
+            if (alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
     }
 
-    function submitIndividualForm() {
-        showLoadingModal();
-        const formData = new FormData(clientBasicForm);
-
-        fetch('{% url "save_client_basic" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            hideLoadingModal();
-            if (data.success) {
-                if (data.redirect_url) {
-                    window.location.href = data.redirect_url;
-                }
-            } else {
-                handleFormErrors(data);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            hideLoadingModal();
-            alert('Network error occurred. Please try again.');
-        });
-    }
-
+    // FIXED: Using simple overlay instead of Bootstrap modal
     function handleNextButtonClick() {
-        showLoadingModal();
+        if (!validateForm()) {
+            showTemporaryAlert('Please fix the validation errors before proceeding.', 'error');
+            return;
+        }
+
+        console.log('Next button clicked');
+        showLoading();
         const formData = new FormData(clientBasicForm);
 
         fetch('{% url "save_client_basic" %}', {
@@ -563,58 +679,61 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            hideLoadingModal();
+            console.log('Processing response data:', data);
+
+            // HIDE LOADING FIRST - this is crucial
+            hideLoading();
 
             if (data.success) {
                 if (data.form_html) {
+                    console.log('Showing business structure form');
                     showBusinessStructureForm(data);
                 } else if (data.redirect_url) {
+                    console.log('Redirecting to:', data.redirect_url);
                     window.location.href = data.redirect_url;
                 }
             } else {
+                console.log('Form errors:', data.errors);
                 handleFormErrors(data);
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            hideLoadingModal();
+            console.error('Error in handleNextButtonClick:', error);
+            hideLoading();
             alert('Network error occurred. Please try again.');
         });
     }
 
     function showBusinessStructureForm(data) {
+        console.log('showBusinessStructureForm called');
         currentState = 'business';
 
-        clientBasicForm.style.opacity = '0';
-        setTimeout(() => {
-            clientBasicForm.style.display = 'none';
-            businessStructureForm.style.display = 'block';
-            businessStructureForm.innerHTML = data.form_html;
-            formTitle.textContent = `${data.business_structure} Details`;
+        // Hide basic form and show business structure form
+        clientBasicForm.style.display = 'none';
+        businessStructureForm.style.display = 'block';
+        businessStructureForm.innerHTML = data.form_html;
+        formTitle.textContent = `${data.business_structure} Details`;
 
-            setTimeout(() => {
-                businessStructureForm.style.opacity = '1';
-            }, 50);
+        // Add event listeners to the new form
+        const backButton = businessStructureForm.querySelector('#backButton');
+        if (backButton) {
+            backButton.addEventListener('click', goBackToBasicForm);
+        }
 
-            const backButton = businessStructureForm.querySelector('#backButton');
-            if (backButton) {
-                backButton.addEventListener('click', goBackToBasicForm);
-            }
+        const businessForm = businessStructureForm.querySelector('#businessStructureDetailsForm');
+        if (businessForm) {
+            businessForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitBusinessStructureForm(this);
+            });
+        }
 
-            const businessForm = businessStructureForm.querySelector('#businessStructureDetailsForm');
-            if (businessForm) {
-                businessForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    submitBusinessStructureForm(this);
-                });
-            }
-
-            window.scrollTo(0, 0);
-        }, 300);
+        window.scrollTo(0, 0);
     }
 
     function submitBusinessStructureForm(form) {
-        showLoadingModal();
+        console.log('Submitting business structure form');
+        showLoading();
         const formData = new FormData(form);
 
         fetch('{% url "save_client_complete" %}', {
@@ -632,37 +751,30 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            hideLoadingModal();
-            if (data.success && data.redirect_url) {
-                window.location.href = data.redirect_url;
+            hideLoading();
+            if (data.success) {
+                window.location.href = '{% url "clients" %}';
             } else {
                 handleFormErrors(data);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            hideLoadingModal();
+            hideLoading();
             alert('Network error occurred. Please try again.');
         });
     }
 
     function goBackToBasicForm() {
+        console.log('Going back to basic form');
         currentState = 'basic';
 
-        businessStructureForm.style.opacity = '0';
-        setTimeout(() => {
-            businessStructureForm.style.display = 'none';
-            businessStructureForm.innerHTML = '';
-            clientBasicForm.style.display = 'block';
-
-            setTimeout(() => {
-                clientBasicForm.style.opacity = '1';
-            }, 50);
-
-            formTitle.textContent = 'Client Basic Information';
-            toggleBusinessStructure();
-            window.scrollTo(0, 0);
-        }, 300);
+        businessStructureForm.style.display = 'none';
+        businessStructureForm.innerHTML = '';
+        clientBasicForm.style.display = 'block';
+        formTitle.textContent = 'Client Basic Information';
+        toggleBusinessStructure();
+        window.scrollTo(0, 0);
 
         fetch('{% url "clear_client_session" %}', {
             method: 'POST',
@@ -674,28 +786,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleFormErrors(data) {
-        let errorMessages = [];
         if (data.errors) {
             for (let field in data.errors) {
-                errorMessages.push(`${field}: ${data.errors[field].join(', ')}`);
+                const fieldElement = document.getElementById(`id_${field}`);
+                if (fieldElement) {
+                    showFieldError(fieldElement, data.errors[field].join(', '));
+                }
             }
-            alert('Please fix the errors:\n' + errorMessages.join('\n'));
+            showTemporaryAlert('Please fix the form errors before submitting.', 'error');
         } else if (data.error) {
-            alert('Error: ' + data.error);
+            showTemporaryAlert('Error: ' + data.error, 'error');
         } else {
-            alert('An unknown error occurred.');
+            showTemporaryAlert('An unknown error occurred.', 'error');
         }
-    }
-
-    function showLoadingModal() {
-        console.log('Showing loading modal');
-        loadingModal.show();
-    }
-
-    function hideLoadingModal() {
-        console.log('Hiding loading modal');
-        loadingModal.hide();
-        setTimeout(cleanupModals, 150);
     }
 
     // Event listeners
@@ -703,6 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle page refresh
     window.addEventListener('beforeunload', function() {
+        hideLoading();
         fetch('{% url "clear_client_session" %}', {
             method: 'POST',
             headers: {
@@ -713,20 +817,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Initialize on load
-    window.addEventListener('load', function() {
-        initializeForm();
-    });
-
     // Global error handlers
     window.addEventListener('error', function(event) {
         console.error('Global error:', event.error);
-        hideLoadingModal();
+        hideLoading();
     });
 
     window.addEventListener('unhandledrejection', function(event) {
         console.error('Unhandled promise rejection:', event.reason);
-        hideLoadingModal();
+        hideLoading();
     });
 });
 </script>

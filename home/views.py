@@ -96,8 +96,16 @@ class AddClientView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Always start with a fresh form - don't pre-fill from session
+        # Clear any existing messages when loading the form
+        from django.contrib.messages import get_messages
+        storage = get_messages(self.request)
+        for message in storage:
+            pass  # This clears the messages
         context['client_form'] = ClientForm()
+        storage = messages.get_messages(self.request)
+        for message in storage:
+            pass
+
         return context
 
 
@@ -105,7 +113,15 @@ class SaveClientBasicView(LoginRequiredMixin, View):
     def post(self, request):
         print("SaveClientBasicView called")
         try:
-            client_form = ClientForm(request.POST)
+            # Create a mutable copy of the POST data
+            post_data = request.POST.copy()
+
+            # If client type is Individual, remove business_structure requirement
+            if post_data.get('client_type') == 'Individual':
+                post_data['business_structure'] = ''  # Set to empty
+
+            client_form = ClientForm(post_data)
+
             if not client_form.is_valid():
                 print("Form errors:", client_form.errors)
                 return JsonResponse({'success': False, 'errors': client_form.errors})
@@ -171,6 +187,12 @@ class SaveClientBasicView(LoginRequiredMixin, View):
                 # Clear any existing session data
                 self._clear_session_data(request)
 
+                # Use session storage for messages to prevent persistence
+                from django.contrib.messages import get_messages
+                storage = get_messages(request)
+                for message in storage:
+                    pass  # Clear existing messages
+
                 messages.success(request, 'Client added successfully!')
                 return JsonResponse({
                     'success': True,
@@ -219,9 +241,10 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     client.save()
 
                     # Save business structure specific details
-                    success = self._save_business_structure_details(request, business_structure, client)
-                    if not success:
-                        return JsonResponse({'success': False, 'errors': 'Failed to save business structure details'})
+                    business_structure_result = self._save_business_structure_details(request, business_structure,
+                                                                                      client)
+                    if business_structure_result is not True:
+                        return JsonResponse({'success': False, 'errors': business_structure_result})
 
                     # Clear session data after successful save
                     self._clear_session_data(request)
@@ -247,7 +270,7 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     company_details.save()
                     form.save_m2m()
                     return True
-                return False
+                return form.errors  # Return form errors
 
             elif business_structure == 'LLP':
                 form = LLPDetailsForm(request.POST, request.FILES)
@@ -256,7 +279,7 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     llp_details.client = client
                     llp_details.save()
                     return True
-                return False
+                return form.errors
 
             elif business_structure == 'OPC':
                 form = OPCDetailsForm(request.POST, request.FILES)
@@ -265,7 +288,7 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     opc_details.client = client
                     opc_details.save()
                     return True
-                return False
+                return form.errors
 
             elif business_structure == 'Section 8':
                 form = Section8CompanyDetailsForm(request.POST, request.FILES)
@@ -274,7 +297,7 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     section8_details.client = client
                     section8_details.save()
                     return True
-                return False
+                return form.errors
 
             elif business_structure == 'HUF':
                 form = HUFDetailsForm(request.POST, request.FILES)
@@ -283,13 +306,13 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     huf_details.client = client
                     huf_details.save()
                     return True
-                return False
+                return form.errors
 
             return True  # For business structures without additional details
 
         except Exception as e:
             print(f"Error saving business structure details: {e}")
-            return False
+            return str(e)
 
     def _clear_session_data(self, request):
         """Clear session data"""

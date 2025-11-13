@@ -1,5 +1,7 @@
 from django import forms
 from .models import Client, CompanyDetails, LLPDetails, OPCDetails, Section8CompanyDetails, HUFDetails, ClientDocumentUpload
+from datetime import date
+from django.contrib.auth.models import User
 
 class ClientDocumentUploadForm(forms.ModelForm):
     class Meta:
@@ -13,6 +15,16 @@ class ClientDocumentUploadForm(forms.ModelForm):
 class ClientForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Set default values
+        self.fields['client_type'].initial = 'Individual'
+        self.fields['date_of_engagement'].initial = date.today()
+        self.fields['status'].initial = 'Active'
+        self.fields['pan_no'].widget.attrs['maxlength'] = '10'
+
+        # Make business_structure NOT required by default
+        self.fields['business_structure'].required = False
+
+        self.fields['assigned_ca'].queryset = User.objects.filter(is_staff=True)
         # Add Bootstrap classes to all form fields
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput) or isinstance(field.widget, forms.EmailInput):
@@ -24,9 +36,13 @@ class ClientForm(forms.ModelForm):
             elif isinstance(field.widget, forms.DateInput):
                 field.widget.attrs.update({'class': 'form-control'})
 
-            # Add placeholder for better UX
-            if field_name in ['client_name', 'primary_contact_name', 'pan_no', 'email']:
-                field.widget.attrs.update({'placeholder': f'Enter {field.label.lower()}'})
+            # Add required attribute for mandatory fields (EXCLUDE business_structure)
+            if field_name in ['client_name', 'primary_contact_name', 'pan_no', 'email',
+                              'phone_number', 'address_line1', 'aadhar', 'city', 'state',
+                              'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
+                              'client_type', 'status']:
+                field.widget.attrs.update({'required': 'required'})
+                field.widget.attrs.update({'data-required': 'true'})
 
     class Meta:
         model = Client
@@ -55,22 +71,61 @@ class ClientForm(forms.ModelForm):
             'address_line1': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter complete address'}),
             'remarks': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Enter any additional remarks'}),
             'pan_no': forms.TextInput(attrs={'placeholder': 'e.g., ABCDE1234F', 'style': 'text-transform: uppercase'}),
-            'aadhar': forms.TextInput(attrs={'placeholder': 'e.g., 1234 5678 9012'}),
-            'phone_number': forms.TextInput(attrs={'placeholder': 'e.g., +91 9876543210'}),
+            'aadhar': forms.TextInput(attrs={'placeholder': 'e.g., 1234 5678 9012', 'max_length': '12'}),
+            'phone_number': forms.TextInput(attrs={'placeholder': 'e.g., 9876543210', 'max_length': '10'}),
+            'postal_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter 6-digit postal code',
+                'max_length': '6',
+                'pattern': '[0-9]{6}',
+                'title': 'Postal code must be exactly 6 digits'
+            }),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        client_type = cleaned_data.get('client_type')
+        business_structure = cleaned_data.get('business_structure')
+
+        # Only validate business_structure for Entity clients
+        if client_type == 'Entity' and not business_structure:
+            self.add_error('business_structure', 'Business structure is required for Entity clients.')
+
+        return cleaned_data
 
     def clean_pan_no(self):
         pan_no = self.cleaned_data.get('pan_no', '').upper().strip()
+        if not pan_no:
+            raise forms.ValidationError("PAN number is required.")
         if len(pan_no) != 10:
             raise forms.ValidationError("PAN number must be exactly 10 characters long.")
         return pan_no
 
     def clean_phone_number(self):
         phone_number = self.cleaned_data.get('phone_number', '').strip()
-        # Basic phone number validation
-        if len(phone_number) < 10:
-            raise forms.ValidationError("Phone number must be at least 10 digits long.")
+        if not phone_number:
+            raise forms.ValidationError("Phone number is required.")
+        # Remove any non-digit characters
+        phone_digits = ''.join(filter(str.isdigit, phone_number))
+        if len(phone_digits) != 10:
+            raise forms.ValidationError("Phone number must be exactly 10 digits long.")
         return phone_number
+
+    def clean_aadhar(self):
+        aadhar = self.cleaned_data.get('aadhar', '').strip()
+        if not aadhar:
+            raise forms.ValidationError("Aadhar number is required.")
+        # Remove any non-digit characters
+        aadhar_digits = ''.join(filter(str.isdigit, aadhar))
+        if len(aadhar_digits) != 12:
+            raise forms.ValidationError("Aadhar number must be exactly 12 digits long.")
+        return aadhar
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip()
+        if not email:
+            raise forms.ValidationError("Email is required.")
+        return email
 
 
 class CompanyDetailsForm(forms.ModelForm):
@@ -89,6 +144,10 @@ class CompanyDetailsForm(forms.ModelForm):
                 field.widget.attrs.update({'class': 'form-control', 'type': 'date'})
             elif isinstance(field.widget, forms.FileInput):
                 field.widget.attrs.update({'class': 'form-control'})
+
+            # Add required attribute for all fields
+            if field_name not in ['moa_file', 'aoa_file']:  # Files might be optional
+                field.widget.attrs.update({'required': 'required'})
 
     class Meta:
         model = CompanyDetails
@@ -116,6 +175,19 @@ class CompanyDetailsForm(forms.ModelForm):
             'paid_up_share_capital': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01', 'min': '0'}),
             'udyam_registration': forms.TextInput(attrs={'placeholder': 'Enter Udyam registration number'}),
         }
+        error_messages = {
+            'company_type': {'required': 'Company type is required.'},
+            'proposed_company_name': {'required': 'Proposed company name is required.'},
+            'cin': {'required': 'CIN is required.'},
+            'authorised_share_capital': {'required': 'Authorised share capital is required.'},
+            'paid_up_share_capital': {'required': 'Paid-up share capital is required.'},
+            'number_of_directors': {'required': 'Number of directors is required.'},
+            'number_of_shareholders': {'required': 'Number of shareholders is required.'},
+            'registered_office_address': {'required': 'Registered office address is required.'},
+            'date_of_incorporation': {'required': 'Date of incorporation is required.'},
+            'udyam_registration': {'required': 'Udyam registration is required.'},
+            'directors': {'required': 'Directors are required.'},
+        }
 
 
 class LLPDetailsForm(forms.ModelForm):
@@ -135,6 +207,10 @@ class LLPDetailsForm(forms.ModelForm):
             elif isinstance(field.widget, forms.FileInput):
                 field.widget.attrs.update({'class': 'form-control'})
 
+            # Add required attribute for all fields
+            if field_name not in ['llp_agreement_file']:  # File might be optional
+                field.widget.attrs.update({'required': 'required'})
+
     class Meta:
         model = LLPDetails
         fields = [
@@ -153,6 +229,14 @@ class LLPDetailsForm(forms.ModelForm):
             'llp_registration_no': forms.TextInput(attrs={'placeholder': 'Enter LLP registration number'}),
             'paid_up_capital_llp': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01', 'min': '0'}),
         }
+        error_messages = {
+            'llp_name': {'required': 'LLP name is required.'},
+            'llp_registration_no': {'required': 'LLP registration number is required.'},
+            'registered_office_address_llp': {'required': 'Registered office address is required.'},
+            'designated_partners': {'required': 'Designated partners are required.'},
+            'paid_up_capital_llp': {'required': 'Paid-up capital is required.'},
+            'date_of_registration_llp': {'required': 'Date of registration is required.'},
+        }
 
 
 class OPCDetailsForm(forms.ModelForm):
@@ -169,6 +253,9 @@ class OPCDetailsForm(forms.ModelForm):
                 field.widget.attrs.update({'class': 'form-control'})
             elif isinstance(field.widget, forms.DateInput):
                 field.widget.attrs.update({'class': 'form-control', 'type': 'date'})
+
+            # Add required attribute for all fields
+            field.widget.attrs.update({'required': 'required'})
 
     class Meta:
         model = OPCDetails
@@ -189,6 +276,15 @@ class OPCDetailsForm(forms.ModelForm):
             'nominee_member_name': forms.TextInput(attrs={'placeholder': 'Enter nominee member name'}),
             'paid_up_share_capital_opc': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01', 'min': '0'}),
         }
+        error_messages = {
+            'opc_name': {'required': 'OPC name is required.'},
+            'opc_cin': {'required': 'OPC CIN is required.'},
+            'registered_office_address_opc': {'required': 'Registered office address is required.'},
+            'sole_member_name': {'required': 'Sole member name is required.'},
+            'nominee_member_name': {'required': 'Nominee member name is required.'},
+            'paid_up_share_capital_opc': {'required': 'Paid-up share capital is required.'},
+            'date_of_incorporation_opc': {'required': 'Date of incorporation is required.'},
+        }
 
 
 class Section8CompanyDetailsForm(forms.ModelForm):
@@ -205,6 +301,10 @@ class Section8CompanyDetailsForm(forms.ModelForm):
                 field.widget.attrs.update({'class': 'form-check-input'})
             elif isinstance(field.widget, forms.DateInput):
                 field.widget.attrs.update({'class': 'form-control', 'type': 'date'})
+
+            # Add required attribute for all fields except checkbox
+            if field_name != 'whether_licence_obtained':
+                field.widget.attrs.update({'required': 'required'})
 
     class Meta:
         model = Section8CompanyDetails
@@ -224,6 +324,13 @@ class Section8CompanyDetailsForm(forms.ModelForm):
             'object_clause': forms.Textarea(
                 attrs={'rows': 4, 'placeholder': 'Describe the main objectives and purposes of the company'}),
         }
+        error_messages = {
+            'section8_company_name': {'required': 'Company name is required.'},
+            'registration_no_section8': {'required': 'Registration number is required.'},
+            'registered_office_address_s8': {'required': 'Registered office address is required.'},
+            'object_clause': {'required': 'Object clause is required.'},
+            'date_of_registration_s8': {'required': 'Date of registration is required.'},
+        }
 
 
 class HUFDetailsForm(forms.ModelForm):
@@ -242,6 +349,10 @@ class HUFDetailsForm(forms.ModelForm):
                 field.widget.attrs.update({'class': 'form-control', 'type': 'date'})
             elif isinstance(field.widget, forms.FileInput):
                 field.widget.attrs.update({'class': 'form-control'})
+
+            # Add required attribute for all fields except optional ones
+            if field_name not in ['deed_of_declaration_file', 'remarks']:
+                field.widget.attrs.update({'required': 'required'})
 
     class Meta:
         model = HUFDetails
@@ -271,6 +382,17 @@ class HUFDetailsForm(forms.ModelForm):
             'remarks': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Enter any additional remarks'}),
             'number_of_coparceners': forms.NumberInput(attrs={'min': '1'}),
             'number_of_members': forms.NumberInput(attrs={'min': '1'}),
+        }
+        error_messages = {
+            'huf_name': {'required': 'HUF name is required.'},
+            'pan_huf': {'required': 'HUF PAN number is required.'},
+            'date_of_creation': {'required': 'Date of creation is required.'},
+            'karta_name': {'required': 'Karta name is required.'},
+            'number_of_coparceners': {'required': 'Number of coparceners is required.'},
+            'number_of_members': {'required': 'Number of members is required.'},
+            'residential_address': {'required': 'Residential address is required.'},
+            'bank_account_details': {'required': 'Bank account details are required.'},
+            'business_activity': {'required': 'Business activity is required.'},
         }
 
     def clean_pan_huf(self):
