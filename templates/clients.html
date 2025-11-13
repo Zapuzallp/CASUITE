@@ -1,293 +1,142 @@
 {% extends 'base.html' %}
 {% load static %}
+
 {% block body %}
-    <style>
-        .holiday-card {
-            margin-bottom: 10px;
-            padding: 2px;
-            border-radius: 6px;
-            color: white;
-            margin-left: 8px;
-            margin-right: 8px;
-        }
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-        .error-message {
-            display: none;
-            color: #dc3545;
-            text-align: center;
-            padding: 20px;
-        }
-    </style>
-    <main id="main" class="main">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-secondary alert-dismissible fade show" role="alert">
-                    <i class="bi bi-check-circle-fill"></i>
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-        <div class="pagetitle">
-            <h1>Clients</h1>
-            <nav>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href={% url "dashboard" %}>Home</a></li>
-                    <li class="breadcrumb-item active">Clients</li>
-                </ol>
-            </nav>
-            <div class="col-auto">
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h1>Clients</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                <li class="breadcrumb-item active">Clients</li>
+            </ol>
+        </nav>
+    </div><!-- End Page Title -->
+
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title">All Clients</h5>
                 <a href="{% url 'add_client' %}" class="btn btn-primary">
-                    <i class="fas fa-plus me-2"></i>Add New Client
+                    <i class="bi bi-plus-circle"></i> Add New Client
                 </a>
             </div>
-        </div><!-- End Page Title -->
 
-        <!-- Loading Spinner -->
-        <div id="loadingSpinner" class="loading-spinner">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+            <!-- Clients Table -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="clientsTable">
+                    <thead>
+                        <tr>
+                            <th>Client Name</th>
+                            <th>Primary Contact</th>
+                            <th>PAN No.</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Client Type</th>
+                            <th>Business Structure</th>
+                            <th>Status</th>
+                            <th>Assigned CA</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for client in clients %}
+                        <tr>
+                            <td>{{ client.client_name }}</td>
+                            <td>{{ client.primary_contact_name }}</td>
+                            <td>{{ client.pan_no }}</td>
+                            <td>{{ client.email }}</td>
+                            <td>{{ client.phone_number }}</td>
+                            <td>
+                                <span class="badge bg-{% if client.client_type == 'Individual' %}info{% else %}primary{% endif %}">
+                                    {{ client.client_type }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if client.business_structure %}
+                                <span class="badge bg-secondary">{{ client.business_structure }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge
+                                    {% if client.status == 'Incorporated' %}bg-success
+                                    {% elif client.status == 'Prospect' %}bg-warning
+                                    {% elif client.status == 'Incorporation in progress' %}bg-info
+                                    {% elif client.status == 'Closed' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ client.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if client.assigned_ca %}
+                                    {{ client.assigned_ca.get_full_name }}
+                                {% else %}
+                                    <span class="text-muted">Not assigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">
+                                No clients found. <a href="{% url 'add_client' %}">Add your first client</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <p class="mt-2">Loading clients...</p>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Client pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
         </div>
+    </div>
+</main>
 
-        <!-- Error Message -->
-        <div id="errorMessage" class="error-message">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-            <span id="errorText">Failed to load clients. Please try again.</span>
-        </div>
-
-        <!-- Client Data Table -->
-        <div class="card" id="clientTable" style="display: none;">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Client Information</h5>
-                <div class="table-info">
-                    Showing <span id="showingStart">0</span> to <span id="showingEnd">0</span> of <span id="totalEntries">0</span> entries
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table data-table">
-                        <thead>
-                            <tr>
-                                <th>Client Name</th>
-                                <th>PAN No.</th>
-                                <th>Email</th>
-                                <th>Contact No.</th>
-                                <th>Aadhar No.</th>
-                                <th>City</th>
-                                <th>Date of Engagement</th>
-                                <th>Business Structure</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            <!-- Table rows will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Pagination -->
-                <nav aria-label="Client data pagination">
-                    <ul class="pagination justify-content-end" id="pagination">
-                        <!-- Pagination will be generated by JavaScript -->
-                    </ul>
-                </nav>
-            </div>
-        </div>
-    </main><!-- End #main -->
-
-<script>
-    // Global variables
-    let currentPage = 1;
-    const entriesPerPage = 10;
-    let totalPages = 1;
-    let totalRecords = 0;
-
-    // Function to fetch clients from API
-    async function fetchClients(page = 1) {
-        showLoading();
-
-        try {
-            const response = await fetch(`/api/clients/?page=${page}&per_page=${entriesPerPage}`);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            displayClients(data.clients, data.pagination);
-            hideError();
-
-        } catch (error) {
-            console.error('Error fetching clients:', error);
-            showError('Failed to load clients. Please try again.');
-        } finally {
-            hideLoading();
-        }
+<style>
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
     }
 
-    // Function to display clients in table
-    function displayClients(clients, pagination) {
-        const tableBody = document.getElementById('tableBody');
-        tableBody.innerHTML = '';
-
-        if (clients.length === 0) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="10" class="text-center text-muted py-4">
-                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                        No clients found
-                    </td>
-                </tr>
-            `;
-        } else {
-            clients.forEach(client => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${escapeHtml(client.client_name)}</td>
-                    <td>${escapeHtml(client.pan_no)}</td>
-                    <td>${escapeHtml(client.email)}</td>
-                    <td>${escapeHtml(client.phone_number)}</td>
-                    <td>${escapeHtml(client.aadhar || '-')}</td>
-                    <td>${escapeHtml(client.city)}</td>
-                    <td>${formatDate(client.date_of_engagement)}</td>
-                    <td>${escapeHtml(client.business_structure)}</td>
-                    <td>
-                        <span class="badge bg-${getStatusBadgeColor(client.status)}">
-                            ${escapeHtml(client.status)}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-sm btn-outline-primary" onclick="viewClient(${client.id})" title="View">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="editClient(${client.id})" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
-        // Update pagination info
-        updatePaginationInfo(pagination);
-        updatePaginationControls(pagination);
-
-        // Show table
-        document.getElementById('clientTable').style.display = 'block';
+    .badge {
+        font-size: 0.75em;
     }
-
-    // Function to update pagination information
-    function updatePaginationInfo(pagination) {
-        const start = ((pagination.current_page - 1) * entriesPerPage) + 1;
-        const end = Math.min(pagination.current_page * entriesPerPage, pagination.total_records);
-
-        document.getElementById('showingStart').textContent = start;
-        document.getElementById('showingEnd').textContent = end;
-        document.getElementById('totalEntries').textContent = pagination.total_records;
-
-        currentPage = pagination.current_page;
-        totalPages = pagination.total_pages;
-        totalRecords = pagination.total_records;
-    }
-
-    // Function to update pagination controls
-    function updatePaginationControls(pagination) {
-        const paginationElement = document.getElementById('pagination');
-        paginationElement.innerHTML = '';
-
-        // Previous button
-        const prevLi = document.createElement('li');
-        prevLi.className = `page-item ${!pagination.has_previous ? 'disabled' : ''}`;
-        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>`;
-        paginationElement.appendChild(prevLi);
-
-        // Page numbers
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(totalPages, currentPage + 2);
-
-        for (let i = startPage; i <= endPage; i++) {
-            const pageLi = document.createElement('li');
-            pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
-            pageLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
-            paginationElement.appendChild(pageLi);
-        }
-
-        // Next button
-        const nextLi = document.createElement('li');
-        nextLi.className = `page-item ${!pagination.has_next ? 'disabled' : ''}`;
-        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>`;
-        paginationElement.appendChild(nextLi);
-    }
-
-    // Function to change page
-    function changePage(page) {
-        if (page < 1 || page > totalPages) return;
-        fetchClients(page);
-    }
-
-    // Utility functions
-    function escapeHtml(unsafe) {
-        if (unsafe === null || unsafe === undefined) return '';
-        return unsafe
-            .toString()
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-    function formatDate(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-IN');
-    }
-
-    function getStatusBadgeColor(status) {
-        const statusColors = {
-            'Prospect': 'warning',
-            'Incorporation in progress': 'info',
-            'Incorporated': 'success',
-            'Closed': 'secondary',
-            'On-hold': 'danger'
-        };
-        return statusColors[status] || 'secondary';
-    }
-
-    // Loading and error handlers
-    function showLoading() {
-        document.getElementById('loadingSpinner').style.display = 'block';
-        document.getElementById('clientTable').style.display = 'none';
-        document.getElementById('errorMessage').style.display = 'none';
-    }
-
-    function hideLoading() {
-        document.getElementById('loadingSpinner').style.display = 'none';
-    }
-
-    function showError(message) {
-        document.getElementById('errorText').textContent = message;
-        document.getElementById('errorMessage').style.display = 'block';
-        document.getElementById('clientTable').style.display = 'none';
-    }
-
-    function hideError() {
-        document.getElementById('errorMessage').style.display = 'none';
-    }
-
-    // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        fetchClients(1);
-    });
-</script>
+</style>
 {% endblock body %}

@@ -1,0 +1,70 @@
+<form method="post" enctype="multipart/form-data" class="row g-3" id="businessStructureDetailsForm">
+    {% csrf_token %}
+    <input type="hidden" name="business_structure" value="{{ business_structure }}">
+
+    <h6 class="card-title mb-3">OPC (One Person Company) Details</h6>
+
+    <div class="col-md-6">
+        <label for="{{ form.opc_name.id_for_label }}" class="form-label">OPC Name</label>
+        {{ form.opc_name }}
+        {% if form.opc_name.errors %}
+            <div class="text-danger small">{{ form.opc_name.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.opc_cin.id_for_label }}" class="form-label">OPC CIN</label>
+        {{ form.opc_cin }}
+        {% if form.opc_cin.errors %}
+            <div class="text-danger small">{{ form.opc_cin.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-12">
+        <label for="{{ form.registered_office_address_opc.id_for_label }}" class="form-label">Registered Office Address</label>
+        {{ form.registered_office_address_opc }}
+        {% if form.registered_office_address_opc.errors %}
+            <div class="text-danger small">{{ form.registered_office_address_opc.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.sole_member_name.id_for_label }}" class="form-label">Sole Member Name</label>
+        {{ form.sole_member_name }}
+        {% if form.sole_member_name.errors %}
+            <div class="text-danger small">{{ form.sole_member_name.errors }}</div>
+        {% endif %}
+        <small class="form-text text-muted">Select the sole member from existing clients</small>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.nominee_member_name.id_for_label }}" class="form-label">Nominee Member Name</label>
+        {{ form.nominee_member_name }}
+        {% if form.nominee_member_name.errors %}
+            <div class="text-danger small">{{ form.nominee_member_name.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.paid_up_share_capital_opc.id_for_label }}" class="form-label">Paid-up Share Capital (₹)</label>
+        {{ form.paid_up_share_capital_opc }}
+        {% if form.paid_up_share_capital_opc.errors %}
+            <div class="text-danger small">{{ form.paid_up_share_capital_opc.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.date_of_incorporation_opc.id_for_label }}" class="form-label">Date of Incorporation</label>
+        {{ form.date_of_incorporation_opc }}
+        {% if form.date_of_incorporation_opc.errors %}
+            <div class="text-danger small">{{ form.date_of_incorporation_opc.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-12">
+        <div class="d-flex justify-content-between">
+            <button type="button" id="backButton" class="btn btn-secondary">Back</button>
+            <button type="submit" class="btn btn-primary">Save Client</button>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,66 @@
+<form method="post" enctype="multipart/form-data" class="row g-3" id="businessStructureDetailsForm">
+    {% csrf_token %}
+    <input type="hidden" name="business_structure" value="{{ business_structure }}">
+
+    <h6 class="card-title mb-3">Section 8 Company Details</h6>
+
+    <div class="col-md-6">
+        <label for="{{ form.section8_company_name.id_for_label }}" class="form-label">Company Name</label>
+        {{ form.section8_company_name }}
+        {% if form.section8_company_name.errors %}
+            <div class="text-danger small">{{ form.section8_company_name.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.registration_no_section8.id_for_label }}" class="form-label">Registration Number</label>
+        {{ form.registration_no_section8 }}
+        {% if form.registration_no_section8.errors %}
+            <div class="text-danger small">{{ form.registration_no_section8.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-12">
+        <label for="{{ form.registered_office_address_s8.id_for_label }}" class="form-label">Registered Office Address</label>
+        {{ form.registered_office_address_s8 }}
+        {% if form.registered_office_address_s8.errors %}
+            <div class="text-danger small">{{ form.registered_office_address_s8.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-12">
+        <label for="{{ form.object_clause.id_for_label }}" class="form-label">Object Clause</label>
+        {{ form.object_clause }}
+        {% if form.object_clause.errors %}
+            <div class="text-danger small">{{ form.object_clause.errors }}</div>
+        {% endif %}
+        <small class="form-text text-muted">Describe the main objectives and purposes of the company</small>
+    </div>
+
+    <div class="col-md-6">
+        <div class="form-check mt-3">
+            {{ form.whether_licence_obtained }}
+            <label class="form-check-label" for="{{ form.whether_licence_obtained.id_for_label }}">
+                Whether Licence Obtained
+            </label>
+        </div>
+        {% if form.whether_licence_obtained.errors %}
+            <div class="text-danger small">{{ form.whether_licence_obtained.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.date_of_registration_s8.id_for_label }}" class="form-label">Date of Registration</label>
+        {{ form.date_of_registration_s8 }}
+        {% if form.date_of_registration_s8.errors %}
+            <div class="text-danger small">{{ form.date_of_registration_s8.errors }}</div>
+        {% endif %}
+    </div>
+
+    <div class="col-12">
+        <div class="d-flex justify-content-between">
+            <button type="button" id="backButton" class="btn btn-secondary">Back</button>
+            <button type="submit" class="btn btn-primary">Save Client</button>
+        </div>
+    </div>
+</form>

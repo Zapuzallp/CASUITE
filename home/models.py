@@ -17,6 +17,7 @@ class Client(models.Model):
         ('LLP', 'LLP'),
         ('OPC', 'OPC'),
         ('Section 8', 'Section 8'),
+        ('HUF', 'HUF'),
     ]
 
     STATUS_CHOICES = [
@@ -64,7 +65,6 @@ class CompanyDetails(models.Model):
     COMPANY_TYPE_CHOICES = [
         ('Private Limited', 'Private Limited'),
         ('Public Limited', 'Public Limited'),
-        ('One Person Company', 'One Person Company'),
     ]
 
     client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='company_details')

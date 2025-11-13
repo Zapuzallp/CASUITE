@@ -26,132 +26,708 @@
 
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title">Client Information</h5>
+            <h5 class="card-title" id="formTitle">Client Basic Information</h5>
 
-            <form method="post" class="row g-3">
+            <!-- Basic Client Form -->
+            <form id="clientBasicForm" method="post" class="row g-3" novalidate style="display: block;">
                 {% csrf_token %}
 
-                <!-- Client Basic Information -->
-                <div class="col-md-6">
-                    <label for="{{ form.client_name.id_for_label }}" class="form-label">Client Name</label>
-                    {{ form.client_name }}
+                <!-- Row 1: Client Name & Primary Contact -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.client_name.id_for_label }}" class="form-label">Client Name *</label>
+                            {{ client_form.client_name }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.primary_contact_name.id_for_label }}" class="form-label">Primary Contact Name *</label>
+                            {{ client_form.primary_contact_name }}
+                        </div>
+                    </div>
                 </div>
 
-                <div class="col-md-6">
-                    <label for="{{ form.primary_contact_name.id_for_label }}" class="form-label">Primary Contact Name</label>
-                    {{ form.primary_contact_name }}
+                <!-- Row 2: PAN & Email -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.pan_no.id_for_label }}" class="form-label">PAN No. *</label>
+                            {{ client_form.pan_no }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.email.id_for_label }}" class="form-label">Email *</label>
+                            {{ client_form.email }}
+                        </div>
+                    </div>
                 </div>
 
-                <div class="col-md-6">
-                    <label for="{{ form.pan_no.id_for_label }}" class="form-label">PAN No.</label>
-                    {{ form.pan_no }}
+                <!-- Row 3: Phone & Aadhar -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.phone_number.id_for_label }}" class="form-label">Contact No. *</label>
+                            {{ client_form.phone_number }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.aadhar.id_for_label }}" class="form-label">Aadhar No.</label>
+                            {{ client_form.aadhar }}
+                        </div>
+                    </div>
                 </div>
 
-                <div class="col-md-6">
-                    <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                    {{ form.email }}
+                <!-- Row 4: Address -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label for="{{ client_form.address_line1.id_for_label }}" class="form-label">Address *</label>
+                            {{ client_form.address_line1 }}
+                        </div>
+                    </div>
                 </div>
 
-                <div class="col-md-6">
-                    <label for="{{ form.phone_number.id_for_label }}" class="form-label">Contact No.</label>
-                    {{ form.phone_number }}
+                <!-- Row 5: City, State, Postal Code -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ client_form.city.id_for_label }}" class="form-label">City *</label>
+                            {{ client_form.city }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ client_form.state.id_for_label }}" class="form-label">State *</label>
+                            {{ client_form.state }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ client_form.postal_code.id_for_label }}" class="form-label">Postal Code *</label>
+                            {{ client_form.postal_code }}
+                        </div>
+                    </div>
                 </div>
 
-                <div class="col-md-6">
-                    <label for="{{ form.aadhar.id_for_label }}" class="form-label">Aadhar No.</label>
-                    {{ form.aadhar }}
+                <!-- Row 6: Country & Date of Engagement -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.country.id_for_label }}" class="form-label">Country *</label>
+                            {{ client_form.country }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.date_of_engagement.id_for_label }}" class="form-label">Date of Engagement</label>
+                            {{ client_form.date_of_engagement }}
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Address Information -->
-                <div class="col-12">
-                    <label for="{{ form.address_line1.id_for_label }}" class="form-label">Address</label>
-                    {{ form.address_line1 }}
+                <!-- Row 7: Client Type & Business Structure -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.client_type.id_for_label }}" class="form-label">Client Type *</label>
+                            {{ client_form.client_type }}
+                        </div>
+                    </div>
+                    <div class="col-md-6" id="businessStructureField" style="display: none;">
+                        <div class="mb-3">
+                            <label for="{{ client_form.business_structure.id_for_label }}" class="form-label">Business Structure *</label>
+                            {{ client_form.business_structure }}
+                        </div>
+                    </div>
                 </div>
 
-                <div class="col-md-4">
-                    <label for="{{ form.city.id_for_label }}" class="form-label">City</label>
-                    {{ form.city }}
+                <!-- Row 8: Assigned CA & Status -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.assigned_ca.id_for_label }}" class="form-label">Assigned CA</label>
+                            {{ client_form.assigned_ca }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.status.id_for_label }}" class="form-label">Status *</label>
+                            {{ client_form.status }}
+                        </div>
+                    </div>
                 </div>
 
-                <div class="col-md-4">
-                    <label for="{{ form.state.id_for_label }}" class="form-label">State</label>
-                    {{ form.state }}
+                <!-- Row 9: DIN No & Empty space for alignment -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.din_no.id_for_label }}" class="form-label">DIN No.</label>
+                            {{ client_form.din_no }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <!-- Empty column for alignment -->
+                    </div>
                 </div>
 
-                <div class="col-md-4">
-                    <label for="{{ form.postal_code.id_for_label }}" class="form-label">Postal Code</label>
-                    {{ form.postal_code }}
-                </div>
-
-                <div class="col-md-6">
-                    <label for="{{ form.country.id_for_label }}" class="form-label">Country</label>
-                    {{ form.country }}
-                </div>
-
-                <!-- Business Information -->
-                <div class="col-md-6">
-                    <label for="{{ form.date_of_engagement.id_for_label }}" class="form-label">Date of Engagement</label>
-                    {{ form.date_of_engagement }}
-                </div>
-
-                <div class="col-md-6">
-                    <label for="{{ form.client_type.id_for_label }}" class="form-label">Client Type</label>
-                    {{ form.client_type }}
-                </div>
-
-                <div class="col-md-6">
-                    <label for="{{ form.business_structure.id_for_label }}" class="form-label">Business Structure</label>
-                    {{ form.business_structure }}
-                </div>
-
-                <div class="col-md-6">
-                    <label for="{{ form.assigned_ca.id_for_label }}" class="form-label">Assigned CA</label>
-                    {{ form.assigned_ca }}
-                </div>
-
-                <div class="col-md-6">
-                    <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
-                    {{ form.status }}
-                </div>
-
-                <div class="col-md-6">
-                    <label for="{{ form.din_no.id_for_label }}" class="form-label">DIN No.</label>
-                    {{ form.din_no }}
-                </div>
-
-                <!-- Remarks -->
-                <div class="col-12">
-                    <label for="{{ form.remarks.id_for_label }}" class="form-label">Remarks</label>
-                    {{ form.remarks }}
+                <!-- Row 10: Remarks -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label for="{{ client_form.remarks.id_for_label }}" class="form-label">Remarks</label>
+                            {{ client_form.remarks }}
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Form Actions -->
-                <div class="col-12">
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'clients' %}" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">Next</button>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" id="clearButton" class="btn btn-warning">Clear Form</button>
+                            <div id="submitButtons">
+                                <!-- Buttons will be dynamically shown based on client type -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </form>
+
+            <!-- Dynamic form container for business structure details -->
+            <div id="businessStructureForm" style="display: none;"></div>
         </div>
     </div>
-</main><!-- End #main -->
+</main>
+
+<!-- Loading Spinner -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Processing...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Form Confirmation Modal -->
+<div class="modal fade" id="clearFormModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Clear Form</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to clear all form data? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirmClearButton">Clear Form</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
-    /* Add minimal styling for form elements to match NiceAdmin */
+    /* Reset and base styles */
+    * {
+        box-sizing: border-box;
+    }
+
+    /* Form structure fixes */
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-right: -0.75rem;
+        margin-left: -0.75rem;
+    }
+
+    .col-md-6, .col-md-4, .col-12 {
+        padding-right: 0.75rem;
+        padding-left: 0.75rem;
+        flex: 0 0 auto;
+    }
+
+    .col-md-6 {
+        width: 50%;
+    }
+
+    .col-md-4 {
+        width: 33.333333%;
+    }
+
+    .col-12 {
+        width: 100%;
+    }
+
+    /* Form element styling */
+    .form-label {
+        font-weight: 500;
+        color: #5a5c69;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
     .form-control, .form-select {
         border-radius: 0.375rem;
         border: 1px solid #d1d3e2;
+        width: 100%;
+        min-height: 38px;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
     }
 
     .form-control:focus, .form-select:focus {
         border-color: #4154f1;
         box-shadow: 0 0 0 0.2rem rgba(65, 84, 241, 0.25);
+        outline: 0;
     }
 
-    .form-label {
-        font-weight: 500;
-        color: #5a5c69;
+    /* Ensure all form elements have consistent styling */
+    input.form-control,
+    select.form-select,
+    textarea.form-control {
+        display: block;
+        width: 100%;
+        min-height: 38px;
+    }
+
+    textarea.form-control {
+        min-height: 80px;
+        resize: vertical;
+    }
+
+    /* Spacing and layout */
+    .mb-3 {
+        margin-bottom: 1rem !important;
+    }
+
+    .mt-4 {
+        margin-top: 1.5rem !important;
+    }
+
+    /* Card and container styling */
+    .card-body {
+        padding: 2rem;
+    }
+
+    /* Button styling */
+    .btn {
+        min-width: 120px;
+        padding: 0.5rem 1.5rem;
+        font-size: 0.875rem;
+    }
+
+    /* Ensure proper form display */
+    #clientBasicForm {
+        opacity: 1;
+        transition: opacity 0.3s ease;
+    }
+
+    #businessStructureForm {
+        opacity: 1;
+        transition: opacity 0.3s ease;
+    }
+
+    /* Modal fixes */
+    body.modal-open {
+        overflow: hidden;
+        padding-right: 0 !important;
+    }
+
+    /* Make sure form fields are properly aligned horizontally */
+    @media (min-width: 768px) {
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .col-md-6, .col-md-4 {
+            display: block;
+        }
+    }
+
+    /* Fix for small screens */
+    @media (max-width: 767.98px) {
+        .col-md-6, .col-md-4 {
+            width: 100%;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+    }
+
+    /* Ensure form groups don't break the layout */
+    .form-group {
+        width: 100%;
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clientTypeField = document.getElementById('{{ client_form.client_type.id_for_label }}');
+    const businessStructureField = document.getElementById('businessStructureField');
+    const submitButtonsContainer = document.getElementById('submitButtons');
+    const clientBasicForm = document.getElementById('clientBasicForm');
+    const businessStructureForm = document.getElementById('businessStructureForm');
+    const formTitle = document.getElementById('formTitle');
+    const clearButton = document.getElementById('clearButton');
+    const confirmClearButton = document.getElementById('confirmClearButton');
+    const loadingModalElement = document.getElementById('loadingModal');
+    const loadingModal = new bootstrap.Modal(loadingModalElement);
+    const clearFormModal = new bootstrap.Modal(document.getElementById('clearFormModal'));
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    let currentState = 'basic';
+
+    // Initialize form
+    initializeForm();
+
+    function initializeForm() {
+        console.log('Initializing form layout...');
+        currentState = 'basic';
+
+        // Ensure proper display
+        clientBasicForm.style.display = 'block';
+        clientBasicForm.style.opacity = '1';
+        businessStructureForm.style.display = 'none';
+        businessStructureForm.innerHTML = '';
+        formTitle.textContent = 'Client Basic Information';
+
+        // Initialize UI state
+        toggleBusinessStructure();
+        updateSubmitButtons();
+        cleanupModals();
+
+        // Force reflow to ensure proper rendering
+        setTimeout(() => {
+            clientBasicForm.style.visibility = 'visible';
+        }, 10);
+    }
+
+    function cleanupModals() {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => {
+            if (backdrop.parentNode) {
+                backdrop.parentNode.removeChild(backdrop);
+            }
+        });
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }
+
+    function toggleBusinessStructure() {
+        if (clientTypeField.value === 'Entity') {
+            businessStructureField.style.display = 'block';
+        } else {
+            businessStructureField.style.display = 'none';
+        }
+        updateSubmitButtons();
+    }
+
+    function updateSubmitButtons() {
+        submitButtonsContainer.innerHTML = '';
+
+        if (currentState === 'basic') {
+            if (clientTypeField.value === 'Individual') {
+                const submitButton = document.createElement('button');
+                submitButton.type = 'button';
+                submitButton.className = 'btn btn-success';
+                submitButton.textContent = 'Submit';
+                submitButton.onclick = submitIndividualForm;
+                submitButtonsContainer.appendChild(submitButton);
+            } else if (clientTypeField.value === 'Entity') {
+                const nextButton = document.createElement('button');
+                nextButton.type = 'button';
+                nextButton.className = 'btn btn-primary';
+                nextButton.textContent = 'Next';
+                nextButton.onclick = handleNextButtonClick;
+                submitButtonsContainer.appendChild(nextButton);
+            }
+        }
+    }
+
+    // Clear form functionality
+    clearButton.addEventListener('click', function() {
+        clearFormModal.show();
+    });
+
+    confirmClearButton.addEventListener('click', function() {
+        clearFormModal.hide();
+        resetFormCompletely();
+    });
+
+    function resetFormCompletely() {
+        fetch('{% url "clear_client_session" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(() => {
+            clientBasicForm.reset();
+            const selects = clientBasicForm.querySelectorAll('select');
+            selects.forEach(select => {
+                select.selectedIndex = 0;
+            });
+            initializeForm();
+            showTemporaryAlert('Form cleared successfully!', 'success');
+        }).catch(error => {
+            console.error('Error clearing session:', error);
+            clientBasicForm.reset();
+            initializeForm();
+            showTemporaryAlert('Form cleared successfully!', 'success');
+        });
+    }
+
+    function showTemporaryAlert(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-info';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        const main = document.querySelector('main');
+        const existingAlerts = main.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+        main.insertAdjacentHTML('afterbegin', alertHtml);
+        setTimeout(() => {
+            const alert = main.querySelector('.alert');
+            if (alert) bootstrap.Alert.getOrCreateInstance(alert).close();
+        }, 3000);
+    }
+
+    function submitIndividualForm() {
+        showLoadingModal();
+        const formData = new FormData(clientBasicForm);
+
+        fetch('{% url "save_client_basic" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoadingModal();
+            if (data.success) {
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                }
+            } else {
+                handleFormErrors(data);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            hideLoadingModal();
+            alert('Network error occurred. Please try again.');
+        });
+    }
+
+    function handleNextButtonClick() {
+        showLoadingModal();
+        const formData = new FormData(clientBasicForm);
+
+        fetch('{% url "save_client_basic" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoadingModal();
+
+            if (data.success) {
+                if (data.form_html) {
+                    showBusinessStructureForm(data);
+                } else if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                }
+            } else {
+                handleFormErrors(data);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            hideLoadingModal();
+            alert('Network error occurred. Please try again.');
+        });
+    }
+
+    function showBusinessStructureForm(data) {
+        currentState = 'business';
+
+        clientBasicForm.style.opacity = '0';
+        setTimeout(() => {
+            clientBasicForm.style.display = 'none';
+            businessStructureForm.style.display = 'block';
+            businessStructureForm.innerHTML = data.form_html;
+            formTitle.textContent = `${data.business_structure} Details`;
+
+            setTimeout(() => {
+                businessStructureForm.style.opacity = '1';
+            }, 50);
+
+            const backButton = businessStructureForm.querySelector('#backButton');
+            if (backButton) {
+                backButton.addEventListener('click', goBackToBasicForm);
+            }
+
+            const businessForm = businessStructureForm.querySelector('#businessStructureDetailsForm');
+            if (businessForm) {
+                businessForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    submitBusinessStructureForm(this);
+                });
+            }
+
+            window.scrollTo(0, 0);
+        }, 300);
+    }
+
+    function submitBusinessStructureForm(form) {
+        showLoadingModal();
+        const formData = new FormData(form);
+
+        fetch('{% url "save_client_complete" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideLoadingModal();
+            if (data.success && data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                handleFormErrors(data);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            hideLoadingModal();
+            alert('Network error occurred. Please try again.');
+        });
+    }
+
+    function goBackToBasicForm() {
+        currentState = 'basic';
+
+        businessStructureForm.style.opacity = '0';
+        setTimeout(() => {
+            businessStructureForm.style.display = 'none';
+            businessStructureForm.innerHTML = '';
+            clientBasicForm.style.display = 'block';
+
+            setTimeout(() => {
+                clientBasicForm.style.opacity = '1';
+            }, 50);
+
+            formTitle.textContent = 'Client Basic Information';
+            toggleBusinessStructure();
+            window.scrollTo(0, 0);
+        }, 300);
+
+        fetch('{% url "clear_client_session" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+    }
+
+    function handleFormErrors(data) {
+        let errorMessages = [];
+        if (data.errors) {
+            for (let field in data.errors) {
+                errorMessages.push(`${field}: ${data.errors[field].join(', ')}`);
+            }
+            alert('Please fix the errors:\n' + errorMessages.join('\n'));
+        } else if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            alert('An unknown error occurred.');
+        }
+    }
+
+    function showLoadingModal() {
+        console.log('Showing loading modal');
+        loadingModal.show();
+    }
+
+    function hideLoadingModal() {
+        console.log('Hiding loading modal');
+        loadingModal.hide();
+        setTimeout(cleanupModals, 150);
+    }
+
+    // Event listeners
+    clientTypeField.addEventListener('change', toggleBusinessStructure);
+
+    // Handle page refresh
+    window.addEventListener('beforeunload', function() {
+        fetch('{% url "clear_client_session" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            keepalive: true
+        });
+    });
+
+    // Initialize on load
+    window.addEventListener('load', function() {
+        initializeForm();
+    });
+
+    // Global error handlers
+    window.addEventListener('error', function(event) {
+        console.error('Global error:', event.error);
+        hideLoadingModal();
+    });
+
+    window.addEventListener('unhandledrejection', function(event) {
+        console.error('Unhandled promise rejection:', event.reason);
+        hideLoadingModal();
+    });
+});
+</script>
 {% endblock body %}
