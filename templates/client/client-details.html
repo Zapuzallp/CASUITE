@@ -1,0 +1,1433 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+    <style>
+        .card {
+            border-radius: 15px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px 15px 0 0;
+        }
+
+        .avatar-lg {
+            width: 120px;
+            height: 120px;
+            border: 5px solid white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-pills .nav-link {
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-pills .nav-link:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+            min-width: 140px;
+        }
+
+        .badge-status {
+            padding: 0.5em 1em;
+            font-weight: 600;
+        }
+
+        .company-card {
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .company-card:hover {
+            border-left-color: #764ba2;
+            transform: translateX(5px);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 30px;
+            padding-bottom: 20px;
+            border-left: 2px solid #e9ecef;
+        }
+
+        .timeline-item:last-child {
+            border-left: none;
+        }
+
+        .timeline-badge {
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            border-radius: 8px;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+
+        .action-btn {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+    </style>
+
+    <main id="main" class="main">
+        <div class="container-fluid py-4">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="#"><i class="bi bi-house-door me-1"></i>Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="#">Clients</a></li>
+                    <li class="breadcrumb-item active">Client Details</li>
+                </ol>
+            </nav>
+
+            <!-- Client Profile Header -->
+            <div class="card shadow-sm mb-4">
+                <div class="profile-header text-white p-4">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="avatar-lg rounded-circle bg-white d-flex align-items-center justify-content-center">
+                                <i class="bi bi-person-fill display-3 text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h2 class="mb-1 fw-bold">Rajesh Kumar Sharma</h2>
+                            <p class="mb-2 opacity-75">PAN: ABCDE1234F | Client ID: CLT-2024-001</p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-success badge-status">Active</span>
+                                <span class="badge bg-info badge-status">Individual</span>
+                                <span class="badge bg-warning text-dark badge-status">Premium Client</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-light btn-lg me-2">
+                                <i class="bi bi-pencil-square me-2"></i>Edit Profile
+                            </button>
+                            <div class="btn-group">
+                                <button class="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="#"><i class="bi bi-envelope me-2"></i>Send Email</a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#"><i class="bi bi-telephone me-2"></i>Call
+                                        Client</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>Delete
+                                        Client</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="stat-box text-center">
+                                <i class="bi bi-briefcase fs-2 text-primary mb-2"></i>
+                                <h4 class="mb-0 fw-bold">8</h4>
+                                <small class="text-muted">Active Services</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-box text-center">
+                                <i class="bi bi-building fs-2 text-success mb-2"></i>
+                                <h4 class="mb-0 fw-bold">3</h4>
+                                <small class="text-muted">Companies</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-box text-center">
+                                <i class="bi bi-list-check fs-2 text-warning mb-2"></i>
+                                <h4 class="mb-0 fw-bold">15</h4>
+                                <small class="text-muted">Pending Tasks</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-box text-center">
+                                <i class="bi bi-calendar-check fs-2 text-info mb-2"></i>
+                                <h4 class="mb-0 fw-bold">3 Years</h4>
+                                <small class="text-muted">Client Since</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Left Sidebar - Navigation -->
+                <div class="col-lg-3">
+                    <div class="card shadow-sm sticky-top" style="top: 20px;">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3 text-primary">
+                                <i class="bi bi-list-ul me-2"></i>Sections
+                            </h6>
+                            <ul class="nav nav-pills flex-column">
+                                <li class="nav-item">
+                                    <a class="nav-link active" data-bs-toggle="pill" href="#overview">
+                                        <i class="bi bi-info-circle me-2"></i>Overview
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="pill" href="#companies">
+                                        <i class="bi bi-building me-2"></i>Companies
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="pill" href="#services">
+                                        <i class="bi bi-briefcase me-2"></i>Services
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="pill" href="#tasks">
+                                        <i class="bi bi-list-check me-2"></i>Tasks
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="pill" href="#financial">
+                                        <i class="bi bi-currency-rupee me-2"></i>Financial
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="pill" href="#documents">
+                                        <i class="bi bi-file-earmark-text me-2"></i>Documents
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="pill" href="#cases">
+                                        <i class="bi bi-briefcase-fill me-2"></i>Legal Cases
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="pill" href="#activity">
+                                        <i class="bi bi-clock-history me-2"></i>Activity
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <hr>
+
+                            <h6 class="fw-bold mb-3 text-primary">
+                                <i class="bi bi-plus-circle me-2"></i>Quick Actions
+                            </h6>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                        data-bs-target="#addServiceModal">
+                                    <i class="bi bi-plus-lg me-2"></i>Add Service
+                                </button>
+                                <button class="btn btn-success btn-sm" data-bs-toggle="modal"
+                                        data-bs-target="#addTaskModal">
+                                    <i class="bi bi-plus-lg me-2"></i>Add Task
+                                </button>
+                                <button class="btn btn-info btn-sm">
+                                    <i class="bi bi-upload me-2"></i>Upload Document
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content Area -->
+                <div class="col-lg-9">
+                    <div class="tab-content">
+                        <!-- Overview Tab -->
+                        <div class="tab-pane fade show active" id="overview">
+                            <!-- Personal Information -->
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-primary text-white py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-person-badge me-2"></i>Personal Information
+                                    </h5>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Full Name:</span>
+                                                <span class="ms-auto">Rajesh Kumar Sharma</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">PAN Number:</span>
+                                                <span class="ms-auto">ABCDE1234F</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Aadhar Number:</span>
+                                                <span class="ms-auto">XXXX-XXXX-5678</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Email:</span>
+                                                <span class="ms-auto">rajesh.sharma@example.com</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Phone:</span>
+                                                <span class="ms-auto">+91 98765 43210</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">DIN Number:</span>
+                                                <span class="ms-auto">DIN12345678</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <hr>
+                                            <div class="d-flex">
+                                                <span class="info-label">Address:</span>
+                                                <span class="ms-auto text-end">
+                                                    123, MG Road, Bangalore, Karnataka - 560001, India
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Client Type:</span>
+                                                <span class="ms-auto"><span
+                                                        class="badge bg-info">Individual</span></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Status:</span>
+                                                <span class="ms-auto"><span
+                                                        class="badge bg-success">Active</span></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Engagement Date:</span>
+                                                <span class="ms-auto">Jan 15, 2022</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Assigned CA:</span>
+                                                <span class="ms-auto">CA Priya Mehta</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Contact Information -->
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-success text-white py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-telephone me-2"></i>Contact & Emergency Information
+                                    </h5>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Primary Contact:</span>
+                                                <span class="ms-auto">+91 98765 43210</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Alternate Contact:</span>
+                                                <span class="ms-auto">+91 98765 43211</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Emergency Contact:</span>
+                                                <span class="ms-auto">+91 98765 43212</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex">
+                                                <span class="info-label">Preferred Communication:</span>
+                                                <span class="ms-auto">Email & Phone</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Companies Tab -->
+                        <div class="tab-pane fade" id="companies">
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-primary text-white py-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0 fw-bold">
+                                            <i class="bi bi-building me-2"></i>Associated Companies
+                                        </h5>
+                                        <button class="btn btn-light btn-sm">
+                                            <i class="bi bi-plus-lg me-2"></i>Add Company
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body p-4">
+                                    <!-- Company 1 -->
+                                    <div class="company-card card mb-3">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h5 class="fw-bold mb-2">Tech Innovators Private Limited</h5>
+                                                    <p class="text-muted mb-2"><strong>CIN:</strong>
+                                                        U72900KA2020PTC135790</p>
+                                                    <p class="text-muted mb-2"><strong>Type:</strong> Private Limited
+                                                    </p>
+                                                    <div class="mb-2">
+                                                        <span class="badge bg-success me-2">Director</span>
+                                                        <span class="badge bg-info">25% Shareholding</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-end">
+                                                    <p class="mb-2"><strong>Incorporation:</strong> Jan 2020</p>
+                                                    <p class="mb-2"><strong>Authorized Capital:</strong> ₹10,00,000</p>
+                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹5,00,000</p>
+                                                </div>
+                                            </div>
+                                            <hr>
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye me-1"></i>View Details
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-info">
+                                                    <i class="bi bi-graph-up me-1"></i>Financial Records
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-file-text me-1"></i>Documents
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Company 2 -->
+                                    <div class="company-card card mb-3">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h5 class="fw-bold mb-2">Digital Solutions LLP</h5>
+                                                    <p class="text-muted mb-2"><strong>LLP IN:</strong> AAL-5678</p>
+                                                    <p class="text-muted mb-2"><strong>Type:</strong> Limited Liability
+                                                        Partnership</p>
+                                                    <div class="mb-2">
+                                                        <span class="badge bg-success me-2">Designated Partner</span>
+                                                        <span class="badge bg-info">50% Partnership</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-end">
+                                                    <p class="mb-2"><strong>Registration:</strong> Mar 2021</p>
+                                                    <p class="mb-2"><strong>Capital:</strong> ₹3,00,000</p>
+                                                    <p class="mb-2"><strong>Partners:</strong> 2</p>
+                                                </div>
+                                            </div>
+                                            <hr>
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye me-1"></i>View Details
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-info">
+                                                    <i class="bi bi-graph-up me-1"></i>Financial Records
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-file-text me-1"></i>Documents
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Company 3 -->
+                                    <div class="company-card card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h5 class="fw-bold mb-2">Sharma Enterprises (OPC)</h5>
+                                                    <p class="text-muted mb-2"><strong>CIN:</strong>
+                                                        U74999DL2019OPC350123</p>
+                                                    <p class="text-muted mb-2"><strong>Type:</strong> One Person Company
+                                                    </p>
+                                                    <div class="mb-2">
+                                                        <span class="badge bg-success me-2">Sole Member</span>
+                                                        <span class="badge bg-info">100% Ownership</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4 text-end">
+                                                    <p class="mb-2"><strong>Incorporation:</strong> Dec 2019</p>
+                                                    <p class="mb-2"><strong>Authorized Capital:</strong> ₹5,00,000</p>
+                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹2,00,000</p>
+                                                </div>
+                                            </div>
+                                            <hr>
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye me-1"></i>View Details
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-info">
+                                                    <i class="bi bi-graph-up me-1"></i>Financial Records
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-file-text me-1"></i>Documents
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Services Tab -->
+                        <div class="tab-pane fade" id="services">
+                            <!-- ITR Services -->
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-info text-white py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-file-text me-2"></i>Income Tax Return (ITR) Services
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Assessment Year</th>
+                                                <th>ITR Type</th>
+                                                <th>Filing Status</th>
+                                                <th>Acknowledgment</th>
+                                                <th>Amount</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <td><strong>2024-25</strong></td>
+                                                <td>ITR-2</td>
+                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                                <td>-</td>
+                                                <td>₹5,000</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-pencil"></i> Edit
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>2023-24</strong></td>
+                                                <td>ITR-2</td>
+                                                <td><span class="badge bg-success">Filed</span></td>
+                                                <td>ACK123456789</td>
+                                                <td>₹4,500</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>2022-23</strong></td>
+                                                <td>ITR-1</td>
+                                                <td><span class="badge bg-success">Filed</span></td>
+                                                <td>ACK987654321</td>
+                                                <td>₹4,000</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- GST Services -->
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-success text-white py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-receipt me-2"></i>GST Services
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-light rounded">
+                                                <p class="mb-1"><strong>GSTIN:</strong> 29ABCDE1234F1Z5</p>
+                                                <p class="mb-1"><strong>Registration Type:</strong> Regular</p>
+                                                <p class="mb-0"><strong>Filing Frequency:</strong> Monthly</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-light rounded">
+                                                <p class="mb-1"><strong>State:</strong> Karnataka</p>
+                                                <p class="mb-1"><strong>Registration Date:</strong> Jan 2020</p>
+                                                <p class="mb-0"><strong>Status:</strong> <span class="badge bg-success">Active</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Period</th>
+                                                <th>Return Type</th>
+                                                <th>Status</th>
+                                                <th>ARN</th>
+                                                <th>Due Date</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <td><strong>Oct 2025</strong></td>
+                                                <td>GSTR-1</td>
+                                                <td><span class="badge bg-warning text-dark">Pending</span></td>
+                                                <td>-</td>
+                                                <td>Nov 11, 2025</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-upload"></i> File
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Sep 2025</strong></td>
+                                                <td>GSTR-3B</td>
+                                                <td><span class="badge bg-success">Filed</span></td>
+                                                <td>ARN123456789012</td>
+                                                <td>Oct 20, 2025</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Audit Services -->
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-warning text-dark py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-clipboard-check me-2"></i>Audit Services
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Financial Year</th>
+                                                <th>Audit Type</th>
+                                                <th>Auditor</th>
+                                                <th>Status</th>
+                                                <th>Report Date</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <td><strong>2024-25</strong></td>
+                                                <td>Statutory Audit</td>
+                                                <td>CA Amit Verma</td>
+                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                                <td>-</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-eye"></i> Track
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>2023-24</strong></td>
+                                                <td>Tax Audit</td>
+                                                <td>CA Amit Verma</td>
+                                                <td><span class="badge bg-success">Completed</span></td>
+                                                <td>Sep 15, 2024</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
+                                                        <i class="bi bi-download"></i> Report
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tasks Tab -->
+                        <div class="tab-pane fade" id="tasks">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-primary text-white py-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0 fw-bold">
+                                            <i class="bi bi-list-check me-2"></i>Service Tasks
+                                        </h5>
+                                        <button class="btn btn-light btn-sm" data-bs-toggle="modal"
+                                                data-bs-target="#addTaskModal">
+                                            <i class="bi bi-plus-lg me-2"></i>Add Task
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Task Filters -->
+                                    <div class="btn-group mb-3" role="group">
+                                        <input type="radio" class="btn-check" name="taskFilter" id="allTasks" checked>
+                                        <label class="btn btn-outline-primary" for="allTasks">All (15)</label>
+
+                                        <input type="radio" class="btn-check" name="taskFilter" id="pendingTasks">
+                                        <label class="btn btn-outline-warning" for="pendingTasks">Pending (8)</label>
+
+                                        <input type="radio" class="btn-check" name="taskFilter" id="completedTasks">
+                                        <label class="btn btn-outline-success" for="completedTasks">Completed
+                                            (7)</label>
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Task Title</th>
+                                                <th>Service Type</th>
+                                                <th>Period</th>
+                                                <th>Due Date</th>
+                                                <th>Assigned To</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <td><strong>ITR-2 Filing for AY 2024-25</strong></td>
+                                                <td><span class="badge bg-info">ITR</span></td>
+                                                <td>2024-25</td>
+                                                <td class="text-danger">Nov 30, 2025</td>
+                                                <td>CA Priya Mehta</td>
+                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>GSTR-1 Filing October 2025</strong></td>
+                                                <td><span class="badge bg-success">GST</span></td>
+                                                <td>Oct 2025</td>
+                                                <td class="text-danger">Nov 11, 2025</td>
+                                                <td>CA Amit Shah</td>
+                                                <td><span class="badge bg-danger">Overdue</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-danger action-btn">
+                                                        <i class="bi bi-exclamation-triangle"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Annual Audit Report Preparation</strong></td>
+                                                <td><span class="badge bg-warning text-dark">Audit</span></td>
+                                                <td>2023-24</td>
+                                                <td>Dec 15, 2025</td>
+                                                <td>CA Priya Mehta</td>
+                                                <td><span class="badge bg-info">Scheduled</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>TDS Return Q2 Filing</strong></td>
+                                                <td><span class="badge bg-secondary">TDS</span></td>
+                                                <td>Q2 2025-26</td>
+                                                <td>Oct 31, 2025</td>
+                                                <td>CA Amit Shah</td>
+                                                <td><span class="badge bg-success">Completed</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Balance Sheet Finalization</strong></td>
+                                                <td><span class="badge bg-primary">Accounting</span></td>
+                                                <td>2023-24</td>
+                                                <td>Nov 20, 2025</td>
+                                                <td>CA Priya Mehta</td>
+                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Tab -->
+                        <div class="tab-pane fade" id="financial">
+                            <!-- Billing Summary -->
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-3">
+                                    <div class="card shadow-sm border-start border-primary border-4">
+                                        <div class="card-body">
+                                            <h6 class="text-muted text-uppercase small mb-2">Total Billed</h6>
+                                            <h3 class="mb-0 fw-bold text-primary">₹2,45,000</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card shadow-sm border-start border-success border-4">
+                                        <div class="card-body">
+                                            <h6 class="text-muted text-uppercase small mb-2">Total Paid</h6>
+                                            <h3 class="mb-0 fw-bold text-success">₹2,10,000</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card shadow-sm border-start border-warning border-4">
+                                        <div class="card-body">
+                                            <h6 class="text-muted text-uppercase small mb-2">Pending</h6>
+                                            <h3 class="mb-0 fw-bold text-warning">₹35,000</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card shadow-sm border-start border-info border-4">
+                                        <div class="card-body">
+                                            <h6 class="text-muted text-uppercase small mb-2">Next Due</h6>
+                                            <h3 class="mb-0 fw-bold text-info">₹15,000</h3>
+                                            <small class="text-muted">Nov 30, 2025</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Invoice History -->
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-primary text-white py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-receipt me-2"></i>Invoice History
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Invoice No.</th>
+                                                <th>Date</th>
+                                                <th>Service</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                                <th>Due Date</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <td><strong>INV-2025-089</strong></td>
+                                                <td>Nov 01, 2025</td>
+                                                <td>ITR Filing - AY 2024-25</td>
+                                                <td>₹15,000</td>
+                                                <td><span class="badge bg-warning text-dark">Pending</span></td>
+                                                <td>Nov 30, 2025</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-download"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>INV-2025-078</strong></td>
+                                                <td>Oct 15, 2025</td>
+                                                <td>GST Filing - Q2</td>
+                                                <td>₹12,000</td>
+                                                <td><span class="badge bg-success">Paid</span></td>
+                                                <td>Oct 31, 2025</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
+                                                        <i class="bi bi-download"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>INV-2025-067</strong></td>
+                                                <td>Sep 20, 2025</td>
+                                                <td>Audit Services - FY 2023-24</td>
+                                                <td>₹50,000</td>
+                                                <td><span class="badge bg-success">Paid</span></td>
+                                                <td>Oct 20, 2025</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
+                                                        <i class="bi bi-download"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Payment History -->
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-success text-white py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-credit-card me-2"></i>Payment History
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Payment Date</th>
+                                                <th>Invoice No.</th>
+                                                <th>Amount</th>
+                                                <th>Payment Mode</th>
+                                                <th>Transaction ID</th>
+                                                <th>Status</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <td>Oct 25, 2025</td>
+                                                <td>INV-2025-078</td>
+                                                <td>₹12,000</td>
+                                                <td>Online Transfer</td>
+                                                <td>TXN123456789</td>
+                                                <td><span class="badge bg-success">Success</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Oct 18, 2025</td>
+                                                <td>INV-2025-067</td>
+                                                <td>₹50,000</td>
+                                                <td>Cheque</td>
+                                                <td>CHQ987654321</td>
+                                                <td><span class="badge bg-success">Cleared</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Sep 15, 2025</td>
+                                                <td>INV-2025-056</td>
+                                                <td>₹8,500</td>
+                                                <td>UPI</td>
+                                                <td>UPI456789123</td>
+                                                <td><span class="badge bg-success">Success</span></td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Documents Tab -->
+                        <div class="tab-pane fade" id="documents">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-primary text-white py-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0 fw-bold">
+                                            <i class="bi bi-folder2-open me-2"></i>Documents Repository
+                                        </h5>
+                                        <button class="btn btn-light btn-sm">
+                                            <i class="bi bi-upload me-2"></i>Upload Document
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Document Categories -->
+                                    <div class="accordion" id="documentAccordion">
+                                        <!-- Tax Documents -->
+                                        <div class="accordion-item border-0 mb-3">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                        data-bs-target="#taxDocs">
+                                                    <i class="bi bi-file-earmark-text text-primary me-2"></i>
+                                                    Tax Documents (12)
+                                                </button>
+                                            </h2>
+                                            <div id="taxDocs" class="accordion-collapse collapse show"
+                                                 data-bs-parent="#documentAccordion">
+                                                <div class="accordion-body">
+                                                    <div class="list-group">
+                                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <i class="bi bi-file-pdf text-danger me-2"></i>
+                                                                <strong>ITR-2 AY 2023-24.pdf</strong>
+                                                                <small class="text-muted d-block ms-4">Uploaded on Oct
+                                                                    15, 2024</small>
+                                                            </div>
+                                                            <div>
+                                                                <button class="btn btn-sm btn-outline-primary me-2">
+                                                                    <i class="bi bi-download"></i>
+                                                                </button>
+                                                                <button class="btn btn-sm btn-outline-secondary">
+                                                                    <i class="bi bi-eye"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <i class="bi bi-file-pdf text-danger me-2"></i>
+                                                                <strong>Form 16 - 2023-24.pdf</strong>
+                                                                <small class="text-muted d-block ms-4">Uploaded on May
+                                                                    20, 2024</small>
+                                                            </div>
+                                                            <div>
+                                                                <button class="btn btn-sm btn-outline-primary me-2">
+                                                                    <i class="bi bi-download"></i>
+                                                                </button>
+                                                                <button class="btn btn-sm btn-outline-secondary">
+                                                                    <i class="bi bi-eye"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- GST Documents -->
+                                        <div class="accordion-item border-0 mb-3">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#gstDocs">
+                                                    <i class="bi bi-receipt text-success me-2"></i>
+                                                    GST Documents (8)
+                                                </button>
+                                            </h2>
+                                            <div id="gstDocs" class="accordion-collapse collapse"
+                                                 data-bs-parent="#documentAccordion">
+                                                <div class="accordion-body">
+                                                    <div class="list-group">
+                                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <i class="bi bi-file-excel text-success me-2"></i>
+                                                                <strong>GSTR-1 September 2025.xlsx</strong>
+                                                                <small class="text-muted d-block ms-4">Uploaded on Oct
+                                                                    10, 2025</small>
+                                                            </div>
+                                                            <div>
+                                                                <button class="btn btn-sm btn-outline-primary me-2">
+                                                                    <i class="bi bi-download"></i>
+                                                                </button>
+                                                                <button class="btn btn-sm btn-outline-secondary">
+                                                                    <i class="bi bi-eye"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Financial Statements -->
+                                        <div class="accordion-item border-0">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#financialDocs">
+                                                    <i class="bi bi-graph-up text-info me-2"></i>
+                                                    Financial Statements (5)
+                                                </button>
+                                            </h2>
+                                            <div id="financialDocs" class="accordion-collapse collapse"
+                                                 data-bs-parent="#documentAccordion">
+                                                <div class="accordion-body">
+                                                    <div class="list-group">
+                                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <i class="bi bi-file-pdf text-danger me-2"></i>
+                                                                <strong>Balance Sheet 2023-24.pdf</strong>
+                                                                <small class="text-muted d-block ms-4">Uploaded on Sep
+                                                                    15, 2024</small>
+                                                            </div>
+                                                            <div>
+                                                                <button class="btn btn-sm btn-outline-primary me-2">
+                                                                    <i class="bi bi-download"></i>
+                                                                </button>
+                                                                <button class="btn btn-sm btn-outline-secondary">
+                                                                    <i class="bi bi-eye"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Legal Cases Tab -->
+                        <div class="tab-pane fade" id="cases">
+                            <!-- Income Tax Cases -->
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-danger text-white py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-briefcase me-2"></i>Income Tax Cases
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Case Type</th>
+                                                <th>Notice No.</th>
+                                                <th>Assessment Year</th>
+                                                <th>Status</th>
+                                                <th>Next Hearing</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <td><span class="badge bg-warning text-dark">Scrutiny</span></td>
+                                                <td>SCN-2024-1234</td>
+                                                <td>2022-23</td>
+                                                <td><span class="badge bg-info">In Progress</span></td>
+                                                <td>Dec 05, 2025</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="badge bg-danger">Appeal</span></td>
+                                                <td>APP-2023-5678</td>
+                                                <td>2021-22</td>
+                                                <td><span class="badge bg-success">Closed</span></td>
+                                                <td>-</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
+                                                        <i class="bi bi-file-text"></i> Details
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- GST Cases -->
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-warning text-dark py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>GST Cases
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Case Type</th>
+                                                <th>Case No.</th>
+                                                <th>GSTIN</th>
+                                                <th>Notice Date</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <td><span class="badge bg-danger">Show Cause Notice</span></td>
+                                                <td>SCN/GST/2025/0123</td>
+                                                <td>29ABCDE1234F1Z5</td>
+                                                <td>Sep 15, 2025</td>
+                                                <td><span class="badge bg-warning text-dark">Pending</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        <i class="bi bi-info-circle-fill me-2"></i>
+                                        <strong>Note:</strong> Response to Show Cause Notice is due by November 20,
+                                        2025.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Activity Tab -->
+                        <div class="tab-pane fade" id="activity">
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-info text-white py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-clock-history me-2"></i>Activity Timeline
+                                    </h5>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="timeline-item">
+                                        <div class="timeline-badge bg-success"></div>
+                                        <div>
+                                            <strong>Document Uploaded</strong>
+                                            <p class="text-muted mb-1">Uploaded "Balance Sheet Q3.pdf" for Tech
+                                                Innovators Pvt Ltd</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock me-1"></i>Today at 3:45 PM by CA Priya Mehta
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <div class="timeline-item">
+                                        <div class="timeline-badge bg-primary"></div>
+                                        <div>
+                                            <strong>Service Added</strong>
+                                            <p class="text-muted mb-1">ITR Filing service added for AY 2024-25</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock me-1"></i>Today at 11:20 AM by CA Amit Shah
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <div class="timeline-item">
+                                        <div class="timeline-badge bg-info"></div>
+                                        <div>
+                                            <strong>Task Completed</strong>
+                                            <p class="text-muted mb-1">GST Return Filing for September 2025
+                                                completed</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock me-1"></i>Yesterday at 5:30 PM by CA Priya Mehta
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <div class="timeline-item">
+                                        <div class="timeline-badge bg-warning"></div>
+                                        <div>
+                                            <strong>Payment Received</strong>
+                                            <p class="text-muted mb-1">₹12,000 received for Invoice INV-2025-078</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock me-1"></i>2 days ago by Admin
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <div class="timeline-item">
+                                        <div class="timeline-badge bg-danger"></div>
+                                        <div>
+                                            <strong>Case Filed</strong>
+                                            <p class="text-muted mb-1">GST Show Cause Notice case opened</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock me-1"></i>5 days ago by CA Amit Shah
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Service Modal -->
+        <div class="modal fade" id="addServiceModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-plus-circle me-2"></i>Add New Service
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Service Type <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select">
+                                        <option>Select Service Type</option>
+                                        <option>ITR Filing</option>
+                                        <option>GST Filing</option>
+                                        <option>Audit Services</option>
+                                        <option>TDS Return</option>
+                                        <option>Accounting</option>
+                                        <option>Compliance</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Billing Cycle <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select">
+                                        <option>Monthly</option>
+                                        <option>Quarterly</option>
+                                        <option>Half-yearly</option>
+                                        <option>Yearly</option>
+                                        <option>One-time</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Start Date <span
+                                            class="text-danger">*</span></label>
+                                    <input type="date" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Agreed Fee <span
+                                            class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" placeholder="Enter amount">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Remarks</label>
+                                    <textarea class="form-control" rows="3"
+                                              placeholder="Add any additional notes"></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Add Service
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Task Modal -->
+        <div class="modal fade" id="addTaskModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-plus-circle me-2"></i>Add New Task
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Task Title <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" placeholder="Enter task title">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Service Type <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select">
+                                        <option>Select Service</option>
+                                        <option>ITR Filing</option>
+                                        <option>GST Filing</option>
+                                        <option>Audit Services</option>
+                                        <option>TDS Return</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Priority <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select">
+                                        <option>Normal</option>
+                                        <option>High</option>
+                                        <option>Urgent</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Due Date <span
+                                            class="text-danger">*</span></label>
+                                    <input type="date" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Assign To <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select">
+                                        <option>CA Priya Mehta</option>
+                                        <option>CA Amit Shah</option>
+                                        <option>CA Rahul Verma</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Description</label>
+                                    <textarea class="form-control" rows="3" placeholder="Task description"></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-success">
+                            <i class="bi bi-check-lg me-2"></i>Create Task
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Auto-hide toasts
+        setTimeout(function () {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function (toast) {
+                var bsToast = new bootstrap.Toast(toast);
+                bsToast.hide();
+            });
+        }, 5000);
+    </script>
+{% endblock %}

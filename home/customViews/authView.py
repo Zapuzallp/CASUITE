@@ -1,9 +1,9 @@
-from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
+from django.contrib.auth import authenticate, login
+from django.contrib.auth import logout
 from django.shortcuts import render, redirect
 from django.views import View
-from django.contrib import messages
-from django.utils import timezone
-from datetime import timedelta
+
 
 class LoginView(View):
     def get(self, request):
@@ -17,12 +17,18 @@ class LoginView(View):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('dashboard')
-            messages.error(request, 'Invalid Credentials')
-            return redirect("login")
+                # Redirect based on user type
+                if user.is_staff:
+                    return redirect('dashboard')  # Admin/Staff Dashboard
+                else:
+                    return redirect('client_dashboard')  # Client Dashboard
+            else:
+                messages.error(request, 'Invalid Credentials')
+                return redirect("login")
         except Exception as e:
-            messages.error(request, f'User not present in centralized data {str(e)}')
+            messages.error(request, f'User not present in centralized data: {str(e)}')
             return redirect("login")
+
 
 class LogoutView(View):
     def get(self, request):

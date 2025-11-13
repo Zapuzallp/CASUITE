@@ -1,10 +1,164 @@
+<style>
+    /* Compact White Sidebar Styles */
+    .sidebar {
+        background: #ffffff;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+        border-right: 1px solid #e9ecef;
+    }
+
+    .sidebar-nav {
+        padding: 0.5rem 0;
+    }
+
+    .sidebar-nav .nav-item {
+        margin-bottom: 0.25rem;
+    }
+
+    .sidebar-nav .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1.25rem;
+        color: #6c757d;
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        border-left: 3px solid transparent;
+        margin: 0.1rem 0.75rem;
+        border-radius: 8px;
+    }
+
+    .sidebar-nav .nav-link i {
+        font-size: 1.1rem;
+        margin-right: 0.75rem;
+        transition: all 0.2s ease;
+        color: #6c757d;
+    }
+
+    .sidebar-nav .nav-link:hover {
+        background: #f8f9fa;
+        color: #667eea;
+        transform: translateX(3px);
+        border-left-color: #667eea;
+    }
+
+    .sidebar-nav .nav-link:hover i {
+        color: #667eea;
+    }
+
+    .sidebar-nav .nav-link.active {
+        background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+        color: #667eea;
+        border-left-color: #667eea;
+        font-weight: 600;
+    }
+
+    .sidebar-nav .nav-link.active i {
+        color: #667eea;
+    }
+
+    /* Sidebar Header */
+    .sidebar-header {
+        padding: 1rem 1.25rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        margin-bottom: 0.5rem;
+    }
+
+    .sidebar-header h6 {
+        color: #495057;
+        font-weight: 700;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.75rem;
+    }
+
+    /* Nav Section Headers */
+    .nav-heading {
+        color: #adb5bd;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.75rem 1.25rem 0.25rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Badge for notifications */
+    .nav-badge {
+        background: #dc3545;
+        color: white;
+        padding: 0.15rem 0.4rem;
+        border-radius: 12px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        margin-left: auto;
+    }
+
+    /* Scrollbar */
+    .sidebar-nav::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-track {
+        background: #f8f9fa;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-thumb {
+        background: #dee2e6;
+        border-radius: 10px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-thumb:hover {
+        background: #adb5bd;
+    }
+
+    /* Submenu styles */
+    .nav-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.25s ease;
+        background: #f8f9fa;
+        border-radius: 6px;
+        margin: 0 0.75rem;
+    }
+
+    .nav-content.show {
+        max-height: 400px;
+    }
+
+    .nav-content .nav-link {
+        padding: 0.6rem 1rem 0.6rem 3rem;
+        font-size: 0.875rem;
+    }
+
+    /* Dropdown arrow */
+    .nav-link.has-dropdown::after {
+        content: '\F282';
+        font-family: 'bootstrap-icons';
+        margin-left: auto;
+        transition: transform 0.2s ease;
+        font-size: 0.75rem;
+    }
+
+    .nav-link.has-dropdown.collapsed::after {
+        transform: rotate(-90deg);
+    }
+</style>
+
 <aside id="sidebar" class="sidebar">
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+        <h6><i class="bi bi-grid-3x3-gap me-2"></i>Menu</h6>
+    </div>
 
     <ul class="sidebar-nav" id="sidebar-nav">
+        <!-- Main -->
+        <li class="nav-heading">Main</li>
 
         <li class="nav-item">
-            <a class="nav-link" href={% url "dashboard" %}>
-                <i class="bi bi-grid"></i>
+            <a class="nav-link active" href="{% url 'dashboard' %}">
+                <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </a>
             <a class="nav-link" href={% url "clients" %}>
@@ -12,5 +166,134 @@
                 <span>Clients</span>
             </a>
         </li>
+
+        <!-- Documents -->
+        <li class="nav-heading">Documents</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'document_requests' %}">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Document Requests</span>
+                <span class="nav-badge">3</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-cloud-upload"></i>
+                <span>Upload Documents</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-folder2-open"></i>
+                <span>My Documents</span>
+            </a>
+        </li>
+
+        <!-- Clients -->
+        <li class="nav-heading">Clients</li>
+
+        <li class="nav-item">
+            <a class="nav-link has-dropdown collapsed" data-bs-toggle="collapse" href="#clientsNav">
+                <i class="bi bi-people"></i>
+                <span>Client Management</span>
+            </a>
+            <ul id="clientsNav" class="nav-content collapse">
+                <li>
+                    <a class="nav-link" href="#">
+                        <i class="bi bi-circle"></i>
+                        <span>All Clients</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link" href="#">
+                        <i class="bi bi-circle"></i>
+                        <span>Add Client</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Services -->
+        <li class="nav-heading">Services</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-calculator"></i>
+                <span>Tax Filing</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-receipt"></i>
+                <span>GST Returns</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-clipboard-check"></i>
+                <span>Audit</span>
+            </a>
+        </li>
+
+        <!-- Operations -->
+        <li class="nav-heading">Operations</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-list-check"></i>
+                <span>Tasks</span>
+                <span class="nav-badge">8</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-calendar-event"></i>
+                <span>Calendar</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Reports</span>
+            </a>
+        </li>
+
+        <!-- System -->
+        <li class="nav-heading">System</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-question-circle"></i>
+                <span>Help</span>
+            </a>
+        </li>
     </ul>
-</aside><!-- End Sidebar-->
+</aside>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.sidebar-nav .nav-link:not(.has-dropdown)');
+        
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+            }
+        });
+    });
+</script>

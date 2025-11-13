@@ -1,0 +1,647 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+    <style>
+        /* Enhanced Dashboard Styles */
+        .card {
+            border-radius: 15px;
+            border: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-icon {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 3rem;
+            opacity: 0.2;
+        }
+
+        .progress-thin {
+            height: 5px;
+        }
+
+        .badge-notification {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+        }
+
+        .activity-item {
+            border-left: 3px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .activity-item:hover {
+            border-left-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .table-responsive {
+            border-radius: 10px;
+        }
+
+        .btn {
+            border-radius: 8px;
+        }
+
+        .list-group-item {
+            border: none;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .list-group-item:last-child {
+            border-bottom: none;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+
+    <main id="main" class="main">
+        <div class="container-fluid py-4">
+            <!-- Welcome Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm border-0 bg-gradient bg-primary text-white">
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h2 class="mb-1 fw-bold">Welcome back, John Doe! 👋</h2>
+                                    <p class="mb-0 opacity-75">Here's what's happening with your account today.</p>
+                                </div>
+                                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                                    <p class="mb-0 small">Last login: Nov 12, 2025 at 2:30 PM</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card shadow-sm stat-card border-start border-primary border-4">
+                        <div class="card-body">
+                            <i class="bi bi-file-earmark-text stat-icon text-primary"></i>
+                            <h6 class="text-muted mb-2 text-uppercase small">Total Requests</h6>
+                            <h2 class="mb-0 fw-bold">24</h2>
+                            <div class="progress progress-thin mt-3">
+                                <div class="progress-bar bg-primary" style="width: 75%"></div>
+                            </div>
+                            <small class="text-muted mt-1 d-block">
+                                <i class="bi bi-arrow-up text-success"></i> 12% from last month
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6">
+                    <div class="card shadow-sm stat-card border-start border-warning border-4">
+                        <div class="card-body">
+                            <i class="bi bi-hourglass-split stat-icon text-warning"></i>
+                            <h6 class="text-muted mb-2 text-uppercase small">Pending Actions</h6>
+                            <h2 class="mb-0 fw-bold">8</h2>
+                            <div class="progress progress-thin mt-3">
+                                <div class="progress-bar bg-warning" style="width: 45%"></div>
+                            </div>
+                            <small class="text-muted mt-1 d-block">
+                                <i class="bi bi-exclamation-triangle text-warning"></i> Requires attention
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6">
+                    <div class="card shadow-sm stat-card border-start border-success border-4">
+                        <div class="card-body">
+                            <i class="bi bi-check-circle stat-icon text-success"></i>
+                            <h6 class="text-muted mb-2 text-uppercase small">Completed</h6>
+                            <h2 class="mb-0 fw-bold">16</h2>
+                            <div class="progress progress-thin mt-3">
+                                <div class="progress-bar bg-success" style="width: 85%"></div>
+                            </div>
+                            <small class="text-muted mt-1 d-block">
+                                <i class="bi bi-arrow-up text-success"></i> 8% from last month
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-3 col-md-6">
+                    <div class="card shadow-sm stat-card border-start border-danger border-4">
+                        <div class="card-body">
+                            <i class="bi bi-calendar-x stat-icon text-danger"></i>
+                            <h6 class="text-muted mb-2 text-uppercase small">Overdue</h6>
+                            <h2 class="mb-0 fw-bold">3</h2>
+                            <div class="progress progress-thin mt-3">
+                                <div class="progress-bar bg-danger" style="width: 25%"></div>
+                            </div>
+                            <small class="text-muted mt-1 d-block">
+                                <i class="bi bi-exclamation-circle text-danger"></i> Urgent action needed
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <!-- Document Requests Overview -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 fw-bold">
+                                    <i class="bi bi-file-earmark-bar-graph text-primary me-2"></i>
+                                    Recent Document Requests
+                                </h5>
+                                <a href="{% url 'document_requests' %}" class="btn btn-sm btn-outline-primary">
+                                    View All <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">Request Title</th>
+                                        <th>Due Date</th>
+                                        <th>Progress</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td class="ps-4">
+                                            <i class="bi bi-folder2 text-primary me-2"></i>
+                                            <strong>Q4 Financial Documents</strong>
+                                        </td>
+                                        <td><span class="text-muted">Nov 30, 2025</span></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                    <div class="progress-bar bg-success" style="width: 75%"></div>
+                                                </div>
+                                                <small class="text-muted">75%</small>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                        <td class="text-center">
+                                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="ps-4">
+                                            <i class="bi bi-folder2 text-primary me-2"></i>
+                                            <strong>Tax Return Documents 2024</strong>
+                                        </td>
+                                        <td><span class="text-danger">Nov 15, 2025</span></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                    <div class="progress-bar bg-danger" style="width: 30%"></div>
+                                                </div>
+                                                <small class="text-muted">30%</small>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-danger">Overdue</span></td>
+                                        <td class="text-center">
+                                            <a href="#" class="btn btn-sm btn-outline-danger">Urgent</a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="ps-4">
+                                            <i class="bi bi-folder2 text-primary me-2"></i>
+                                            <strong>Annual Audit Papers</strong>
+                                        </td>
+                                        <td><span class="text-muted">Dec 10, 2025</span></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                    <div class="progress-bar bg-success" style="width: 100%"></div>
+                                                </div>
+                                                <small class="text-muted">100%</small>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-success">Completed</span></td>
+                                        <td class="text-center">
+                                            <a href="#" class="btn btn-sm btn-outline-secondary">View</a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="ps-4">
+                                            <i class="bi bi-folder2 text-primary me-2"></i>
+                                            <strong>GST Compliance Documents</strong>
+                                        </td>
+                                        <td><span class="text-muted">Dec 5, 2025</span></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                    <div class="progress-bar bg-info" style="width: 50%"></div>
+                                                </div>
+                                                <small class="text-muted">50%</small>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-info">In Review</span></td>
+                                        <td class="text-center">
+                                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Notifications -->
+                <div class="col-lg-4">
+                    <!-- Quick Actions -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-lightning-charge-fill text-warning me-2"></i>
+                                Quick Actions
+                            </h5>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'document_requests' %}" class="btn btn-outline-primary text-start">
+                                    <i class="bi bi-cloud-upload me-2"></i> Upload Documents
+                                </a>
+                                <a href="#" class="btn btn-outline-success text-start">
+                                    <i class="bi bi-file-earmark-text me-2"></i> View All Requests
+                                </a>
+                                <a href="#" class="btn btn-outline-info text-start">
+                                    <i class="bi bi-chat-dots me-2"></i> Contact Support
+                                </a>
+                                <a href="#" class="btn btn-outline-secondary text-start">
+                                    <i class="bi bi-gear me-2"></i> Account Settings
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0 fw-bold">
+                                    <i class="bi bi-bell-fill text-danger me-2"></i>
+                                    Notifications
+                                </h5>
+                                <span class="badge bg-danger rounded-pill">5</span>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex align-items-start">
+                                        <div class="avatar bg-danger text-white me-3">
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <p class="mb-1 fw-semibold">Document Overdue</p>
+                                            <p class="mb-0 small text-muted">Tax documents are past the deadline</p>
+                                            <small class="text-muted">2 hours ago</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex align-items-start">
+                                        <div class="avatar bg-success text-white me-3">
+                                            <i class="bi bi-check-circle"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <p class="mb-1 fw-semibold">Document Approved</p>
+                                            <p class="mb-0 small text-muted">Your audit papers have been approved</p>
+                                            <small class="text-muted">5 hours ago</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex align-items-start">
+                                        <div class="avatar bg-info text-white me-3">
+                                            <i class="bi bi-info-circle"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <p class="mb-1 fw-semibold">New Request Added</p>
+                                            <p class="mb-0 small text-muted">Q1 2026 financial documents</p>
+                                            <small class="text-muted">1 day ago</small>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light text-center py-2">
+                            <a href="#" class="text-decoration-none small">View All Notifications</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Timeline & Charts -->
+            <div class="row g-4 mb-4">
+                <!-- Recent Activity -->
+                <div class="col-lg-6">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-clock-history text-info me-2"></i>
+                                Recent Activity
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="activity-item ps-3 pb-3 mb-3">
+                                <div class="d-flex align-items-start">
+                                    <div class="badge bg-success rounded-circle p-2 me-3">
+                                        <i class="bi bi-file-earmark-check"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1 fw-semibold">Document Uploaded</p>
+                                        <p class="mb-1 small text-muted">You uploaded "Balance Sheet Q3.pdf"</p>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock me-1"></i>Today at 3:45 PM
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="activity-item ps-3 pb-3 mb-3">
+                                <div class="d-flex align-items-start">
+                                    <div class="badge bg-primary rounded-circle p-2 me-3">
+                                        <i class="bi bi-chat-dots"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1 fw-semibold">Message Received</p>
+                                        <p class="mb-1 small text-muted">CA sent you a message regarding GST filing</p>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock me-1"></i>Today at 2:30 PM
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="activity-item ps-3 pb-3 mb-3">
+                                <div class="d-flex align-items-start">
+                                    <div class="badge bg-warning rounded-circle p-2 me-3">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1 fw-semibold">Document Replaced</p>
+                                        <p class="mb-1 small text-muted">You replaced "ITR Form 2024.pdf"</p>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock me-1"></i>Yesterday at 11:20 AM
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="activity-item ps-3 pb-0">
+                                <div class="d-flex align-items-start">
+                                    <div class="badge bg-info rounded-circle p-2 me-3">
+                                        <i class="bi bi-bell"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1 fw-semibold">Reminder Set</p>
+                                        <p class="mb-1 small text-muted">Deadline reminder for tax documents</p>
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock me-1"></i>2 days ago
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light text-center py-2">
+                            <a href="#" class="text-decoration-none small">View All Activity</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Completion Statistics -->
+                <div class="col-lg-6">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-graph-up-arrow text-success me-2"></i>
+                                Completion Statistics
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Monthly Progress -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-semibold">Monthly Progress</span>
+                                    <span class="text-muted">85%</span>
+                                </div>
+                                <div class="progress" style="height: 15px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: 85%">
+                                        85%
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Document Categories -->
+                            <div class="mb-4">
+                                <h6 class="fw-semibold mb-3">Document Categories</h6>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Tax Documents</span>
+                                        <span class="badge bg-primary">12/15</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" style="width: 80%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Financial Statements</span>
+                                        <span class="badge bg-success">8/8</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Compliance Docs</span>
+                                        <span class="badge bg-warning text-dark">5/10</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-warning" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Audit Papers</span>
+                                        <span class="badge bg-info">6/8</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-info" style="width: 75%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Statistics Cards -->
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="p-3 bg-light rounded text-center">
+                                        <h3 class="mb-0 fw-bold text-primary">32</h3>
+                                        <small class="text-muted">Total Uploads</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 bg-light rounded text-center">
+                                        <h3 class="mb-0 fw-bold text-success">28</h3>
+                                        <small class="text-muted">Approved</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Deadlines & Service Overview -->
+            <div class="row g-4">
+                <!-- Upcoming Deadlines -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-calendar-event text-danger me-2"></i>
+                                Upcoming Deadlines
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <p class="mb-1 fw-semibold">Tax Return Filing</p>
+                                            <small class="text-danger">
+                                                <i class="bi bi-clock-fill me-1"></i>Due in 3 days
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-danger">Urgent</span>
+                                    </div>
+                                </div>
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <p class="mb-1 fw-semibold">GST Quarterly Return</p>
+                                            <small class="text-warning">
+                                                <i class="bi bi-clock-fill me-1"></i>Due in 10 days
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-warning text-dark">Soon</span>
+                                    </div>
+                                </div>
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <p class="mb-1 fw-semibold">Annual Audit</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock-fill me-1"></i>Due in 25 days
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-info">Scheduled</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Overview -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-briefcase text-primary me-2"></i>
+                                Your Services
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="card border h-100">
+                                        <div class="card-body text-center">
+                                            <div class="mb-3">
+                                                <i class="bi bi-calculator display-4 text-primary"></i>
+                                            </div>
+                                            <h6 class="fw-bold">Tax Filing</h6>
+                                            <p class="text-muted small mb-3">Income Tax & GST Returns</p>
+                                            <span class="badge bg-success">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border h-100">
+                                        <div class="card-body text-center">
+                                            <div class="mb-3">
+                                                <i class="bi bi-file-earmark-spreadsheet display-4 text-success"></i>
+                                            </div>
+                                            <h6 class="fw-bold">Audit Services</h6>
+                                            <p class="text-muted small mb-3">Statutory & Internal Audit</p>
+                                            <span class="badge bg-success">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border h-100">
+                                        <div class="card-body text-center">
+                                            <div class="mb-3">
+                                                <i class="bi bi-clipboard-check display-4 text-info"></i>
+                                            </div>
+                                            <h6 class="fw-bold">Compliance</h6>
+                                            <p class="text-muted small mb-3">Regulatory Compliance</p>
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Auto-hide toasts
+        setTimeout(function () {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function (toast) {
+                var bsToast = new bootstrap.Toast(toast);
+                bsToast.hide();
+            });
+        }, 5000);
+    </script>
+{% endblock %}

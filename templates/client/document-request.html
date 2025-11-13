@@ -1,0 +1,424 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+    <style>
+        .card {
+            border-radius: 15px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .progress {
+            height: 10px;
+            border-radius: 10px;
+        }
+
+        .badge {
+            padding: 0.5em 1em;
+        }
+
+        .btn {
+            border-radius: 8px;
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 1rem 0.75rem;
+        }
+
+        /* Collapse transition */
+        .collapse {
+            transition: height 0.35s ease;
+        }
+
+        /* Hide filtered cards smoothly */
+        .request-card {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .request-card.filtered {
+            display: none !important;
+        }
+    </style>
+
+    <main id="main" class="main">
+        {% if messages %}
+            <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+                {% for message in messages %}
+                    <div class="toast show align-items-center text-bg-success border-0" role="alert"
+                         aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                {{ message }}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                                    data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="container-fluid py-4">
+            <div class="row g-4">
+                <!-- Sidebar Navigation -->
+                <div class="col-lg-3 col-md-4">
+                    <!-- Navigation Card -->
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-header bg-primary text-white py-3">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-grid-3x3-gap me-2"></i>Navigation</h6>
+                        </div>
+                        <div class="list-group list-group-flush">
+                            <a href="{% url 'client_dashboard' %}"
+                               class="list-group-item list-group-item-action d-flex align-items-center py-3">
+                                <i class="bi bi-speedometer2 me-3 fs-5 text-primary"></i>
+                                <span class="fw-semibold">Dashboard</span>
+                            </a>
+                            <a href="{% url 'document_requests' %}"
+                               class="list-group-item list-group-item-action active d-flex align-items-center py-3">
+                                <i class="bi bi-file-earmark-text me-3 fs-5"></i>
+                                <span class="fw-semibold">Document Requests</span>
+                                {% if request_list %}
+                                    <span class="badge bg-primary rounded-pill ms-auto">{{ request_list|length }}</span>
+                                {% endif %}
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats Card -->
+                    {% if request_list %}
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-body p-4">
+                                <h6 class="fw-bold mb-4 text-primary">
+                                    <i class="bi bi-graph-up-arrow me-2"></i>Quick Overview
+                                </h6>
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded mb-3">
+                                    <div>
+                                        <p class="text-muted small mb-1">Total Requests</p>
+                                        <h4 class="mb-0 fw-bold text-primary">{{ request_list|length }}</h4>
+                                    </div>
+                                    <i class="bi bi-folder2-open fs-1 text-primary opacity-25"></i>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                    <div>
+                                        <p class="text-muted small mb-1">Pending Actions</p>
+                                        <h4 class="mb-0 fw-bold text-warning">{{ pending_documents }}</h4>
+                                    </div>
+                                    <i class="bi bi-hourglass-split fs-1 text-warning opacity-25"></i>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Filter Options -->
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold mb-4 text-primary">
+                                <i class="bi bi-funnel-fill me-2"></i>Filter
+                            </h6>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="filter" id="filterAll" value="all"
+                                       checked>
+                                <label class="form-check-label fw-semibold" for="filterAll">
+                                    All Requests
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="filter" id="filterPending"
+                                       value="pending">
+                                <label class="form-check-label fw-semibold" for="filterPending">
+                                    Pending Only
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="filter" id="filterCompleted"
+                                       value="completed">
+                                <label class="form-check-label fw-semibold" for="filterCompleted">
+                                    Completed
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content Area -->
+                <div class="col-lg-9 col-md-8">
+                    <!-- Page Header -->
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                <div>
+                                    <h2 class="mb-1 fw-bold">
+                                        <i class="bi bi-file-earmark-check text-primary me-2"></i>
+                                        Document Requests
+                                    </h2>
+                                    <p class="text-muted mb-0">Manage and upload your requested documents</p>
+                                </div>
+                                <div>
+                                    <button class="btn btn-outline-primary px-4 py-2" id="expandAll">
+                                        <i class="bi bi-arrows-expand me-2"></i>Expand All
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document Requests List -->
+                    {% for block in request_list %}
+                        <div class="card shadow-sm border-0 mb-4 request-card" data-status="{{ block.status }}">
+                            <div class="card-header bg-primary text-white py-3">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h5 class="mb-1 fw-bold">
+                                            <button class="btn btn-link text-white text-decoration-none p-0 collapsed"
+                                                    type="button"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#collapse{{ forloop.counter }}"
+                                                    aria-expanded="false"
+                                                    aria-controls="collapse{{ forloop.counter }}">
+                                                <i class="bi bi-folder2-open me-2"></i>
+                                                {{ block.request.title }}
+                                                <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
+                                            </button>
+                                        </h5>
+                                        <p class="mb-0 small opacity-75">{{ block.request.description }}</p>
+                                    </div>
+                                    <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                                        <span class="badge bg-danger fs-6 px-3 py-2">
+                                            <i class="bi bi-calendar-event me-1"></i>
+                                            Due: {{ block.request.due_date|date:"M d, Y" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="collapse{{ forloop.counter }}" class="collapse"
+                                 data-bs-parent="#accordionDocuments">
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th scope="col" class="border-0 py-3 px-4">
+                                                    <i class="bi bi-file-earmark text-primary me-2"></i>
+                                                    Document Name
+                                                </th>
+                                                <th scope="col" class="border-0 text-center py-3">
+                                                    <i class="bi bi-info-circle text-primary me-2"></i>
+                                                    Status
+                                                </th>
+                                                <th scope="col" class="border-0 text-center py-3">
+                                                    <i class="bi bi-gear text-primary me-2"></i>
+                                                    Actions
+                                                </th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for item in block.items %}
+                                                <tr>
+                                                    <td class="fw-semibold px-4">
+                                                        <i class="bi bi-file-earmark-pdf text-danger me-2 fs-5"></i>
+                                                        {{ item.document_master.document_name }}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {% if item.upload %}
+                                                            <div>
+                                                                <span class="badge bg-success mb-1">
+                                                                    <i class="bi bi-check-circle me-1"></i>
+                                                                    {{ item.upload.status }}
+                                                                </span>
+                                                                <br>
+                                                                <small class="text-muted">
+                                                                    <i class="bi bi-clock me-1"></i>
+                                                                    {{ item.upload.upload_date|date:"M d, Y H:i" }}
+                                                                </small>
+                                                            </div>
+                                                        {% else %}
+                                                            <span class="badge bg-warning text-dark">
+                                                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                                                {{ item.status }}
+                                                            </span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="btn-group" role="group">
+                                                            {% if item.can_upload %}
+                                                                {% if item.upload %}
+                                                                    <a href="{% url 'upload_document' item.requested_document.id %}"
+                                                                       class="btn btn-sm btn-outline-primary px-3 py-2"
+                                                                       data-bs-toggle="tooltip"
+                                                                       title="Replace document">
+                                                                        <i class="bi bi-arrow-repeat me-1"></i>Replace
+                                                                    </a>
+                                                                    <a href="{{ item.upload.uploaded_file.url }}"
+                                                                       class="btn btn-sm btn-outline-secondary px-3 py-2"
+                                                                       target="_blank"
+                                                                       data-bs-toggle="tooltip"
+                                                                       title="View document">
+                                                                        <i class="bi bi-eye me-1"></i>View
+                                                                    </a>
+                                                                {% else %}
+                                                                    <a href="{% url 'upload_document' item.requested_document.id %}"
+                                                                       class="btn btn-sm btn-primary px-3 py-2">
+                                                                        <i class="bi bi-cloud-upload me-1"></i>Upload
+                                                                    </a>
+                                                                {% endif %}
+                                                            {% else %}
+                                                                <button class="btn btn-sm btn-secondary px-3 py-2"
+                                                                        disabled>
+                                                                    <i class="bi bi-lock me-1"></i>Upload Disabled
+                                                                </button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Progress Indicator -->
+                                <div class="card-footer bg-light py-3 px-4">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6 mb-3 mb-md-0">
+                                            <small class="text-muted fw-semibold">
+                                                <i class="bi bi-graph-up text-primary me-1"></i>
+                                                Progress:
+                                                <strong class="text-primary">
+                                                    {{ block.uploaded_count }}
+                                                    / {{ block.items|length }}
+                                                </strong>
+                                                documents uploaded
+                                            </small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            {% widthratio block.uploaded_count block.items|length 100 as percentage %}
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" role="progressbar"
+                                                     style="width: {{ percentage|default:0 }}%"
+                                                     aria-valuenow="{{ percentage|default:0 }}" aria-valuemin="0"
+                                                     aria-valuemax="100">
+                                                    <small class="fw-bold">{{ percentage|default:0 }}%</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body text-center py-5">
+                                <i class="bi bi-inbox display-1 text-muted"></i>
+                                <h4 class="mt-4 text-muted">No Document Requests</h4>
+                                <p class="text-muted mb-4">You don't have any document requests assigned at the
+                                    moment.</p>
+                                <a href="/" class="btn btn-primary px-4 py-2">
+                                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        document.querySelectorAll('input[name="filter"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                const filterValue = this.value;
+                const cards = document.querySelectorAll('.request-card');
+
+                cards.forEach(function (card) {
+                    const status = card.getAttribute('data-status');
+
+                    if (filterValue === 'all') {
+                        card.classList.remove('filtered');
+                    } else if (status === filterValue) {
+                        card.classList.remove('filtered');
+                    } else {
+                        card.classList.add('filtered');
+                    }
+                });
+            });
+        });
+
+        let isExpanded = false;
+        document.getElementById('expandAll').addEventListener('click', function () {
+            const collapseElements = document.querySelectorAll('.request-card .collapse');
+            const icon = this.querySelector('i');
+
+            if (!isExpanded) {
+                collapseElements.forEach(function (element) {
+                    const bsCollapse = new bootstrap.Collapse(element, {
+                        show: true
+                    });
+                });
+                icon.classList.remove('bi-arrows-expand');
+                icon.classList.add('bi-arrows-collapse');
+                this.innerHTML = '<i class="bi bi-arrows-collapse me-2"></i>Collapse All';
+                isExpanded = true;
+            } else {
+                // Collapse all
+                collapseElements.forEach(function (element) {
+                    const bsCollapse = bootstrap.Collapse.getInstance(element);
+                    if (bsCollapse) {
+                        bsCollapse.hide();
+                    }
+                });
+                icon.classList.remove('bi-arrows-collapse');
+                icon.classList.add('bi-arrows-expand');
+                this.innerHTML = '<i class="bi bi-arrows-expand me-2"></i>Expand All';
+                isExpanded = false;
+            }
+        });
+
+        document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const icon = this.querySelector('.collapse-icon');
+                if (icon) {
+                    icon.classList.toggle('rotate-180');
+                }
+            });
+        });
+
+        setTimeout(function () {
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function (toast) {
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.hide();
+            });
+        }, 5000);
+    </script>
+
+    <style>
+        /* Chevron rotation */
+        .collapse-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .collapsed .collapse-icon {
+            transform: rotate(0deg);
+        }
+
+        .collapse-icon {
+            transform: rotate(180deg);
+        }
+
+        .card-header .btn-link:hover {
+            opacity: 0.9;
+        }
+    </style>
+{% endblock %}
