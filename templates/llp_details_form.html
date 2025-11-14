@@ -2,10 +2,10 @@
     {% csrf_token %}
     <input type="hidden" name="business_structure" value="{{ business_structure }}">
 
-    <h6 class="card-title mb-3">LLP (Limited Liability Partnership) Details</h6>
+    <h6 class="card-title mb-3">LLP (Limited Liability Partnership) Details <small class="text-muted">(* indicates required field)</small></h6>
 
     <div class="col-md-6">
-        <label for="{{ form.llp_name.id_for_label }}" class="form-label">LLP Name</label>
+        <label for="{{ form.llp_name.id_for_label }}" class="form-label">LLP Name *</label>
         {{ form.llp_name }}
         {% if form.llp_name.errors %}
             <div class="text-danger small">{{ form.llp_name.errors }}</div>
@@ -13,7 +13,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.llp_registration_no.id_for_label }}" class="form-label">LLP Registration Number</label>
+        <label for="{{ form.llp_registration_no.id_for_label }}" class="form-label">LLP Registration Number *</label>
         {{ form.llp_registration_no }}
         {% if form.llp_registration_no.errors %}
             <div class="text-danger small">{{ form.llp_registration_no.errors }}</div>
@@ -21,7 +21,7 @@
     </div>
 
     <div class="col-12">
-        <label for="{{ form.registered_office_address_llp.id_for_label }}" class="form-label">Registered Office Address</label>
+        <label for="{{ form.registered_office_address_llp.id_for_label }}" class="form-label">Registered Office Address *</label>
         {{ form.registered_office_address_llp }}
         {% if form.registered_office_address_llp.errors %}
             <div class="text-danger small">{{ form.registered_office_address_llp.errors }}</div>
@@ -29,16 +29,16 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.designated_partners.id_for_label }}" class="form-label">Designated Partners</label>
+        <label for="{{ form.designated_partners.id_for_label }}" class="form-label">Designated Partners *</label>
         {{ form.designated_partners }}
         {% if form.designated_partners.errors %}
             <div class="text-danger small">{{ form.designated_partners.errors }}</div>
         {% endif %}
-        <small class="form-text text-muted">Select designated partners from existing clients with DIN numbers</small>
+        <small class="form-text text-muted">Select designated partners from existing clients with DIN numbers (Hold Ctrl/Cmd to select multiple)</small>
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.paid_up_capital_llp.id_for_label }}" class="form-label">Paid-up Capital (₹)</label>
+        <label for="{{ form.paid_up_capital_llp.id_for_label }}" class="form-label">Paid-up Capital (₹) *</label>
         {{ form.paid_up_capital_llp }}
         {% if form.paid_up_capital_llp.errors %}
             <div class="text-danger small">{{ form.paid_up_capital_llp.errors }}</div>
@@ -46,7 +46,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.date_of_registration_llp.id_for_label }}" class="form-label">Date of Registration</label>
+        <label for="{{ form.date_of_registration_llp.id_for_label }}" class="form-label">Date of Registration *</label>
         {{ form.date_of_registration_llp }}
         {% if form.date_of_registration_llp.errors %}
             <div class="text-danger small">{{ form.date_of_registration_llp.errors }}</div>

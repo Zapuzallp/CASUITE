@@ -2,6 +2,7 @@ from django import forms
 from .models import Client, CompanyDetails, LLPDetails, OPCDetails, Section8CompanyDetails, HUFDetails, ClientDocumentUpload
 from datetime import date
 from django.contrib.auth.models import User
+import json
 
 class ClientDocumentUploadForm(forms.ModelForm):
     class Meta:
@@ -12,6 +13,7 @@ class ClientDocumentUploadForm(forms.ModelForm):
         f = self.cleaned_data.get('uploaded_file')
         return f
 
+
 class ClientForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -21,10 +23,12 @@ class ClientForm(forms.ModelForm):
         self.fields['status'].initial = 'Active'
         self.fields['pan_no'].widget.attrs['maxlength'] = '10'
 
-        # Make business_structure NOT required by default
+        # Make business_structure NOT required by default - FIXED
         self.fields['business_structure'].required = False
+        self.fields['business_structure'].widget.attrs.update({'class': 'form-select'})
 
         self.fields['assigned_ca'].queryset = User.objects.filter(is_staff=True)
+
         # Add Bootstrap classes to all form fields
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput) or isinstance(field.widget, forms.EmailInput):
@@ -71,7 +75,7 @@ class ClientForm(forms.ModelForm):
             'address_line1': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter complete address'}),
             'remarks': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Enter any additional remarks'}),
             'pan_no': forms.TextInput(attrs={'placeholder': 'e.g., ABCDE1234F', 'style': 'text-transform: uppercase'}),
-            'aadhar': forms.TextInput(attrs={'placeholder': 'e.g., 1234 5678 9012', 'max_length': '12'}),
+            'aadhar': forms.TextInput(attrs={'placeholder': 'e.g., 1234-5678-9012', 'max_length': '12'}),
             'phone_number': forms.TextInput(attrs={'placeholder': 'e.g., 9876543210', 'max_length': '10'}),
             'postal_code': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -80,6 +84,7 @@ class ClientForm(forms.ModelForm):
                 'pattern': '[0-9]{6}',
                 'title': 'Postal code must be exactly 6 digits'
             }),
+            'business_structure': forms.Select(attrs={'class': 'form-select'}),
         }
 
     def clean(self):
@@ -90,6 +95,10 @@ class ClientForm(forms.ModelForm):
         # Only validate business_structure for Entity clients
         if client_type == 'Entity' and not business_structure:
             self.add_error('business_structure', 'Business structure is required for Entity clients.')
+
+        # Clear business_structure for Individual clients
+        if client_type == 'Individual':
+            cleaned_data['business_structure'] = None
 
         return cleaned_data
 
@@ -131,6 +140,9 @@ class ClientForm(forms.ModelForm):
 class CompanyDetailsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Limit directors queryset to clients with DIN numbers
+        self.fields['directors'].queryset = Client.objects.filter(din_no__isnull=False)
+
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput) or isinstance(field.widget, forms.EmailInput):
                 field.widget.attrs.update({'class': 'form-control'})
@@ -144,9 +156,15 @@ class CompanyDetailsForm(forms.ModelForm):
                 field.widget.attrs.update({'class': 'form-control', 'type': 'date'})
             elif isinstance(field.widget, forms.FileInput):
                 field.widget.attrs.update({'class': 'form-control'})
+            elif isinstance(field.widget, forms.SelectMultiple):
+                # Add Select2 class for multi-select
+                field.widget.attrs.update({
+                    'class': 'form-control select2-multiple',
+                    'data-placeholder': 'Select directors...'
+                })
 
-            # Add required attribute for all fields
-            if field_name not in ['moa_file', 'aoa_file']:  # Files might be optional
+            # Add required attribute for all fields except files
+            if field_name not in ['moa_file', 'aoa_file']:
                 field.widget.attrs.update({'required': 'required'})
 
     class Meta:
@@ -173,7 +191,9 @@ class CompanyDetailsForm(forms.ModelForm):
             'cin': forms.TextInput(attrs={'placeholder': 'Enter Corporate Identification Number'}),
             'authorised_share_capital': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01', 'min': '0'}),
             'paid_up_share_capital': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01', 'min': '0'}),
+            'date_of_incorporation': forms.DateInput(attrs={'type': 'date'}),
             'udyam_registration': forms.TextInput(attrs={'placeholder': 'Enter Udyam registration number'}),
+            'directors': forms.SelectMultiple(attrs={'class': 'form-select'}),
         }
         error_messages = {
             'company_type': {'required': 'Company type is required.'},
@@ -193,6 +213,9 @@ class CompanyDetailsForm(forms.ModelForm):
 class LLPDetailsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Limit designated_partners queryset to clients with DIN numbers
+        self.fields['designated_partners'].queryset = Client.objects.filter(din_no__isnull=False)
+
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput):
                 field.widget.attrs.update({'class': 'form-control'})
@@ -206,9 +229,15 @@ class LLPDetailsForm(forms.ModelForm):
                 field.widget.attrs.update({'class': 'form-control', 'type': 'date'})
             elif isinstance(field.widget, forms.FileInput):
                 field.widget.attrs.update({'class': 'form-control'})
+            elif isinstance(field.widget, forms.SelectMultiple):
+                # Add Select2 class for multi-select
+                field.widget.attrs.update({
+                    'class': 'form-control select2-multiple',
+                    'data-placeholder': 'Select designated partners...'
+                })
 
-            # Add required attribute for all fields
-            if field_name not in ['llp_agreement_file']:  # File might be optional
+            # Add required attribute for all fields except file
+            if field_name not in ['llp_agreement_file']:
                 field.widget.attrs.update({'required': 'required'})
 
     class Meta:
@@ -228,6 +257,8 @@ class LLPDetailsForm(forms.ModelForm):
             'llp_name': forms.TextInput(attrs={'placeholder': 'Enter LLP name'}),
             'llp_registration_no': forms.TextInput(attrs={'placeholder': 'Enter LLP registration number'}),
             'paid_up_capital_llp': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01', 'min': '0'}),
+            'date_of_registration_llp': forms.DateInput(attrs={'type': 'date'}),
+            'designated_partners': forms.SelectMultiple(attrs={'class': 'form-select'}),
         }
         error_messages = {
             'llp_name': {'required': 'LLP name is required.'},
@@ -242,6 +273,9 @@ class LLPDetailsForm(forms.ModelForm):
 class OPCDetailsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Limit sole_member_name queryset to appropriate clients
+        self.fields['sole_member_name'].queryset = Client.objects.all()
+
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput):
                 field.widget.attrs.update({'class': 'form-control'})
@@ -275,6 +309,7 @@ class OPCDetailsForm(forms.ModelForm):
             'opc_cin': forms.TextInput(attrs={'placeholder': 'Enter OPC CIN'}),
             'nominee_member_name': forms.TextInput(attrs={'placeholder': 'Enter nominee member name'}),
             'paid_up_share_capital_opc': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01', 'min': '0'}),
+            'date_of_incorporation_opc': forms.DateInput(attrs={'type': 'date'}),
         }
         error_messages = {
             'opc_name': {'required': 'OPC name is required.'},
@@ -323,6 +358,7 @@ class Section8CompanyDetailsForm(forms.ModelForm):
             'registration_no_section8': forms.TextInput(attrs={'placeholder': 'Enter registration number'}),
             'object_clause': forms.Textarea(
                 attrs={'rows': 4, 'placeholder': 'Describe the main objectives and purposes of the company'}),
+            'date_of_registration_s8': forms.DateInput(attrs={'type': 'date'}),  # This fixes the issue
         }
         error_messages = {
             'section8_company_name': {'required': 'Company name is required.'},
@@ -332,10 +368,12 @@ class Section8CompanyDetailsForm(forms.ModelForm):
             'date_of_registration_s8': {'required': 'Date of registration is required.'},
         }
 
-
 class HUFDetailsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Limit karta_name queryset to individual clients
+        self.fields['karta_name'].queryset = Client.objects.filter(client_type='Individual')
+
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput):
                 field.widget.attrs.update({'class': 'form-control'})
@@ -351,7 +389,7 @@ class HUFDetailsForm(forms.ModelForm):
                 field.widget.attrs.update({'class': 'form-control'})
 
             # Add required attribute for all fields except optional ones
-            if field_name not in ['deed_of_declaration_file', 'remarks']:
+            if field_name not in ['deed_of_declaration_file', 'remarks', 'bank_account_details']:
                 field.widget.attrs.update({'required': 'required'})
 
     class Meta:
@@ -374,6 +412,7 @@ class HUFDetailsForm(forms.ModelForm):
                 attrs={'rows': 3, 'placeholder': 'Enter complete residential address'}),
             'huf_name': forms.TextInput(attrs={'placeholder': 'Enter HUF name'}),
             'pan_huf': forms.TextInput(attrs={'placeholder': 'e.g., ABCDE1234F', 'style': 'text-transform: uppercase'}),
+            'date_of_creation': forms.DateInput(attrs={'type': 'date'}),
             'bank_account_details': forms.Textarea(attrs={
                 'rows': 3,
                 'placeholder': 'Enter bank details in JSON format: {"bank_name": "", "account_number": "", "ifsc_code": ""}'
@@ -391,7 +430,6 @@ class HUFDetailsForm(forms.ModelForm):
             'number_of_coparceners': {'required': 'Number of coparceners is required.'},
             'number_of_members': {'required': 'Number of members is required.'},
             'residential_address': {'required': 'Residential address is required.'},
-            'bank_account_details': {'required': 'Bank account details are required.'},
             'business_activity': {'required': 'Business activity is required.'},
         }
 

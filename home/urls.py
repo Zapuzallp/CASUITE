@@ -8,6 +8,7 @@ from home.views import (
     ClientListAPI,
     SaveClientBasicView,
     SaveClientCompleteView,
+    SaveIndividualClientView,
     ClearClientSessionView
 )
 
@@ -22,6 +23,7 @@ urlpatterns = [
     path('clients/onboarding/', AddClientView.as_view(), name='add_client'),
     path('clients/save-basic/', SaveClientBasicView.as_view(), name='save_client_basic'),
     path('clients/save-complete/', SaveClientCompleteView.as_view(), name='save_client_complete'),
+    path('clients/save-individual/', SaveIndividualClientView.as_view(), name='save_individual_client'),
     path('clients/clear-session/', ClearClientSessionView.as_view(), name='clear_client_session'),
     path('api/clients/', ClientListAPI.as_view(), name='api_clients'),
     # Documents Upload

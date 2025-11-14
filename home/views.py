@@ -8,8 +8,10 @@ from django.views import View
 from django.shortcuts import redirect, render
 from django.db import transaction
 from .models import Client
-from .forms import ClientForm, CompanyDetailsForm, LLPDetailsForm, OPCDetailsForm, Section8CompanyDetailsForm, HUFDetailsForm
+from .forms import ClientForm, CompanyDetailsForm, LLPDetailsForm, OPCDetailsForm, Section8CompanyDetailsForm, \
+    HUFDetailsForm
 from datetime import datetime
+
 
 class HomeView(LoginRequiredMixin, View):
     def get(self, request):
@@ -19,11 +21,13 @@ class HomeView(LoginRequiredMixin, View):
             return redirect('client_dashboard')
         return render(request, "dashboard.html")
 
+
 class ClientView(LoginRequiredMixin, ListView):
     model = Client
     template_name = 'clients.html'
     context_object_name = 'clients'
     paginate_by = 10
+
 
 class ClientListAPI(LoginRequiredMixin, View):
     def get(self, request):
@@ -116,6 +120,9 @@ class SaveClientBasicView(LoginRequiredMixin, View):
             # Create a mutable copy of the POST data
             post_data = request.POST.copy()
 
+            # DEBUG: Print what we're receiving
+            print("Received POST data:", dict(post_data))
+
             # If client type is Individual, remove business_structure requirement
             if post_data.get('client_type') == 'Individual':
                 post_data['business_structure'] = ''  # Set to empty
@@ -131,10 +138,6 @@ class SaveClientBasicView(LoginRequiredMixin, View):
             business_structure = client_form.cleaned_data.get('business_structure')
             print(f"Client type: {client_type}, Business structure: {business_structure}")
 
-            # Handle 'Individual' clients - save immediately
-            if client_type == 'Individual':
-                return self._save_and_redirect(client_form, request)
-
             # Define form templates mapping for Entity types
             structure_map = {
                 'Private Ltd': ('company_details_form.html', CompanyDetailsForm),
@@ -145,68 +148,47 @@ class SaveClientBasicView(LoginRequiredMixin, View):
                 'HUF': ('huf_details_form.html', HUFDetailsForm),
             }
 
-            # If business structure is not in the map → save directly
-            if business_structure not in structure_map:
-                return self._save_and_redirect(client_form, request)
-
             # Store form data in session for multi-step process
-            # Convert date objects to strings for session storage
-            session_data = request.POST.dict().copy()
-            for key, value in session_data.items():
-                if hasattr(value, 'isoformat'):  # If it's a date object
-                    session_data[key] = value.isoformat()
-
-            request.session['client_basic_data'] = session_data
+            request.session['client_basic_data'] = request.POST.dict()
             request.session.modified = True
 
-            # Render the extra form for Entity
-            template_name, form_class = structure_map[business_structure]
-            form_html = self.render_form_to_string(request, template_name, {
-                'form': form_class(),
-                'business_structure': business_structure
-            })
+            # For Individual clients - redirect to complete save immediately
+            if client_type == 'Individual':
+                return JsonResponse({
+                    'success': True,
+                    'redirect_to_complete': True,
+                    'client_type': 'Individual'
+                })
 
+            # For Entity clients with business structure - show additional form
+            if business_structure in structure_map:
+                template_name, form_class = structure_map[business_structure]
+
+                # Create form instance with proper queryset filtering
+                form_instance = form_class()
+
+                form_html = self.render_form_to_string(request, template_name, {
+                    'form': form_instance,
+                    'business_structure': business_structure
+                })
+
+                return JsonResponse({
+                    'success': True,
+                    'form_html': form_html,
+                    'business_structure': business_structure
+                })
+
+            # For Entity clients without specific business structure - save directly
             return JsonResponse({
                 'success': True,
-                'form_html': form_html,
+                'redirect_to_complete': True,
+                'client_type': 'Entity',
                 'business_structure': business_structure
             })
 
         except Exception as e:
             print(f"Unexpected error in SaveClientBasicView: {e}")
             return JsonResponse({'success': False, 'error': f"Unexpected error: {str(e)}"})
-
-    def _save_and_redirect(self, client_form, request):
-        """Save individual client and redirect"""
-        try:
-            with transaction.atomic():
-                client = client_form.save(commit=False)
-                client.created_by = request.user
-                client.save()
-
-                # Clear any existing session data
-                self._clear_session_data(request)
-
-                # Use session storage for messages to prevent persistence
-                from django.contrib.messages import get_messages
-                storage = get_messages(request)
-                for message in storage:
-                    pass  # Clear existing messages
-
-                messages.success(request, 'Client added successfully!')
-                return JsonResponse({
-                    'success': True,
-                    'redirect_url': reverse_lazy('clients')
-                })
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    def _clear_session_data(self, request):
-        """Clear session data"""
-        if 'client_basic_data' in request.session:
-            del request.session['client_basic_data']
-        if 'client_form_data' in request.session:
-            del request.session['client_form_data']
 
     def render_form_to_string(self, request, template_name, context):
         from django.template.loader import render_to_string
@@ -241,16 +223,21 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     client.save()
 
                     # Save business structure specific details
-                    business_structure_result = self._save_business_structure_details(request, business_structure,
-                                                                                      client)
+                    business_structure_result = self._save_business_structure_details(request, business_structure, client)
                     if business_structure_result is not True:
+                        # Rollback transaction if business structure details fail
+                        transaction.set_rollback(True)
                         return JsonResponse({'success': False, 'errors': business_structure_result})
 
                     # Clear session data after successful save
                     self._clear_session_data(request)
 
-                    messages.success(request, 'Client added successfully!')
-                    return JsonResponse({'success': True, 'redirect_url': reverse_lazy('clients')})
+                    # Return success with client ID instead of redirecting
+                    return JsonResponse({
+                        'success': True,
+                        'client_id': client.id,
+                        'client_name': client.client_name
+                    })
 
                 else:
                     return JsonResponse({'success': False, 'errors': client_form.errors})
@@ -260,7 +247,7 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
             return JsonResponse({'success': False, 'error': str(e)})
 
     def _save_business_structure_details(self, request, business_structure, client):
-        """Save business structure specific details"""
+        """Save business structure specific details with proper ManyToMany handling"""
         try:
             if business_structure in ['Private Ltd', 'Public Ltd']:
                 form = CompanyDetailsForm(request.POST, request.FILES)
@@ -268,9 +255,10 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     company_details = form.save(commit=False)
                     company_details.client = client
                     company_details.save()
+                    # Save ManyToMany relationships
                     form.save_m2m()
                     return True
-                return form.errors  # Return form errors
+                return form.errors
 
             elif business_structure == 'LLP':
                 form = LLPDetailsForm(request.POST, request.FILES)
@@ -278,6 +266,8 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     llp_details = form.save(commit=False)
                     llp_details.client = client
                     llp_details.save()
+                    # Save ManyToMany relationships
+                    form.save_m2m()
                     return True
                 return form.errors
 
@@ -313,6 +303,55 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
         except Exception as e:
             print(f"Error saving business structure details: {e}")
             return str(e)
+
+    def _clear_session_data(self, request):
+        """Clear session data"""
+        if 'client_basic_data' in request.session:
+            del request.session['client_basic_data']
+
+
+class SaveIndividualClientView(LoginRequiredMixin, View):
+    """Handle saving individual clients directly (without business structure)"""
+
+    def post(self, request):
+        client_basic_data = request.session.get('client_basic_data')
+
+        if not client_basic_data:
+            return JsonResponse({'success': False, 'error': 'Session expired. Please start over.'})
+
+        try:
+            with transaction.atomic():
+                # Convert string dates back to date objects for form validation
+                processed_basic_data = client_basic_data.copy()
+                for key, value in processed_basic_data.items():
+                    if isinstance(value, str) and ('date' in key.lower() or 'engagement' in key.lower()):
+                        try:
+                            processed_basic_data[key] = datetime.strptime(value, '%Y-%m-%d').date()
+                        except (ValueError, TypeError):
+                            pass
+
+                # Save basic client data
+                client_form = ClientForm(processed_basic_data)
+                if client_form.is_valid():
+                    client = client_form.save(commit=False)
+                    client.created_by = request.user
+                    client.save()
+
+                    # Clear session data after successful save
+                    self._clear_session_data(request)
+
+                    # Return success with client ID instead of redirecting
+                    return JsonResponse({
+                        'success': True,
+                        'client_id': client.id,
+                        'client_name': client.client_name
+                    })
+                else:
+                    return JsonResponse({'success': False, 'errors': client_form.errors})
+
+        except Exception as e:
+            print(f"Error in SaveIndividualClientView: {e}")
+            return JsonResponse({'success': False, 'error': str(e)})
 
     def _clear_session_data(self, request):
         """Clear session data"""

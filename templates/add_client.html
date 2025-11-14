@@ -28,7 +28,7 @@
 
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title" id="formTitle">Client Basic Information</h5>
+            <h5 class="card-title" id="formTitle">Client Basic Information <small class="text-muted">(* indicates required field)</small></h5>
 
             <!-- Basic Client Form -->
             <form id="clientBasicForm" method="post" class="row g-3" novalidate style="display: block;">
@@ -220,6 +220,31 @@
             <div id="businessStructureForm" style="display: none;"></div>
         </div>
     </div>
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        Client Created Successfully
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="text-success mb-3">Client Onboarded Successfully!</h5>
+                    <p class="mb-1"><strong>Client Name:</strong> <span id="successClientName"></span></p>
+                    <p class="mb-3"><strong>Client ID:</strong> <span id="successClientId" class="badge bg-primary"></span></p>
+                    <p class="text-muted small">Please note down the Client ID for future reference.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-success" id="successOkButton">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </main>
 
 <!-- Loading Spinner -->
@@ -268,64 +293,218 @@
         font-size: 0.875em;
         color: #dc3545;
     }
+    /* Select2 custom styles */
+    .select2-container--bootstrap-5 .select2-selection--multiple {
+        min-height: 45px;
+        padding: 5px;
+    }
+
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__rendered {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+        background-color: #0d6efd;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 0.875rem;
+    }
+
+    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+        color: white;
+        margin-right: 4px;
+    }
+
+    .select2-container--bootstrap-5 .select2-dropdown {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+    }
+
+    /* Fix for business structure field visibility */
+    #businessStructureField[style*="display: block"] {
+        display: block !important;
+    }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const clientTypeField = document.getElementById('{{ client_form.client_type.id_for_label }}');
-    const businessStructureField = document.getElementById('businessStructureField');
-    const submitButtonsContainer = document.getElementById('submitButtons');
+    // Elements & state
     const clientBasicForm = document.getElementById('clientBasicForm');
     const businessStructureForm = document.getElementById('businessStructureForm');
+    const businessStructureField = document.getElementById('businessStructureField');
+    const submitButtonsContainer = document.getElementById('submitButtons');
     const formTitle = document.getElementById('formTitle');
     const clearButton = document.getElementById('clearButton');
     const confirmClearButton = document.getElementById('confirmClearButton');
-    const loadingOverlay = document.getElementById('customLoadingOverlay'); // Changed to overlay
-    const clearFormModal = new bootstrap.Modal(document.getElementById('clearFormModal'));
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    const clientTypeSelectId = 'id_client_type';
+    const clientTypeField = document.getElementById(clientTypeSelectId);
 
     let currentState = 'basic';
+    let requestInFlight = false;
+    let loadingModalInstance = null;
 
-    // Simple and reliable loading overlay functions
+    // --------- FIXED Bootstrap modal helpers ----------
     function showLoading() {
-        console.log('Showing loading overlay');
-        if (loadingOverlay) {
-            loadingOverlay.style.display = 'block';
-            // Prevent body scrolling
-            document.body.style.overflow = 'hidden';
+        const el = document.getElementById('loadingModal');
+        if (!el) return;
+
+        // Clean up any existing modal state first
+        cleanupModalState();
+
+        if (!loadingModalInstance) {
+            loadingModalInstance = new bootstrap.Modal(el, {
+                backdrop: 'static',
+                keyboard: false
+            });
         }
+        loadingModalInstance.show();
     }
 
     function hideLoading() {
-        console.log('Hiding loading overlay');
-        if (loadingOverlay) {
-            loadingOverlay.style.display = 'none';
-            // Restore body scrolling
-            document.body.style.overflow = '';
+        console.log('hideLoading called');
+
+        // Method 1: Use Bootstrap instance
+        if (loadingModalInstance) {
+            try {
+                loadingModalInstance.hide();
+            } catch (e) {
+                console.log('Error hiding with instance:', e);
+            }
         }
 
-        // Additional safety - force hide after short delay
-        setTimeout(() => {
-            if (loadingOverlay && loadingOverlay.style.display !== 'none') {
-                loadingOverlay.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-        }, 100);
+        // Method 2: Force cleanup
+        cleanupModalState();
+
+        // Method 3: Direct DOM manipulation as final fallback
+        const loadingModal = document.getElementById('loadingModal');
+        if (loadingModal) {
+            loadingModal.classList.remove('show');
+            loadingModal.style.display = 'none';
+        }
     }
 
-    // Initialize form
-    initializeForm();
+    function cleanupModalState() {
+        // Remove all modal backdrops
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => {
+            backdrop.remove();
+        });
 
-    function initializeForm() {
-        console.log('Initializing form...');
-        currentState = 'basic';
-        clientBasicForm.style.display = 'block';
-        businessStructureForm.style.display = 'none';
-        businessStructureForm.innerHTML = '';
-        formTitle.textContent = 'Client Basic Information';
-        toggleBusinessStructure();
-        updateSubmitButtons();
-        setupRealTimeValidation();
+        // Reset body styles
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+
+        // Hide all modals
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+        });
+    }
+
+    // --------- Select2 helpers ----------
+    function initializeSelect2(context = document) {
+        $(context).find('.select2-multiple').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: function() { return $(this).data('placeholder'); },
+            allowClear: true,
+            closeOnSelect: false
+        });
+
+        $(context).find('.form-select:not(.select2-multiple)').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            minimumResultsForSearch: 10
+        });
+    }
+
+    function destroySelect2(context = document) {
+        try {
+            $(context).find('.select2-multiple').select2('destroy');
+        } catch (e) {}
+        try {
+            $(context).find('.form-select').select2('destroy');
+        } catch (e) {}
+    }
+
+    // --------- Validation helpers ----------
+    function showFieldError(field, message) {
+        field.classList.add('is-invalid');
+        const errorElement = document.getElementById(`${field.name}_error`);
+        if (errorElement) errorElement.textContent = message;
+    }
+
+    function clearFieldError() {
+        this.classList.remove('is-invalid');
+        const errorElement = document.getElementById(`${this.name}_error`);
+        if (errorElement) errorElement.textContent = '';
+    }
+
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    function validateField(e) {
+        const field = e.target;
+        const fieldName = field.name;
+        const value = field.value.trim();
+        field.classList.remove('is-invalid');
+
+        const mandatoryFields = [
+            'client_name', 'primary_contact_name', 'pan_no', 'email',
+            'phone_number', 'address_line1', 'aadhar', 'city', 'state',
+            'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
+            'client_type', 'status'
+        ];
+
+        if (mandatoryFields.includes(fieldName) && !value) {
+            showFieldError(field, 'This field is required.');
+            return false;
+        }
+
+        switch(fieldName) {
+            case 'phone_number':
+                const phoneDigits = value.replace(/\D/g, '');
+                if (phoneDigits.length !== 10) {
+                    showFieldError(field, 'Phone number must be exactly 10 digits.');
+                    return false;
+                }
+                break;
+            case 'pan_no':
+                if (value.length !== 10) {
+                    showFieldError(field, 'PAN number must be exactly 10 characters.');
+                    return false;
+                }
+                break;
+            case 'aadhar':
+                const aadharDigits = value.replace(/\D/g, '');
+                if (aadharDigits.length !== 12) {
+                    showFieldError(field, 'Aadhar number must be exactly 12 digits.');
+                    return false;
+                }
+                break;
+            case 'email':
+                if (value && !isValidEmail(value)) {
+                    showFieldError(field, 'Please enter a valid email address.');
+                    return false;
+                }
+                break;
+            case 'postal_code':
+                if (!/^\d{6}$/.test(value)) {
+                    showFieldError(field, 'Postal code must be exactly 6 digits.');
+                    return false;
+                }
+                break;
+        }
+        return true;
     }
 
     function setupRealTimeValidation() {
@@ -348,155 +527,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const phoneField = document.getElementById('id_phone_number');
         if (phoneField) {
-            phoneField.addEventListener('input', formatPhoneNumber);
+            phoneField.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 10) value = value.substring(0, 10);
+                e.target.value = value;
+                clearFieldError.call(e.target);
+            });
         }
 
-        const postalCodeField = document.getElementById('id_postal_code');
-        if (postalCodeField) {
-            postalCodeField.addEventListener('input', formatPostalCode);
-            postalCodeField.addEventListener('blur', validatePostalCode);
+        const postalField = document.getElementById('id_postal_code');
+        if (postalField) {
+            postalField.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 6) value = value.substring(0,6);
+                e.target.value = value;
+                clearFieldError.call(e.target);
+            });
+            postalField.addEventListener('blur', validateField);
         }
 
         const aadharField = document.getElementById('id_aadhar');
         if (aadharField) {
-            aadharField.addEventListener('input', formatAadhar);
+            aadharField.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 12) value = value.substring(0,12);
+                let formatted = value;
+                if (formatted.length > 4) formatted = formatted.substring(0,4) + '-' + formatted.substring(4);
+                if (formatted.length > 9) formatted = formatted.substring(0,9) + '-' + formatted.substring(9);
+                e.target.value = formatted;
+                clearFieldError.call(e.target);
+            });
         }
 
         const panField = document.getElementById('id_pan_no');
         if (panField) {
             panField.addEventListener('input', function(e) {
-                this.value = this.value.toUpperCase();
-                clearFieldError.call(this);
+                e.target.value = e.target.value.toUpperCase();
+                clearFieldError.call(e.target);
             });
-        }
-    }
-
-    function formatPostalCode(e) {
-        let value = e.target.value.replace(/\D/g, '');
-        if (value.length > 6) value = value.substring(0, 6);
-        e.target.value = value;
-        clearFieldError.call(e.target);
-    }
-
-    function validatePostalCode(e) {
-        const field = e.target;
-        const value = field.value.trim();
-        clearFieldError.call(field);
-
-        if (!value) {
-            showFieldError(field, 'Postal code is required.');
-            return false;
-        }
-
-        if (value.length !== 6) {
-            showFieldError(field, 'Postal code must be exactly 6 digits.');
-            return false;
-        }
-
-        if (!/^\d{6}$/.test(value)) {
-            showFieldError(field, 'Postal code must contain only numbers.');
-            return false;
-        }
-
-        return true;
-    }
-
-    function formatPhoneNumber(e) {
-        let value = e.target.value.replace(/\D/g, '');
-        if (value.length > 10) value = value.substring(0, 10);
-        e.target.value = value;
-        clearFieldError.call(e.target);
-    }
-
-    function formatAadhar(e) {
-        let value = e.target.value.replace(/\D/g, '');
-        if (value.length > 12) value = value.substring(0, 12);
-        e.target.value = value;
-        clearFieldError.call(e.target);
-    }
-
-    function validateField(e) {
-        const field = e.target;
-        const fieldName = field.name;
-        const value = field.value.trim();
-        clearFieldError.call(field);
-
-        const mandatoryFields = [
-            'client_name', 'primary_contact_name', 'pan_no', 'email',
-            'phone_number', 'address_line1', 'aadhar', 'city', 'state',
-            'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
-            'client_type', 'status'
-        ];
-
-        if (mandatoryFields.includes(fieldName) && !value) {
-            showFieldError(field, 'This field is required.');
-            return false;
-        }
-
-        switch(fieldName) {
-            case 'phone_number':
-                const phoneDigits = value.replace(/\D/g, '');
-                if (phoneDigits.length !== 10) {
-                    showFieldError(field, 'Phone number must be exactly 10 digits.');
-                    return false;
-                }
-                break;
-
-            case 'pan_no':
-                if (value.length !== 10) {
-                    showFieldError(field, 'PAN number must be exactly 10 characters.');
-                    return false;
-                }
-                break;
-
-            case 'aadhar':
-                const aadharDigits = value.replace(/\D/g, '');
-                if (aadharDigits.length !== 12) {
-                    showFieldError(field, 'Aadhar number must be exactly 12 digits.');
-                    return false;
-                }
-                break;
-
-            case 'email':
-                if (value && !isValidEmail(value)) {
-                    showFieldError(field, 'Please enter a valid email address.');
-                    return false;
-                }
-                break;
-
-            case 'postal_code':
-                if (value.length !== 6) {
-                    showFieldError(field, 'Postal code must be exactly 6 digits.');
-                    return false;
-                }
-                if (!/^\d{6}$/.test(value)) {
-                    showFieldError(field, 'Postal code must contain only numbers.');
-                    return false;
-                }
-                break;
-        }
-
-        return true;
-    }
-
-    function isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
-    function showFieldError(field, message) {
-        field.classList.add('is-invalid');
-        const errorElement = document.getElementById(`${field.name}_error`);
-        if (errorElement) {
-            errorElement.textContent = message;
-        }
-    }
-
-    function clearFieldError() {
-        this.classList.remove('is-invalid');
-        const errorElement = document.getElementById(`${this.name}_error`);
-        if (errorElement) {
-            errorElement.textContent = '';
         }
     }
 
@@ -508,42 +576,31 @@ document.addEventListener('DOMContentLoaded', function() {
             'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
             'client_type', 'status'
         ];
-
         mandatoryFields.forEach(fieldName => {
             const field = document.getElementById(`id_${fieldName}`);
             if (field) {
                 const event = new Event('blur', { bubbles: true });
                 field.dispatchEvent(event);
-                if (field.classList.contains('is-invalid')) {
-                    isValid = false;
-                }
+                if (field.classList.contains('is-invalid')) isValid = false;
             }
         });
-
         return isValid;
     }
 
-    function toggleBusinessStructure() {
-        if (clientTypeField.value === 'Entity') {
-            businessStructureField.style.display = 'block';
-        } else {
-            businessStructureField.style.display = 'none';
-        }
-        updateSubmitButtons();
-    }
-
+    // --------- Button / flow helpers ----------
     function updateSubmitButtons() {
+        if (!submitButtonsContainer) return;
         submitButtonsContainer.innerHTML = '';
 
         if (currentState === 'basic') {
-            if (clientTypeField.value === 'Individual') {
+            if (clientTypeField && clientTypeField.value && clientTypeField.value.toLowerCase() === 'individual') {
                 const submitButton = document.createElement('button');
                 submitButton.type = 'button';
                 submitButton.className = 'btn btn-success';
                 submitButton.textContent = 'Submit';
                 submitButton.onclick = submitIndividualForm;
                 submitButtonsContainer.appendChild(submitButton);
-            } else if (clientTypeField.value === 'Entity') {
+            } else {
                 const nextButton = document.createElement('button');
                 nextButton.type = 'button';
                 nextButton.className = 'btn btn-primary';
@@ -551,85 +608,273 @@ document.addEventListener('DOMContentLoaded', function() {
                 nextButton.onclick = handleNextButtonClick;
                 submitButtonsContainer.appendChild(nextButton);
             }
+        } else if (currentState === 'business') {
+            const back = document.createElement('button');
+            back.type = 'button';
+            back.className = 'btn btn-secondary me-2';
+            back.id = 'bizBackBtn';
+            back.textContent = 'Back';
+            back.onclick = goBackToBasicForm;
+
+            const save = document.createElement('button');
+            save.type = 'button';
+            save.className = 'btn btn-success';
+            save.id = 'bizSaveBtn';
+            save.textContent = 'Save';
+            save.onclick = function() {
+                const form = businessStructureForm.querySelector('#businessStructureDetailsForm');
+                if (form) form.requestSubmit();
+            };
+
+            submitButtonsContainer.appendChild(back);
+            submitButtonsContainer.appendChild(save);
         }
     }
 
-    function submitIndividualForm() {
+    // --------- FIXED: AJAX functions with proper loading handling ----------
+    async function submitIndividualForm() {
         if (!validateForm()) {
             showTemporaryAlert('Please fix the validation errors before submitting.', 'error');
             return;
         }
-
         showLoading();
-        const formData = new FormData(clientBasicForm);
-
-        fetch('{% url "save_client_basic" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
+        try {
+            const formData = new FormData(clientBasicForm);
+            const res = await fetch('{% url "save_client_basic" %}', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (data.redirect_to_complete && data.client_type && data.client_type.toLowerCase() === 'individual') {
+                    await finalizeIndividualClient();
+                } else if (data.redirect_url) {
+                    hideLoading();
+                    window.location.href = data.redirect_url;
+                } else if (data.form_html) {
+                    showBusinessStructureForm(data);
+                } else {
+                    hideLoading();
+                    showTemporaryAlert('Client saved.', 'success');
+                }
+            } else {
+                hideLoading();
+                handleFormErrors(data);
             }
-        })
-        .then(response => response.json())
-        .then(data => {
+        } catch (err) {
+            console.error('submitIndividualForm error:', err);
+            hideLoading();
+            showTemporaryAlert('Network error occurred. Please try again.', 'error');
+        }
+    }
+
+    async function finalizeIndividualClient() {
+        try {
+            const res = await fetch('{% url "save_individual_client" %}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
             hideLoading();
             if (data.success) {
-                window.location.href = '{% url "clients" %}';
+                showSuccessModal(data.client_id, data.client_name);
             } else {
                 handleFormErrors(data);
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
+        } catch (err) {
+            console.error('finalizeIndividualClient error:', err);
             hideLoading();
-            alert('Network error occurred. Please try again.');
-        });
+            showTemporaryAlert('Network error occurred while finalizing.', 'error');
+        }
     }
 
-    // Clear form functionality
-    clearButton.addEventListener('click', function() {
-        clearFormModal.show();
-    });
+    async function handleNextButtonClick() {
+        if (requestInFlight) return;
+        requestInFlight = true;
 
-    confirmClearButton.addEventListener('click', function() {
-        clearFormModal.hide();
-        resetFormCompletely();
-    });
+        if (!validateForm()) {
+            requestInFlight = false;
+            showTemporaryAlert('Please fix the validation errors before proceeding.', 'error');
+            return;
+        }
 
-    function resetFormCompletely() {
+        showLoading();
+        try {
+            const formData = new FormData(clientBasicForm);
+            const res = await fetch('{% url "save_client_basic" %}', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (!res.ok) {
+                const text = await res.text().catch(()=>null);
+                throw new Error('HTTP ' + res.status + ' — ' + (text || ''));
+            }
+
+            const data = await res.json();
+            if (data.success) {
+                if (data.form_html) {
+                    showBusinessStructureForm(data);
+                } else if (data.redirect_url) {
+                    hideLoading();
+                    window.location.href = data.redirect_url;
+                } else {
+                    hideLoading();
+                    showTemporaryAlert('Unexpected response from server.', 'error');
+                }
+            } else {
+                hideLoading();
+                handleFormErrors(data);
+            }
+        } catch (err) {
+            console.error('handleNextButtonClick error:', err);
+            hideLoading();
+            showTemporaryAlert('Network error occurred. Please try again.', 'error');
+        } finally {
+            requestInFlight = false;
+        }
+    }
+
+    // --------- FIXED: Business structure form loading ----------
+    function showBusinessStructureForm(data) {
+        console.log('Loading business structure form...');
+
+        currentState = 'business';
+        destroySelect2(clientBasicForm);
+
+        // Hide basic form and show business form
+        clientBasicForm.style.display = 'none';
+        businessStructureForm.style.display = 'block';
+        businessStructureForm.innerHTML = data.form_html;
+
+        // HIDE LOADING - This is the key fix
+        setTimeout(() => {
+            hideLoading();
+        }, 100);
+
+        if (formTitle) formTitle.style.display = 'none';
+
+        // Initialize the new form
+        setTimeout(() => {
+            initializeSelect2(businessStructureForm);
+            setupRealTimeValidation();
+            attachBusinessFormHandlers();
+        }, 150);
+
+        updateSubmitButtons();
+        window.scrollTo(0, 0);
+
+        console.log('Business structure form loaded');
+    }
+
+    function attachBusinessFormHandlers() {
+        const backButton = businessStructureForm.querySelector('#backButton');
+        if (backButton) {
+            backButton.addEventListener('click', goBackToBasicForm);
+        }
+
+        const businessForm = businessStructureForm.querySelector('#businessStructureDetailsForm');
+        if (businessForm) {
+            businessForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitBusinessStructureForm(businessForm);
+            });
+
+            const inputs = businessForm.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.removeEventListener('blur', validateField);
+                input.removeEventListener('input', clearFieldError);
+                input.addEventListener('blur', validateField);
+                input.addEventListener('input', clearFieldError);
+            });
+        }
+    }
+
+    async function submitBusinessStructureForm(form) {
+        showLoading();
+        try {
+            const formData = new FormData(form);
+            const res = await fetch('{% url "save_client_complete" %}', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+
+            const data = await res.json();
+            hideLoading();
+            if (data.success) {
+                showSuccessModal(data.client_id, data.client_name);
+            } else {
+                handleFormErrors(data);
+            }
+        } catch (err) {
+            console.error('submitBusinessStructureForm error:', err);
+            hideLoading();
+            showTemporaryAlert('Network error occurred. Please try again.', 'error');
+        }
+    }
+
+    function goBackToBasicForm() {
+        currentState = 'basic';
+        destroySelect2(businessStructureForm);
+
+        businessStructureForm.style.display = 'none';
+        businessStructureForm.innerHTML = '';
+        clientBasicForm.style.display = 'block';
+
+        if (formTitle) {
+            formTitle.style.display = 'block';
+            formTitle.innerHTML = 'Client Basic Information <small class="text-muted">(* indicates required field)</small>';
+        }
+
+        setTimeout(() => {
+            initializeSelect2(clientBasicForm);
+            setupRealTimeValidation();
+            attachClientTypeChange();
+        }, 80);
+
         fetch('{% url "clear_client_session" %}', {
             method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        }).then(() => {
-            clientBasicForm.reset();
-            const selects = clientBasicForm.querySelectorAll('select');
-            selects.forEach(select => {
-                select.selectedIndex = 0;
-            });
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            keepalive: true
+        }).catch(()=>{});
 
-            const errorElements = clientBasicForm.querySelectorAll('.invalid-feedback');
-            errorElements.forEach(element => {
-                element.textContent = '';
-            });
-            const invalidFields = clientBasicForm.querySelectorAll('.is-invalid');
-            invalidFields.forEach(field => {
-                field.classList.remove('is-invalid');
-            });
-
-            initializeForm();
-            showTemporaryAlert('Form cleared successfully!', 'success');
-        }).catch(error => {
-            console.error('Error clearing session:', error);
-            clientBasicForm.reset();
-            initializeForm();
-            showTemporaryAlert('Form cleared successfully!', 'success');
-        });
+        updateSubmitButtons();
+        window.scrollTo(0, 0);
     }
 
+    // --------- success modal ----------
+    function showSuccessModal(clientId, clientName) {
+        document.getElementById('successClientId').textContent = clientId;
+        document.getElementById('successClientName').textContent = clientName;
+        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+        successModal.show();
+        document.getElementById('successOkButton').onclick = function() {
+            window.location.href = '{% url "clients" %}';
+        };
+    }
+
+    // --------- form errors helper ----------
+    function handleFormErrors(data) {
+        if (!data) return;
+        if (data.errors) {
+            for (let field in data.errors) {
+                const elem = document.getElementById(`id_${field}`);
+                if (elem) showFieldError(elem, data.errors[field].join(', '));
+            }
+            showTemporaryAlert('Please fix the form errors before submitting.', 'error');
+        } else if (data.error) {
+            showTemporaryAlert('Error: ' + data.error, 'error');
+        } else {
+            showTemporaryAlert('An unknown error occurred.', 'error');
+        }
+    }
+
+    // --------- temporary alert ----------
     function showTemporaryAlert(message, type) {
         const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
         const alertHtml = `
@@ -640,193 +885,83 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         const main = document.querySelector('main');
-        const existingAlerts = main.querySelectorAll('.alert');
-        existingAlerts.forEach(alert => alert.remove());
+        const existing = main.querySelectorAll('.alert');
+        existing.forEach(e => e.remove());
         main.insertAdjacentHTML('afterbegin', alertHtml);
-
         setTimeout(() => {
             const alert = main.querySelector('.alert');
             if (alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
+                try { new bootstrap.Alert(alert).close(); } catch (e) {}
             }
         }, 5000);
     }
 
-    // FIXED: Using simple overlay instead of Bootstrap modal
-    function handleNextButtonClick() {
-        if (!validateForm()) {
-            showTemporaryAlert('Please fix the validation errors before proceeding.', 'error');
-            return;
-        }
-
-        console.log('Next button clicked');
-        showLoading();
-        const formData = new FormData(clientBasicForm);
-
-        fetch('{% url "save_client_basic" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Processing response data:', data);
-
-            // HIDE LOADING FIRST - this is crucial
-            hideLoading();
-
-            if (data.success) {
-                if (data.form_html) {
-                    console.log('Showing business structure form');
-                    showBusinessStructureForm(data);
-                } else if (data.redirect_url) {
-                    console.log('Redirecting to:', data.redirect_url);
-                    window.location.href = data.redirect_url;
-                }
-            } else {
-                console.log('Form errors:', data.errors);
-                handleFormErrors(data);
-            }
-        })
-        .catch(error => {
-            console.error('Error in handleNextButtonClick:', error);
-            hideLoading();
-            alert('Network error occurred. Please try again.');
+    // --------- client type change ----------
+    function attachClientTypeChange() {
+        try { $('#'+clientTypeSelectId).off('change'); } catch(e){}
+        $('#'+clientTypeSelectId).on('change', function() {
+            toggleBusinessStructure();
+            updateSubmitButtons();
         });
     }
 
-    function showBusinessStructureForm(data) {
-        console.log('showBusinessStructureForm called');
-        currentState = 'business';
-
-        // Hide basic form and show business structure form
-        clientBasicForm.style.display = 'none';
-        businessStructureForm.style.display = 'block';
-        businessStructureForm.innerHTML = data.form_html;
-        formTitle.textContent = `${data.business_structure} Details`;
-
-        // Add event listeners to the new form
-        const backButton = businessStructureForm.querySelector('#backButton');
-        if (backButton) {
-            backButton.addEventListener('click', goBackToBasicForm);
+    function toggleBusinessStructure() {
+        if (!businessStructureField) return;
+        businessStructureField.style.display = 'none';
+        if (clientTypeField && clientTypeField.value && clientTypeField.value.toLowerCase() === 'entity') {
+            businessStructureField.style.display = 'block';
         }
-
-        const businessForm = businessStructureForm.querySelector('#businessStructureDetailsForm');
-        if (businessForm) {
-            businessForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                submitBusinessStructureForm(this);
-            });
-        }
-
-        window.scrollTo(0, 0);
     }
 
-    function submitBusinessStructureForm(form) {
-        console.log('Submitting business structure form');
-        showLoading();
-        const formData = new FormData(form);
+    // --------- clear form flow ----------
+    clearButton.addEventListener('click', function() {
+        const clearFormModal = new bootstrap.Modal(document.getElementById('clearFormModal'));
+        clearFormModal.show();
+    });
 
-        fetch('{% url "save_client_complete" %}', {
+    confirmClearButton.addEventListener('click', function() {
+        destroySelect2();
+        fetch('{% url "clear_client_session" %}', {
             method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            hideLoading();
-            if (data.success) {
-                window.location.href = '{% url "clients" %}';
-            } else {
-                handleFormErrors(data);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            hideLoading();
-            alert('Network error occurred. Please try again.');
-        });
-    }
+            headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+        }).finally(() => {
+            clientBasicForm.reset();
+            const selects = clientBasicForm.querySelectorAll('select');
+            selects.forEach(s => s.selectedIndex = 0);
+            const errorElements = clientBasicForm.querySelectorAll('.invalid-feedback');
+            errorElements.forEach(el => el.textContent = '');
+            const invalidFields = clientBasicForm.querySelectorAll('.is-invalid');
+            invalidFields.forEach(f => f.classList.remove('is-invalid'));
 
-    function goBackToBasicForm() {
-        console.log('Going back to basic form');
+            initializeForm();
+            showTemporaryAlert('Form cleared successfully!', 'success');
+
+            const clearModal = bootstrap.Modal.getInstance(document.getElementById('clearFormModal'));
+            if (clearModal) clearModal.hide();
+        });
+    });
+
+    // --------- initialize everything ----------
+    function initializeForm() {
         currentState = 'basic';
-
+        clientBasicForm.style.display = 'block';
         businessStructureForm.style.display = 'none';
         businessStructureForm.innerHTML = '';
-        clientBasicForm.style.display = 'block';
-        formTitle.textContent = 'Client Basic Information';
-        toggleBusinessStructure();
-        window.scrollTo(0, 0);
-
-        fetch('{% url "clear_client_session" %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-    }
-
-    function handleFormErrors(data) {
-        if (data.errors) {
-            for (let field in data.errors) {
-                const fieldElement = document.getElementById(`id_${field}`);
-                if (fieldElement) {
-                    showFieldError(fieldElement, data.errors[field].join(', '));
-                }
-            }
-            showTemporaryAlert('Please fix the form errors before submitting.', 'error');
-        } else if (data.error) {
-            showTemporaryAlert('Error: ' + data.error, 'error');
-        } else {
-            showTemporaryAlert('An unknown error occurred.', 'error');
+        if (formTitle) {
+            formTitle.style.display = 'block';
+            formTitle.innerHTML = 'Client Basic Information <small class="text-muted">(* indicates required field)</small>';
         }
+
+        setTimeout(() => {
+            initializeSelect2(clientBasicForm);
+            setupRealTimeValidation();
+            attachClientTypeChange();
+            updateSubmitButtons();
+        }, 120);
     }
 
-    // Event listeners
-    clientTypeField.addEventListener('change', toggleBusinessStructure);
-
-    // Handle page refresh
-    window.addEventListener('beforeunload', function() {
-        hideLoading();
-        fetch('{% url "clear_client_session" %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            keepalive: true
-        });
-    });
-
-    // Global error handlers
-    window.addEventListener('error', function(event) {
-        console.error('Global error:', event.error);
-        hideLoading();
-    });
-
-    window.addEventListener('unhandledrejection', function(event) {
-        console.error('Unhandled promise rejection:', event.reason);
-        hideLoading();
-    });
+    // Start
+    initializeForm();
 });
 </script>
 {% endblock body %}
