@@ -28,7 +28,7 @@
 
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title" id="formTitle">Client Basic Information <small class="text-muted">(* indicates required field)</small></h5>
+            <h5 class="card-title" id="formTitle">Client Basic Information <small class="text-muted">(<span class="text-danger">*</span> indicates required field)</small></h5>
 
             <!-- Basic Client Form -->
             <form id="clientBasicForm" method="post" class="row g-3" novalidate style="display: block;">
@@ -38,14 +38,14 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.client_name.id_for_label }}" class="form-label">Client Name *</label>
+                            <label for="{{ client_form.client_name.id_for_label }}" class="form-label">Client Name <span class="text-danger">*</span></label>
                             {{ client_form.client_name }}
                             <div class="invalid-feedback" id="client_name_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.primary_contact_name.id_for_label }}" class="form-label">Primary Contact Name *</label>
+                            <label for="{{ client_form.primary_contact_name.id_for_label }}" class="form-label">Primary Contact Name <span class="text-danger">*</span></label>
                             {{ client_form.primary_contact_name }}
                             <div class="invalid-feedback" id="primary_contact_name_error"></div>
                         </div>
@@ -56,14 +56,14 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.pan_no.id_for_label }}" class="form-label">PAN No. *</label>
+                            <label for="{{ client_form.pan_no.id_for_label }}" class="form-label">PAN No. <span class="text-danger">*</span></label>
                             {{ client_form.pan_no }}
                             <div class="invalid-feedback" id="pan_no_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.email.id_for_label }}" class="form-label">Email *</label>
+                            <label for="{{ client_form.email.id_for_label }}" class="form-label">Email <span class="text-danger">*</span></label>
                             {{ client_form.email }}
                             <div class="invalid-feedback" id="email_error"></div>
                         </div>
@@ -74,14 +74,14 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.phone_number.id_for_label }}" class="form-label">Contact No. *</label>
+                            <label for="{{ client_form.phone_number.id_for_label }}" class="form-label">Contact No. <span class="text-danger">*</span></label>
                             {{ client_form.phone_number }}
                             <div class="invalid-feedback" id="phone_number_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.aadhar.id_for_label }}" class="form-label">Aadhar No. *</label>
+                            <label for="{{ client_form.aadhar.id_for_label }}" class="form-label">Aadhar No. <span class="text-danger">*</span></label>
                             {{ client_form.aadhar }}
                             <div class="invalid-feedback" id="aadhar_error"></div>
                         </div>
@@ -92,7 +92,7 @@
                 <div class="row mb-3">
                     <div class="col-12">
                         <div class="mb-3">
-                            <label for="{{ client_form.address_line1.id_for_label }}" class="form-label">Address *</label>
+                            <label for="{{ client_form.address_line1.id_for_label }}" class="form-label">Address <span class="text-danger">*</span></label>
                             {{ client_form.address_line1 }}
                             <div class="invalid-feedback" id="address_line1_error"></div>
                         </div>
@@ -103,21 +103,21 @@
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <div class="mb-3">
-                            <label for="{{ client_form.city.id_for_label }}" class="form-label">City *</label>
+                            <label for="{{ client_form.city.id_for_label }}" class="form-label">City <span class="text-danger">*</span></label>
                             {{ client_form.city }}
                             <div class="invalid-feedback" id="city_error"></div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-3">
-                            <label for="{{ client_form.state.id_for_label }}" class="form-label">State *</label>
+                            <label for="{{ client_form.state.id_for_label }}" class="form-label">State <span class="text-danger">*</span></label>
                             {{ client_form.state }}
                             <div class="invalid-feedback" id="state_error"></div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="mb-3">
-                            <label for="{{ client_form.postal_code.id_for_label }}" class="form-label">Postal Code *</label>
+                            <label for="{{ client_form.postal_code.id_for_label }}" class="form-label">Postal Code <span class="text-danger">*</span></label>
                             {{ client_form.postal_code }}
                             <div class="invalid-feedback" id="postal_code_error"></div>
                         </div>
@@ -128,14 +128,14 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.country.id_for_label }}" class="form-label">Country *</label>
+                            <label for="{{ client_form.country.id_for_label }}" class="form-label">Country <span class="text-danger">*</span></label>
                             {{ client_form.country }}
                             <div class="invalid-feedback" id="country_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.date_of_engagement.id_for_label }}" class="form-label">Date of Engagement *</label>
+                            <label for="{{ client_form.date_of_engagement.id_for_label }}" class="form-label">Date of Engagement <span class="text-danger">*</span></label>
                             {{ client_form.date_of_engagement }}
                             <div class="invalid-feedback" id="date_of_engagement_error"></div>
                         </div>
@@ -146,14 +146,14 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.client_type.id_for_label }}" class="form-label">Client Type *</label>
+                            <label for="{{ client_form.client_type.id_for_label }}" class="form-label">Client Type <span class="text-danger">*</span></label>
                             {{ client_form.client_type }}
                             <div class="invalid-feedback" id="client_type_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6" id="businessStructureField" style="display: none;">
                         <div class="mb-3">
-                            <label for="{{ client_form.business_structure.id_for_label }}" class="form-label">Business Structure *</label>
+                            <label for="{{ client_form.business_structure.id_for_label }}" class="form-label">Business Structure <span class="text-danger">*</span></label>
                             {{ client_form.business_structure }}
                             <div class="invalid-feedback" id="business_structure_error"></div>
                         </div>
@@ -164,14 +164,14 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.assigned_ca.id_for_label }}" class="form-label">Assigned CA *</label>
+                            <label for="{{ client_form.assigned_ca.id_for_label }}" class="form-label">Assigned CA <span class="text-danger">*</span></label>
                             {{ client_form.assigned_ca }}
                             <div class="invalid-feedback" id="assigned_ca_error"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.status.id_for_label }}" class="form-label">Status *</label>
+                            <label for="{{ client_form.status.id_for_label }}" class="form-label">Status <span class="text-danger">*</span></label>
                             {{ client_form.status }}
                             <div class="invalid-feedback" id="status_error"></div>
                         </div>
@@ -348,43 +348,73 @@ document.addEventListener('DOMContentLoaded', function() {
     let requestInFlight = false;
     let loadingModalInstance = null;
 
-    // --------- FIXED Bootstrap modal helpers ----------
-    function showLoading() {
+    // Modal helpers (Bootstrap 5 safe)
+    function createLoadingInstance() {
         const el = document.getElementById('loadingModal');
-        if (!el) return;
+        if (!el) return null;
+        // If an instance already exists (from previous show), reuse it
+        const existing = bootstrap.Modal.getInstance(el);
+        if (existing) return existing;
+        return new bootstrap.Modal(el, { backdrop: 'static', keyboard: false });
+    }
 
-        // Clean up any existing modal state first
-        cleanupModalState();
-
-        if (!loadingModalInstance) {
-            loadingModalInstance = new bootstrap.Modal(el, {
-                backdrop: 'static',
-                keyboard: false
-            });
+    function showLoading() {
+        try {
+            // Ensure we have a valid instance and call .show()
+            if (!loadingModalInstance) {
+                loadingModalInstance = createLoadingInstance();
+            }
+            if (loadingModalInstance) {
+                loadingModalInstance.show();
+            } else {
+                // Fallback: if modal element missing, add a simple overlay class (very defensive)
+                console.warn('Loading modal element not found.');
+            }
+        } catch (err) {
+            console.error('showLoading error', err);
         }
-        loadingModalInstance.show();
     }
 
     function hideLoading() {
-        console.log('hideLoading called');
+        try {
+            console.log('[loader] hideLoading called. instance:', !!loadingModalInstance);
+            // Prefer the Bootstrap API
+            const el = document.getElementById('loadingModal');
+            const inst = loadingModalInstance || (el ? bootstrap.Modal.getInstance(el) : null);
 
-        // Method 1: Use Bootstrap instance
-        if (loadingModalInstance) {
-            try {
-                loadingModalInstance.hide();
-            } catch (e) {
-                console.log('Error hiding with instance:', e);
+            if (inst && typeof inst.hide === 'function') {
+                inst.hide();
+                console.log('[loader] called instance.hide()');
+            } else {
+                console.log('[loader] no bootstrap instance found — will perform manual cleanup');
             }
-        }
 
-        // Method 2: Force cleanup
-        cleanupModalState();
+            // clear local reference so next show recreates it
+            loadingModalInstance = null;
 
-        // Method 3: Direct DOM manipulation as final fallback
-        const loadingModal = document.getElementById('loadingModal');
-        if (loadingModal) {
-            loadingModal.classList.remove('show');
-            loadingModal.style.display = 'none';
+            // Slight delay then ensure backdrop/body cleaned (idempotent)
+            setTimeout(() => {
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                if (backdrops.length > 0) {
+                    console.warn('[loader] removing leftover backdrops:', backdrops.length);
+                    backdrops.forEach(b => b.remove());
+                }
+                if (document.body.classList.contains('modal-open')) {
+                    console.warn('[loader] removing modal-open class from body');
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                }
+            }, 120);
+        } catch (err) {
+            console.error('[loader] hideLoading error', err);
+            // last-resort cleanup
+            setTimeout(() => {
+                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 150);
         }
     }
 
@@ -673,18 +703,28 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const res = await fetch('{% url "save_individual_client" %}', {
                 method: 'POST',
-                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
+
             const data = await res.json();
-            hideLoading();
-            if (data.success) {
-                showSuccessModal(data.client_id, data.client_name);
-            } else {
-                handleFormErrors(data);
-            }
+
+            // Add a small delay to ensure loading is hidden
+            setTimeout(() => {
+                hideLoading();
+
+                if (data.success) {
+                    showSuccessModal(data.client_id, data.client_name);
+                } else {
+                    handleFormErrors(data);
+                }
+            }, 300);
+
         } catch (err) {
             console.error('finalizeIndividualClient error:', err);
-            hideLoading();
+            setTimeout(hideLoading, 300);
             showTemporaryAlert('Network error occurred while finalizing.', 'error');
         }
     }
@@ -737,31 +777,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --------- FIXED: Business structure form loading ----------
     function showBusinessStructureForm(data) {
         console.log('Loading business structure form...');
 
         currentState = 'business';
         destroySelect2(clientBasicForm);
 
-        // Hide basic form and show business form
         clientBasicForm.style.display = 'none';
         businessStructureForm.style.display = 'block';
         businessStructureForm.innerHTML = data.form_html;
 
-        // HIDE LOADING - This is the key fix
-        setTimeout(() => {
-            hideLoading();
-        }, 100);
+        // Best-effort: wait for DOM render + any inline scripts to run, then hide loader.
+        // Use double requestAnimationFrame then fallback timeouts to be robust.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                try { hideLoading(); } catch(e){ console.error(e); }
+            });
+        });
+
+        // Fallbacks in case something re-adds backdrop after rapid DOM manipulation
+        setTimeout(() => { hideLoading(); }, 250);
+        setTimeout(() => { hideLoading(); }, 600);
 
         if (formTitle) formTitle.style.display = 'none';
 
-        // Initialize the new form
+        // initialize after a small delay (keeps init and hide separate)
         setTimeout(() => {
             initializeSelect2(businessStructureForm);
             setupRealTimeValidation();
-            attachBusinessFormHandlers();
-        }, 150);
+            attachBusinessFormHandlers();  // will call hideLoading safety internally
+        }, 140);
 
         updateSubmitButtons();
         window.scrollTo(0, 0);
@@ -770,22 +815,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function attachBusinessFormHandlers() {
+        // Safety: Ensure loading is hidden when business form handlers are attached
+        setTimeout(() => {
+            try { hideLoading(); } catch(e){ console.error(e); }
+        }, 200);
+
         const backButton = businessStructureForm.querySelector('#backButton');
         if (backButton) {
+            backButton.removeEventListener('click', goBackToBasicForm);
             backButton.addEventListener('click', goBackToBasicForm);
         }
 
         const businessForm = businessStructureForm.querySelector('#businessStructureDetailsForm');
         if (businessForm) {
+            businessForm.removeEventListener('submit', function(e){});
             businessForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 submitBusinessStructureForm(businessForm);
             });
 
+            // Add file upload feedback for all file inputs in business form
+            const fileInputs = businessForm.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+                // remove previous to prevent duplicate handlers
+                input.replaceWith(input.cloneNode(true));
+                const fresh = businessForm.querySelector(`input[name="${input.name}"]`);
+                if (!fresh) return;
+                fresh.addEventListener('change', function(e) {
+                    const feedback = this.closest('.col-md-6')?.querySelector('.file-upload-feedback');
+                    if (feedback && this.files.length > 0) {
+                        feedback.style.display = 'block';
+                        const fileName = this.files[0].name;
+                        feedback.innerHTML = `<small class="text-success"><i class="bi bi-check-circle"></i> ${fileName}</small>`;
+                    } else if (feedback) {
+                        feedback.style.display = 'none';
+                    }
+                });
+            });
+
             const inputs = businessForm.querySelectorAll('input, select, textarea');
             inputs.forEach(input => {
-                input.removeEventListener('blur', validateField);
-                input.removeEventListener('input', clearFieldError);
+                try {
+                    input.removeEventListener('blur', validateField);
+                    input.removeEventListener('input', clearFieldError);
+                } catch(e){}
                 input.addEventListener('blur', validateField);
                 input.addEventListener('input', clearFieldError);
             });
@@ -796,10 +869,14 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading();
         try {
             const formData = new FormData(form);
+
             const res = await fetch('{% url "save_client_complete" %}', {
                 method: 'POST',
-                body: formData,
-                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+                body: formData,  // FormData automatically sets multipart/form-data
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    // Don't set Content-Type - let browser set it with boundary
+                }
             });
 
             if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -828,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (formTitle) {
             formTitle.style.display = 'block';
-            formTitle.innerHTML = 'Client Basic Information <small class="text-muted">(* indicates required field)</small>';
+            formTitle.innerHTML = 'Client Basic Information <small class="text-muted">(<span class="text-danger">*</span> indicates required field)</small>';
         }
 
         setTimeout(() => {
@@ -873,7 +950,44 @@ document.addEventListener('DOMContentLoaded', function() {
             showTemporaryAlert('An unknown error occurred.', 'error');
         }
     }
+    // File Upload
+    function attachBusinessFormHandlers() {
+        const backButton = businessStructureForm.querySelector('#backButton');
+        if (backButton) {
+            backButton.addEventListener('click', goBackToBasicForm);
+        }
 
+        const businessForm = businessStructureForm.querySelector('#businessStructureDetailsForm');
+        if (businessForm) {
+            businessForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitBusinessStructureForm(businessForm);
+            });
+
+            // Add file upload feedback for all file inputs in business form
+            const fileInputs = businessForm.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+                input.addEventListener('change', function(e) {
+                    const feedback = this.closest('.col-md-6')?.querySelector('.file-upload-feedback');
+                    if (feedback && this.files.length > 0) {
+                        feedback.style.display = 'block';
+                        const fileName = this.files[0].name;
+                        feedback.innerHTML = `<small class="text-success"><i class="bi bi-check-circle"></i> ${fileName}</small>`;
+                    } else if (feedback) {
+                        feedback.style.display = 'none';
+                    }
+                });
+            });
+
+            const inputs = businessForm.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.removeEventListener('blur', validateField);
+                input.removeEventListener('input', clearFieldError);
+                input.addEventListener('blur', validateField);
+                input.addEventListener('input', clearFieldError);
+            });
+        }
+    }
     // --------- temporary alert ----------
     function showTemporaryAlert(message, type) {
         const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
@@ -898,18 +1012,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --------- client type change ----------
     function attachClientTypeChange() {
-        try { $('#'+clientTypeSelectId).off('change'); } catch(e){}
-        $('#'+clientTypeSelectId).on('change', function() {
+        // Remove any existing event listeners
+        try {
+            $('#'+clientTypeSelectId).off('change.select2-client-type');
+        } catch(e){}
+
+        // Add new event listener with namespace
+        $('#'+clientTypeSelectId).on('change.select2-client-type', function() {
+            console.log('Client type changed to:', this.value);
             toggleBusinessStructure();
             updateSubmitButtons();
         });
+
+        // Also trigger initially to set correct state
+        setTimeout(() => {
+            toggleBusinessStructure();
+            updateSubmitButtons();
+        }, 200);
     }
 
     function toggleBusinessStructure() {
-        if (!businessStructureField) return;
-        businessStructureField.style.display = 'none';
-        if (clientTypeField && clientTypeField.value && clientTypeField.value.toLowerCase() === 'entity') {
+        if (!businessStructureField || !clientTypeField) return;
+
+        const clientType = clientTypeField.value ? clientTypeField.value.toLowerCase() : '';
+        console.log('Toggle business structure for client type:', clientType);
+
+        if (clientType === 'entity') {
             businessStructureField.style.display = 'block';
+        } else {
+            businessStructureField.style.display = 'none';
+            // Clear business structure value for non-entity types
+            const businessStructureFieldInput = document.getElementById('id_business_structure');
+            if (businessStructureFieldInput) {
+                businessStructureFieldInput.value = '';
+            }
         }
     }
 
@@ -949,7 +1085,7 @@ document.addEventListener('DOMContentLoaded', function() {
         businessStructureForm.innerHTML = '';
         if (formTitle) {
             formTitle.style.display = 'block';
-            formTitle.innerHTML = 'Client Basic Information <small class="text-muted">(* indicates required field)</small>';
+            formTitle.innerHTML = 'Client Basic Information <small class="text-muted">(<span class="text-danger">*</span> indicates required field)</small>';
         }
 
         setTimeout(() => {

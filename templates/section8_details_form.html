@@ -5,7 +5,7 @@
     <h6 class="card-title mb-3">Section 8 Company Details <small class="text-muted">(* indicates required field)</small></h6>
 
     <div class="col-md-6">
-        <label for="{{ form.section8_company_name.id_for_label }}" class="form-label">Company Name *</label>
+        <label for="{{ form.section8_company_name.id_for_label }}" class="form-label">Company Name <span class="text-danger">*</span></label>
         {{ form.section8_company_name }}
         {% if form.section8_company_name.errors %}
             <div class="text-danger small">{{ form.section8_company_name.errors }}</div>
@@ -13,7 +13,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.registration_no_section8.id_for_label }}" class="form-label">Registration Number *</label>
+        <label for="{{ form.registration_no_section8.id_for_label }}" class="form-label">Registration Number <span class="text-danger">*</span></label>
         {{ form.registration_no_section8 }}
         {% if form.registration_no_section8.errors %}
             <div class="text-danger small">{{ form.registration_no_section8.errors }}</div>
@@ -21,7 +21,7 @@
     </div>
 
     <div class="col-12">
-        <label for="{{ form.registered_office_address_s8.id_for_label }}" class="form-label">Registered Office Address *</label>
+        <label for="{{ form.registered_office_address_s8.id_for_label }}" class="form-label">Registered Office Address <span class="text-danger">*</span></label>
         {{ form.registered_office_address_s8 }}
         {% if form.registered_office_address_s8.errors %}
             <div class="text-danger small">{{ form.registered_office_address_s8.errors }}</div>
@@ -29,7 +29,7 @@
     </div>
 
     <div class="col-12">
-        <label for="{{ form.object_clause.id_for_label }}" class="form-label">Object Clause *</label>
+        <label for="{{ form.object_clause.id_for_label }}" class="form-label">Object Clause <span class="text-danger">*</span></label>
         {{ form.object_clause }}
         {% if form.object_clause.errors %}
             <div class="text-danger small">{{ form.object_clause.errors }}</div>
@@ -41,7 +41,7 @@
         <div class="form-check mt-3">
             {{ form.whether_licence_obtained }}
             <label class="form-check-label" for="{{ form.whether_licence_obtained.id_for_label }}">
-                Whether Licence Obtained
+                Whether Licence Obtained <span class="text-danger">*</span>
             </label>
         </div>
         {% if form.whether_licence_obtained.errors %}
@@ -50,7 +50,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.date_of_registration_s8.id_for_label }}" class="form-label">Date of Registration *</label>
+        <label for="{{ form.date_of_registration_s8.id_for_label }}" class="form-label">Date of Registration <span class="text-danger">*</span></label>
         {{ form.date_of_registration_s8 }}
         {% if form.date_of_registration_s8.errors %}
             <div class="text-danger small">{{ form.date_of_registration_s8.errors }}</div>

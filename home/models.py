@@ -44,7 +44,7 @@ class Client(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='clients_assigned'
     )
     client_type = models.CharField(max_length=20, choices=CLIENT_TYPE_CHOICES)
-    business_structure = models.CharField(max_length=50, choices=BUSINESS_STRUCTURE_CHOICES)
+    business_structure = models.CharField(max_length=50, choices=BUSINESS_STRUCTURE_CHOICES, blank=True, null=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Prospect')
     remarks = models.TextField(blank=True, null=True)
     din_no = models.CharField(max_length=50, blank=True, null=True)

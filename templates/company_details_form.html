@@ -5,7 +5,7 @@
     <h6 class="card-title mb-3">Company Details <small class="text-muted">(* indicates required field)</small></h6>
 
     <div class="col-md-6">
-        <label for="{{ form.company_type.id_for_label }}" class="form-label">Company Type *</label>
+        <label for="{{ form.company_type.id_for_label }}" class="form-label">Company Type <span class="text-danger">*</span></label>
         {{ form.company_type }}
         {% if form.company_type.errors %}
             <div class="text-danger small">{{ form.company_type.errors }}</div>
@@ -13,7 +13,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.proposed_company_name.id_for_label }}" class="form-label">Proposed Company Name *</label>
+        <label for="{{ form.proposed_company_name.id_for_label }}" class="form-label">Proposed Company Name <span class="text-danger">*</span></label>
         {{ form.proposed_company_name }}
         {% if form.proposed_company_name.errors %}
             <div class="text-danger small">{{ form.proposed_company_name.errors }}</div>
@@ -21,7 +21,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.cin.id_for_label }}" class="form-label">CIN (Corporate Identification Number) *</label>
+        <label for="{{ form.cin.id_for_label }}" class="form-label">CIN (Corporate Identification Number) <span class="text-danger">*</span></label>
         {{ form.cin }}
         {% if form.cin.errors %}
             <div class="text-danger small">{{ form.cin.errors }}</div>
@@ -29,7 +29,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.authorised_share_capital.id_for_label }}" class="form-label">Authorised Share Capital (₹) *</label>
+        <label for="{{ form.authorised_share_capital.id_for_label }}" class="form-label">Authorised Share Capital (₹) <span class="text-danger">*</span></label>
         {{ form.authorised_share_capital }}
         {% if form.authorised_share_capital.errors %}
             <div class="text-danger small">{{ form.authorised_share_capital.errors }}</div>
@@ -37,7 +37,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.paid_up_share_capital.id_for_label }}" class="form-label">Paid-up Share Capital (₹) *</label>
+        <label for="{{ form.paid_up_share_capital.id_for_label }}" class="form-label">Paid-up Share Capital (₹) <span class="text-danger">*</span></label>
         {{ form.paid_up_share_capital }}
         {% if form.paid_up_share_capital.errors %}
             <div class="text-danger small">{{ form.paid_up_share_capital.errors }}</div>
@@ -45,7 +45,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.number_of_directors.id_for_label }}" class="form-label">Number of Directors *</label>
+        <label for="{{ form.number_of_directors.id_for_label }}" class="form-label">Number of Directors <span class="text-danger">*</span></label>
         {{ form.number_of_directors }}
         {% if form.number_of_directors.errors %}
             <div class="text-danger small">{{ form.number_of_directors.errors }}</div>
@@ -53,7 +53,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.number_of_shareholders.id_for_label }}" class="form-label">Number of Shareholders *</label>
+        <label for="{{ form.number_of_shareholders.id_for_label }}" class="form-label">Number of Shareholders <span class="text-danger">*</span></label>
         {{ form.number_of_shareholders }}
         {% if form.number_of_shareholders.errors %}
             <div class="text-danger small">{{ form.number_of_shareholders.errors }}</div>
@@ -61,7 +61,7 @@
     </div>
 
     <div class="col-12">
-        <label for="{{ form.registered_office_address.id_for_label }}" class="form-label">Registered Office Address *</label>
+        <label for="{{ form.registered_office_address.id_for_label }}" class="form-label">Registered Office Address <span class="text-danger">*</span></label>
         {{ form.registered_office_address }}
         {% if form.registered_office_address.errors %}
             <div class="text-danger small">{{ form.registered_office_address.errors }}</div>
@@ -69,7 +69,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.date_of_incorporation.id_for_label }}" class="form-label">Date of Incorporation *</label>
+        <label for="{{ form.date_of_incorporation.id_for_label }}" class="form-label">Date of Incorporation <span class="text-danger">*</span></label>
         {{ form.date_of_incorporation }}
         {% if form.date_of_incorporation.errors %}
             <div class="text-danger small">{{ form.date_of_incorporation.errors }}</div>
@@ -77,7 +77,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.udyam_registration.id_for_label }}" class="form-label">Udyam Registration Number *</label>
+        <label for="{{ form.udyam_registration.id_for_label }}" class="form-label">Udyam Registration Number <span class="text-danger">*</span></label>
         {{ form.udyam_registration }}
         {% if form.udyam_registration.errors %}
             <div class="text-danger small">{{ form.udyam_registration.errors }}</div>
@@ -85,7 +85,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.directors.id_for_label }}" class="form-label">Directors *</label>
+        <label for="{{ form.directors.id_for_label }}" class="form-label">Directors <span class="text-danger">*</span></label>
         {{ form.directors }}
         {% if form.directors.errors %}
             <div class="text-danger small">{{ form.directors.errors }}</div>

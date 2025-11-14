@@ -5,7 +5,7 @@
     <h6 class="card-title mb-3">LLP (Limited Liability Partnership) Details <small class="text-muted">(* indicates required field)</small></h6>
 
     <div class="col-md-6">
-        <label for="{{ form.llp_name.id_for_label }}" class="form-label">LLP Name *</label>
+        <label for="{{ form.llp_name.id_for_label }}" class="form-label">LLP Name <span class="text-danger">*</span></label>
         {{ form.llp_name }}
         {% if form.llp_name.errors %}
             <div class="text-danger small">{{ form.llp_name.errors }}</div>
@@ -13,7 +13,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.llp_registration_no.id_for_label }}" class="form-label">LLP Registration Number *</label>
+        <label for="{{ form.llp_registration_no.id_for_label }}" class="form-label">LLP Registration Number <span class="text-danger">*</span></label>
         {{ form.llp_registration_no }}
         {% if form.llp_registration_no.errors %}
             <div class="text-danger small">{{ form.llp_registration_no.errors }}</div>
@@ -21,7 +21,7 @@
     </div>
 
     <div class="col-12">
-        <label for="{{ form.registered_office_address_llp.id_for_label }}" class="form-label">Registered Office Address *</label>
+        <label for="{{ form.registered_office_address_llp.id_for_label }}" class="form-label">Registered Office Address <span class="text-danger">*</span></label>
         {{ form.registered_office_address_llp }}
         {% if form.registered_office_address_llp.errors %}
             <div class="text-danger small">{{ form.registered_office_address_llp.errors }}</div>
@@ -29,16 +29,16 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.designated_partners.id_for_label }}" class="form-label">Designated Partners *</label>
+        <label for="{{ form.designated_partners.id_for_label }}" class="form-label">Designated Partners <span class="text-danger">*</span></label>
         {{ form.designated_partners }}
         {% if form.designated_partners.errors %}
             <div class="text-danger small">{{ form.designated_partners.errors }}</div>
         {% endif %}
-        <small class="form-text text-muted">Select designated partners from existing clients with DIN numbers (Hold Ctrl/Cmd to select multiple)</small>
+        <small class="form-text text-muted">Select designated partners from existing clients with DIN numbers</small>
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.paid_up_capital_llp.id_for_label }}" class="form-label">Paid-up Capital (₹) *</label>
+        <label for="{{ form.paid_up_capital_llp.id_for_label }}" class="form-label">Paid-up Capital (₹) <span class="text-danger">*</span></label>
         {{ form.paid_up_capital_llp }}
         {% if form.paid_up_capital_llp.errors %}
             <div class="text-danger small">{{ form.paid_up_capital_llp.errors }}</div>
@@ -46,7 +46,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="{{ form.date_of_registration_llp.id_for_label }}" class="form-label">Date of Registration *</label>
+        <label for="{{ form.date_of_registration_llp.id_for_label }}" class="form-label">Date of Registration <span class="text-danger">*</span></label>
         {{ form.date_of_registration_llp }}
         {% if form.date_of_registration_llp.errors %}
             <div class="text-danger small">{{ form.date_of_registration_llp.errors }}</div>
@@ -56,9 +56,13 @@
     <div class="col-md-6">
         <label for="{{ form.llp_agreement_file.id_for_label }}" class="form-label">LLP Agreement File</label>
         {{ form.llp_agreement_file }}
+        <div class="file-upload-feedback mt-1" style="display: none;">
+            <small class="text-success"><i class="bi bi-check-circle"></i> File selected</small>
+        </div>
         {% if form.llp_agreement_file.errors %}
             <div class="text-danger small">{{ form.llp_agreement_file.errors }}</div>
         {% endif %}
+        <small class="form-text text-muted">Upload LLP agreement document (PDF, DOC, DOCX, JPG, PNG - max 10MB)</small>
     </div>
 
     <div class="col-12">
@@ -68,3 +72,23 @@
         </div>
     </div>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // File upload feedback
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const feedback = this.closest('.col-md-6').querySelector('.file-upload-feedback');
+            if (this.files.length > 0) {
+                feedback.style.display = 'block';
+                // Show file name
+                const fileName = this.files[0].name;
+                feedback.innerHTML = `<small class="text-success"><i class="bi bi-check-circle"></i> ${fileName}</small>`;
+            } else {
+                feedback.style.display = 'none';
+            }
+        });
+    }
+});
+</script>

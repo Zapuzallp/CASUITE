@@ -2,7 +2,7 @@ from django import forms
 from .models import Client, CompanyDetails, LLPDetails, OPCDetails, Section8CompanyDetails, HUFDetails, ClientDocumentUpload
 from datetime import date
 from django.contrib.auth.models import User
-import json
+import os
 
 class ClientDocumentUploadForm(forms.ModelForm):
     class Meta:
@@ -27,8 +27,13 @@ class ClientForm(forms.ModelForm):
         self.fields['business_structure'].required = False
         self.fields['business_structure'].widget.attrs.update({'class': 'form-select'})
 
-        self.fields['assigned_ca'].queryset = User.objects.filter(is_staff=True)
+        if 'assigned_ca' in self.fields:
+            self.fields['assigned_ca'].queryset = User.objects.filter(
+                is_staff=True,
+                is_active=True
+            ).order_by('first_name', 'last_name')
 
+        self.fields['assigned_ca'].label_from_instance = lambda obj: f"{obj.first_name} {obj.last_name}".strip() or obj.username
         # Add Bootstrap classes to all form fields
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput) or isinstance(field.widget, forms.EmailInput):
@@ -47,6 +52,7 @@ class ClientForm(forms.ModelForm):
                               'client_type', 'status']:
                 field.widget.attrs.update({'required': 'required'})
                 field.widget.attrs.update({'data-required': 'true'})
+                field.label = f'{field.label} <span class="text-danger">*</span>'
 
     class Meta:
         model = Client
@@ -157,15 +163,41 @@ class CompanyDetailsForm(forms.ModelForm):
             elif isinstance(field.widget, forms.FileInput):
                 field.widget.attrs.update({'class': 'form-control'})
             elif isinstance(field.widget, forms.SelectMultiple):
-                # Add Select2 class for multi-select
                 field.widget.attrs.update({
                     'class': 'form-control select2-multiple',
                     'data-placeholder': 'Select directors...'
                 })
 
-            # Add required attribute for all fields except files
             if field_name not in ['moa_file', 'aoa_file']:
                 field.widget.attrs.update({'required': 'required'})
+
+    def clean_moa_file(self):
+        file = self.cleaned_data.get('moa_file')
+        if file:
+            if file.size > 10 * 1024 * 1024:
+                raise forms.ValidationError("File size must be under 10MB")
+
+            valid_extensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+            ext = os.path.splitext(file.name)[1].lower()
+            if ext not in valid_extensions:
+                raise forms.ValidationError(
+                    f"Unsupported file extension. Supported formats: {', '.join(valid_extensions)}"
+                )
+        return file
+
+    def clean_aoa_file(self):
+        file = self.cleaned_data.get('aoa_file')
+        if file:
+            if file.size > 10 * 1024 * 1024:
+                raise forms.ValidationError("File size must be under 10MB")
+
+            valid_extensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+            ext = os.path.splitext(file.name)[1].lower()
+            if ext not in valid_extensions:
+                raise forms.ValidationError(
+                    f"Unsupported file extension. Supported formats: {', '.join(valid_extensions)}"
+                )
+        return file
 
     class Meta:
         model = CompanyDetails
@@ -194,6 +226,14 @@ class CompanyDetailsForm(forms.ModelForm):
             'date_of_incorporation': forms.DateInput(attrs={'type': 'date'}),
             'udyam_registration': forms.TextInput(attrs={'placeholder': 'Enter Udyam registration number'}),
             'directors': forms.SelectMultiple(attrs={'class': 'form-select'}),
+            'moa_file': forms.FileInput(attrs={
+                'accept': '.pdf,.doc,.docx,.jpg,.jpeg,.png',
+                'class': 'form-control'
+            }),
+            'aoa_file': forms.FileInput(attrs={
+                'accept': '.pdf,.doc,.docx,.jpg,.jpeg,.png',
+                'class': 'form-control'
+            }),
         }
         error_messages = {
             'company_type': {'required': 'Company type is required.'},
@@ -240,6 +280,23 @@ class LLPDetailsForm(forms.ModelForm):
             if field_name not in ['llp_agreement_file']:
                 field.widget.attrs.update({'required': 'required'})
 
+    def clean_llp_agreement_file(self):
+        file = self.cleaned_data.get('llp_agreement_file')
+        if file:
+            # Validate file size (10MB limit)
+            if file.size > 10 * 1024 * 1024:
+                raise forms.ValidationError("File size must be under 10MB")
+
+            # Validate file extension
+            valid_extensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+            ext = os.path.splitext(file.name)[1].lower()
+            if ext not in valid_extensions:
+                raise forms.ValidationError(
+                    f"Unsupported file extension. Supported formats: {', '.join(valid_extensions)}"
+                )
+
+        return file
+
     class Meta:
         model = LLPDetails
         fields = [
@@ -259,6 +316,10 @@ class LLPDetailsForm(forms.ModelForm):
             'paid_up_capital_llp': forms.NumberInput(attrs={'placeholder': '0.00', 'step': '0.01', 'min': '0'}),
             'date_of_registration_llp': forms.DateInput(attrs={'type': 'date'}),
             'designated_partners': forms.SelectMultiple(attrs={'class': 'form-select'}),
+            'llp_agreement_file': forms.FileInput(attrs={
+                'accept': '.pdf,.doc,.docx,.jpg,.jpeg,.png',
+                'class': 'form-control'
+            }),
         }
         error_messages = {
             'llp_name': {'required': 'LLP name is required.'},
@@ -388,7 +449,6 @@ class HUFDetailsForm(forms.ModelForm):
             elif isinstance(field.widget, forms.FileInput):
                 field.widget.attrs.update({'class': 'form-control'})
 
-            # Add required attribute for all fields except optional ones
             if field_name not in ['deed_of_declaration_file', 'remarks', 'bank_account_details']:
                 field.widget.attrs.update({'required': 'required'})
 
@@ -432,6 +492,20 @@ class HUFDetailsForm(forms.ModelForm):
             'residential_address': {'required': 'Residential address is required.'},
             'business_activity': {'required': 'Business activity is required.'},
         }
+
+    def clean_deed_of_declaration_file(self):
+        file = self.cleaned_data.get('deed_of_declaration_file')
+        if file:
+            if file.size > 10 * 1024 * 1024:
+                raise forms.ValidationError("File size must be under 10MB")
+
+            valid_extensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+            ext = os.path.splitext(file.name)[1].lower()
+            if ext not in valid_extensions:
+                raise forms.ValidationError(
+                    f"Unsupported file extension. Supported formats: {', '.join(valid_extensions)}"
+                )
+        return file
 
     def clean_pan_huf(self):
         pan_huf = self.cleaned_data.get('pan_huf', '').upper().strip()
