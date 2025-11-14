@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DocumentMaster, DocumentRequest, RequestedDocument, ClientDocumentUpload
+from .models import DocumentMaster, DocumentRequest, RequestedDocument, ClientDocumentUpload, Client, PrivateLimitedDetails, ITRDetails, ClientService, ServiceType, GSTDetails, AuditDetails
 
 admin.site.site_header = 'CA Suite 2.0 Admin'
 admin.site.site_title = 'CA Suite 2.0'
@@ -49,3 +49,12 @@ class ClientDocumentUploadAdmin(admin.ModelAdmin):
         'client__email',
         'requested_document__document_master__document_name',
     )
+
+
+admin.site.register(Client)
+admin.site.register(PrivateLimitedDetails)
+admin.site.register(ClientService)
+admin.site.register(ITRDetails)
+admin.site.register(ServiceType)
+admin.site.register(AuditDetails)
+admin.site.register(GSTDetails)

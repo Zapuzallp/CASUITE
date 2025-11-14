@@ -62,6 +62,7 @@ class CompanyDetails(models.Model):
         ('Private Limited', 'Private Limited'),
         ('Public Limited', 'Public Limited'),
         ('One Person Company', 'One Person Company'),
+        ('Limited Liability Partnership', 'Limited Liability Partnership')
     ]
 
     client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='company_details')
@@ -86,6 +87,36 @@ class CompanyDetails(models.Model):
     def __str__(self):
         return self.proposed_company_name
 
+
+class PrivateLimitedDetails(models.Model):
+
+    proposed_company_name = models.CharField(max_length=255)
+    CIN = models.CharField(max_length=50, blank=True, null=True)  # or "to be applied"
+
+    authorised_share_capital = models.DecimalField(max_digits=15, decimal_places=2)
+    paid_up_share_capital = models.DecimalField(max_digits=15, decimal_places=2)
+
+    number_of_directors = models.PositiveIntegerField()
+    number_of_shareholders = models.PositiveIntegerField()
+
+    registered_office_address = models.TextField()
+    date_of_incorporation = models.DateField(blank=True, null=True)
+
+    # MSME Udyam
+    udyam_registration = models.CharField(max_length=100, blank=True, null=True)
+
+    # directors = multi-select referencing Client table (where DIN != null)
+    directors = models.ManyToManyField(
+        'Client',
+        related_name='companies_directed'
+    )
+
+    # File uploads
+    MOA_file = models.FileField(upload_to='company_docs/moa/', blank=True, null=True)
+    AOA_file = models.FileField(upload_to='company_docs/aoa/', blank=True, null=True)
+
+    def __str__(self):
+        return self.proposed_company_name
 
 class LLPDetails(models.Model):
     client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='llp_details')

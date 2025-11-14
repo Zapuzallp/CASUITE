@@ -128,8 +128,8 @@
                             </div>
                         </div>
                         <div class="col">
-                            <h2 class="mb-1 fw-bold">Rajesh Kumar Sharma</h2>
-                            <p class="mb-2 opacity-75">PAN: ABCDE1234F | Client ID: CLT-2024-001</p>
+                            <h2 class="mb-1 fw-bold">{{client.client_name}}</h2>
+                            <p class="mb-2 opacity-75">PAN: {{client.pan_no}} | Client ID: CLT-2024-001</p>
                             <div class="d-flex flex-wrap gap-2">
                                 <span class="badge bg-success badge-status">Active</span>
                                 <span class="badge bg-info badge-status">Individual</span>
@@ -211,7 +211,11 @@
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-bs-toggle="pill" href="#companies">
-                                        <i class="bi bi-building me-2"></i>Companies
+                                        <i class="bi bi-building me-2"></i>{% if client.client_type == "Entity" %}
+                                        Directors
+                                        {% else %}
+                                        Companies
+                                        {% endif %}
                                     </a>
                                 </li>
                                 <li class="nav-item">
@@ -285,37 +289,37 @@
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Full Name:</span>
-                                                <span class="ms-auto">Rajesh Kumar Sharma</span>
+                                                <span class="ms-auto">{{client.client_name}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">PAN Number:</span>
-                                                <span class="ms-auto">ABCDE1234F</span>
+                                                <span class="ms-auto">{{client.pan_no}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Aadhar Number:</span>
-                                                <span class="ms-auto">XXXX-XXXX-5678</span>
+                                                <span class="ms-auto">{{client.aadhar}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Email:</span>
-                                                <span class="ms-auto">rajesh.sharma@example.com</span>
+                                                <span class="ms-auto">{{client.email}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Phone:</span>
-                                                <span class="ms-auto">+91 98765 43210</span>
+                                                <span class="ms-auto">+91 {{client.phone_number}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">DIN Number:</span>
-                                                <span class="ms-auto">DIN12345678</span>
+                                                <span class="ms-auto">{{client.din_no}}</span>
                                             </div>
                                         </div>
                                         <div class="col-12">
@@ -323,7 +327,7 @@
                                             <div class="d-flex">
                                                 <span class="info-label">Address:</span>
                                                 <span class="ms-auto text-end">
-                                                    123, MG Road, Bangalore, Karnataka - 560001, India
+                                                    {{client.address_line1}}, {{client.city}}, {{client.state}},{{client.postal_code}}, {{client.country}}
                                                 </span>
                                             </div>
                                         </div>
@@ -331,26 +335,26 @@
                                             <div class="d-flex">
                                                 <span class="info-label">Client Type:</span>
                                                 <span class="ms-auto"><span
-                                                        class="badge bg-info">Individual</span></span>
+                                                        class="badge bg-info">{{client.client_type}}</span></span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Status:</span>
                                                 <span class="ms-auto"><span
-                                                        class="badge bg-success">Active</span></span>
+                                                        class="badge bg-success">{{client.status}}</span></span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Engagement Date:</span>
-                                                <span class="ms-auto">Jan 15, 2022</span>
+                                                <span class="ms-auto">{{client.date_of_engagement}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Assigned CA:</span>
-                                                <span class="ms-auto">CA Priya Mehta</span>
+                                                <span class="ms-auto">{{client.assigned_ca}}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -369,13 +373,13 @@
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Primary Contact:</span>
-                                                <span class="ms-auto">+91 98765 43210</span>
+                                                <span class="ms-auto">+91 {{client.phone_number}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Alternate Contact:</span>
-                                                <span class="ms-auto">+91 98765 43211</span>
+                                                <span class="ms-auto">+91 {{client.phone_number}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
@@ -395,6 +399,7 @@
                             </div>
                         </div>
 
+                        {% if client.client_type == "Individual" %}
                         <!-- Companies Tab -->
                         <div class="tab-pane fade" id="companies">
                             <div class="card shadow-sm mb-4">
@@ -409,14 +414,16 @@
                                     </div>
                                 </div>
                                 <div class="card-body p-4">
+                                    {% if PVT %}
+                                    {% for company in PVT %}
                                     <!-- Company 1 -->
                                     <div class="company-card card mb-3">
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col-md-8">
-                                                    <h5 class="fw-bold mb-2">Tech Innovators Private Limited</h5>
+                                                    <h5 class="fw-bold mb-2">{{company.proposed_company_name}}</h5>
                                                     <p class="text-muted mb-2"><strong>CIN:</strong>
-                                                        U72900KA2020PTC135790</p>
+                                                        {{company.CIN}}</p>
                                                     <p class="text-muted mb-2"><strong>Type:</strong> Private Limited
                                                     </p>
                                                     <div class="mb-2">
@@ -425,9 +432,9 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-4 text-end">
-                                                    <p class="mb-2"><strong>Incorporation:</strong> Jan 2020</p>
-                                                    <p class="mb-2"><strong>Authorized Capital:</strong> ₹10,00,000</p>
-                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹5,00,000</p>
+                                                    <p class="mb-2"><strong>Incorporation:</strong> {{company.date_of_incorporation}}</p>
+                                                    <p class="mb-2"><strong>Authorized Capital:</strong> ₹{{company.authorised_share_capital}}</p>
+                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹{{company.paid_up_share_capital}}</p>
                                                 </div>
                                             </div>
                                             <hr>
@@ -444,14 +451,18 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% endfor %}
+                                    {% endif %}
 
+                                    {% if LLP %}
+                                    {% for company in LLP %}
                                     <!-- Company 2 -->
                                     <div class="company-card card mb-3">
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col-md-8">
-                                                    <h5 class="fw-bold mb-2">Digital Solutions LLP</h5>
-                                                    <p class="text-muted mb-2"><strong>LLP IN:</strong> AAL-5678</p>
+                                                    <h5 class="fw-bold mb-2">{{company.llp_name}}</h5>
+                                                    <p class="text-muted mb-2"><strong>LLP IN:</strong> {{company.llp_registration_no}}</p>
                                                     <p class="text-muted mb-2"><strong>Type:</strong> Limited Liability
                                                         Partnership</p>
                                                     <div class="mb-2">
@@ -460,9 +471,9 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-4 text-end">
-                                                    <p class="mb-2"><strong>Registration:</strong> Mar 2021</p>
-                                                    <p class="mb-2"><strong>Capital:</strong> ₹3,00,000</p>
-                                                    <p class="mb-2"><strong>Partners:</strong> 2</p>
+                                                    <p class="mb-2"><strong>Registration:</strong> {{company.date_of_registration_llp}}</p>
+                                                    <p class="mb-2"><strong>Capital:</strong> ₹{{company.paid_up_capital_llp}}</p>
+                                                    <p class="mb-2"><strong>Partners:</strong> {{company.designated_partners.count}}</p>
                                                 </div>
                                             </div>
                                             <hr>
@@ -479,15 +490,19 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% endfor %}
+                                    {% endif %}
 
+                                    {% if OPC %}
+                                    {% for company in OPC %}
                                     <!-- Company 3 -->
                                     <div class="company-card card">
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col-md-8">
-                                                    <h5 class="fw-bold mb-2">Sharma Enterprises (OPC)</h5>
+                                                    <h5 class="fw-bold mb-2">{{company.opc_name}}</h5>
                                                     <p class="text-muted mb-2"><strong>CIN:</strong>
-                                                        U74999DL2019OPC350123</p>
+                                                        {{company.opc_cin}}</p>
                                                     <p class="text-muted mb-2"><strong>Type:</strong> One Person Company
                                                     </p>
                                                     <div class="mb-2">
@@ -496,9 +511,9 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-4 text-end">
-                                                    <p class="mb-2"><strong>Incorporation:</strong> Dec 2019</p>
+                                                    <p class="mb-2"><strong>Incorporation:</strong> {{company.date_of_incorporation_opc}}</p>
                                                     <p class="mb-2"><strong>Authorized Capital:</strong> ₹5,00,000</p>
-                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹2,00,000</p>
+                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹{{company.paid_up_share_capital_opc}}</p>
                                                 </div>
                                             </div>
                                             <hr>
@@ -515,12 +530,17 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% endfor %}
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
 
                         <!-- Services Tab -->
                         <div class="tab-pane fade" id="services">
+
+                            {% if ITR %}
                             <!-- ITR Services -->
                             <div class="card shadow-sm mb-4">
                                 <div class="card-header bg-info text-white py-3">
@@ -542,48 +562,33 @@
                                             </tr>
                                             </thead>
                                             <tbody>
+
+                                            {% for itr in ITR %}
                                             <tr>
-                                                <td><strong>2024-25</strong></td>
-                                                <td>ITR-2</td>
+                                                <td><strong>{{itr.assessment_year}}</strong></td>
+                                                <td>{{itr.itr_type}}</td>
                                                 <td><span class="badge bg-warning text-dark">In Progress</span></td>
                                                 <td>-</td>
-                                                <td>₹5,000</td>
+                                                <td>₹{{itr.client_service.agreed_fee}}</td>
                                                 <td>
                                                     <button class="btn btn-sm btn-outline-primary action-btn">
                                                         <i class="bi bi-pencil"></i> Edit
                                                     </button>
                                                 </td>
                                             </tr>
-                                            <tr>
-                                                <td><strong>2023-24</strong></td>
-                                                <td>ITR-2</td>
-                                                <td><span class="badge bg-success">Filed</span></td>
-                                                <td>ACK123456789</td>
-                                                <td>₹4,500</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-eye"></i> View
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>2022-23</strong></td>
-                                                <td>ITR-1</td>
-                                                <td><span class="badge bg-success">Filed</span></td>
-                                                <td>ACK987654321</td>
-                                                <td>₹4,000</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-eye"></i> View
-                                                    </button>
-                                                </td>
-                                            </tr>
+                                            {% endfor %}
+
+
+
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
 
+
+                            {% if GST %}
                             <!-- GST Services -->
                             <div class="card shadow-sm mb-4">
                                 <div class="card-header bg-success text-white py-3">
@@ -595,15 +600,15 @@
                                     <div class="row mb-4">
                                         <div class="col-md-6">
                                             <div class="p-3 bg-light rounded">
-                                                <p class="mb-1"><strong>GSTIN:</strong> 29ABCDE1234F1Z5</p>
-                                                <p class="mb-1"><strong>Registration Type:</strong> Regular</p>
-                                                <p class="mb-0"><strong>Filing Frequency:</strong> Monthly</p>
+                                                <p class="mb-1"><strong>GSTIN:</strong>{{GST.0.gst_number}}</p>
+                                                <p class="mb-1"><strong>Registration Type:</strong> {{GST.0.type_of_registration}}</p>
+                                                <p class="mb-0"><strong>Filing Frequency:</strong> {{GST.0.filing_frequency}}</p>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="p-3 bg-light rounded">
                                                 <p class="mb-1"><strong>State:</strong> Karnataka</p>
-                                                <p class="mb-1"><strong>Registration Date:</strong> Jan 2020</p>
+                                                <p class="mb-1"><strong>Registration Date:</strong>{{GST.0.date_of_registration}}</p>
                                                 <p class="mb-0"><strong>Status:</strong> <span class="badge bg-success">Active</span>
                                                 </p>
                                             </div>
@@ -651,7 +656,11 @@
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
 
+
+
+                            {% if Audit %}
                             <!-- Audit Services -->
                             <div class="card shadow-sm">
                                 <div class="card-header bg-warning text-dark py-3">
@@ -673,10 +682,11 @@
                                             </tr>
                                             </thead>
                                             <tbody>
+                                            {% for audit in Audit %}
                                             <tr>
-                                                <td><strong>2024-25</strong></td>
-                                                <td>Statutory Audit</td>
-                                                <td>CA Amit Verma</td>
+                                                <td><strong>{{audit.financial_year}}</strong></td>
+                                                <td>{{audit.audit_type}}</td>
+                                                <td>{{audit.auditor_name}}</td>
                                                 <td><span class="badge bg-warning text-dark">In Progress</span></td>
                                                 <td>-</td>
                                                 <td>
@@ -685,23 +695,13 @@
                                                     </button>
                                                 </td>
                                             </tr>
-                                            <tr>
-                                                <td><strong>2023-24</strong></td>
-                                                <td>Tax Audit</td>
-                                                <td>CA Amit Verma</td>
-                                                <td><span class="badge bg-success">Completed</span></td>
-                                                <td>Sep 15, 2024</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-download"></i> Report
-                                                    </button>
-                                                </td>
-                                            </tr>
+                                            {% endfor %}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
 
                         <!-- Tasks Tab -->

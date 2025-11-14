@@ -14,7 +14,6 @@ django-simpleui==2024.4.1
 django-unfold==0.25.0
 idna==3.7
 openpyxl==3.1.5
-pillow==10.3.0
 pyarmor==8.5.8
 pyarmor.cli.core==6.5.1
 PyMySQL==1.1.1
