@@ -7,33 +7,25 @@
     <div class="col-md-6">
         <label for="{{ form.section8_company_name.id_for_label }}" class="form-label">Company Name <span class="text-danger">*</span></label>
         {{ form.section8_company_name }}
-        {% if form.section8_company_name.errors %}
-            <div class="text-danger small">{{ form.section8_company_name.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="section8_company_name_error"></div>
     </div>
 
     <div class="col-md-6">
         <label for="{{ form.registration_no_section8.id_for_label }}" class="form-label">Registration Number <span class="text-danger">*</span></label>
         {{ form.registration_no_section8 }}
-        {% if form.registration_no_section8.errors %}
-            <div class="text-danger small">{{ form.registration_no_section8.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="registration_no_section8_error"></div>
     </div>
 
     <div class="col-12">
         <label for="{{ form.registered_office_address_s8.id_for_label }}" class="form-label">Registered Office Address <span class="text-danger">*</span></label>
         {{ form.registered_office_address_s8 }}
-        {% if form.registered_office_address_s8.errors %}
-            <div class="text-danger small">{{ form.registered_office_address_s8.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="registered_office_address_s8_error"></div>
     </div>
 
     <div class="col-12">
         <label for="{{ form.object_clause.id_for_label }}" class="form-label">Object Clause <span class="text-danger">*</span></label>
         {{ form.object_clause }}
-        {% if form.object_clause.errors %}
-            <div class="text-danger small">{{ form.object_clause.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="object_clause_error"></div>
         <small class="form-text text-muted">Describe the main objectives and purposes of the company</small>
     </div>
 
@@ -44,17 +36,13 @@
                 Whether Licence Obtained <span class="text-danger">*</span>
             </label>
         </div>
-        {% if form.whether_licence_obtained.errors %}
-            <div class="text-danger small">{{ form.whether_licence_obtained.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="whether_licence_obtained_error"></div>
     </div>
 
     <div class="col-md-6">
         <label for="{{ form.date_of_registration_s8.id_for_label }}" class="form-label">Date of Registration <span class="text-danger">*</span></label>
         {{ form.date_of_registration_s8 }}
-        {% if form.date_of_registration_s8.errors %}
-            <div class="text-danger small">{{ form.date_of_registration_s8.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="date_of_registration_s8_error"></div>
     </div>
 
     <div class="col-12">

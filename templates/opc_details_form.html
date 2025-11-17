@@ -7,58 +7,44 @@
     <div class="col-md-6">
         <label for="{{ form.opc_name.id_for_label }}" class="form-label">OPC Name <span class="text-danger">*</span></label>
         {{ form.opc_name }}
-        {% if form.opc_name.errors %}
-            <div class="text-danger small">{{ form.opc_name.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="opc_name_error"></div>
     </div>
 
     <div class="col-md-6">
         <label for="{{ form.opc_cin.id_for_label }}" class="form-label">OPC CIN <span class="text-danger">*</span></label>
         {{ form.opc_cin }}
-        {% if form.opc_cin.errors %}
-            <div class="text-danger small">{{ form.opc_cin.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="opc_cin_error"></div>
     </div>
 
     <div class="col-12">
         <label for="{{ form.registered_office_address_opc.id_for_label }}" class="form-label">Registered Office Address <span class="text-danger">*</span></label>
         {{ form.registered_office_address_opc }}
-        {% if form.registered_office_address_opc.errors %}
-            <div class="text-danger small">{{ form.registered_office_address_opc.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="registered_office_address_opc_error"></div>
     </div>
 
     <div class="col-md-6">
         <label for="{{ form.sole_member_name.id_for_label }}" class="form-label">Sole Member Name <span class="text-danger">*</span></label>
         {{ form.sole_member_name }}
-        {% if form.sole_member_name.errors %}
-            <div class="text-danger small">{{ form.sole_member_name.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="sole_member_name_error"></div>
         <small class="form-text text-muted">Select the sole member from existing clients</small>
     </div>
 
     <div class="col-md-6">
         <label for="{{ form.nominee_member_name.id_for_label }}" class="form-label">Nominee Member Name <span class="text-danger">*</span></label>
         {{ form.nominee_member_name }}
-        {% if form.nominee_member_name.errors %}
-            <div class="text-danger small">{{ form.nominee_member_name.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="nominee_member_name_error"></div>
     </div>
 
     <div class="col-md-6">
         <label for="{{ form.paid_up_share_capital_opc.id_for_label }}" class="form-label">Paid-up Share Capital (₹) <span class="text-danger">*</span></label>
         {{ form.paid_up_share_capital_opc }}
-        {% if form.paid_up_share_capital_opc.errors %}
-            <div class="text-danger small">{{ form.paid_up_share_capital_opc.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="paid_up_share_capital_opc_error"></div>
     </div>
 
     <div class="col-md-6">
         <label for="{{ form.date_of_incorporation_opc.id_for_label }}" class="form-label">Date of Incorporation <span class="text-danger">*</span></label>
         {{ form.date_of_incorporation_opc }}
-        {% if form.date_of_incorporation_opc.errors %}
-            <div class="text-danger small">{{ form.date_of_incorporation_opc.errors }}</div>
-        {% endif %}
+        <div class="invalid-feedback" id="date_of_incorporation_opc_error"></div>
     </div>
 
     <div class="col-12">

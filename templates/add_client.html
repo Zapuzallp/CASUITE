@@ -451,6 +451,18 @@ document.addEventListener('DOMContentLoaded', function() {
             width: '100%',
             minimumResultsForSearch: 10
         });
+
+        // Special handling for business structure field
+        const businessStructureField = context.querySelector('#id_business_structure');
+        if (businessStructureField) {
+            console.log('Setting up Select2 change handler for business structure');
+            $(businessStructureField).off('change.select2-business');
+            $(businessStructureField).on('change.select2-business', function(e) {
+                console.log('Business structure Select2 changed to:', this.value);
+                // Clear error immediately when a value is selected
+                clearFieldError.call(this);
+            });
+        }
     }
 
     function destroySelect2(context = document) {
@@ -466,13 +478,25 @@ document.addEventListener('DOMContentLoaded', function() {
     function showFieldError(field, message) {
         field.classList.add('is-invalid');
         const errorElement = document.getElementById(`${field.name}_error`);
-        if (errorElement) errorElement.textContent = message;
+        if (errorElement) {
+            errorElement.textContent = message;
+        } else {
+            console.warn('Error element not found for:', field.name);
+            // Create error element if it doesn't exist
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback';
+            errorDiv.id = `${field.name}_error`;
+            errorDiv.textContent = message;
+            field.parentNode.appendChild(errorDiv);
+        }
     }
 
     function clearFieldError() {
         this.classList.remove('is-invalid');
         const errorElement = document.getElementById(`${this.name}_error`);
-        if (errorElement) errorElement.textContent = '';
+        if (errorElement) {
+            errorElement.textContent = '';
+        }
     }
 
     function isValidEmail(email) {
@@ -553,6 +577,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        // Simple business structure validation
+        const businessStructureField = document.getElementById('id_business_structure');
+        if (businessStructureField) {
+            businessStructureField.removeEventListener('change', handleBusinessStructureChange);
+            businessStructureField.addEventListener('change', handleBusinessStructureChange);
+        }
+
         const phoneField = document.getElementById('id_phone_number');
         if (phoneField) {
             phoneField.addEventListener('input', function(e) {
@@ -596,6 +627,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Simple business structure change handler
+    function handleBusinessStructureChange(e) {
+        console.log('Business structure changed to:', this.value);
+        clearFieldError.call(this);
+    }
+
     function validateForm() {
         let isValid = true;
         const mandatoryFields = [
@@ -604,6 +641,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
             'client_type', 'status'
         ];
+
+        // Validate all basic mandatory fields
         mandatoryFields.forEach(fieldName => {
             const field = document.getElementById(`id_${fieldName}`);
             if (field) {
@@ -612,6 +651,317 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (field.classList.contains('is-invalid')) isValid = false;
             }
         });
+
+        // Validate business structure field
+        const businessStructureField = document.getElementById('id_business_structure');
+        const clientTypeField = document.getElementById('id_client_type');
+
+        if (businessStructureField && clientTypeField) {
+            const clientType = clientTypeField.value ? clientTypeField.value.toLowerCase() : '';
+            const businessStructure = businessStructureField.value ? businessStructureField.value.trim() : '';
+
+            console.log('Final validation - Client type:', clientType, 'Business structure:', businessStructure);
+
+            if (clientType === 'entity' && !businessStructure) {
+                showFieldError(businessStructureField, 'Business structure is required for Entity clients.');
+                isValid = false;
+            } else {
+                clearFieldError.call(businessStructureField);
+            }
+        }
+
+        if (!isValid) {
+            showTemporaryAlert('Please fix the validation errors before proceeding.', 'error');
+            // Scroll to first error
+            const firstError = document.querySelector('.is-invalid');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        return isValid;
+    }
+
+    // --------- Business Form Validation ----------
+    function setupBusinessFormValidation() {
+        const businessForm = document.querySelector('#businessStructureDetailsForm');
+        if (!businessForm) {
+            console.log('No business form found for validation setup');
+            return;
+        }
+
+        console.log('Setting up business form validation for all fields...');
+
+        // Get all input elements
+        const inputs = businessForm.querySelectorAll('input, select, textarea');
+        console.log('Found', inputs.length, 'fields to setup validation for');
+
+        inputs.forEach(input => {
+            const fieldName = input.name;
+            console.log('Setting up validation for field:', fieldName);
+
+            // Remove any existing event listeners first
+            input.removeEventListener('blur', validateBusinessField);
+            input.removeEventListener('input', clearBusinessFieldError);
+            input.removeEventListener('change', validateBusinessField);
+
+            // Add blur event for validation
+            input.addEventListener('blur', function(e) {
+                console.log('Blur event on:', fieldName, 'Value:', this.value);
+                validateBusinessField(e);
+            });
+
+            // Add input event for clearing errors
+            input.addEventListener('input', function(e) {
+                clearBusinessFieldError.call(this);
+            });
+
+            // For select fields, validate on change as well
+            if (input.tagName === 'SELECT') {
+                input.addEventListener('change', function(e) {
+                    console.log('Change event on select:', fieldName, 'Value:', this.value);
+                    validateBusinessField(e);
+                });
+            }
+
+            // For checkbox fields
+            if (input.type === 'checkbox') {
+                input.addEventListener('change', function(e) {
+                    console.log('Change event on checkbox:', fieldName, 'Checked:', this.checked);
+                    validateBusinessField(e);
+                });
+            }
+
+            // For file inputs
+            if (input.type === 'file') {
+                input.addEventListener('change', function(e) {
+                    console.log('Change event on file input:', fieldName);
+                    validateBusinessField(e);
+                });
+            }
+        });
+
+        console.log('Business form validation setup complete');
+    }
+
+    function getMandatoryFieldsForBusinessStructure() {
+        // Get the business structure from hidden input
+        const businessStructureInput = document.querySelector('input[name="business_structure"]');
+        const businessStructure = businessStructureInput ? businessStructureInput.value : '';
+
+        console.log('Detected business structure:', businessStructure);
+
+        const mandatoryFields = {
+            'Private Ltd': [
+                'company_type', 'proposed_company_name', 'cin', 'authorised_share_capital',
+                'paid_up_share_capital', 'number_of_directors', 'number_of_shareholders',
+                'registered_office_address', 'date_of_incorporation', 'udyam_registration', 'directors'
+            ],
+            'Public Ltd': [
+                'company_type', 'proposed_company_name', 'cin', 'authorised_share_capital',
+                'paid_up_share_capital', 'number_of_directors', 'number_of_shareholders',
+                'registered_office_address', 'date_of_incorporation', 'udyam_registration', 'directors'
+            ],
+            'LLP': [
+                'llp_name', 'llp_registration_no', 'registered_office_address_llp',
+                'designated_partners', 'paid_up_capital_llp', 'date_of_registration_llp'
+            ],
+            'OPC': [
+                'opc_name', 'opc_cin', 'registered_office_address_opc',
+                'sole_member_name', 'nominee_member_name', 'paid_up_share_capital_opc', 'date_of_incorporation_opc'
+            ],
+            'Section 8': [
+                'section8_company_name', 'registration_no_section8', 'registered_office_address_s8',
+                'object_clause', 'whether_licence_obtained', 'date_of_registration_s8'
+            ],
+            'HUF': [
+                'huf_name', 'pan_huf', 'date_of_creation', 'karta_name',
+                'number_of_coparceners', 'number_of_members', 'residential_address', 'business_activity'
+            ]
+        };
+
+        const fields = mandatoryFields[businessStructure] || [];
+        console.log('Mandatory fields for', businessStructure, ':', fields);
+        return fields;
+    }
+
+    function validateBusinessField(e) {
+        const field = e.target;
+        const fieldName = field.name;
+        let value;
+
+        // Handle different field types
+        if (field.type === 'checkbox') {
+            value = field.checked;
+        } else if (field.type === 'file') {
+            value = field.files.length > 0 ? field.files[0].name : '';
+        } else if (field.tagName === 'SELECT' && field.multiple) {
+            value = Array.from(field.selectedOptions).map(opt => opt.value);
+        } else {
+            value = field.value ? field.value.trim() : '';
+        }
+
+        console.log('Validating business field:', fieldName, 'Type:', field.type, 'Value:', value);
+
+        // Clear previous error
+        clearBusinessFieldError.call(field);
+
+        // Check if field is mandatory
+        const mandatoryFields = getMandatoryFieldsForBusinessStructure();
+        const isMandatory = mandatoryFields.includes(fieldName);
+
+        console.log('Is mandatory field:', isMandatory, 'Mandatory fields:', mandatoryFields);
+
+        // Required field validation
+        if (isMandatory) {
+            let isEmpty = false;
+
+            if (field.type === 'checkbox') {
+                isEmpty = !value;
+            } else if (field.tagName === 'SELECT' && field.multiple) {
+                isEmpty = value.length === 0;
+            } else if (field.type === 'file') {
+                isEmpty = !value;
+            } else {
+                isEmpty = !value || value === '';
+            }
+
+            if (isEmpty) {
+                console.log('Field is mandatory and empty:', fieldName);
+                showBusinessFieldError(field, 'This field is required.');
+                return false;
+            }
+        }
+
+        // For non-mandatory fields with no value, skip further validation
+        if (!value || value === '' || (Array.isArray(value) && value.length === 0)) {
+            return true;
+        }
+
+        // Field-specific validations
+        return validateBusinessFieldSpecificRules(field, fieldName, value);
+    }
+
+    function validateBusinessFieldSpecificRules(field, fieldName, value) {
+        switch(fieldName) {
+            case 'udyam_registration':
+                if (!/^UDYAM-[A-Z]{2}-\d{2}-\d{7}$/.test(value)) {
+                    showBusinessFieldError(field, 'Please enter a valid Udyam registration number (format: UDYAM-XX-XX-XXXXXXX).');
+                    return false;
+                }
+                break;
+
+            case 'authorised_share_capital':
+            case 'paid_up_share_capital':
+            case 'paid_up_capital_llp':
+            case 'paid_up_share_capital_opc':
+                const capitalValue = parseFloat(value);
+                if (isNaN(capitalValue) || capitalValue < 0) {
+                    showBusinessFieldError(field, 'Please enter a valid capital amount (positive number).');
+                    return false;
+                }
+                if (capitalValue > 1000000000) {
+                    showBusinessFieldError(field, 'Capital amount seems too high. Please verify.');
+                    return false;
+                }
+                break;
+
+            case 'number_of_directors':
+            case 'number_of_shareholders':
+            case 'number_of_coparceners':
+            case 'number_of_members':
+                const numValue = parseInt(value);
+                if (isNaN(numValue) || numValue < 1) {
+                    showBusinessFieldError(field, 'Please enter a valid number (at least 1).');
+                    return false;
+                }
+                if (numValue > 100) {
+                    showBusinessFieldError(field, 'Number seems too high. Please verify.');
+                    return false;
+                }
+                break;
+
+            case 'email':
+                if (!isValidEmail(value)) {
+                    showBusinessFieldError(field, 'Please enter a valid email address.');
+                    return false;
+                }
+                break;
+        }
+
+        return true;
+    }
+
+    function showBusinessFieldError(field, message) {
+        field.classList.add('is-invalid');
+        const errorElement = document.getElementById(`${field.name}_error`);
+        if (errorElement) {
+            errorElement.textContent = message;
+        }
+    }
+
+    function clearBusinessFieldError() {
+        this.classList.remove('is-invalid');
+        const errorElement = document.getElementById(`${this.name}_error`);
+        if (errorElement) {
+            errorElement.textContent = '';
+        }
+    }
+
+    function validateBusinessForm() {
+        const businessForm = document.querySelector('#businessStructureDetailsForm');
+        if (!businessForm) {
+            console.log('No business form found for validation');
+            return true;
+        }
+
+        let isValid = true;
+        const mandatoryFields = getMandatoryFieldsForBusinessStructure();
+
+        console.log('Validating business form with mandatory fields:', mandatoryFields);
+
+        // Validate all mandatory fields
+        mandatoryFields.forEach(fieldName => {
+            let field = businessForm.querySelector(`[name="${fieldName}"]`);
+
+            // If field not found with exact name, try alternative selectors
+            if (!field) {
+                // Try by ID
+                field = document.getElementById(`id_${fieldName}`);
+            }
+
+            if (field) {
+                console.log('Validating mandatory field:', fieldName);
+                // Create and dispatch blur event to trigger validation
+                const event = new Event('blur', { bubbles: true });
+                field.dispatchEvent(event);
+
+                // Check if field has error
+                if (field.classList.contains('is-invalid')) {
+                    console.log('Field has error:', fieldName);
+                    isValid = false;
+                }
+            } else {
+                console.warn('Mandatory field not found in form:', fieldName);
+
+                // Log available fields for debugging
+                const allFields = businessForm.querySelectorAll('input, select, textarea');
+                const fieldNames = Array.from(allFields).map(f => f.name).filter(name => name);
+                console.log('Available fields in form:', fieldNames);
+            }
+        });
+
+        if (!isValid) {
+            showTemporaryAlert('Please fix the validation errors before submitting.', 'error');
+            // Scroll to first error
+            const firstError = businessForm.querySelector('.is-invalid');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        } else {
+            console.log('Business form validation passed');
+        }
+
         return isValid;
     }
 
@@ -651,7 +1001,9 @@ document.addEventListener('DOMContentLoaded', function() {
             save.textContent = 'Save';
             save.onclick = function() {
                 const form = businessStructureForm.querySelector('#businessStructureDetailsForm');
-                if (form) form.requestSubmit();
+                if (form && validateBusinessForm()) {
+                    form.requestSubmit();
+                }
             };
 
             submitButtonsContainer.appendChild(back);
@@ -659,12 +1011,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --------- FIXED: AJAX functions with proper loading handling ----------
+    // --------- AJAX functions ----------
     async function submitIndividualForm() {
         if (!validateForm()) {
-            showTemporaryAlert('Please fix the validation errors before submitting.', 'error');
+            console.log('Form validation failed, blocking submission');
             return;
         }
+
         showLoading();
         try {
             const formData = new FormData(clientBasicForm);
@@ -729,15 +1082,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function handleNextButtonClick() {
         if (requestInFlight) return;
-        requestInFlight = true;
 
+        // Validate form BEFORE showing loading modal
         if (!validateForm()) {
-            requestInFlight = false;
-            showTemporaryAlert('Please fix the validation errors before proceeding.', 'error');
+            console.log('Form validation failed, blocking submission');
             return;
         }
 
+        requestInFlight = true;
         showLoading();
+
         try {
             const formData = new FormData(clientBasicForm);
             const res = await fetch('{% url "save_client_basic" %}', {
@@ -785,26 +1139,34 @@ document.addEventListener('DOMContentLoaded', function() {
         businessStructureForm.style.display = 'block';
         businessStructureForm.innerHTML = data.form_html;
 
-        // Best-effort: wait for DOM render + any inline scripts to run, then hide loader.
-        // Use double requestAnimationFrame then fallback timeouts to be robust.
+        // Hide loading
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 try { hideLoading(); } catch(e){ console.error(e); }
             });
         });
 
-        // Fallbacks in case something re-adds backdrop after rapid DOM manipulation
         setTimeout(() => { hideLoading(); }, 250);
         setTimeout(() => { hideLoading(); }, 600);
 
         if (formTitle) formTitle.style.display = 'none';
 
-        // initialize after a small delay (keeps init and hide separate)
+        // Initialize after a delay
         setTimeout(() => {
+            console.log('Initializing business form components...');
             initializeSelect2(businessStructureForm);
-            setupRealTimeValidation();
-            attachBusinessFormHandlers();  // will call hideLoading safety internally
-        }, 140);
+            setupBusinessFormValidation(); // This sets up real-time validation
+            attachBusinessFormHandlers();
+
+            // Test that validation is working
+            console.log('Validation setup complete, testing field detection...');
+            const testFields = businessStructureForm.querySelectorAll('input, select, textarea');
+            console.log('Total fields found:', testFields.length);
+            testFields.forEach(field => {
+                console.log('Field:', field.name, 'Type:', field.type, 'ID:', field.id);
+            });
+
+        }, 200);
 
         updateSubmitButtons();
         window.scrollTo(0, 0);
@@ -813,33 +1175,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function attachBusinessFormHandlers() {
-        // Safety: Ensure loading is hidden when business form handlers are attached
-        setTimeout(() => {
-            try { hideLoading(); } catch(e){ console.error(e); }
-        }, 200);
-
         const backButton = businessStructureForm.querySelector('#backButton');
         if (backButton) {
-            backButton.removeEventListener('click', goBackToBasicForm);
             backButton.addEventListener('click', goBackToBasicForm);
         }
 
         const businessForm = businessStructureForm.querySelector('#businessStructureDetailsForm');
         if (businessForm) {
-            businessForm.removeEventListener('submit', function(e){});
             businessForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                submitBusinessStructureForm(businessForm);
+                if (validateBusinessForm()) {
+                    submitBusinessStructureForm(businessForm);
+                }
             });
 
-            // Add file upload feedback for all file inputs in business form
+            // File upload feedback
             const fileInputs = businessForm.querySelectorAll('input[type="file"]');
             fileInputs.forEach(input => {
-                // remove previous to prevent duplicate handlers
-                input.replaceWith(input.cloneNode(true));
-                const fresh = businessForm.querySelector(`input[name="${input.name}"]`);
-                if (!fresh) return;
-                fresh.addEventListener('change', function(e) {
+                input.addEventListener('change', function(e) {
                     const feedback = this.closest('.col-md-6')?.querySelector('.file-upload-feedback');
                     if (feedback && this.files.length > 0) {
                         feedback.style.display = 'block';
@@ -849,16 +1202,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         feedback.style.display = 'none';
                     }
                 });
-            });
-
-            const inputs = businessForm.querySelectorAll('input, select, textarea');
-            inputs.forEach(input => {
-                try {
-                    input.removeEventListener('blur', validateField);
-                    input.removeEventListener('input', clearFieldError);
-                } catch(e){}
-                input.addEventListener('blur', validateField);
-                input.addEventListener('input', clearFieldError);
             });
         }
     }
@@ -973,44 +1316,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showTemporaryAlert('An unknown error occurred.', 'error');
         }
     }
-    // File Upload
-    function attachBusinessFormHandlers() {
-        const backButton = businessStructureForm.querySelector('#backButton');
-        if (backButton) {
-            backButton.addEventListener('click', goBackToBasicForm);
-        }
 
-        const businessForm = businessStructureForm.querySelector('#businessStructureDetailsForm');
-        if (businessForm) {
-            businessForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                submitBusinessStructureForm(businessForm);
-            });
-
-            // Add file upload feedback for all file inputs in business form
-            const fileInputs = businessForm.querySelectorAll('input[type="file"]');
-            fileInputs.forEach(input => {
-                input.addEventListener('change', function(e) {
-                    const feedback = this.closest('.col-md-6')?.querySelector('.file-upload-feedback');
-                    if (feedback && this.files.length > 0) {
-                        feedback.style.display = 'block';
-                        const fileName = this.files[0].name;
-                        feedback.innerHTML = `<small class="text-success"><i class="bi bi-check-circle"></i> ${fileName}</small>`;
-                    } else if (feedback) {
-                        feedback.style.display = 'none';
-                    }
-                });
-            });
-
-            const inputs = businessForm.querySelectorAll('input, select, textarea');
-            inputs.forEach(input => {
-                input.removeEventListener('blur', validateField);
-                input.removeEventListener('input', clearFieldError);
-                input.addEventListener('blur', validateField);
-                input.addEventListener('input', clearFieldError);
-            });
-        }
-    }
     // --------- temporary alert ----------
     function showTemporaryAlert(message, type) {
         const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
@@ -1045,6 +1351,18 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Client type changed to:', this.value);
             toggleBusinessStructure();
             updateSubmitButtons();
+
+            // Clear business structure error when client type changes
+            const businessStructureField = document.getElementById('id_business_structure');
+            if (businessStructureField) {
+                clearFieldError.call(businessStructureField);
+
+                // If changing to non-entity, clear the value too
+                const clientType = this.value ? this.value.toLowerCase() : '';
+                if (clientType !== 'entity') {
+                    businessStructureField.value = '';
+                }
+            }
         });
 
         // Also trigger initially to set correct state
@@ -1068,6 +1386,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const businessStructureFieldInput = document.getElementById('id_business_structure');
             if (businessStructureFieldInput) {
                 businessStructureFieldInput.value = '';
+                clearFieldError.call(businessStructureFieldInput);
             }
         }
     }
