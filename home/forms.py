@@ -2,7 +2,25 @@ from django import forms
 from .models import Client, CompanyDetails, LLPDetails, OPCDetails, Section8CompanyDetails, HUFDetails, ClientDocumentUpload
 from datetime import date
 from django.contrib.auth.models import User
-import os
+import os, json
+from django.forms.widgets import Textarea
+
+class CleanJSONTextarea(Textarea):
+    def format_value(self, value):
+        # Handles POST values and initial values
+        if value in (None, '', 'null', '"null"', '""', "'\"\"'", '{}'):
+            return ''
+        try:
+            # If value is JSON string, pretty format it
+            import json
+            if isinstance(value, str):
+                parsed = json.loads(value)
+                return json.dumps(parsed, indent=4)
+        except:
+            # Strip unnecessary quotes
+            return value.strip('"')
+
+        return value
 
 class ClientDocumentUploadForm(forms.ModelForm):
     class Meta:
@@ -429,11 +447,23 @@ class Section8CompanyDetailsForm(forms.ModelForm):
             'date_of_registration_s8': {'required': 'Date of registration is required.'},
         }
 
+
 class HUFDetailsForm(forms.ModelForm):
+    bank_account_details = forms.CharField(
+        required=False,
+        widget=CleanJSONTextarea(attrs={'rows': 3})
+    )
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Limit karta_name queryset to individual clients
+        # Limit karta_name queryset
         self.fields['karta_name'].queryset = Client.objects.filter(client_type='Individual')
+        self.fields['pan_huf'].widget.attrs['maxlength'] = '10'
+
+        if 'bank_account_details' in self.initial:
+            # Check if it's an empty string, empty dict, or None
+            current_value = self.initial['bank_account_details']
+            if current_value in ['', '""', '{}', None, 'null']:
+                self.initial['bank_account_details'] = ''
 
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.TextInput):
@@ -473,24 +503,11 @@ class HUFDetailsForm(forms.ModelForm):
             'huf_name': forms.TextInput(attrs={'placeholder': 'Enter HUF name'}),
             'pan_huf': forms.TextInput(attrs={'placeholder': 'e.g., ABCDE1234F', 'style': 'text-transform: uppercase'}),
             'date_of_creation': forms.DateInput(attrs={'type': 'date'}),
-            'bank_account_details': forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': 'Enter bank details in JSON format: {"bank_name": "", "account_number": "", "ifsc_code": ""}'
-            }),
+            'bank_account_details': forms.Textarea(attrs={'rows': 3}),
             'business_activity': forms.TextInput(attrs={'placeholder': 'Enter main business activity'}),
             'remarks': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Enter any additional remarks'}),
             'number_of_coparceners': forms.NumberInput(attrs={'min': '1'}),
             'number_of_members': forms.NumberInput(attrs={'min': '1'}),
-        }
-        error_messages = {
-            'huf_name': {'required': 'HUF name is required.'},
-            'pan_huf': {'required': 'HUF PAN number is required.'},
-            'date_of_creation': {'required': 'Date of creation is required.'},
-            'karta_name': {'required': 'Karta name is required.'},
-            'number_of_coparceners': {'required': 'Number of coparceners is required.'},
-            'number_of_members': {'required': 'Number of members is required.'},
-            'residential_address': {'required': 'Residential address is required.'},
-            'business_activity': {'required': 'Business activity is required.'},
         }
 
     def clean_deed_of_declaration_file(self):
@@ -514,14 +531,16 @@ class HUFDetailsForm(forms.ModelForm):
         return pan_huf
 
     def clean_bank_account_details(self):
-        bank_details = self.cleaned_data.get('bank_account_details', '').strip()
-        # Basic JSON validation
-        if bank_details:
-            try:
-                import json
-                parsed = json.loads(bank_details)
-                if not isinstance(parsed, dict):
-                    raise forms.ValidationError("Bank details must be a valid JSON object.")
-            except json.JSONDecodeError:
-                raise forms.ValidationError("Please enter valid JSON format for bank details.")
-        return bank_details
+        value = self.cleaned_data.get('bank_account_details')
+
+        # Blank textarea → None
+        if value is None or value == '':
+            return None
+
+        # Try to parse JSON
+        import json
+        try:
+            parsed = json.loads(value)
+            return parsed
+        except json.JSONDecodeError:
+            raise forms.ValidationError("Please enter valid JSON format for bank details.")

@@ -29,5 +29,5 @@ urlpatterns = [
     # Documents Upload
     path('dashboard/', documentsUploadView.client_dashboard, name='client_dashboard'),
     path('document-requests/', documentsUploadView.document_requests, name='document_requests'),
-    path('upload/<int:requested_document_id>/', documentsUploadView.upload_document, name='upload_document')
+    path('upload/<int:requested_document_id>/', documentsUploadView.upload_document, name='upload_document'),
 ]

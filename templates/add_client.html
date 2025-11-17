@@ -419,23 +419,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function cleanupModalState() {
-        // Remove all modal backdrops
+        // Remove loading modal backdrop specifically
         const backdrops = document.querySelectorAll('.modal-backdrop');
         backdrops.forEach(backdrop => {
-            backdrop.remove();
+            if (backdrop.parentNode) {
+                backdrop.remove();
+            }
         });
 
-        // Reset body styles
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-
-        // Hide all modals
-        const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => {
-            modal.classList.remove('show');
-            modal.style.display = 'none';
-        });
+        // Reset body styles only if no other modals are open
+        const openModals = document.querySelectorAll('.modal.show');
+        if (openModals.length === 0) {
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }
     }
 
     // --------- Select2 helpers ----------
@@ -872,22 +870,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const res = await fetch('{% url "save_client_complete" %}', {
                 method: 'POST',
-                body: formData,  // FormData automatically sets multipart/form-data
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    // Don't set Content-Type - let browser set it with boundary
-                }
+                body: formData,
+                headers: { 'X-CSRFToken': csrfToken }
             });
 
             if (!res.ok) throw new Error('HTTP ' + res.status);
 
             const data = await res.json();
+
+            // IMPORTANT: Hide loading BEFORE showing success
             hideLoading();
-            if (data.success) {
-                showSuccessModal(data.client_id, data.client_name);
-            } else {
-                handleFormErrors(data);
-            }
+
+            // Add a small delay to ensure loading is completely hidden
+            setTimeout(() => {
+                if (data.success) {
+                    showSuccessModal(data.client_id, data.client_name);
+                } else {
+                    handleFormErrors(data);
+                }
+            }, 300);
+
         } catch (err) {
             console.error('submitBusinessStructureForm error:', err);
             hideLoading();
@@ -926,13 +928,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --------- success modal ----------
     function showSuccessModal(clientId, clientName) {
+        // Ensure any existing modals are properly closed first
+        const existingModals = document.querySelectorAll('.modal.show');
+        existingModals.forEach(modal => {
+            if (modal.id !== 'successModal') {
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+            }
+        });
+
+        // Set success modal content
         document.getElementById('successClientId').textContent = clientId;
         document.getElementById('successClientName').textContent = clientName;
-        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-        successModal.show();
+
+        // Initialize and show success modal
+        const successModalElement = document.getElementById('successModal');
+        const successModal = new bootstrap.Modal(successModalElement, {
+            backdrop: 'static',
+            keyboard: false
+        });
+
+        // Set up the OK button handler
         document.getElementById('successOkButton').onclick = function() {
+            successModal.hide();
             window.location.href = '{% url "clients" %}';
         };
+
+        // Show the success modal
+        successModal.show();
     }
 
     // --------- form errors helper ----------

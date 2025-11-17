@@ -151,7 +151,7 @@ class HUFDetails(models.Model):
     number_of_coparceners = models.PositiveIntegerField()
     number_of_members = models.PositiveIntegerField()
     residential_address = models.TextField()
-    bank_account_details = models.JSONField(blank=True, null=True)
+    bank_account_details = models.JSONField(blank=True)
     deed_of_declaration_file = models.FileField(upload_to='huf_docs/deeds/', blank=True, null=True)
     business_activity = models.CharField(max_length=255, blank=True, null=True)
     remarks = models.TextField(blank=True, null=True)
@@ -441,7 +441,7 @@ class DocumentMaster(models.Model):
 
 class DocumentRequest(models.Model):
     # Represents a document collection cycle for one client (or optionally all clients)
-    client = models.ForeignKey(User, on_delete=models.CASCADE)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     due_date = models.DateField()
@@ -476,7 +476,7 @@ class ClientDocumentUpload(models.Model):
         ('Overdue', 'Overdue'),
     ]
 
-    client = models.ForeignKey(User, on_delete=models.CASCADE)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
     requested_document = models.ForeignKey(RequestedDocument, related_name='uploads', on_delete=models.CASCADE)
     uploaded_file = models.FileField(upload_to='client_documents/%Y/%m/%d/')
     upload_date = models.DateTimeField(auto_now_add=True)
