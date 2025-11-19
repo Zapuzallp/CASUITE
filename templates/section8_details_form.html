@@ -2,7 +2,7 @@
     {% csrf_token %}
     <input type="hidden" name="business_structure" value="{{ business_structure }}">
 
-    <h6 class="card-title mb-3">Section 8 Company Details <small class="text-muted">(* indicates required field)</small></h6>
+    <h6 class="card-title mb-3">Section 8 Company Details <small class="text-muted">(<span class="text-danger">*</span> indicates required field)</small></h6>
 
     <div class="col-md-6">
         <label for="{{ form.section8_company_name.id_for_label }}" class="form-label">Company Name <span class="text-danger">*</span></label>
