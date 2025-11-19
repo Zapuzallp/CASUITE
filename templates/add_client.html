@@ -70,36 +70,61 @@
                     </div>
                 </div>
 
-                <!-- Row 3: Phone & Aadhar -->
+                <!-- Row 3: Client Type & Business Structure (MOVED UP) -->
                 <div class="row mb-3">
                     <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ client_form.client_type.id_for_label }}" class="form-label">Client Type <span class="text-danger">*</span></label>
+                            {{ client_form.client_type }}
+                            <div class="invalid-feedback" id="client_type_error"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6" id="businessStructureField" style="display: none;">
+                        <div class="mb-3">
+                            <label for="{{ client_form.business_structure.id_for_label }}" class="form-label">Business Structure <span class="text-danger">*</span></label>
+                            {{ client_form.business_structure }}
+                            <div class="invalid-feedback" id="business_structure_error"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Contact No, Aadhar No & DIN No in single row -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
                         <div class="mb-3">
                             <label for="{{ client_form.phone_number.id_for_label }}" class="form-label">Contact No. <span class="text-danger">*</span></label>
                             {{ client_form.phone_number }}
                             <div class="invalid-feedback" id="phone_number_error"></div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="mb-3">
-                            <label for="{{ client_form.aadhar.id_for_label }}" class="form-label">Aadhar No. <span class="text-danger">*</span></label>
+                            <label for="{{ client_form.aadhar.id_for_label }}" class="form-label">Aadhar No. <span id="aadhar_required" class="text-danger" style="display: none;">*</span></label>
                             {{ client_form.aadhar }}
                             <div class="invalid-feedback" id="aadhar_error"></div>
                         </div>
                     </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ client_form.din_no.id_for_label }}" class="form-label">DIN No. <span id="din_required" class="text-danger" style="display: none;">*</span></label>
+                            {{ client_form.din_no }}
+                            <div class="invalid-feedback" id="din_no_error"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Row 4: Address -->
+                <!-- Existing Row 5: Address -->
                 <div class="row mb-3">
                     <div class="col-12">
                         <div class="mb-3">
-                            <label for="{{ client_form.address_line1.id_for_label }}" class="form-label">Address <span class="text-danger">*</span></label>
+                            <label for="{{ client_form.address_line1.id_for_label }}" class="form-label">Address Line 1 (Street Name, House No., Landmark) <span class="text-danger">*</span></label>
                             {{ client_form.address_line1 }}
                             <div class="invalid-feedback" id="address_line1_error"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Row 5: City, State, Postal Code -->
+                <!-- Existing Row 6: City, State, Postal Code -->
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <div class="mb-3">
@@ -124,7 +149,7 @@
                     </div>
                 </div>
 
-                <!-- Row 6: Country & Date of Engagement -->
+                <!-- Existing Row 7: Country & Date of Engagement -->
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
@@ -142,29 +167,11 @@
                     </div>
                 </div>
 
-                <!-- Row 7: Client Type & Business Structure -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="{{ client_form.client_type.id_for_label }}" class="form-label">Client Type <span class="text-danger">*</span></label>
-                            {{ client_form.client_type }}
-                            <div class="invalid-feedback" id="client_type_error"></div>
-                        </div>
-                    </div>
-                    <div class="col-md-6" id="businessStructureField" style="display: none;">
-                        <div class="mb-3">
-                            <label for="{{ client_form.business_structure.id_for_label }}" class="form-label">Business Structure <span class="text-danger">*</span></label>
-                            {{ client_form.business_structure }}
-                            <div class="invalid-feedback" id="business_structure_error"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Row 8: Assigned CA & Status -->
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ client_form.assigned_ca.id_for_label }}" class="form-label">Assigned CA <span class="text-danger">*</span></label>
+                            <label for="{{ client_form.assigned_ca.id_for_label }}" class="form-label">Assigned CA/Article <span class="text-danger">*</span></label>
                             {{ client_form.assigned_ca }}
                             <div class="invalid-feedback" id="assigned_ca_error"></div>
                         </div>
@@ -178,21 +185,7 @@
                     </div>
                 </div>
 
-                <!-- Row 9: DIN No & Empty space for alignment -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="{{ client_form.din_no.id_for_label }}" class="form-label">DIN No.</label>
-                            {{ client_form.din_no }}
-                            <div class="invalid-feedback" id="din_no_error"></div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <!-- Empty column for alignment -->
-                    </div>
-                </div>
-
-                <!-- Row 10: Remarks -->
+                <!-- Row 9: Remarks -->
                 <div class="row mb-3">
                     <div class="col-12">
                         <div class="mb-3">
@@ -280,6 +273,43 @@
     </div>
 </div>
 
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="reviewModalTitle">
+                    <i class="bi bi-eye-fill me-2"></i>
+                    Review Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Please review all the details before saving the client.
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
+                    </div>
+                </div>
+
+                <div class="row" id="reviewContent">
+                    <!-- Review content will be dynamically populated here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="confirmSaveButton">
+                    <i class="bi bi-check-circle-fill me-1"></i>Save Client
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     /* Your existing CSS styles */
     .is-invalid {
@@ -328,6 +358,27 @@
     #businessStructureField[style*="display: block"] {
         display: block !important;
     }
+
+    /* Review Modal Styles */
+    #reviewContent .table-sm td {
+        padding: 0.3rem 0.5rem;
+    }
+
+    #reviewContent .table-borderless td {
+        border: none;
+    }
+
+    #reviewContent h6 {
+        color: #495057;
+        font-weight: 600;
+    }
+
+    /* Dynamic button styles */
+    .dynamic-form-buttons {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
 </style>
 
 <script>
@@ -346,94 +397,84 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let currentState = 'basic';
     let requestInFlight = false;
-    let loadingModalInstance = null;
 
-    // Modal helpers (Bootstrap 5 safe)
-    function createLoadingInstance() {
-        const el = document.getElementById('loadingModal');
-        if (!el) return null;
-        // If an instance already exists (from previous show), reuse it
-        const existing = bootstrap.Modal.getInstance(el);
-        if (existing) return existing;
-        return new bootstrap.Modal(el, { backdrop: 'static', keyboard: false });
-    }
-
+    // --------- Loading Modal Functions ----------
     function showLoading() {
-        try {
-            // Ensure we have a valid instance and call .show()
-            if (!loadingModalInstance) {
-                loadingModalInstance = createLoadingInstance();
-            }
-            if (loadingModalInstance) {
-                loadingModalInstance.show();
-            } else {
-                // Fallback: if modal element missing, add a simple overlay class (very defensive)
-                console.warn('Loading modal element not found.');
-            }
-        } catch (err) {
-            console.error('showLoading error', err);
+        console.log('showLoading called');
+        const loadingModalEl = document.getElementById('loadingModal');
+        if (loadingModalEl) {
+            // First ensure any existing instance is properly disposed
+            try {
+                const existingModal = bootstrap.Modal.getInstance(loadingModalEl);
+                if (existingModal) {
+                    existingModal.hide();
+                }
+            } catch (e) {}
+
+            // Clear any existing backdrops
+            const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+            existingBackdrops.forEach(backdrop => backdrop.remove());
+
+            // Create new instance and show
+            const loadingModal = new bootstrap.Modal(loadingModalEl, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            loadingModal.show();
         }
     }
 
     function hideLoading() {
-        try {
-            console.log('[loader] hideLoading called. instance:', !!loadingModalInstance);
-            // Prefer the Bootstrap API
-            const el = document.getElementById('loadingModal');
-            const inst = loadingModalInstance || (el ? bootstrap.Modal.getInstance(el) : null);
+        console.log('🚨 HIDE LOADING CALLED - FORCEFUL VERSION');
 
-            if (inst && typeof inst.hide === 'function') {
-                inst.hide();
-                console.log('[loader] called instance.hide()');
-            } else {
-                console.log('[loader] no bootstrap instance found — will perform manual cleanup');
-            }
-
-            // clear local reference so next show recreates it
-            loadingModalInstance = null;
-
-            // Slight delay then ensure backdrop/body cleaned (idempotent)
-            setTimeout(() => {
-                const backdrops = document.querySelectorAll('.modal-backdrop');
-                if (backdrops.length > 0) {
-                    console.warn('[loader] removing leftover backdrops:', backdrops.length);
-                    backdrops.forEach(b => b.remove());
-                }
-                if (document.body.classList.contains('modal-open')) {
-                    console.warn('[loader] removing modal-open class from body');
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = '';
-                    document.body.style.paddingRight = '';
-                }
-            }, 120);
-        } catch (err) {
-            console.error('[loader] hideLoading error', err);
-            // last-resort cleanup
-            setTimeout(() => {
-                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = '';
-                document.body.style.paddingRight = '';
-            }, 150);
+        const loadingModalEl = document.getElementById('loadingModal');
+        if (!loadingModalEl) {
+            console.log('Loading modal element not found');
+            return;
         }
-    }
 
-    function cleanupModalState() {
-        // Remove loading modal backdrop specifically
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        backdrops.forEach(backdrop => {
-            if (backdrop.parentNode) {
-                backdrop.remove();
+        // Method 1: Get Bootstrap instance and force hide
+        try {
+            const existingInstances = bootstrap.Modal.getInstance(loadingModalEl) || bootstrap.Modal.getInstance(loadingModalEl);
+            if (existingInstances) {
+                console.log('Found Bootstrap instance, calling hide()');
+                existingInstances.hide();
+                // Dispose the instance to prevent caching
+                existingInstances.dispose();
             }
+        } catch (e) {
+            console.log('Bootstrap instance method failed:', e);
+        }
+
+        // Method 2: Direct DOM manipulation
+        loadingModalEl.classList.remove('show');
+        loadingModalEl.style.display = 'none';
+        loadingModalEl.setAttribute('aria-hidden', 'true');
+        loadingModalEl.removeAttribute('aria-modal');
+        loadingModalEl.removeAttribute('role');
+        loadingModalEl.style.paddingRight = '';
+        loadingModalEl.style.paddingLeft = '';
+
+        // Method 3: Remove all backdrops and reset body
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        console.log(`Removing ${backdrops.length} backdrops`);
+        backdrops.forEach(backdrop => {
+            backdrop.remove();
         });
 
-        // Reset body styles only if no other modals are open
-        const openModals = document.querySelectorAll('.modal.show');
-        if (openModals.length === 0) {
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+
+        // Method 4: Force a reflow
+        loadingModalEl.offsetHeight;
+
+        console.log('Hide loading completed. Final state:', {
+            hasShowClass: loadingModalEl.classList.contains('show'),
+            display: loadingModalEl.style.display,
+            bodyHasModalOpen: document.body.classList.contains('modal-open'),
+            remainingBackdrops: document.querySelectorAll('.modal-backdrop').length
+        });
     }
 
     // --------- Select2 helpers ----------
@@ -452,14 +493,22 @@ document.addEventListener('DOMContentLoaded', function() {
             minimumResultsForSearch: 10
         });
 
+        // Special handling for assigned_ca field and other Select2 fields
+        $(context).find('.form-select.select2-hidden-accessible').each(function() {
+            const field = this;
+            $(field).off('change.select2-clear-error');
+            $(field).on('change.select2-clear-error', function() {
+                console.log('Select2 field changed:', field.name, 'Value:', this.value);
+                clearFieldError.call(this);
+            });
+        });
+
         // Special handling for business structure field
         const businessStructureField = context.querySelector('#id_business_structure');
         if (businessStructureField) {
-            console.log('Setting up Select2 change handler for business structure');
             $(businessStructureField).off('change.select2-business');
             $(businessStructureField).on('change.select2-business', function(e) {
                 console.log('Business structure Select2 changed to:', this.value);
-                // Clear error immediately when a value is selected
                 clearFieldError.call(this);
             });
         }
@@ -482,7 +531,6 @@ document.addEventListener('DOMContentLoaded', function() {
             errorElement.textContent = message;
         } else {
             console.warn('Error element not found for:', field.name);
-            // Create error element if it doesn't exist
             const errorDiv = document.createElement('div');
             errorDiv.className = 'invalid-feedback';
             errorDiv.id = `${field.name}_error`;
@@ -512,16 +560,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const mandatoryFields = [
             'client_name', 'primary_contact_name', 'pan_no', 'email',
-            'phone_number', 'address_line1', 'aadhar', 'city', 'state',
+            'phone_number', 'address_line1', 'city', 'state',
             'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
             'client_type', 'status'
         ];
 
+        // Check if field is in mandatory fields
         if (mandatoryFields.includes(fieldName) && !value) {
             showFieldError(field, 'This field is required.');
             return false;
         }
 
+        // Get client type for conditional validation
+        const clientTypeField = document.getElementById('id_client_type');
+        const clientType = clientTypeField ? clientTypeField.value.toLowerCase() : '';
+
+        // Special handling for Aadhar and DIN - ONLY for Individual clients
+        if (clientType === 'individual') {
+            if (fieldName === 'aadhar' && !value) {
+                showFieldError(field, 'Aadhar number is required for Individual clients.');
+                return false;
+            }
+            if (fieldName === 'din_no' && !value) {
+                showFieldError(field, 'DIN number is required for Individual clients.');
+                return false;
+            }
+        } else {
+            // For Entity clients, clear any Aadhar/DIN errors if they exist
+            if (fieldName === 'aadhar' || fieldName === 'din_no') {
+                clearFieldError.call(field);
+            }
+        }
+
+        // Existing validation rules for all fields...
         switch(fieldName) {
             case 'phone_number':
                 const phoneDigits = value.replace(/\D/g, '');
@@ -537,10 +608,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 break;
             case 'aadhar':
-                const aadharDigits = value.replace(/\D/g, '');
-                if (aadharDigits.length !== 12) {
-                    showFieldError(field, 'Aadhar number must be exactly 12 digits.');
-                    return false;
+                // Only validate format if there's a value (not mandatory for entities)
+                if (value) {
+                    const aadharDigits = value.replace(/\D/g, '');
+                    if (aadharDigits.length !== 12) {
+                        showFieldError(field, 'Aadhar number must be exactly 12 digits.');
+                        return false;
+                    }
                 }
                 break;
             case 'email':
@@ -559,12 +633,30 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
 
+    function toggleIndividualRequiredFields() {
+        const clientTypeField = document.getElementById('id_client_type');
+        const aadharRequired = document.getElementById('aadhar_required');
+        const dinRequired = document.getElementById('din_required');
+
+        if (clientTypeField && aadharRequired && dinRequired) {
+            const clientType = clientTypeField.value ? clientTypeField.value.toLowerCase() : '';
+
+            if (clientType === 'individual') {
+                aadharRequired.style.display = 'inline';
+                dinRequired.style.display = 'inline';
+            } else {
+                aadharRequired.style.display = 'none';
+                dinRequired.style.display = 'none';
+            }
+        }
+    }
+
     function setupRealTimeValidation() {
         const mandatoryFields = [
             'client_name', 'primary_contact_name', 'pan_no', 'email',
-            'phone_number', 'address_line1', 'aadhar', 'city', 'state',
+            'phone_number', 'address_line1', 'city', 'state',
             'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
-            'client_type', 'status'
+            'client_type', 'status', 'aadhar', 'din_no' // Include them but handle conditionally
         ];
 
         mandatoryFields.forEach(fieldName => {
@@ -574,10 +666,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 field.removeEventListener('input', clearFieldError);
                 field.addEventListener('blur', validateField);
                 field.addEventListener('input', clearFieldError);
+
+                if ($(field).hasClass('select2-hidden-accessible')) {
+                    $(field).off('change.select2-validation');
+                    $(field).on('change.select2-validation', function() {
+                        clearFieldError.call(this);
+                        validateField({ target: this });
+                    });
+                }
             }
         });
 
-        // Simple business structure validation
         const businessStructureField = document.getElementById('id_business_structure');
         if (businessStructureField) {
             businessStructureField.removeEventListener('change', handleBusinessStructureChange);
@@ -627,7 +726,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Simple business structure change handler
     function handleBusinessStructureChange(e) {
         console.log('Business structure changed to:', this.value);
         clearFieldError.call(this);
@@ -637,7 +735,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let isValid = true;
         const mandatoryFields = [
             'client_name', 'primary_contact_name', 'pan_no', 'email',
-            'phone_number', 'address_line1', 'aadhar', 'city', 'state',
+            'phone_number', 'address_line1', 'city', 'state',
             'postal_code', 'country', 'date_of_engagement', 'assigned_ca',
             'client_type', 'status'
         ];
@@ -652,20 +750,58 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Validate business structure field
-        const businessStructureField = document.getElementById('id_business_structure');
+        // Get client type FIRST
         const clientTypeField = document.getElementById('id_client_type');
+        const clientType = clientTypeField ? clientTypeField.value.toLowerCase() : '';
 
-        if (businessStructureField && clientTypeField) {
-            const clientType = clientTypeField.value ? clientTypeField.value.toLowerCase() : '';
+        console.log('🔍 validateForm - Client type:', clientType);
+
+        // ONLY validate Aadhar and DIN for Individual clients
+        if (clientType === 'individual') {
+            const aadharField = document.getElementById('id_aadhar');
+            const dinField = document.getElementById('id_din_no');
+
+            // Validate Aadhar for Individual clients
+            if (aadharField && !aadharField.value.trim()) {
+                showFieldError(aadharField, 'Aadhar number is required for Individual clients.');
+                isValid = false;
+            }
+
+            // Validate DIN for Individual clients
+            if (dinField && !dinField.value.trim()) {
+                showFieldError(dinField, 'DIN number is required for Individual clients.');
+                isValid = false;
+            }
+        } else {
+            // For Entity clients, CLEAR any existing errors on Aadhar and DIN fields
+            const aadharField = document.getElementById('id_aadhar');
+            const dinField = document.getElementById('id_din_no');
+
+            if (aadharField) {
+                aadharField.classList.remove('is-invalid');
+                const errorElement = document.getElementById('aadhar_error');
+                if (errorElement) errorElement.textContent = '';
+            }
+
+            if (dinField) {
+                dinField.classList.remove('is-invalid');
+                const errorElement = document.getElementById('din_no_error');
+                if (errorElement) errorElement.textContent = '';
+            }
+        }
+
+        // Validate business structure field ONLY for Entity clients
+        const businessStructureField = document.getElementById('id_business_structure');
+        if (businessStructureField) {
             const businessStructure = businessStructureField.value ? businessStructureField.value.trim() : '';
 
-            console.log('Final validation - Client type:', clientType, 'Business structure:', businessStructure);
+            console.log('🔍 validateForm - Business structure:', businessStructure, 'for client type:', clientType);
 
             if (clientType === 'entity' && !businessStructure) {
                 showFieldError(businessStructureField, 'Business structure is required for Entity clients.');
                 isValid = false;
             } else {
+                // Clear business structure error for non-entity clients or when valid
                 clearFieldError.call(businessStructureField);
             }
         }
@@ -677,6 +813,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (firstError) {
                 firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+        } else {
+            console.log('✅ Form validation passed');
         }
 
         return isValid;
@@ -685,71 +823,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // --------- Business Form Validation ----------
     function setupBusinessFormValidation() {
         const businessForm = document.querySelector('#businessStructureDetailsForm');
-        if (!businessForm) {
-            console.log('No business form found for validation setup');
-            return;
-        }
+        if (!businessForm) return;
 
-        console.log('Setting up business form validation for all fields...');
-
-        // Get all input elements
         const inputs = businessForm.querySelectorAll('input, select, textarea');
-        console.log('Found', inputs.length, 'fields to setup validation for');
-
         inputs.forEach(input => {
             const fieldName = input.name;
-            console.log('Setting up validation for field:', fieldName);
-
-            // Remove any existing event listeners first
             input.removeEventListener('blur', validateBusinessField);
             input.removeEventListener('input', clearBusinessFieldError);
             input.removeEventListener('change', validateBusinessField);
 
-            // Add blur event for validation
             input.addEventListener('blur', function(e) {
-                console.log('Blur event on:', fieldName, 'Value:', this.value);
                 validateBusinessField(e);
             });
 
-            // Add input event for clearing errors
             input.addEventListener('input', function(e) {
                 clearBusinessFieldError.call(this);
             });
 
-            // For select fields, validate on change as well
             if (input.tagName === 'SELECT') {
                 input.addEventListener('change', function(e) {
-                    console.log('Change event on select:', fieldName, 'Value:', this.value);
                     validateBusinessField(e);
                 });
             }
 
-            // For checkbox fields
             if (input.type === 'checkbox') {
                 input.addEventListener('change', function(e) {
-                    console.log('Change event on checkbox:', fieldName, 'Checked:', this.checked);
                     validateBusinessField(e);
                 });
             }
 
-            // For file inputs
             if (input.type === 'file') {
                 input.addEventListener('change', function(e) {
-                    console.log('Change event on file input:', fieldName);
                     validateBusinessField(e);
                 });
             }
         });
-
-        console.log('Business form validation setup complete');
     }
 
     function getMandatoryFieldsForBusinessStructure() {
-        // Get the business structure from hidden input
         const businessStructureInput = document.querySelector('input[name="business_structure"]');
         const businessStructure = businessStructureInput ? businessStructureInput.value : '';
-
-        console.log('Detected business structure:', businessStructure);
 
         const mandatoryFields = {
             'Private Ltd': [
@@ -780,9 +893,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ]
         };
 
-        const fields = mandatoryFields[businessStructure] || [];
-        console.log('Mandatory fields for', businessStructure, ':', fields);
-        return fields;
+        return mandatoryFields[businessStructure] || [];
     }
 
     function validateBusinessField(e) {
@@ -790,7 +901,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const fieldName = field.name;
         let value;
 
-        // Handle different field types
         if (field.type === 'checkbox') {
             value = field.checked;
         } else if (field.type === 'file') {
@@ -801,18 +911,11 @@ document.addEventListener('DOMContentLoaded', function() {
             value = field.value ? field.value.trim() : '';
         }
 
-        console.log('Validating business field:', fieldName, 'Type:', field.type, 'Value:', value);
-
-        // Clear previous error
         clearBusinessFieldError.call(field);
 
-        // Check if field is mandatory
         const mandatoryFields = getMandatoryFieldsForBusinessStructure();
         const isMandatory = mandatoryFields.includes(fieldName);
 
-        console.log('Is mandatory field:', isMandatory, 'Mandatory fields:', mandatoryFields);
-
-        // Required field validation
         if (isMandatory) {
             let isEmpty = false;
 
@@ -827,18 +930,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (isEmpty) {
-                console.log('Field is mandatory and empty:', fieldName);
                 showBusinessFieldError(field, 'This field is required.');
                 return false;
             }
         }
 
-        // For non-mandatory fields with no value, skip further validation
         if (!value || value === '' || (Array.isArray(value) && value.length === 0)) {
             return true;
         }
 
-        // Field-specific validations
         return validateBusinessFieldSpecificRules(field, fieldName, value);
     }
 
@@ -911,55 +1011,34 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateBusinessForm() {
         const businessForm = document.querySelector('#businessStructureDetailsForm');
         if (!businessForm) {
-            console.log('No business form found for validation');
             return true;
         }
 
         let isValid = true;
         const mandatoryFields = getMandatoryFieldsForBusinessStructure();
 
-        console.log('Validating business form with mandatory fields:', mandatoryFields);
-
-        // Validate all mandatory fields
         mandatoryFields.forEach(fieldName => {
             let field = businessForm.querySelector(`[name="${fieldName}"]`);
-
-            // If field not found with exact name, try alternative selectors
             if (!field) {
-                // Try by ID
                 field = document.getElementById(`id_${fieldName}`);
             }
 
             if (field) {
-                console.log('Validating mandatory field:', fieldName);
-                // Create and dispatch blur event to trigger validation
                 const event = new Event('blur', { bubbles: true });
                 field.dispatchEvent(event);
 
-                // Check if field has error
                 if (field.classList.contains('is-invalid')) {
-                    console.log('Field has error:', fieldName);
                     isValid = false;
                 }
-            } else {
-                console.warn('Mandatory field not found in form:', fieldName);
-
-                // Log available fields for debugging
-                const allFields = businessForm.querySelectorAll('input, select, textarea');
-                const fieldNames = Array.from(allFields).map(f => f.name).filter(name => name);
-                console.log('Available fields in form:', fieldNames);
             }
         });
 
         if (!isValid) {
             showTemporaryAlert('Please fix the validation errors before submitting.', 'error');
-            // Scroll to first error
             const firstError = businessForm.querySelector('.is-invalid');
             if (firstError) {
                 firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-        } else {
-            console.log('Business form validation passed');
         }
 
         return isValid;
@@ -967,125 +1046,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --------- Button / flow helpers ----------
     function updateSubmitButtons() {
-        if (!submitButtonsContainer) return;
-        submitButtonsContainer.innerHTML = '';
+        console.log('updateSubmitButtons called - currentState:', currentState);
 
         if (currentState === 'basic') {
-            if (clientTypeField && clientTypeField.value && clientTypeField.value.toLowerCase() === 'individual') {
-                const submitButton = document.createElement('button');
-                submitButton.type = 'button';
-                submitButton.className = 'btn btn-success';
-                submitButton.textContent = 'Submit';
-                submitButton.onclick = submitIndividualForm;
-                submitButtonsContainer.appendChild(submitButton);
-            } else {
-                const nextButton = document.createElement('button');
-                nextButton.type = 'button';
-                nextButton.className = 'btn btn-primary';
-                nextButton.textContent = 'Next';
-                nextButton.onclick = handleNextButtonClick;
-                submitButtonsContainer.appendChild(nextButton);
+            if (!submitButtonsContainer) return;
+            submitButtonsContainer.innerHTML = '';
+
+            const clientTypeField = document.getElementById('id_client_type');
+            const clientType = clientTypeField ? clientTypeField.value : '';
+
+            if (clientType) {
+                if (clientType.toLowerCase() === 'individual') {
+                    const reviewButton = document.createElement('button');
+                    reviewButton.type = 'button';
+                    reviewButton.className = 'btn btn-primary';
+                    reviewButton.id = 'reviewButton';
+                    reviewButton.textContent = 'Review Details';
+                    reviewButton.onclick = showReviewModal;
+                    submitButtonsContainer.appendChild(reviewButton);
+                } else if (clientType.toLowerCase() === 'entity') {
+                    const nextButton = document.createElement('button');
+                    nextButton.type = 'button';
+                    nextButton.className = 'btn btn-primary';
+                    nextButton.id = 'nextButton';
+                    nextButton.textContent = 'Next';
+                    nextButton.onclick = handleNextButtonClick;
+                    submitButtonsContainer.appendChild(nextButton);
+                }
             }
         } else if (currentState === 'business') {
-            const back = document.createElement('button');
-            back.type = 'button';
-            back.className = 'btn btn-secondary me-2';
-            back.id = 'bizBackBtn';
-            back.textContent = 'Back';
-            back.onclick = goBackToBasicForm;
+            const businessForm = document.querySelector('#businessStructureDetailsForm');
+            if (!businessForm) {
+                return;
+            }
 
-            const save = document.createElement('button');
-            save.type = 'button';
-            save.className = 'btn btn-success';
-            save.id = 'bizSaveBtn';
-            save.textContent = 'Save';
-            save.onclick = function() {
-                const form = businessStructureForm.querySelector('#businessStructureDetailsForm');
-                if (form && validateBusinessForm()) {
-                    form.requestSubmit();
+            const existingButtons = businessForm.querySelectorAll('.dynamic-form-buttons');
+            existingButtons.forEach(btn => btn.remove());
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'dynamic-form-buttons row mt-4';
+            buttonContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button type="button" id="bizBackBtn" class="btn btn-secondary">Back</button>
+                        <button type="button" id="bizReviewBtn" class="btn btn-primary">Review</button>
+                    </div>
+                </div>
+            `;
+
+            businessForm.appendChild(buttonContainer);
+
+            document.getElementById('bizBackBtn').onclick = goBackToBasicForm;
+            document.getElementById('bizReviewBtn').onclick = function() {
+                if (validateBusinessForm()) {
+                    showBusinessReviewModal();
                 }
             };
-
-            submitButtonsContainer.appendChild(back);
-            submitButtonsContainer.appendChild(save);
-        }
-    }
-
-    // --------- AJAX functions ----------
-    async function submitIndividualForm() {
-        if (!validateForm()) {
-            console.log('Form validation failed, blocking submission');
-            return;
-        }
-
-        showLoading();
-        try {
-            const formData = new FormData(clientBasicForm);
-            const res = await fetch('{% url "save_client_basic" %}', {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const data = await res.json();
-            if (data.success) {
-                if (data.redirect_to_complete && data.client_type && data.client_type.toLowerCase() === 'individual') {
-                    await finalizeIndividualClient();
-                } else if (data.redirect_url) {
-                    hideLoading();
-                    window.location.href = data.redirect_url;
-                } else if (data.form_html) {
-                    showBusinessStructureForm(data);
-                } else {
-                    hideLoading();
-                    showTemporaryAlert('Client saved.', 'success');
-                }
-            } else {
-                hideLoading();
-                handleFormErrors(data);
-            }
-        } catch (err) {
-            console.error('submitIndividualForm error:', err);
-            hideLoading();
-            showTemporaryAlert('Network error occurred. Please try again.', 'error');
-        }
-    }
-
-    async function finalizeIndividualClient() {
-        try {
-            const res = await fetch('{% url "save_individual_client" %}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            const data = await res.json();
-
-            // Add a small delay to ensure loading is hidden
-            setTimeout(() => {
-                hideLoading();
-
-                if (data.success) {
-                    showSuccessModal(data.client_id, data.client_name);
-                } else {
-                    handleFormErrors(data);
-                }
-            }, 300);
-
-        } catch (err) {
-            console.error('finalizeIndividualClient error:', err);
-            setTimeout(hideLoading, 300);
-            showTemporaryAlert('Network error occurred while finalizing.', 'error');
         }
     }
 
     async function handleNextButtonClick() {
         if (requestInFlight) return;
 
-        // Validate form BEFORE showing loading modal
         if (!validateForm()) {
-            console.log('Form validation failed, blocking submission');
             return;
         }
 
@@ -1101,23 +1124,23 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!res.ok) {
-                const text = await res.text().catch(()=>null);
-                throw new Error('HTTP ' + res.status + ' — ' + (text || ''));
+                throw new Error('HTTP ' + res.status);
             }
 
             const data = await res.json();
+
+            // HIDE LOADING BEFORE PROCESSING THE RESPONSE
+            hideLoading();
+
             if (data.success) {
                 if (data.form_html) {
                     showBusinessStructureForm(data);
                 } else if (data.redirect_url) {
-                    hideLoading();
                     window.location.href = data.redirect_url;
                 } else {
-                    hideLoading();
                     showTemporaryAlert('Unexpected response from server.', 'error');
                 }
             } else {
-                hideLoading();
                 handleFormErrors(data);
             }
         } catch (err) {
@@ -1130,7 +1153,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showBusinessStructureForm(data) {
-        console.log('Loading business structure form...');
+        console.log('🔄 showBusinessStructureForm called');
+
+        // FIRST hide any loading state
+        hideLoading();
 
         currentState = 'business';
         destroySelect2(clientBasicForm);
@@ -1139,49 +1165,36 @@ document.addEventListener('DOMContentLoaded', function() {
         businessStructureForm.style.display = 'block';
         businessStructureForm.innerHTML = data.form_html;
 
-        // Hide loading
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                try { hideLoading(); } catch(e){ console.error(e); }
-            });
-        });
-
-        setTimeout(() => { hideLoading(); }, 250);
-        setTimeout(() => { hideLoading(); }, 600);
+        // REMOVED ALL hideLoading() calls from here
 
         if (formTitle) formTitle.style.display = 'none';
 
-        // Initialize after a delay
+        // Initialize after ALL DOM operations are complete
         setTimeout(() => {
             console.log('Initializing business form components...');
             initializeSelect2(businessStructureForm);
-            setupBusinessFormValidation(); // This sets up real-time validation
+            setupBusinessFormValidation();
             attachBusinessFormHandlers();
+            updateSubmitButtons();
+        }, 100);
 
-            // Test that validation is working
-            console.log('Validation setup complete, testing field detection...');
-            const testFields = businessStructureForm.querySelectorAll('input, select, textarea');
-            console.log('Total fields found:', testFields.length);
-            testFields.forEach(field => {
-                console.log('Field:', field.name, 'Type:', field.type, 'ID:', field.id);
-            });
-
-        }, 200);
-
-        updateSubmitButtons();
         window.scrollTo(0, 0);
-
-        console.log('Business structure form loaded');
+        console.log('✅ Business structure form loaded');
     }
 
     function attachBusinessFormHandlers() {
-        const backButton = businessStructureForm.querySelector('#backButton');
-        if (backButton) {
-            backButton.addEventListener('click', goBackToBasicForm);
+        const existingBackButton = businessStructureForm.querySelector('#backButton');
+        if (existingBackButton) {
+            existingBackButton.remove();
         }
 
         const businessForm = businessStructureForm.querySelector('#businessStructureDetailsForm');
         if (businessForm) {
+            const existingSubmitButton = businessForm.querySelector('button[type="submit"]');
+            if (existingSubmitButton) {
+                existingSubmitButton.remove();
+            }
+
             businessForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 if (validateBusinessForm()) {
@@ -1189,7 +1202,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            // File upload feedback
             const fileInputs = businessForm.querySelectorAll('input[type="file"]');
             fileInputs.forEach(input => {
                 input.addEventListener('change', function(e) {
@@ -1204,6 +1216,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
         }
+
+        updateSubmitButtons();
     }
 
     async function submitBusinessStructureForm(form) {
@@ -1221,10 +1235,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await res.json();
 
-            // IMPORTANT: Hide loading BEFORE showing success
             hideLoading();
 
-            // Add a small delay to ensure loading is completely hidden
             setTimeout(() => {
                 if (data.success) {
                     showSuccessModal(data.client_id, data.client_name);
@@ -1257,6 +1269,7 @@ document.addEventListener('DOMContentLoaded', function() {
             initializeSelect2(clientBasicForm);
             setupRealTimeValidation();
             attachClientTypeChange();
+            updateSubmitButtons();
         }, 80);
 
         fetch('{% url "clear_client_session" %}', {
@@ -1271,7 +1284,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --------- success modal ----------
     function showSuccessModal(clientId, clientName) {
-        // Ensure any existing modals are properly closed first
         const existingModals = document.querySelectorAll('.modal.show');
         existingModals.forEach(modal => {
             if (modal.id !== 'successModal') {
@@ -1280,24 +1292,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Set success modal content
         document.getElementById('successClientId').textContent = clientId;
         document.getElementById('successClientName').textContent = clientName;
 
-        // Initialize and show success modal
         const successModalElement = document.getElementById('successModal');
         const successModal = new bootstrap.Modal(successModalElement, {
             backdrop: 'static',
             keyboard: false
         });
 
-        // Set up the OK button handler
         document.getElementById('successOkButton').onclick = function() {
             successModal.hide();
             window.location.href = '{% url "clients" %}';
         };
 
-        // Show the success modal
         successModal.show();
     }
 
@@ -1309,7 +1317,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const elem = document.getElementById(`id_${field}`);
                 if (elem) showFieldError(elem, data.errors[field].join(', '));
             }
-            showTemporaryAlert('Please fix the form errors before submitting.', 'error');
+            showTemporaryAlert('Please fix the form errors before reviewing.', 'error');
         } else if (data.error) {
             showTemporaryAlert('Error: ' + data.error, 'error');
         } else {
@@ -1341,33 +1349,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --------- client type change ----------
     function attachClientTypeChange() {
-        // Remove any existing event listeners
         try {
             $('#'+clientTypeSelectId).off('change.select2-client-type');
         } catch(e){}
 
-        // Add new event listener with namespace
         $('#'+clientTypeSelectId).on('change.select2-client-type', function() {
             console.log('Client type changed to:', this.value);
             toggleBusinessStructure();
+            toggleIndividualRequiredFields();
             updateSubmitButtons();
 
-            // Clear business structure error when client type changes
             const businessStructureField = document.getElementById('id_business_structure');
             if (businessStructureField) {
                 clearFieldError.call(businessStructureField);
-
-                // If changing to non-entity, clear the value too
                 const clientType = this.value ? this.value.toLowerCase() : '';
                 if (clientType !== 'entity') {
                     businessStructureField.value = '';
+                    if ($(businessStructureField).hasClass('select2-hidden-accessible')) {
+                        $(businessStructureField).trigger('change');
+                    }
                 }
             }
+
+            const aadharField = document.getElementById('id_aadhar');
+            const dinField = document.getElementById('id_din_no');
+            if (aadharField) clearFieldError.call(aadharField);
+            if (dinField) clearFieldError.call(dinField);
         });
 
-        // Also trigger initially to set correct state
         setTimeout(() => {
             toggleBusinessStructure();
+            toggleIndividualRequiredFields();
             updateSubmitButtons();
         }, 200);
     }
@@ -1376,19 +1388,491 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!businessStructureField || !clientTypeField) return;
 
         const clientType = clientTypeField.value ? clientTypeField.value.toLowerCase() : '';
-        console.log('Toggle business structure for client type:', clientType);
 
         if (clientType === 'entity') {
             businessStructureField.style.display = 'block';
         } else {
             businessStructureField.style.display = 'none';
-            // Clear business structure value for non-entity types
             const businessStructureFieldInput = document.getElementById('id_business_structure');
             if (businessStructureFieldInput) {
                 businessStructureFieldInput.value = '';
                 clearFieldError.call(businessStructureFieldInput);
             }
         }
+    }
+
+    // --------- Review Modal Functions ----------
+    function showReviewModal() {
+        if (!validateForm()) {
+            return;
+        }
+
+        populateReviewContent();
+
+        const clientType = document.getElementById('id_client_type').value;
+        const modalTitle = document.querySelector('#reviewModal .modal-title');
+        const confirmSaveButton = document.getElementById('confirmSaveButton');
+
+        if (clientType.toLowerCase() === 'individual') {
+            if (modalTitle) modalTitle.innerHTML = '<i class="bi bi-eye-fill me-2"></i>Review Individual Client Details';
+            if (confirmSaveButton) confirmSaveButton.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Save Individual Client';
+        } else {
+            if (modalTitle) modalTitle.innerHTML = '<i class="bi bi-eye-fill me-2"></i>Review Basic Information';
+            if (confirmSaveButton) confirmSaveButton.innerHTML = '<i class="bi bi-arrow-right-circle-fill me-1"></i>Proceed to Business Details';
+        }
+
+        const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
+        reviewModal.show();
+    }
+
+    function showBusinessReviewModal() {
+        if (!validateBusinessForm()) {
+            return;
+        }
+
+        populateBusinessReviewWithBasicInfo();
+
+        const modalTitle = document.querySelector('#reviewModal .modal-title');
+        const confirmSaveButton = document.getElementById('confirmSaveButton');
+
+        if (modalTitle) {
+            modalTitle.innerHTML = '<i class="bi bi-eye-fill me-2"></i>Review Complete Client Details';
+        }
+        if (confirmSaveButton) {
+            confirmSaveButton.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Save Client';
+            confirmSaveButton.onclick = submitBusinessStructureFormFromReview;
+        }
+
+        const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
+        reviewModal.show();
+    }
+
+    function populateReviewContent() {
+        const reviewContent = document.getElementById('reviewContent');
+        if (!reviewContent) return;
+
+        const formData = new FormData(clientBasicForm);
+        const clientType = document.getElementById('id_client_type').value;
+
+        let html = `
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted" style="width: 40%">Client Name:</td>
+                        <td><strong>${formData.get('client_name') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Primary Contact:</td>
+                        <td><strong>${formData.get('primary_contact_name') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">PAN No:</td>
+                        <td><strong>${formData.get('pan_no') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Email:</td>
+                        <td><strong>${formData.get('email') || 'N/A'}</strong></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted" style="width: 40%">Client Type:</td>
+                        <td><strong>${clientType || 'N/A'}</strong></td>
+                    </tr>
+        `;
+
+        html += `
+                    <tr>
+                        <td class="text-muted">Contact No:</td>
+                        <td><strong>${formData.get('phone_number') || 'N/A'}</strong></td>
+                    </tr>
+        `;
+
+        if (clientType.toLowerCase() === 'individual') {
+            html += `
+                    <tr>
+                        <td class="text-muted">Aadhar No:</td>
+                        <td><strong>${formData.get('aadhar') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">DIN No:</td>
+                        <td><strong>${formData.get('din_no') || 'N/A'}</strong></td>
+                    </tr>
+            `;
+        }
+
+        if (clientType.toLowerCase() === 'entity') {
+            const businessStructure = formData.get('business_structure');
+            if (businessStructure) {
+                html += `
+                    <tr>
+                        <td class="text-muted">Business Structure:</td>
+                        <td><strong>${businessStructure || 'N/A'}</strong></td>
+                    </tr>
+                `;
+            }
+        }
+
+        html += `
+                    <tr>
+                        <td class="text-muted">Assigned CA:</td>
+                        <td><strong>${formData.get('assigned_ca') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Status:</td>
+                        <td><strong>${formData.get('status') || 'N/A'}</strong></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-12 mt-3">
+                <h6 class="border-bottom pb-2 mb-3">Address Information</h6>
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted" style="width: 20%">Address:</td>
+                        <td><strong>${formData.get('address_line1') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">City:</td>
+                        <td><strong>${formData.get('city') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">State:</td>
+                        <td><strong>${formData.get('state') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Postal Code:</td>
+                        <td><strong>${formData.get('postal_code') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Country:</td>
+                        <td><strong>${formData.get('country') || 'N/A'}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        `;
+
+        const remarks = formData.get('remarks');
+        if (remarks) {
+            html += `
+                <div class="col-12 mt-3">
+                    <h6 class="border-bottom pb-2 mb-3">Remarks</h6>
+                    <p><strong>${remarks}</strong></p>
+                </div>
+            `;
+        }
+
+        reviewContent.innerHTML = html;
+
+        const confirmSaveButton = document.getElementById('confirmSaveButton');
+        if (confirmSaveButton) {
+            if (clientType.toLowerCase() === 'individual') {
+                confirmSaveButton.onclick = submitIndividualFormFromReview;
+            } else {
+                confirmSaveButton.onclick = proceedToBusinessFormFromReview;
+            }
+        }
+    }
+
+    function populateBusinessReviewWithBasicInfo() {
+        const reviewContent = document.getElementById('reviewContent');
+        if (!reviewContent) return;
+
+        const basicFormData = new FormData(clientBasicForm);
+        const clientType = document.getElementById('id_client_type').value;
+        const businessStructure = basicFormData.get('business_structure');
+
+        let html = `
+            <div class="col-12">
+                <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted" style="width: 40%">Client Name:</td>
+                        <td><strong>${basicFormData.get('client_name') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Primary Contact:</td>
+                        <td><strong>${basicFormData.get('primary_contact_name') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">PAN No:</td>
+                        <td><strong>${basicFormData.get('pan_no') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Email:</td>
+                        <td><strong>${basicFormData.get('email') || 'N/A'}</strong></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted">Client Type:</td>
+                        <td><strong>${clientType || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Business Structure:</td>
+                        <td><strong>${businessStructure || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Contact No:</td>
+                        <td><strong>${basicFormData.get('phone_number') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Assigned CA:</td>
+                        <td><strong>${basicFormData.get('assigned_ca') || 'N/A'}</strong></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-12 mt-3">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted" style="width: 15%">Address:</td>
+                        <td><strong>${basicFormData.get('address_line1') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">City:</td>
+                        <td><strong>${basicFormData.get('city') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">State:</td>
+                        <td><strong>${basicFormData.get('state') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Postal Code:</td>
+                        <td><strong>${basicFormData.get('postal_code') || 'N/A'}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Country:</td>
+                        <td><strong>${basicFormData.get('country') || 'N/A'}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        `;
+
+        html += populateBusinessStructureDetails();
+
+        const remarks = basicFormData.get('remarks');
+        if (remarks) {
+            html += `
+                <div class="col-12 mt-3">
+                    <h6 class="border-bottom pb-2 mb-3">Remarks</h6>
+                    <p><strong>${remarks}</strong></p>
+                </div>
+            `;
+        }
+
+        reviewContent.innerHTML = html;
+    }
+
+    function populateBusinessStructureDetails() {
+        const businessForm = document.querySelector('#businessStructureDetailsForm');
+        if (!businessForm) return '';
+
+        const businessStructureInput = document.querySelector('input[name="business_structure"]');
+        const businessStructure = businessStructureInput ? businessStructureInput.value : 'Unknown';
+
+        let html = `
+            <div class="col-12 mt-4">
+                <h6 class="border-bottom pb-2 mb-3">${businessStructure} Details</h6>
+            </div>
+        `;
+
+        const fields = businessForm.querySelectorAll('input, select, textarea');
+        let fieldData = [];
+
+        fields.forEach(field => {
+            if (field.name && field.type !== 'file' && field.type !== 'submit' && field.type !== 'button' &&
+                field.name !== 'business_structure' && field.name !== 'csrfmiddlewaretoken') {
+
+                let value = '';
+                let displayName = '';
+
+                if (field.type === 'checkbox') {
+                    value = field.checked ? 'Yes' : 'No';
+                } else if (field.tagName === 'SELECT' && field.multiple) {
+                    value = Array.from(field.selectedOptions).map(opt => opt.text).join(', ');
+                } else if (field.type === 'file') {
+                    value = field.files.length > 0 ? field.files[0].name : 'No file selected';
+                } else {
+                    value = field.value || 'N/A';
+                }
+
+                if (value && value !== 'N/A' && value !== 'No file selected') {
+                    displayName = field.name.replace(/_/g, ' ')
+                        .replace(/(llp|opc|huf|cin|udyam)/gi, match => match.toUpperCase())
+                        .replace(/\b\w/g, l => l.toUpperCase())
+                        .replace(/Id\b/g, 'ID')
+                        .replace(/No\b/g, 'No.')
+                        .replace(/S8\b/g, 'S8')
+                        .replace(/\bUrl\b/g, 'URL');
+
+                    fieldData.push({ name: displayName, value: value });
+                }
+            }
+        });
+
+        if (fieldData.length > 0) {
+            const midPoint = Math.ceil(fieldData.length / 2);
+            const firstColumn = fieldData.slice(0, midPoint);
+            const secondColumn = fieldData.slice(midPoint);
+
+            html += `
+                <div class="col-md-6">
+                    <table class="table table-sm table-borderless">
+            `;
+
+            firstColumn.forEach(field => {
+                html += `
+                    <tr>
+                        <td class="text-muted" style="width: 50%">${field.name}:</td>
+                        <td><strong>${field.value}</strong></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-sm table-borderless">
+            `;
+
+            secondColumn.forEach(field => {
+                html += `
+                    <tr>
+                        <td class="text-muted" style="width: 50%">${field.name}:</td>
+                        <td><strong>${field.value}</strong></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </table>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="col-12">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        No business details found.
+                    </div>
+                </div>
+            `;
+        }
+
+        return html;
+    }
+
+    // --------- Save functions from review modal ----------
+    async function submitIndividualFormFromReview() {
+        const reviewModal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
+        if (reviewModal) {
+            reviewModal.hide();
+        }
+
+        showLoading();
+        try {
+            const formData = new FormData(clientBasicForm);
+            const res = await fetch('{% url "save_client_basic" %}', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (data.redirect_to_complete && data.client_type && data.client_type.toLowerCase() === 'individual') {
+                    await finalizeIndividualClient();
+                } else if (data.redirect_url) {
+                    hideLoading();
+                    window.location.href = data.redirect_url;
+                } else {
+                    hideLoading();
+                    showTemporaryAlert('Client saved successfully!', 'success');
+                }
+            } else {
+                hideLoading();
+                handleFormErrors(data);
+            }
+        } catch (err) {
+            console.error('submitIndividualFormFromReview error:', err);
+            hideLoading();
+            showTemporaryAlert('Network error occurred. Please try again.', 'error');
+        }
+    }
+
+    async function proceedToBusinessFormFromReview() {
+        const reviewModal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
+        if (reviewModal) {
+            reviewModal.hide();
+        }
+
+        await handleNextButtonClick();
+    }
+
+    async function submitBusinessStructureFormFromReview() {
+        const reviewModal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
+        if (reviewModal) {
+            reviewModal.hide();
+        }
+
+        const form = businessStructureForm.querySelector('#businessStructureDetailsForm');
+        if (form) {
+            await submitBusinessStructureForm(form);
+        }
+    }
+
+    async function finalizeIndividualClient() {
+        try {
+            const res = await fetch('{% url "save_individual_client" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await res.json();
+
+            setTimeout(() => {
+                hideLoading();
+
+                if (data.success) {
+                    showSuccessModal(data.client_id, data.client_name);
+                } else {
+                    handleFormErrors(data);
+                }
+            }, 300);
+
+        } catch (err) {
+            console.error('finalizeIndividualClient error:', err);
+            setTimeout(hideLoading, 300);
+            showTemporaryAlert('Network error occurred while finalizing.', 'error');
+        }
+    }
+
+    // --------- initialize everything ----------
+    function initializeForm() {
+        currentState = 'basic';
+        clientBasicForm.style.display = 'block';
+        businessStructureForm.style.display = 'none';
+        businessStructureForm.innerHTML = '';
+        if (formTitle) {
+            formTitle.style.display = 'block';
+            formTitle.innerHTML = 'Client Basic Information <small class="text-muted">(<span class="text-danger">*</span> indicates required field)</small>';
+        }
+
+        setTimeout(() => {
+            initializeSelect2(clientBasicForm);
+            setupRealTimeValidation();
+            attachClientTypeChange();
+            toggleIndividualRequiredFields();
+            updateSubmitButtons();
+        }, 120);
     }
 
     // --------- clear form flow ----------
@@ -1412,31 +1896,13 @@ document.addEventListener('DOMContentLoaded', function() {
             invalidFields.forEach(f => f.classList.remove('is-invalid'));
 
             initializeForm();
+            updateSubmitButtons();
             showTemporaryAlert('Form cleared successfully!', 'success');
 
             const clearModal = bootstrap.Modal.getInstance(document.getElementById('clearFormModal'));
             if (clearModal) clearModal.hide();
         });
     });
-
-    // --------- initialize everything ----------
-    function initializeForm() {
-        currentState = 'basic';
-        clientBasicForm.style.display = 'block';
-        businessStructureForm.style.display = 'none';
-        businessStructureForm.innerHTML = '';
-        if (formTitle) {
-            formTitle.style.display = 'block';
-            formTitle.innerHTML = 'Client Basic Information <small class="text-muted">(<span class="text-danger">*</span> indicates required field)</small>';
-        }
-
-        setTimeout(() => {
-            initializeSelect2(clientBasicForm);
-            setupRealTimeValidation();
-            attachClientTypeChange();
-            updateSubmitButtons();
-        }, 120);
-    }
 
     // Start
     initializeForm();

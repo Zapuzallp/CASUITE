@@ -441,7 +441,7 @@ class DocumentMaster(models.Model):
 
 class DocumentRequest(models.Model):
     # Represents a document collection cycle for one client (or optionally all clients)
-    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    client = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     due_date = models.DateField()
@@ -476,7 +476,7 @@ class ClientDocumentUpload(models.Model):
         ('Overdue', 'Overdue'),
     ]
 
-    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    client = models.ForeignKey(User, on_delete=models.CASCADE)
     requested_document = models.ForeignKey(RequestedDocument, related_name='uploads', on_delete=models.CASCADE)
     uploaded_file = models.FileField(upload_to='client_documents/%Y/%m/%d/')
     upload_date = models.DateTimeField(auto_now_add=True)

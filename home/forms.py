@@ -40,7 +40,8 @@ class ClientForm(forms.ModelForm):
         self.fields['date_of_engagement'].initial = date.today()
         self.fields['status'].initial = 'Active'
         self.fields['pan_no'].widget.attrs['maxlength'] = '10'
-
+        self.fields['aadhar'].required = False
+        self.fields['din_no'].required = False
         # Make business_structure NOT required by default - FIXED
         self.fields['business_structure'].required = False
         self.fields['business_structure'].widget.attrs.update({'class': 'form-select'})
@@ -114,15 +115,18 @@ class ClientForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         client_type = cleaned_data.get('client_type')
-        business_structure = cleaned_data.get('business_structure')
 
-        # Only validate business_structure for Entity clients
-        if client_type == 'Entity' and not business_structure:
-            self.add_error('business_structure', 'Business structure is required for Entity clients.')
-
-        # Clear business_structure for Individual clients
+        # For Individual clients, require Aadhar and DIN
         if client_type == 'Individual':
-            cleaned_data['business_structure'] = None
+            if not cleaned_data.get('aadhar'):
+                self.add_error('aadhar', 'Aadhar number is required for Individual clients.')
+            if not cleaned_data.get('din_no'):
+                self.add_error('din_no', 'DIN number is required for Individual clients.')
+
+        # For Entity clients, require business_structure
+        if client_type == 'Entity':
+            if not cleaned_data.get('business_structure'):
+                self.add_error('business_structure', 'Business structure is required for Entity clients.')
 
         return cleaned_data
 
@@ -144,21 +148,68 @@ class ClientForm(forms.ModelForm):
             raise forms.ValidationError("Phone number must be exactly 10 digits long.")
         return phone_number
 
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip()
+        if not email:
+            raise forms.ValidationError("Email is required.")
+        return email
+
     def clean_aadhar(self):
-        aadhar = self.cleaned_data.get('aadhar', '').strip()
+        aadhar = self.cleaned_data.get('aadhar')
+        # Handle None, empty string, or any falsy value
         if not aadhar:
-            raise forms.ValidationError("Aadhar number is required.")
+            return ''
+
+        # Ensure it's a string before calling strip()
+        aadhar = str(aadhar).strip()
+
+        # If empty after stripping, return empty string
+        if not aadhar:
+            return ''
+
         # Remove any non-digit characters
         aadhar_digits = ''.join(filter(str.isdigit, aadhar))
         if len(aadhar_digits) != 12:
             raise forms.ValidationError("Aadhar number must be exactly 12 digits long.")
         return aadhar
 
-    def clean_email(self):
-        email = self.cleaned_data.get('email', '').strip()
-        if not email:
-            raise forms.ValidationError("Email is required.")
-        return email
+    def clean_din_no(self):
+        din_no = self.cleaned_data.get('din_no')
+        # Handle None, empty string, or any falsy value
+        if not din_no:
+            return ''
+
+        # Ensure it's a string before calling strip()
+        din_no = str(din_no).strip()
+
+        # If empty after stripping, return empty string
+        if not din_no:
+            return ''
+
+        # Add any DIN-specific validation here if needed
+        return din_no
+
+    def clean(self):
+        cleaned_data = super().clean()
+        client_type = cleaned_data.get('client_type')
+
+        # For Individual clients, require Aadhar and DIN
+        if client_type == 'Individual':
+            aadhar = cleaned_data.get('aadhar')
+            din_no = cleaned_data.get('din_no')
+
+            # Only validate if they're empty (not None)
+            if not aadhar:  # This handles None, '', and other falsy values
+                self.add_error('aadhar', 'Aadhar number is required for Individual clients.')
+            if not din_no:  # This handles None, '', and other falsy values
+                self.add_error('din_no', 'DIN number is required for Individual clients.')
+
+        # For Entity clients, require business_structure
+        if client_type == 'Entity':
+            if not cleaned_data.get('business_structure'):
+                self.add_error('business_structure', 'Business structure is required for Entity clients.')
+
+        return cleaned_data
 
 
 class CompanyDetailsForm(forms.ModelForm):

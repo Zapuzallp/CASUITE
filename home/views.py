@@ -248,7 +248,7 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
             return JsonResponse({'success': False, 'error': str(e)})
 
     def _save_business_structure_details(self, request, business_structure, client):
-        """Save business structure specific details and create document records"""
+        """Save business structure specific details WITHOUT creating document records"""
         try:
             if business_structure in ['Private Ltd', 'Public Ltd']:
                 form = CompanyDetailsForm(request.POST, request.FILES)
@@ -259,25 +259,8 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     # Save ManyToMany relationships
                     form.save_m2m()
 
-                    # Create document records for uploaded files
-                    if company_details.moa_file:
-                        self._create_document_record(
-                            client=client,
-                            document_name='Memorandum of Association',
-                            category='Company Documents',
-                            uploaded_file=company_details.moa_file,
-                            created_by=request.user
-                        )
-
-                    if company_details.aoa_file:
-                        self._create_document_record(
-                            client=client,
-                            document_name='Articles of Association',
-                            category='Company Documents',
-                            uploaded_file=company_details.aoa_file,
-                            created_by=request.user
-                        )
-
+                    # Files will be saved locally but no document table entries created
+                    print(f"Company details saved for {client.client_name}. Files uploaded locally.")
                     return True
                 return form.errors
 
@@ -290,16 +273,8 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     # Save ManyToMany relationships
                     form.save_m2m()
 
-                    # Create document record for LLP agreement
-                    if llp_details.llp_agreement_file:
-                        self._create_document_record(
-                            client=client,
-                            document_name='LLP Agreement',
-                            category='LLP Documents',
-                            uploaded_file=llp_details.llp_agreement_file,
-                            created_by=request.user
-                        )
-
+                    # Files will be saved locally but no document table entries created
+                    print(f"LLP details saved for {client.client_name}. Files uploaded locally.")
                     return True
                 return form.errors
 
@@ -330,16 +305,8 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
                     huf_details.client = client
                     huf_details.save()
 
-                    # Create document record for HUF deed
-                    if huf_details.deed_of_declaration_file:
-                        self._create_document_record(
-                            client=client,
-                            document_name='HUF Deed of Declaration',
-                            category='HUF Documents',
-                            uploaded_file=huf_details.deed_of_declaration_file,
-                            created_by=request.user
-                        )
-
+                    # Files will be saved locally but no document table entries created
+                    print(f"HUF details saved for {client.client_name}. Files uploaded locally.")
                     return True
                 return form.errors
 
@@ -348,49 +315,6 @@ class SaveClientCompleteView(LoginRequiredMixin, View):
         except Exception as e:
             print(f"Error saving business structure details: {e}")
             return str(e)
-
-    def _create_document_record(self, client, document_name, category, uploaded_file, created_by):
-        """Helper method to create document records in the document management system"""
-        try:
-            # Get or create document master
-            document_master, created = DocumentMaster.objects.get_or_create(
-                category=category,
-                document_name=document_name,
-                defaults={'is_active': True}
-            )
-
-            # Create a document request for onboarding documents
-            document_request = DocumentRequest.objects.create(
-                client=client,
-                title=f"Onboarding - {document_name}",
-                description=f"Automatically created during client onboarding for {client.client_name}",
-                due_date=datetime.now().date(),  # Due today since we're uploading now
-                created_by=created_by,
-                for_all_clients=False
-            )
-
-            # Create requested document entry
-            requested_document = RequestedDocument.objects.create(
-                document_request=document_request,
-                document_master=document_master
-            )
-
-            # Create the actual upload record
-            client_upload = ClientDocumentUpload.objects.create(
-                client=client,
-                requested_document=requested_document,
-                uploaded_file=uploaded_file,
-                status='Uploaded',
-                remarks=f"Automatically uploaded during client onboarding on {datetime.now().strftime('%Y-%m-%d')}"
-            )
-
-            print(f"Created document record: {document_name} for client {client.client_name}")
-            return client_upload
-
-        except Exception as e:
-            print(f"Error creating document record for {document_name}: {e}")
-            # Don't fail the entire process if document record creation fails
-            return None
 
     def _clear_session_data(self, request):
         """Clear session data"""

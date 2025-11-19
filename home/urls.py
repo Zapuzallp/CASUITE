@@ -9,7 +9,7 @@ from home.views import (
     SaveClientBasicView,
     SaveClientCompleteView,
     SaveIndividualClientView,
-    ClearClientSessionView
+    ClearClientSessionView,
 )
 
 urlpatterns = [
