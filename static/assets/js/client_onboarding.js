@@ -15,83 +15,23 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentState = 'basic';
     let requestInFlight = false;
 
-    // --------- Loading Modal Functions ----------
-    function showLoading() {
-        console.log('showLoading called');
-        const loadingModalEl = document.getElementById('loadingModal');
-        if (loadingModalEl) {
-            // First ensure any existing instance is properly disposed
-            try {
-                const existingModal = bootstrap.Modal.getInstance(loadingModalEl);
-                if (existingModal) {
-                    existingModal.hide();
-                }
-            } catch (e) {}
-
-            // Clear any existing backdrops
-            const existingBackdrops = document.querySelectorAll('.modal-backdrop');
-            existingBackdrops.forEach(backdrop => backdrop.remove());
-
-            // Create new instance and show
-            const loadingModal = new bootstrap.Modal(loadingModalEl, {
-                backdrop: 'static',
-                keyboard: false
-            });
-            loadingModal.show();
+    // --------- Modal Functions ----------
+    function showModal(modalId) {
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
         }
     }
 
-    function hideLoading() {
-        console.log('🚨 HIDE LOADING CALLED - FORCEFUL VERSION');
-
-        const loadingModalEl = document.getElementById('loadingModal');
-        if (!loadingModalEl) {
-            console.log('Loading modal element not found');
-            return;
-        }
-
-        // Method 1: Get Bootstrap instance and force hide
-        try {
-            const existingInstances = bootstrap.Modal.getInstance(loadingModalEl) || bootstrap.Modal.getInstance(loadingModalEl);
-            if (existingInstances) {
-                console.log('Found Bootstrap instance, calling hide()');
-                existingInstances.hide();
-                // Dispose the instance to prevent caching
-                existingInstances.dispose();
+    function hideModal(modalId) {
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
             }
-        } catch (e) {
-            console.log('Bootstrap instance method failed:', e);
         }
-
-        // Method 2: Direct DOM manipulation
-        loadingModalEl.classList.remove('show');
-        loadingModalEl.style.display = 'none';
-        loadingModalEl.setAttribute('aria-hidden', 'true');
-        loadingModalEl.removeAttribute('aria-modal');
-        loadingModalEl.removeAttribute('role');
-        loadingModalEl.style.paddingRight = '';
-        loadingModalEl.style.paddingLeft = '';
-
-        // Method 3: Remove all backdrops and reset body
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        console.log(`Removing ${backdrops.length} backdrops`);
-        backdrops.forEach(backdrop => {
-            backdrop.remove();
-        });
-
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-
-        // Method 4: Force a reflow
-        loadingModalEl.offsetHeight;
-
-        console.log('Hide loading completed. Final state:', {
-            hasShowClass: loadingModalEl.classList.contains('show'),
-            display: loadingModalEl.style.display,
-            bodyHasModalOpen: document.body.classList.contains('modal-open'),
-            remainingBackdrops: document.querySelectorAll('.modal-backdrop').length
-        });
     }
 
     // --------- Select2 helpers ----------
@@ -730,11 +670,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         requestInFlight = true;
-        showLoading();
 
         try {
             const formData = new FormData(clientBasicForm);
-            // FIXED: Use URLS.save_client_basic instead of template tag
             const res = await fetch(URLS.save_client_basic, {
                 method: 'POST',
                 body: formData,
@@ -746,9 +684,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await res.json();
-
-            // HIDE LOADING BEFORE PROCESSING THE RESPONSE
-            hideLoading();
 
             if (data.success) {
                 if (data.form_html) {
@@ -763,7 +698,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (err) {
             console.error('handleNextButtonClick error:', err);
-            hideLoading();
             showTemporaryAlert('Network error occurred. Please try again.', 'error');
         } finally {
             requestInFlight = false;
@@ -773,17 +707,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function showBusinessStructureForm(data) {
         console.log('🔄 showBusinessStructureForm called');
 
-        // FIRST hide any loading state
-        hideLoading();
-
         currentState = 'business';
         destroySelect2(clientBasicForm);
 
         clientBasicForm.style.display = 'none';
         businessStructureForm.style.display = 'block';
         businessStructureForm.innerHTML = data.form_html;
-
-        // REMOVED ALL hideLoading() calls from here
 
         if (formTitle) formTitle.style.display = 'none';
 
@@ -839,11 +768,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function submitBusinessStructureForm(form) {
-        showLoading();
         try {
             const formData = new FormData(form);
 
-            // FIXED: Use URLS.save_client_complete instead of template tag
             const res = await fetch(URLS.save_client_complete, {
                 method: 'POST',
                 body: formData,
@@ -854,19 +781,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await res.json();
 
-            hideLoading();
-
-            setTimeout(() => {
-                if (data.success) {
-                    showSuccessModal(data.client_id, data.client_name);
-                } else {
-                    handleFormErrors(data);
-                }
-            }, 300);
+            if (data.success) {
+                showSuccessModal(data.client_id, data.client_name);
+            } else {
+                handleFormErrors(data);
+            }
 
         } catch (err) {
             console.error('submitBusinessStructureForm error:', err);
-            hideLoading();
             showTemporaryAlert('Network error occurred. Please try again.', 'error');
         }
     }
@@ -891,7 +813,6 @@ document.addEventListener('DOMContentLoaded', function() {
             updateSubmitButtons();
         }, 80);
 
-        // FIXED: Use URLS.clear_client_session instead of template tag
         fetch(URLS.clear_client_session, {
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
@@ -903,30 +824,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showSuccessModal(clientId, clientName) {
-        const existingModals = document.querySelectorAll('.modal.show');
-        existingModals.forEach(modal => {
-            if (modal.id !== 'successModal') {
-                modal.classList.remove('show');
-                modal.style.display = 'none';
-            }
-        });
-
         document.getElementById('successClientId').textContent = clientId;
         document.getElementById('successClientName').textContent = clientName;
-
-        const successModalElement = document.getElementById('successModal');
-        const successModal = new bootstrap.Modal(successModalElement, {
-            backdrop: 'static',
-            keyboard: false
-        });
+        showModal('successModal');
 
         document.getElementById('successOkButton').onclick = function() {
-            successModal.hide();
-            // FIXED: Use URLS.clients instead of template tag
+            hideModal('successModal');
             window.location.href = URLS.clients;
         };
-
-        successModal.show();
     }
 
     // --------- form errors helper ----------
@@ -1035,14 +940,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (clientType.toLowerCase() === 'individual') {
             if (modalTitle) modalTitle.innerHTML = '<i class="bi bi-eye-fill me-2"></i>Review Individual Client Details';
-            if (confirmSaveButton) confirmSaveButton.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Save Individual Client';
+            if (confirmSaveButton) confirmSaveButton.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Save';
         } else {
             if (modalTitle) modalTitle.innerHTML = '<i class="bi bi-eye-fill me-2"></i>Review Basic Information';
             if (confirmSaveButton) confirmSaveButton.innerHTML = '<i class="bi bi-arrow-right-circle-fill me-1"></i>Proceed to Business Details';
         }
 
-        const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
-        reviewModal.show();
+        showModal('reviewModal');
     }
 
     function showBusinessReviewModal() {
@@ -1056,15 +960,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const confirmSaveButton = document.getElementById('confirmSaveButton');
 
         if (modalTitle) {
-            modalTitle.innerHTML = '<i class="bi bi-eye-fill me-2"></i>Review Complete Client Details';
+            modalTitle.innerHTML = '<i class="bi bi-eye-fill me-2"></i>Review Entity Client Details';
         }
         if (confirmSaveButton) {
-            confirmSaveButton.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Save Client';
+            confirmSaveButton.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Save';
             confirmSaveButton.onclick = submitBusinessStructureFormFromReview;
         }
 
-        const reviewModal = new bootstrap.Modal(document.getElementById('reviewModal'));
-        reviewModal.show();
+        showModal('reviewModal');
     }
 
     function populateReviewContent() {
@@ -1390,15 +1293,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --------- Save functions from review modal ----------
     async function submitIndividualFormFromReview() {
-        const reviewModal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
-        if (reviewModal) {
-            reviewModal.hide();
-        }
+        hideModal('reviewModal');
 
-        showLoading();
         try {
             const formData = new FormData(clientBasicForm);
-            // FIXED: Use URLS.save_client_basic instead of template tag
             const res = await fetch(URLS.save_client_basic, {
                 method: 'POST',
                 body: formData,
@@ -1409,37 +1307,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.redirect_to_complete && data.client_type && data.client_type.toLowerCase() === 'individual') {
                     await finalizeIndividualClient();
                 } else if (data.redirect_url) {
-                    hideLoading();
                     window.location.href = data.redirect_url;
                 } else {
-                    hideLoading();
                     showTemporaryAlert('Client saved successfully!', 'success');
                 }
             } else {
-                hideLoading();
                 handleFormErrors(data);
             }
         } catch (err) {
             console.error('submitIndividualFormFromReview error:', err);
-            hideLoading();
             showTemporaryAlert('Network error occurred. Please try again.', 'error');
         }
     }
 
     async function proceedToBusinessFormFromReview() {
-        const reviewModal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
-        if (reviewModal) {
-            reviewModal.hide();
-        }
-
+        hideModal('reviewModal');
         await handleNextButtonClick();
     }
 
     async function submitBusinessStructureFormFromReview() {
-        const reviewModal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
-        if (reviewModal) {
-            reviewModal.hide();
-        }
+        hideModal('reviewModal');
 
         const form = businessStructureForm.querySelector('#businessStructureDetailsForm');
         if (form) {
@@ -1449,7 +1336,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function finalizeIndividualClient() {
         try {
-            // FIXED: Use URLS.save_individual_client instead of template tag
             const res = await fetch(URLS.save_individual_client, {
                 method: 'POST',
                 headers: {
@@ -1460,19 +1346,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await res.json();
 
-            setTimeout(() => {
-                hideLoading();
-
-                if (data.success) {
-                    showSuccessModal(data.client_id, data.client_name);
-                } else {
-                    handleFormErrors(data);
-                }
-            }, 300);
+            if (data.success) {
+                showSuccessModal(data.client_id, data.client_name);
+            } else {
+                handleFormErrors(data);
+            }
 
         } catch (err) {
             console.error('finalizeIndividualClient error:', err);
-            setTimeout(hideLoading, 300);
             showTemporaryAlert('Network error occurred while finalizing.', 'error');
         }
     }
@@ -1497,15 +1378,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 120);
     }
 
- // --------- clear form flow ----------
+    // --------- clear form flow ----------
     clearButton.addEventListener('click', function() {
-        const clearFormModal = new bootstrap.Modal(document.getElementById('clearFormModal'));
-        clearFormModal.show();
+        showModal('clearFormModal');
     });
 
     confirmClearButton.addEventListener('click', function() {
         destroySelect2();
-        // FIXED: Use URLS.clear_client_session instead of template tag
         fetch(URLS.clear_client_session, {
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
@@ -1522,8 +1401,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateSubmitButtons();
             showTemporaryAlert('Form cleared successfully!', 'success');
 
-            const clearModal = bootstrap.Modal.getInstance(document.getElementById('clearFormModal'));
-            if (clearModal) clearModal.hide();
+            hideModal('clearFormModal');
         });
     });
 
