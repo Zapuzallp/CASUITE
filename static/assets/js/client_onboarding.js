@@ -977,6 +977,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(clientBasicForm);
         const clientType = document.getElementById('id_client_type').value;
 
+        const assignedCaField = document.getElementById('id_assigned_ca');
+        const assignedCaDisplay = assignedCaField ? assignedCaField.options[assignedCaField.selectedIndex]?.text || 'N/A' : 'N/A';
+
         let html = `
             <div class="col-md-6">
                 <table class="table table-sm table-borderless">
@@ -1040,8 +1043,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         html += `
                     <tr>
-                        <td class="text-muted">Assigned CA:</td>
-                        <td><strong>${formData.get('assigned_ca') || 'N/A'}</strong></td>
+                        <td class="text-muted">Assigned CA/Article:</td>
+                        <td><strong>${assignedCaDisplay}</strong></td>
                     </tr>
                     <tr>
                         <td class="text-muted">Status:</td>
@@ -1053,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h6 class="border-bottom pb-2 mb-3">Address Information</h6>
                 <table class="table table-sm table-borderless">
                     <tr>
-                        <td class="text-muted" style="width: 20%">Address:</td>
+                        <td class="text-muted" style="width: 20%">Address Line 1:</td>
                         <td><strong>${formData.get('address_line1') || 'N/A'}</strong></td>
                     </tr>
                     <tr>
@@ -1106,6 +1109,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const clientType = document.getElementById('id_client_type').value;
         const businessStructure = basicFormData.get('business_structure');
 
+        const assignedCaField = document.getElementById('id_assigned_ca');
+        const assignedCaDisplay = assignedCaField ? assignedCaField.options[assignedCaField.selectedIndex]?.text || 'N/A' : 'N/A';
+
         let html = `
             <div class="col-12">
                 <h6 class="border-bottom pb-2 mb-3">Basic Information</h6>
@@ -1145,15 +1151,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td><strong>${basicFormData.get('phone_number') || 'N/A'}</strong></td>
                     </tr>
                     <tr>
-                        <td class="text-muted">Assigned CA:</td>
-                        <td><strong>${basicFormData.get('assigned_ca') || 'N/A'}</strong></td>
+                        <td class="text-muted">Assigned CA/Article:</td>
+                        <td><strong>${assignedCaDisplay}</strong></td>
                     </tr>
                 </table>
             </div>
             <div class="col-12 mt-3">
                 <table class="table table-sm table-borderless">
                     <tr>
-                        <td class="text-muted" style="width: 15%">Address:</td>
+                        <td class="text-muted" style="width: 15%">Address Line 1:</td>
                         <td><strong>${basicFormData.get('address_line1') || 'N/A'}</strong></td>
                     </tr>
                     <tr>
