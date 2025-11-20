@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DocumentMaster, DocumentRequest, RequestedDocument, ClientDocumentUpload, Client, PrivateLimitedDetails, ITRDetails, ClientService, ServiceType, GSTDetails, AuditDetails
+from .models import DocumentMaster, DocumentRequest, RequestedDocument, ClientDocumentUpload, Client, PrivateLimitedDetails, ITRDetails, ClientService, ServiceType, GSTDetails, AuditDetails, LLPDetails, OPCDetails
 
 admin.site.site_header = 'CA Suite 2.0 Admin'
 admin.site.site_title = 'CA Suite 2.0'
@@ -58,3 +58,5 @@ admin.site.register(ITRDetails)
 admin.site.register(ServiceType)
 admin.site.register(AuditDetails)
 admin.site.register(GSTDetails)
+admin.site.register(LLPDetails)
+admin.site.register(OPCDetails)

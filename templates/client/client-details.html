@@ -187,7 +187,9 @@
                         <div class="col-md-3">
                             <div class="stat-box text-center">
                                 <i class="bi bi-calendar-check fs-2 text-info mb-2"></i>
-                                <h4 class="mb-0 fw-bold">3 Years</h4>
+                                {% if client_since_date %}
+                                <h4 class="mb-0 fw-bold">{{client_since_date}} Days</h4>
+                                {% endif %}
                                 <small class="text-muted">Client Since</small>
                             </div>
                         </div>
@@ -281,7 +283,7 @@
                             <div class="card shadow-sm mb-4">
                                 <div class="card-header bg-primary text-white py-3">
                                     <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-person-badge me-2"></i>Personal Information
+                                        <i class="bi bi-person-badge me-2"></i>{% if client.client_type == "Entity" %} Entity Information {% else %} Personal Information {% endif %}
                                     </h5>
                                 </div>
                                 <div class="card-body p-4">
@@ -414,11 +416,36 @@
                                     </div>
                                 </div>
                                 <div class="card-body p-4">
+
                                     {% if PVT %}
+
+                                    <!-- JS for PVT company view details pop up and hide -->
+                                    <script>
+                                        function handleCompanyDetailHide(CIN){
+                                            let companyClassName = "company-detail-" + CIN;
+                                            const elements = document.getElementsByClassName(companyClassName);
+
+                                            for(el of elements){
+                                                el.classList.add("d-none");
+                                            }
+                                        }
+
+                                        function handleCompanyDetailShow(CIN){
+                                            let companyClassName = "company-detail-" + CIN;
+                                            const elements = document.getElementsByClassName(companyClassName);
+
+
+                                            for(el of elements){
+                                                el.classList.remove("d-none");
+                                            }
+                                        }
+                                    </script>
+
                                     {% for company in PVT %}
+
                                     <!-- Company 1 -->
-                                    <div class="company-card card mb-3">
-                                        <div class="card-body">
+                                    <div class="company-card card mb-3 position-relative">
+                                        <div class="card-body pt-3">
                                             <div class="row">
                                                 <div class="col-md-8">
                                                     <h5 class="fw-bold mb-2">{{company.proposed_company_name}}</h5>
@@ -439,7 +466,7 @@
                                             </div>
                                             <hr>
                                             <div class="d-flex gap-2">
-                                                <button class="btn btn-sm btn-outline-primary">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="handleCompanyDetailShow('{{company.CIN}}')">
                                                     <i class="bi bi-eye me-1"></i>View Details
                                                 </button>
                                                 <button class="btn btn-sm btn-outline-info">
@@ -451,6 +478,69 @@
                                             </div>
                                         </div>
                                     </div>
+
+
+                                     <!-- Company Detail Tab -->
+                                    <div class="company-detail-{{company.CIN}} position-absolute top-0 start-0 w-100 h-100 bg-white z-3 p-4 overflow-auto d-none">
+                                        <div class="d-flex justify-content-end">
+                                            <button class="btn btn-light" onclick="handleCompanyDetailHide('{{company.CIN}}')">X</button>
+                                        </div>
+
+                                         <div class="container bg-light p-4 rounded shadow-sm" style="max-width: 600px;">
+                                              <h3 class="fw-bold mb-3">Company Details</h3>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Company Name:</span>
+                                                 <span>{{ company.proposed_company_name }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">CIN:</span>
+                                                 <span>{{ company.CIN }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Authorised Share Capital:</span>
+                                                 <span>{{ company.authorised_share_capital }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Paid Up Share Capital:</span>
+                                                 <span>{{ company.paid_up_share_capital }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">No of Directors:</span>
+                                                 <span>{{ company.number_of_directors }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">No of Shareholders:</span>
+                                                 <span>{{ company.number_of_shareholders }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">CIN:</span>
+                                                 <span>{{ company.CIN }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Registered Office Address:</span>
+                                                 <span>{{ company.registered_office_address }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Date of Incorporation:</span>
+                                                 <span>{{ company.date_of_incorporation }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Udyam Registration:</span>
+                                                 <span>{{ company.udyam_registration }}</span>
+                                             </div>
+                                         </div>
+                                    </div>
+
                                     {% endfor %}
                                     {% endif %}
 
@@ -458,7 +548,7 @@
                                     {% for company in LLP %}
                                     <!-- Company 2 -->
                                     <div class="company-card card mb-3">
-                                        <div class="card-body">
+                                        <div class="card-body pt-3">
                                             <div class="row">
                                                 <div class="col-md-8">
                                                     <h5 class="fw-bold mb-2">{{company.llp_name}}</h5>
@@ -497,7 +587,7 @@
                                     {% for company in OPC %}
                                     <!-- Company 3 -->
                                     <div class="company-card card">
-                                        <div class="card-body">
+                                        <div class="card-body pt-3">
                                             <div class="row">
                                                 <div class="col-md-8">
                                                     <h5 class="fw-bold mb-2">{{company.opc_name}}</h5>
