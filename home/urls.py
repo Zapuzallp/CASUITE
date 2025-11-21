@@ -1,5 +1,4 @@
 from django.urls import path
-
 from home.customViews import authView, documentsUploadView, clientView
 from home.views import HomeView
 

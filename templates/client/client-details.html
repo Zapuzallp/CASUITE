@@ -105,7 +105,20 @@
             padding: 0.25rem 0.75rem;
             font-size: 0.875rem;
         }
+        .main {
+            padding-top: 80px;
+        }
+        .alert-tight {
+            padding-top: 0.5rem ;
+            padding-bottom: 0.5rem ;
+        }
+
+            margin-left: 1rem;
+            padding: 0.25rem 0.25rem;
+        }
     </style>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 
     <main id="main" class="main">
         <div class="container-fluid py-4">
@@ -118,7 +131,23 @@
                 </ol>
             </nav>
 
-            <!-- Client Profile Header -->
+           {# --- START OF FIXED GLOBAL MESSAGE BLOCK --- #}
+           {% if messages %}
+              {% for message in messages %}
+                {# Use d-flex to ensure vertical alignment (align-items-center) and push the button to the right (ms-auto) #}
+                {% if 'error' in message.tags %}
+                  <div class="alert alert-danger alert-dismissible fade show autohide-error mt-2 mb-4 d-flex align-items-center" role="alert">
+                    <div class="me-3">{{ message }}</div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                  </div>
+                {% else %}
+                  <div class="alert alert-success alert-dismissible fade show mt-2 mb-4 d-flex align-items-center" role="alert">
+                    <div class="me-3">{{ message }}</div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
             <div class="card shadow-sm mb-4">
                 <div class="profile-header text-white p-4">
                     <div class="row align-items-center">
@@ -984,9 +1013,14 @@
                                         <h5 class="mb-0 fw-bold">
                                             <i class="bi bi-folder2-open me-2"></i>Documents Repository
                                         </h5>
-                                        <button class="btn btn-light btn-sm">
-                                            <i class="bi bi-upload me-2"></i>Upload Document
-                                        </button>
+                                        <div class="d-flex">
+                                            <button class="btn btn-light btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addDocumentRequestModal">
+                                                <i class="bi bi-plus-lg me-2"></i> Add Document Request
+                                            </button>
+                                            <button class="btn btn-light btn-sm">
+                                                <i class="bi bi-upload me-2"></i>Upload Document
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -1419,15 +1453,72 @@
             </div>
         </div>
     </main>
+<div class="modal fade" id="addDocumentRequestModal" tabindex="-1" aria-labelledby="addDocumentRequestLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="addDocumentRequestLabel">
+          <i class="bi bi-upload me-2"></i>Add Document Upload Request
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post" action="">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+            {{ form.title }}
+          </div>
+          <div class="mb-3">
+            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+            {{ form.description }}
+          </div>
+          <div class="mb-3">
+            <label for="{{ form.due_date.id_for_label }}" class="form-label">{{ form.due_date.label }}</label>
+            {{ form.due_date }}
+          </div>
+          <div class="mb-3">
+    <label class="form-label">{{ form.documents.label }}</label>
+    <select id="documentSelect" name="documents" multiple placeholder="Select required documents..." autocomplete="off">
+        {% for doc in form.documents.field.queryset %}
+            <option value="{{ doc.id }}">{{ doc.document_name }}</option>
+        {% endfor %}
+    </select>
+</div>
+          {% if form.non_field_errors %}
+              <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
 
-    <script>
-        // Auto-hide toasts
-        setTimeout(function () {
-            var toasts = document.querySelectorAll('.toast');
-            toasts.forEach(function (toast) {
-                var bsToast = new bootstrap.Toast(toast);
-                bsToast.hide();
-            });
-        }, 5000);
-    </script>
+          <div class="text-end mt-3">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-2"></i>Save Request
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    new TomSelect("#documentSelect", {
+        plugins: ['remove_button'],
+        maxItems: null,
+        create: false,
+        persist: false,
+        sortField: { field: "text", direction: "asc" }
+    });
+});
+</script>
+<script>
+setTimeout(() => {
+    document.querySelectorAll(".alert-success").forEach(el => {
+        el.style.transition = "opacity 0.5s";
+        el.style.opacity = "0";
+        setTimeout(() => el.remove(), 500);
+    });
+}, 5000);
+</script>
+
 {% endblock %}
