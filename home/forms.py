@@ -488,7 +488,7 @@ class Section8CompanyDetailsForm(forms.ModelForm):
             'registration_no_section8': forms.TextInput(attrs={'placeholder': 'Enter registration number'}),
             'object_clause': forms.Textarea(
                 attrs={'rows': 4, 'placeholder': 'Describe the main objectives and purposes of the company'}),
-            'date_of_registration_s8': forms.DateInput(attrs={'type': 'date'}),  # This fixes the issue
+            'date_of_registration_s8': forms.DateInput(attrs={'type': 'date'}),
         }
         error_messages = {
             'section8_company_name': {'required': 'Company name is required.'},

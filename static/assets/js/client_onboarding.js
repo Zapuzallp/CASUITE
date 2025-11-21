@@ -442,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ],
             'Section 8': [
                 'section8_company_name', 'registration_no_section8', 'registered_office_address_s8',
-                'object_clause', 'whether_licence_obtained', 'date_of_registration_s8'
+                'object_clause', 'date_of_registration_s8'
             ],
             'HUF': [
                 'huf_name', 'pan_huf', 'date_of_creation', 'karta_name',
