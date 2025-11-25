@@ -105,6 +105,7 @@
             padding: 0.25rem 0.75rem;
             font-size: 0.875rem;
         }
+
         .main {
             padding-top: 80px;
         }
@@ -115,12 +116,90 @@
 
             margin-left: 1rem;
             padding: 0.25rem 0.25rem;
+
+
+        /* Service Card Animations */
+        .service-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .service-card:hover::before {
+            left: 100%;
+        }
+
+        .service-card.selected {
+            animation: cardSelect 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes cardSelect {
+            0% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-8px) scale(1.02);
+            }
+            100% {
+                transform: translateY(-5px) scale(1);
+            }
+        }
+
+        .service-card.selected .selection-indicator {
+            animation: checkmarkAppear 0.3s ease-out 0.2s both;
+        }
+
+        @keyframes checkmarkAppear {
+            0% {
+                opacity: 0;
+                transform: scale(0) rotate(-180deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        .service-card:not(.selected):hover {
+            animation: cardHover 0.3s ease-out;
+        }
+
+        @keyframes cardHover {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-3px);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+
         }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 
-    <main id="main" class="main">
+    <main id="main" class="main" data-client-id="{{ client.id|default:1 }}">
         <div class="container-fluid py-4">
             <!-- Breadcrumb -->
             <nav aria-label="breadcrumb" class="mb-4">
@@ -285,10 +364,9 @@
                                         data-bs-target="#addServiceModal">
                                     <i class="bi bi-plus-lg me-2"></i>Add Service
                                 </button>
-                                <button class="btn btn-success btn-sm" data-bs-toggle="modal"
-                                        data-bs-target="#addTaskModal">
+                                <a class="btn btn-success btn-sm" href="{% url 'add_task' client.id %}">
                                     <i class="bi bi-plus-lg me-2"></i>Add Task
-                                </button>
+                                </a>
                                 <button class="btn btn-info btn-sm">
                                     <i class="bi bi-upload me-2"></i>Upload Document
                                 </button>
@@ -550,187 +628,29 @@
 
                         <!-- Services Tab -->
                         <div class="tab-pane fade" id="services">
-                            <!-- ITR Services -->
-                            <div class="card shadow-sm mb-4">
-                                <div class="card-header bg-info text-white py-3">
-                                    <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-file-text me-2"></i>Income Tax Return (ITR) Services
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle">
-                                            <thead class="table-light">
-                                            <tr>
-                                                <th>Assessment Year</th>
-                                                <th>ITR Type</th>
-                                                <th>Filing Status</th>
-                                                <th>Acknowledgment</th>
-                                                <th>Amount</th>
-                                                <th>Action</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr>
-                                                <td><strong>2024-25</strong></td>
-                                                <td>ITR-2</td>
-                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
-                                                <td>-</td>
-                                                <td>₹5,000</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-pencil"></i> Edit
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>2023-24</strong></td>
-                                                <td>ITR-2</td>
-                                                <td><span class="badge bg-success">Filed</span></td>
-                                                <td>ACK123456789</td>
-                                                <td>₹4,500</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-eye"></i> View
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>2022-23</strong></td>
-                                                <td>ITR-1</td>
-                                                <td><span class="badge bg-success">Filed</span></td>
-                                                <td>ACK987654321</td>
-                                                <td>₹4,000</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-eye"></i> View
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="mb-0">
+                                    <i class="bi bi-briefcase me-2"></i>Client Services
+                                </h4>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+                                    <i class="bi bi-plus-lg me-2"></i>Add New Service
+                                </button>
                             </div>
 
-                            <!-- GST Services -->
-                            <div class="card shadow-sm mb-4">
-                                <div class="card-header bg-success text-white py-3">
-                                    <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-receipt me-2"></i>GST Services
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
-                                            <div class="p-3 bg-light rounded">
-                                                <p class="mb-1"><strong>GSTIN:</strong> 29ABCDE1234F1Z5</p>
-                                                <p class="mb-1"><strong>Registration Type:</strong> Regular</p>
-                                                <p class="mb-0"><strong>Filing Frequency:</strong> Monthly</p>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="p-3 bg-light rounded">
-                                                <p class="mb-1"><strong>State:</strong> Karnataka</p>
-                                                <p class="mb-1"><strong>Registration Date:</strong> Jan 2020</p>
-                                                <p class="mb-0"><strong>Status:</strong> <span class="badge bg-success">Active</span>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle">
-                                            <thead class="table-light">
-                                            <tr>
-                                                <th>Period</th>
-                                                <th>Return Type</th>
-                                                <th>Status</th>
-                                                <th>ARN</th>
-                                                <th>Due Date</th>
-                                                <th>Action</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr>
-                                                <td><strong>Oct 2025</strong></td>
-                                                <td>GSTR-1</td>
-                                                <td><span class="badge bg-warning text-dark">Pending</span></td>
-                                                <td>-</td>
-                                                <td>Nov 11, 2025</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-upload"></i> File
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Sep 2025</strong></td>
-                                                <td>GSTR-3B</td>
-                                                <td><span class="badge bg-success">Filed</span></td>
-                                                <td>ARN123456789012</td>
-                                                <td>Oct 20, 2025</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-eye"></i> View
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Include the new services accordion template -->
+                            {% include 'client/services_accordion.html' %}
 
-                            <!-- Audit Services -->
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-warning text-dark py-3">
-                                    <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-clipboard-check me-2"></i>Audit Services
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle">
-                                            <thead class="table-light">
-                                            <tr>
-                                                <th>Financial Year</th>
-                                                <th>Audit Type</th>
-                                                <th>Auditor</th>
-                                                <th>Status</th>
-                                                <th>Report Date</th>
-                                                <th>Action</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr>
-                                                <td><strong>2024-25</strong></td>
-                                                <td>Statutory Audit</td>
-                                                <td>CA Amit Verma</td>
-                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
-                                                <td>-</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-eye"></i> Track
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>2023-24</strong></td>
-                                                <td>Tax Audit</td>
-                                                <td>CA Amit Verma</td>
-                                                <td><span class="badge bg-success">Completed</span></td>
-                                                <td>Sep 15, 2024</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-download"></i> Report
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
+                            <!-- Empty State (show when no services) -->
+                            {% if not client_services %}
+                            <div class="text-center py-5" id="emptyServicesState">
+                                <i class="bi bi-briefcase display-1 text-muted mb-3"></i>
+                                <h5 class="text-muted">No Services Added Yet</h5>
+                                <p class="text-muted mb-4">Start by adding services for this client to manage their compliance and taxation needs.</p>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+                                    <i class="bi bi-plus-lg me-2"></i>Add First Service
+                                </button>
                             </div>
+                            {% endif %}
                         </div>
 
                         <!-- Tasks Tab -->
@@ -741,108 +661,130 @@
                                         <h5 class="mb-0 fw-bold">
                                             <i class="bi bi-list-check me-2"></i>Service Tasks
                                         </h5>
-                                        <button class="btn btn-light btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#addTaskModal">
+                                        <a class="btn btn-light btn-sm" href="{% url 'add_task' client.id %}">
                                             <i class="bi bi-plus-lg me-2"></i>Add Task
-                                        </button>
+                                        </a>
                                     </div>
                                 </div>
                                 <div class="card-body">
-                                    <!-- Task Filters -->
-                                    <div class="btn-group mb-3" role="group">
-                                        <input type="radio" class="btn-check" name="taskFilter" id="allTasks" checked>
-                                        <label class="btn btn-outline-primary" for="allTasks">All (15)</label>
+                                    {% if total_tasks %}
+                                        <div class="btn-group mb-3" role="group" aria-label="Task status filter">
+                                            <a href="?tab=tasks" class="btn btn-outline-primary {% if status_filter == 'all' or not status_filter %}active{% endif %}">
+                                                All <span class="badge bg-primary text-white ms-1">{{ status_counts.all|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=Pending" class="btn btn-outline-warning {% if status_filter == 'Pending' %}active{% endif %}">
+                                                Pending <span class="badge bg-warning text-dark ms-1">{{ status_counts.Pending|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=In+Progress" class="btn btn-outline-info {% if status_filter == 'In Progress' %}active{% endif %}">
+                                                In Progress <span class="badge bg-info text-dark ms-1">{{ status_counts.In_Progress|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=Submitted" class="btn btn-outline-secondary {% if status_filter == 'Submitted' %}active{% endif %}">
+                                                Submitted <span class="badge bg-secondary text-white ms-1">{{ status_counts.Submitted|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=Completed" class="btn btn-outline-success {% if status_filter == 'Completed' %}active{% endif %}">
+                                                Completed <span class="badge bg-success text-white ms-1">{{ status_counts.Completed|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=Delayed" class="btn btn-outline-danger {% if status_filter == 'Delayed' %}active{% endif %}">
+                                                Delayed <span class="badge bg-danger text-white ms-1">{{ status_counts.Delayed|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=Cancelled" class="btn btn-outline-dark {% if status_filter == 'Cancelled' %}active{% endif %}">
+                                                Cancelled <span class="badge bg-dark text-white ms-1">{{ status_counts.Cancelled|default:'0' }}</span>
+                                            </a>
+                                        </div>
 
-                                        <input type="radio" class="btn-check" name="taskFilter" id="pendingTasks">
-                                        <label class="btn btn-outline-warning" for="pendingTasks">Pending (8)</label>
-
-                                        <input type="radio" class="btn-check" name="taskFilter" id="completedTasks">
-                                        <label class="btn btn-outline-success" for="completedTasks">Completed
-                                            (7)</label>
-                                    </div>
-
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle">
-                                            <thead class="table-light">
-                                            <tr>
-                                                <th>Task Title</th>
-                                                <th>Service Type</th>
-                                                <th>Period</th>
-                                                <th>Due Date</th>
-                                                <th>Assigned To</th>
-                                                <th>Status</th>
-                                                <th>Action</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr>
-                                                <td><strong>ITR-2 Filing for AY 2024-25</strong></td>
-                                                <td><span class="badge bg-info">ITR</span></td>
-                                                <td>2024-25</td>
-                                                <td class="text-danger">Nov 30, 2025</td>
-                                                <td>CA Priya Mehta</td>
-                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>GSTR-1 Filing October 2025</strong></td>
-                                                <td><span class="badge bg-success">GST</span></td>
-                                                <td>Oct 2025</td>
-                                                <td class="text-danger">Nov 11, 2025</td>
-                                                <td>CA Amit Shah</td>
-                                                <td><span class="badge bg-danger">Overdue</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-danger action-btn">
-                                                        <i class="bi bi-exclamation-triangle"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Annual Audit Report Preparation</strong></td>
-                                                <td><span class="badge bg-warning text-dark">Audit</span></td>
-                                                <td>2023-24</td>
-                                                <td>Dec 15, 2025</td>
-                                                <td>CA Priya Mehta</td>
-                                                <td><span class="badge bg-info">Scheduled</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>TDS Return Q2 Filing</strong></td>
-                                                <td><span class="badge bg-secondary">TDS</span></td>
-                                                <td>Q2 2025-26</td>
-                                                <td>Oct 31, 2025</td>
-                                                <td>CA Amit Shah</td>
-                                                <td><span class="badge bg-success">Completed</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-check-circle"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Balance Sheet Finalization</strong></td>
-                                                <td><span class="badge bg-primary">Accounting</span></td>
-                                                <td>2023-24</td>
-                                                <td>Nov 20, 2025</td>
-                                                <td>CA Priya Mehta</td>
-                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                        {% for group in grouped_tasks %}
+                                            <div class="card mb-3">
+                                                <div class="card-header d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong>{{ group.service_name }}</strong>
+                                                    </div>
+                                                    <div>
+                                                        <span class="badge bg-secondary me-2">{{ group.total_count }} Tasks</span>
+                                                        {% if group.pending_count %}
+                                                            <span class="badge bg-warning text-dark">{{ group.pending_count }} Pending</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-hover align-middle mb-0">
+                                                            <thead class="table-light">
+                                                            <tr>
+                                                                <th>Task Title</th>
+                                                                <th>Period</th>
+                                                                <th>Due Date</th>
+                                                                <th>Assigned To</th>
+                                                                <th>Status</th>
+                                                                <th>Action</th>
+                                                            </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                            {% for task in group.tasks %}
+                                                                <tr>
+                                                                    <td><strong>{{ task.task_title }}</strong></td>
+                                                                    <td>
+                                                                        {% if task.period_from or task.period_to %}
+                                                                            {% if task.period_from %}
+                                                                                {{ task.period_from|date:"M d, Y" }}
+                                                                            {% endif %}
+                                                                            {% if task.period_to %}
+                                                                                	-	{{ task.period_to|date:"M d, Y" }}
+                                                                            {% endif %}
+                                                                        {% else %}
+                                                                            -
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td>
+                                                                        {{ task.due_date|date:"M d, Y" }}
+                                                                    </td>
+                                                                    <td>
+                                                                        {% if task.assigned_to %}
+                                                                            {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                                                                        {% else %}
+                                                                            -
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td>
+                                                                        {% if task.task_status == 'Pending' %}
+                                                                            <span class="badge bg-warning text-dark">Pending</span>
+                                                                        {% elif task.task_status == 'In Progress' %}
+                                                                            <span class="badge bg-info text-dark">In Progress</span>
+                                                                        {% elif task.task_status == 'Submitted' %}
+                                                                            <span class="badge bg-primary">Submitted</span>
+                                                                        {% elif task.task_status == 'Completed' %}
+                                                                            <span class="badge bg-success">Completed</span>
+                                                                        {% elif task.task_status == 'Delayed' %}
+                                                                            <span class="badge bg-danger">Delayed</span>
+                                                                        {% elif task.task_status == 'Cancelled' %}
+                                                                            <span class="badge bg-secondary">Cancelled</span>
+                                                                        {% else %}
+                                                                            <span class="badge bg-light text-dark">{{ task.task_status }}</span>
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td>
+                                                                        <a href="{% url 'task_detail' task.id %}"
+                                                                           class="btn btn-sm btn-outline-primary action-btn">
+                                                                            <i class="bi bi-eye"></i>
+                                                                        </a>
+                                                                    </td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center py-5">
+                                            <i class="bi bi-list-check display-4 text-muted mb-3"></i>
+                                            <h5 class="text-muted">No Tasks Added Yet</h5>
+                                            <p class="text-muted mb-3">Create tasks for this client to track work against their services.</p>
+                                            <a class="btn btn-primary" href="{% url 'add_task' client.id %}">
+                                                <i class="bi bi-plus-lg me-2"></i>Add First Task
+                                            </a>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -1321,137 +1263,108 @@
 
         <!-- Add Service Modal -->
         <div class="modal fade" id="addServiceModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title">
-                            <i class="bi bi-plus-circle me-2"></i>Add New Service
+                            <i class="bi bi-plus-circle me-2"></i>Select Service Type
                         </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <form>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Service Type <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select">
-                                        <option>Select Service Type</option>
-                                        <option>ITR Filing</option>
-                                        <option>GST Filing</option>
-                                        <option>Audit Services</option>
-                                        <option>TDS Return</option>
-                                        <option>Accounting</option>
-                                        <option>Compliance</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Billing Cycle <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select">
-                                        <option>Monthly</option>
-                                        <option>Quarterly</option>
-                                        <option>Half-yearly</option>
-                                        <option>Yearly</option>
-                                        <option>One-time</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Start Date <span
-                                            class="text-danger">*</span></label>
-                                    <input type="date" class="form-control">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Agreed Fee <span
-                                            class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" placeholder="Enter amount">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label fw-bold">Remarks</label>
-                                    <textarea class="form-control" rows="3"
-                                              placeholder="Add any additional notes"></textarea>
+                    <div class="modal-body p-4">
+                        <div class="text-center mb-4">
+                            <h6 class="text-muted">Choose a service to add for this client</h6>
+                        </div>
+                        <div class="row g-4">
+                            {% for service in available_services %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="service-card card h-100 border-0 shadow-sm"
+                                     data-service-id="{{ service.id }}"
+                                     data-service-name="{{ service.service_name }}"
+                                     style="cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(0px);">
+                                    <div class="card-body text-center p-4">
+                                        <div class="service-icon mb-3">
+                                            {% if service.category == 'Taxation' %}
+                                                {% if 'ITR' in service.service_name %}
+                                                    <i class="bi bi-file-text display-1 text-info"></i>
+                                                {% elif 'Case' in service.service_name %}
+                                                    <i class="bi bi-shield-exclamation display-1 text-primary"></i>
+                                                {% else %}
+                                                    <i class="bi bi-calculator display-1 text-danger"></i>
+                                                {% endif %}
+                                            {% elif service.category == 'Compliance' %}
+                                                {% if 'Case' in service.service_name %}
+                                                    <i class="bi bi-exclamation-triangle display-1 text-danger"></i>
+                                                {% else %}
+                                                    <i class="bi bi-receipt display-1 text-success"></i>
+                                                {% endif %}
+                                            {% elif service.category == 'Audit' %}
+                                                <i class="bi bi-search display-1 text-warning"></i>
+                                            {% elif service.category == 'Consulting' %}
+                                                <i class="bi bi-journal-text display-1 text-primary"></i>
+                                            {% else %}
+                                                <i class="bi bi-gear display-1 text-secondary"></i>
+                                            {% endif %}
+                                        </div>
+                                        <h5 class="card-title fw-bold mb-2">{{ service.service_name }}</h5>
+                                        <p class="card-text text-muted mb-3">{{ service.description|default:"Professional service for your business needs" }}</p>
+                                        <div class="service-features">
+                                            <small class="text-muted d-block">• Due in {{ service.default_due_days }} days</small>
+                                            <small class="text-muted d-block">• {{ service.get_frequency_display }} service</small>
+                                            <small class="text-muted d-block">• Professional support included</small>
+                                        </div>
+                                        <div class="mt-3">
+                                            {% if service.category == 'Taxation' %}
+                                                <span class="badge bg-info">{{ service.get_category_display }}</span>
+                                            {% elif service.category == 'Compliance' %}
+                                                <span class="badge bg-success">{{ service.get_category_display }}</span>
+                                            {% elif service.category == 'Audit' %}
+                                                <span class="badge bg-warning text-dark">{{ service.get_category_display }}</span>
+                                            {% elif service.category == 'Consulting' %}
+                                                <span class="badge bg-primary">{{ service.get_category_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ service.get_category_display }}</span>
+                                            {% endif %}
+                                            <span class="badge bg-secondary">{{ service.get_frequency_display }}</span>
+                                        </div>
+                                    </div>
+                                    <!-- Selection indicator -->
+                                    <div class="selection-indicator position-absolute top-0 end-0 m-2" style="display: none;">
+                                        <i class="bi bi-check-circle-fill text-success fs-3"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </form>
+                            {% empty %}
+                            <div class="col-12">
+                                <div class="text-center py-5">
+                                    <i class="bi bi-exclamation-triangle display-1 text-muted mb-3"></i>
+                                    <h5 class="text-muted">No Services Available</h5>
+                                    <p class="text-muted">Please contact administrator to set up service types.</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Click on a service card to proceed with the setup
+                            </p>
+                        </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-2"></i>Add Service
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg me-2"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" id="proceedBtn" disabled>
+                            <i class="bi bi-arrow-right me-2"></i>Proceed
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Add Task Modal -->
-        <div class="modal fade" id="addTaskModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title">
-                            <i class="bi bi-plus-circle me-2"></i>Add New Task
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label fw-bold">Task Title <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" placeholder="Enter task title">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Service Type <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select">
-                                        <option>Select Service</option>
-                                        <option>ITR Filing</option>
-                                        <option>GST Filing</option>
-                                        <option>Audit Services</option>
-                                        <option>TDS Return</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Priority <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select">
-                                        <option>Normal</option>
-                                        <option>High</option>
-                                        <option>Urgent</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Due Date <span
-                                            class="text-danger">*</span></label>
-                                    <input type="date" class="form-control">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Assign To <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select">
-                                        <option>CA Priya Mehta</option>
-                                        <option>CA Amit Shah</option>
-                                        <option>CA Rahul Verma</option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label fw-bold">Description</label>
-                                    <textarea class="form-control" rows="3" placeholder="Task description"></textarea>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-success">
-                            <i class="bi bi-check-lg me-2"></i>Create Task
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+
     </main>
 <div class="modal fade" id="addDocumentRequestModal" tabindex="-1" aria-labelledby="addDocumentRequestLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -1520,5 +1433,127 @@ setTimeout(() => {
     });
 }, 5000);
 </script>
+
+    <script>
+        // Auto-hide toasts
+        setTimeout(function () {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function (toast) {
+                var bsToast = new bootstrap.Toast(toast);
+                bsToast.hide();
+            });
+        }, 5000);
+
+        // Service selection functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const serviceCards = document.querySelectorAll('.service-card');
+            const proceedBtn = document.getElementById('proceedBtn');
+            let selectedServiceId = null;
+            let selectedServiceName = null;
+
+            // Add enhanced selection functionality
+            serviceCards.forEach(card => {
+                // Selection functionality with animations
+                card.addEventListener('click', function() {
+                    // Remove selection from all cards
+                    serviceCards.forEach(c => {
+                        c.classList.remove('selected');
+                        c.style.border = 'none';
+                        c.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+
+                        // Hide selection indicator
+                        const indicator = c.querySelector('.selection-indicator');
+                        if (indicator) {
+                            indicator.style.display = 'none';
+                        }
+                    });
+
+                    // Add selection to clicked card with animation
+                    this.classList.add('selected');
+                    this.style.border = '3px solid #0d6efd';
+                    this.style.boxShadow = '0 12px 35px rgba(13,110,253,0.4)';
+
+                    // Show selection indicator with animation
+                    const indicator = this.querySelector('.selection-indicator');
+                    if (indicator) {
+                        indicator.style.display = 'block';
+                    }
+
+                    // Store selected service data
+                    selectedServiceId = this.getAttribute('data-service-id');
+                    selectedServiceName = this.getAttribute('data-service-name');
+
+                    // Enable proceed button with animation
+                    proceedBtn.disabled = false;
+                    proceedBtn.classList.remove('btn-secondary');
+                    proceedBtn.classList.add('btn-primary');
+                    proceedBtn.innerHTML = `<i class="bi bi-arrow-right me-2"></i>Proceed with ${selectedServiceName}`;
+
+                    // Add button pulse animation
+                    proceedBtn.style.animation = 'pulse 0.6s ease-in-out';
+                    setTimeout(() => {
+                        proceedBtn.style.animation = '';
+                    }, 600);
+                });
+
+                // Enhanced hover effects
+                card.addEventListener('mouseenter', function() {
+                    if (!this.classList.contains('selected')) {
+                        this.style.transform = 'translateY(-3px)';
+                        this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                    }
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    if (!this.classList.contains('selected')) {
+                        this.style.transform = 'translateY(0)';
+                        this.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                    }
+                });
+            });
+
+            // Proceed button functionality
+            proceedBtn.addEventListener('click', function() {
+                if (selectedServiceId) {
+                    // Get client ID from data attribute or URL
+                    const clientId = document.getElementById('main').getAttribute('data-client-id') ||
+                                   window.location.pathname.split('/')[2] || 1;
+
+                    // Add loading state
+                    this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Redirecting...';
+                    this.disabled = true;
+
+                    // Redirect to service form page
+                    setTimeout(() => {
+                        window.location.href = `/client/${clientId}/service/${selectedServiceId}/add/`;
+                    }, 500);
+                }
+            });
+
+            // Reset modal when closed
+            document.getElementById('addServiceModal').addEventListener('hidden.bs.modal', function() {
+                serviceCards.forEach(card => {
+                    card.classList.remove('selected');
+                    card.style.border = 'none';
+                    card.style.transform = 'translateY(0)';
+                    card.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+
+                    // Hide selection indicators
+                    const indicator = card.querySelector('.selection-indicator');
+                    if (indicator) {
+                        indicator.style.display = 'none';
+                    }
+                });
+
+                // Reset button state
+                selectedServiceId = null;
+                selectedServiceName = null;
+                proceedBtn.disabled = true;
+                proceedBtn.classList.remove('btn-primary');
+                proceedBtn.classList.add('btn-secondary');
+                proceedBtn.innerHTML = '<i class="bi bi-arrow-right me-2"></i>Proceed';
+            });
+        });
+    </script>
 
 {% endblock %}
