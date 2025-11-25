@@ -20,7 +20,7 @@ from crispy_forms.helper import FormHelper
 from django.core.exceptions import ValidationError
 from .models import (
     ClientService, GSTDetails, ITRDetails, AuditDetails,
-    IncomeTaxCaseDetails, GSTCaseDetails
+    IncomeTaxCaseDetails, GSTCaseDetails, Task
 )
 from datetime import date
 from .models import ClientDocumentUpload
@@ -105,6 +105,61 @@ class ClientServiceForm(forms.ModelForm):
         return cleaned_data
 
 
+class TaskForm(forms.ModelForm):
+
+    class Meta:
+        model = Task
+        required_css_class = 'required'
+        fields = [
+            'task_title',
+            'period_from',
+            'period_to',
+            'due_date',
+            'assigned_to',
+            'recurrence',
+            'remarks',
+            'document_link',
+        ]
+        widgets = {
+            'task_title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter task title',
+                'required': True,
+                'minlength': '3',
+                'maxlength': '255',
+                'pattern': r'.{3,}',
+                'title': 'Task title must be at least 3 characters long'
+            }),
+            'period_from': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+            }),
+            'period_to': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+            }),
+            'due_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'required': True,
+            }),
+            'assigned_to': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'recurrence': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'remarks': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Task details or internal notes...'
+            }),
+            'document_link': forms.FileInput(attrs={
+                'class': 'form-control',
+            }),
+        }
+
+
 class GSTDetailsForm(forms.ModelForm):
     """
     Form for GST service specific details
@@ -113,6 +168,7 @@ class GSTDetailsForm(forms.ModelForm):
 
     class Meta:
         model = GSTDetails
+        required_css_class = 'required'
         fields = [
             'gst_number', 'date_of_registration', 'type_of_registration',
             'gst_username', 'gst_password', 'principal_place_of_business',
@@ -121,7 +177,7 @@ class GSTDetailsForm(forms.ModelForm):
         widgets = {
             'gst_number': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '22AAAAA0000A1Z5',
+                'placeholder': 'e.g. 22AAAAA0000A1Z5',
                 'maxlength': '15',
                 'minlength': '15',
                 'pattern': r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$',
@@ -159,7 +215,7 @@ class GSTDetailsForm(forms.ModelForm):
                 'maxlength': '2',
                 'minlength': '2',
                 'pattern': r'^[0-9]{2}$',
-                'placeholder': '22',
+                'placeholder': 'e.g. 22',
                 'oninput': "this.value = this.value.replace(/[^0-9]/g, '').substring(0, 2);",
                 'title': 'State code: 2 digits (e.g., 22 for Chhattisgarh)',
                 'inputmode': 'numeric',
@@ -193,6 +249,7 @@ class ITRDetailsForm(forms.ModelForm):
 
     class Meta:
         model = ITRDetails
+        required_css_class = 'required'
         fields = [
             'pan_number', 'aadhaar_number', 'itr_type', 'assessment_year',
             'income_source', 'last_itr_ack_no', 'filing_mode', 'remarks'
@@ -200,7 +257,7 @@ class ITRDetailsForm(forms.ModelForm):
         widgets = {
             'pan_number': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'AAAAA0000A',
+                'placeholder': 'e.g. AAAAA0000A',
                 'maxlength': '10',
                 'minlength': '10',
                 'pattern': r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$',
@@ -210,7 +267,7 @@ class ITRDetailsForm(forms.ModelForm):
             }),
             'aadhaar_number': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '123456789012',
+                'placeholder': 'e.g. 123456789012',
                 'maxlength': '12',
                 'minlength': '12',
                 'pattern': r'^[0-9]{12}$',
@@ -224,7 +281,7 @@ class ITRDetailsForm(forms.ModelForm):
             }),
             'assessment_year': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '2024-25',
+                'placeholder': 'e.g. 2024-25',
                 'maxlength': '9',
                 'required': True
             }),
@@ -272,6 +329,7 @@ class AuditDetailsForm(forms.ModelForm):
 
     class Meta:
         model = AuditDetails
+        required_css_class = 'required'
         fields = [
             'audit_type', 'financial_year', 'auditor_name',
             'audit_start_date', 'audit_end_date', 'report_upload', 'remarks'
@@ -283,7 +341,7 @@ class AuditDetailsForm(forms.ModelForm):
             }),
             'financial_year': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '2023-24',
+                'placeholder': 'e.g. 2023-24',
                 'maxlength': '9',
                 'required': True
             }),
@@ -331,6 +389,7 @@ class IncomeTaxCaseForm(forms.ModelForm):
 
     class Meta:
         model = IncomeTaxCaseDetails
+        required_css_class = 'required'
         fields = [
             'case_type', 'notice_number', 'notice_date', 'ao_name',
             'ward_circle', 'status', 'last_hearing_date', 'next_hearing_date',
@@ -390,6 +449,7 @@ class GSTCaseForm(forms.ModelForm):
 
     class Meta:
         model = GSTCaseDetails
+        required_css_class = 'required'
         fields = [
             'case_type', 'gstin', 'case_number', 'date_of_notice',
             'officer_name', 'jurisdiction', 'status', 'remarks'
@@ -404,7 +464,7 @@ class GSTCaseForm(forms.ModelForm):
                 'maxlength': '15',
                 'minlength': '15',
                 'pattern': r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$',
-                'placeholder': '22AAAAA0000A1Z5',
+                'placeholder': 'e.g. 22AAAAA0000A1Z5',
                 'oninput': "this.value = this.value.toUpperCase().substring(0, 15);",
                 'title': 'GSTIN format: 22AAAAA0000A1Z5 (15 characters)',
                 'required': True

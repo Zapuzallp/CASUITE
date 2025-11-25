@@ -1,255 +1,263 @@
 <!-- Services Accordion - Grouped by service type -->
 <div class="accordion" id="servicesAccordion">
     {% for service_name, services in grouped_services.items %}
-        <div class="accordion-item border-0 shadow-sm mb-3">
-            <h2 class="accordion-header">
-                <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} fw-bold" 
-                        type="button" 
-                        data-bs-toggle="collapse" 
-                        data-bs-target="#service{{ forloop.counter }}" 
-                        aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
-                        aria-controls="service{{ forloop.counter }}"
-                        style="background: linear-gradient(135deg, 
-                            {% if 'ITR' in service_name %}#0d6efd, #084298{% elif 'GST Services' in service_name %}#198754, #0f5132{% elif 'Audit' in service_name %}#fd7e14, #b85c00{% elif 'GST Cases' in service_name %}#dc3545, #842029{% elif 'Income Tax Cases' in service_name %}#6f42c1, #432874{% else %}#6c757d, #495057{% endif %}); 
-                            color: white; border: none;">
-                    {% if 'ITR' in service_name %}
-                        <i class="bi bi-file-text me-3 fs-4"></i>
-                    {% elif 'GST Services' in service_name %}
-                        <i class="bi bi-receipt me-3 fs-4"></i>
-                    {% elif 'Audit' in service_name %}
-                        <i class="bi bi-search me-3 fs-4"></i>
-                    {% elif 'GST Cases' in service_name %}
-                        <i class="bi bi-exclamation-triangle me-3 fs-4"></i>
-                    {% elif 'Income Tax Cases' in service_name %}
-                        <i class="bi bi-shield-exclamation me-3 fs-4"></i>
-                    {% else %}
-                        <i class="bi bi-gear me-3 fs-4"></i>
-                    {% endif %}
-                    <div>
-                        <strong>{{ service_name }}</strong>
-                        <br><small class="opacity-75">
-                            {{ services|length }} instance{{ services|length|pluralize }} • 
-                            Total Fee: ₹{% for service in services %}{{ service.agreed_fee }}{% if not forloop.last %} + ₹{% endif %}{% endfor %}
-                        </small>
-                    </div>
-                </button>
-            </h2>
-            <div id="service{{ forloop.counter }}" 
-                 class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
-                 data-bs-parent="#servicesAccordion">
-                <div class="accordion-body bg-light">
-                    
-                    {% if 'GST Services' in service_name %}
-                        <!-- GST Services - Info Cards Only -->
-                        {% for service in services %}
-                            {% if service.gst_details.first %}
-                                {% with gst=service.gst_details.first %}
-                                <div class="mb-4">
-                                    <h6 class="text-success mb-3"><i class="bi bi-building me-2"></i>GST Registration #{{ forloop.counter }}</h6>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <div class="card border-success h-100">
-                                                <div class="card-header bg-success text-white">
-                                                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Registration Details</h6>
-                                                </div>
-                                                <div class="card-body">
-                                                    <p class="mb-2"><strong>GSTIN:</strong> {{ gst.gst_number }}</p>
-                                                    <p class="mb-2"><strong>Registration Type:</strong> {{ gst.type_of_registration }}</p>
-                                                    <p class="mb-2"><strong>Filing Frequency:</strong> {{ gst.filing_frequency }}</p>
-                                                    <p class="mb-2"><strong>State Code:</strong> {{ gst.state_code }}</p>
-                                                    <p class="mb-2"><strong>Registration Date:</strong> {{ gst.date_of_registration|date:"M d, Y"|default:"Not specified" }}</p>
-                                                    <p class="mb-0"><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="card border-info h-100">
-                                                <div class="card-header bg-info text-white">
-                                                    <h6 class="mb-0"><i class="bi bi-gear me-2"></i>Service Details</h6>
-                                                </div>
-                                                <div class="card-body">
-                                                    <p class="mb-2"><strong>Service Start:</strong> {{ service.start_date|date:"M d, Y" }}</p>
-                                                    <p class="mb-2"><strong>Billing Cycle:</strong> {{ service.billing_cycle }}</p>
-                                                    <p class="mb-2"><strong>Agreed Fee:</strong> ₹{{ service.agreed_fee }}</p>
-                                                    <p class="mb-2"><strong>Username:</strong> {{ gst.gst_username }}</p>
-                                                    <p class="mb-0"><strong>Last Updated:</strong> {{ gst.updated_at|date:"M d, Y" }}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        
-                    {% else %}
-                        <!-- Other Services - Table Format -->
-                        
-                        
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-dark">
-                                <tr>
-                                    {% if 'ITR' in service_name %}
-                                        <th>Assessment Year</th>
-                                        <th>ITR Type</th>
-                                        <th>PAN Number</th>
-                                        <th>Income Source</th>
-                                        <th>Filing Mode</th>
-                                        <th>Service Fee</th>
-                                        <th>Action</th>
-                                    {% elif 'Audit' in service_name %}
-                                        <th>Financial Year</th>
-                                        <th>Audit Type</th>
-                                        <th>Auditor</th>
-                                        <th>Start Date</th>
-                                        <th>End Date</th>
-                                        <th>Service Fee</th>
-                                        <th>Action</th>
-                                    {% elif 'GST Cases' in service_name or 'GST Case' in service_name %}
-                                        <th>Case Type</th>
-                                        <th>Case Number</th>
-                                        <th>GSTIN</th>
-                                        <th>Officer</th>
-                                        <th>Status</th>
-                                        <th>Notice Date</th>
-                                        <th>Action</th>
-                                    {% elif 'Income Tax Cases' in service_name or 'Income Tax Case' in service_name %}
-                                        <th>Case Type</th>
-                                        <th>Notice Number</th>
-                                        <th>AO Name</th>
-                                        <th>Ward/Circle</th>
-                                        <th>Status</th>
-                                        <th>Next Hearing</th>
-                                        <th>Action</th>
-                                    {% endif %}
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <!-- Direct approach - get all cases for this service type -->
-                                {% if 'GST Cases' in service_name or 'GST Case' in service_name %}
-                                    
-                                    {% for service in services %}
-                                        {% for case in service.gst_case_details.all %}
-                                        <tr>
-                                            <td><span class="badge bg-warning text-dark">{{ case.case_type }}</span></td>
-                                            <td>{{ case.case_number }}</td>
-                                            <td>{{ case.gstin }}</td>
-                                            <td>{{ case.officer_name }}</td>
-                                            <td>
-                                                {% if case.status == 'Pending' %}
-                                                    <span class="badge bg-warning text-dark">{{ case.status }}</span>
-                                                {% elif case.status == 'Submitted' %}
-                                                    <span class="badge bg-success">{{ case.status }}</span>
-                                                {% else %}
-                                                    <span class="badge bg-secondary">{{ case.status }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ case.date_of_notice|date:"M d, Y" }}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye"></i> View
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    {% endfor %}
-                                {% elif 'Income Tax Cases' in service_name or 'Income Tax Case' in service_name %}
-                                    
-                                    {% for service in services %}
-                                        {% for case in service.incometax_case_details.all %}
-                                        <tr>
-                                            <td><span class="badge bg-info">{{ case.case_type }}</span></td>
-                                            <td>{{ case.notice_number|default:"-" }}</td>
-                                            <td>{{ case.ao_name }}</td>
-                                            <td>{{ case.ward_circle|default:"-" }}</td>
-                                            <td>
-                                                {% if case.status == 'Pending' %}
-                                                    <span class="badge bg-warning text-dark">{{ case.status }}</span>
-                                                {% elif case.status == 'Submitted' %}
-                                                    <span class="badge bg-success">{{ case.status }}</span>
-                                                {% else %}
-                                                    <span class="badge bg-secondary">{{ case.status }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ case.next_hearing_date|date:"M d, Y"|default:"-" }}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-calendar"></i> View
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    {% endfor %}
-                                {% elif 'ITR' in service_name %}
-                                    {% for service in services %}
-                                        {% for itr in service.itr_details.all %}
-                                        <tr>
-                                            <td><strong>{{ itr.assessment_year }}</strong></td>
-                                            <td>{{ itr.itr_type }}</td>
-                                            <td>{{ itr.pan_number }}</td>
-                                            <td>{{ itr.income_source }}</td>
-                                            <td>{{ itr.filing_mode }}</td>
-                                            <td>₹{{ service.agreed_fee }}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye"></i> View
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    {% endfor %}
-                                {% elif 'Audit' in service_name %}
-                                    {% for service in services %}
-                                        {% for audit in service.audit_details.all %}
-                                        <tr>
-                                            <td><strong>{{ audit.financial_year }}</strong></td>
-                                            <td>{{ audit.audit_type }}</td>
-                                            <td>{{ audit.auditor_name }}</td>
-                                            <td>{{ audit.audit_start_date|date:"M d, Y"|default:"-" }}</td>
-                                            <td>{{ audit.audit_end_date|date:"M d, Y"|default:"-" }}</td>
-                                            <td>₹{{ service.agreed_fee }}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye"></i> View
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    {% endfor %}
-                                {% endif %}
-                                
-                                <!-- Show empty message if no rows were generated -->
-                                {% if 'GST Cases' in service_name or 'GST Case' in service_name %}
-                                    {% for service in services %}
-                                        {% if not service.gst_case_details.all %}
-                                            <tr>
-                                                <td colspan="7" class="text-center py-4">
-                                                    <i class="bi bi-exclamation-triangle display-4 text-muted mb-3"></i>
-                                                    <p class="text-muted">No GST case details found for Service ID {{ service.id }}.</p>
-                                                </td>
-                                            </tr>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% elif 'Income Tax Cases' in service_name or 'Income Tax Case' in service_name %}
-                                    {% for service in services %}
-                                        {% if not service.incometax_case_details.all %}
-                                            <tr>
-                                                <td colspan="7" class="text-center py-4">
-                                                    <i class="bi bi-shield-exclamation display-4 text-muted mb-3"></i>
-                                                    <p class="text-muted">No income tax case details found for Service ID {{ service.id }}.</p>
-                                                </td>
-                                            </tr>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% endif %}
-                    
+    <div class="accordion-item border-0 shadow-sm mb-3">
+        <h2 class="accordion-header">
+            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} fw-bold" type="button"
+                data-bs-toggle="collapse" data-bs-target="#service{{ forloop.counter }}"
+                aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}"
+                aria-controls="service{{ forloop.counter }}"
+                style="background: linear-gradient(135deg,
+                            {% if 'ITR' in service_name %}#0d6efd, #084298{% elif 'GST Services' in service_name %}#198754, #0f5132{% elif 'Audit' in service_name %}#fd7e14, #b85c00{% elif 'GST Cases' in service_name %}#dc3545, #842029{% elif 'Income Tax Cases' in service_name %}#6f42c1, #432874{% else %}#6c757d, #495057{% endif %}); color: white; border: none;">
+                {% if 'ITR' in service_name %}
+                <i class="bi bi-file-text me-3 fs-4"></i>
+                {% elif 'GST Services' in service_name %}
+                <i class="bi bi-receipt me-3 fs-4"></i>
+                {% elif 'Audit' in service_name %}
+                <i class="bi bi-search me-3 fs-4"></i>
+                {% elif 'GST Cases' in service_name %}
+                <i class="bi bi-exclamation-triangle me-3 fs-4"></i>
+                {% elif 'Income Tax Cases' in service_name %}
+                <i class="bi bi-shield-exclamation me-3 fs-4"></i>
+                {% else %}
+                <i class="bi bi-gear me-3 fs-4"></i>
+                {% endif %}
+                <div>
+                    <strong>{{ service_name }}</strong>
+                    <br><small class="opacity-75">
+                        {{ services|length }} instance{{ services|length|pluralize }} •
+                        Total Fee: ₹{% for service in services %}{{ service.agreed_fee }}{% if not forloop.last %} +
+                        ₹{%endif %}{% endfor %}
+                    </small>
                 </div>
+            </button>
+        </h2>
+        <div id="service{{ forloop.counter }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+            data-bs-parent="#servicesAccordion">
+            <div class="accordion-body bg-light">
+
+                {% if 'GST Services' in service_name %}
+                <!-- GST Services - Info Cards Only -->
+                {% for service in services %}
+                {% if service.gst_details.first %}
+                {% with gst=service.gst_details.first %}
+                <div class="mb-4">
+                    <h6 class="text-success mb-3"><i class="bi bi-building me-2"></i>GST Registration #{{forloop.counter
+                        }}</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card border-success h-100">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Registration Details</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-2"><strong>GSTIN:</strong> {{ gst.gst_number }}</p>
+                                    <p class="mb-2"><strong>Registration Type:</strong> {{ gst.type_of_registration }}
+                                    </p>
+                                    <p class="mb-2"><strong>Filing Frequency:</strong> {{ gst.filing_frequency }}</p>
+                                    <p class="mb-2"><strong>State Code:</strong> {{ gst.state_code }}</p>
+                                    <p class="mb-2"><strong>Registration Date:</strong> {{
+                                        gst.date_of_registration|date:"M d, Y"|default:"Not specified" }}</p>
+                                    <p class="mb-0"><strong>Status:</strong> <span
+                                            class="badge bg-success">Active</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-info h-100">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="bi bi-gear me-2"></i>Service Details</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-2"><strong>Service Start:</strong> {{ service.start_date|date:"M d,
+                                        Y"}}</p>
+                                    <p class="mb-2"><strong>Billing Cycle:</strong> {{ service.billing_cycle }}</p>
+                                    <p class="mb-2"><strong>Agreed Fee:</strong> ₹{{ service.agreed_fee }}</p>
+                                    <p class="mb-2"><strong>Username:</strong> {{ gst.gst_username }}</p>
+                                    <p class="mb-0"><strong>Last Updated:</strong> {{ gst.updated_at|date:"M d, Y" }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endif %}
+                {% endfor %}
+
+                {% else %}
+                <!-- Other Services - Table Format -->
+
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                {% if 'ITR' in service_name %}
+                                <th>Assessment Year</th>
+                                <th>ITR Type</th>
+                                <th>PAN Number</th>
+                                <th>Income Source</th>
+                                <th>Filing Mode</th>
+                                <th>Service Fee</th>
+                                <th>Action</th>
+                                {% elif 'Audit' in service_name %}
+                                <th>Financial Year</th>
+                                <th>Audit Type</th>
+                                <th>Auditor</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Service Fee</th>
+                                <th>Action</th>
+                                {% elif 'GST Cases' in service_name or 'GST Case' in service_name %}
+                                <th>Case Type</th>
+                                <th>Case Number</th>
+                                <th>GSTIN</th>
+                                <th>Officer</th>
+                                <th>Status</th>
+                                <th>Notice Date</th>
+                                <th>Action</th>
+                                {% elif 'Income Tax Cases' in service_name or 'Income Tax Case' in service_name %}
+                                <th>Case Type</th>
+                                <th>Notice Number</th>
+                                <th>AO Name</th>
+                                <th>Ward/Circle</th>
+                                <th>Status</th>
+                                <th>Next Hearing</th>
+                                <th>Action</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Direct approach - get all cases for this service type -->
+                            {% if 'GST Cases' in service_name or 'GST Case' in service_name %}
+
+                            {% for service in services %}
+                            {% for case in service.gst_case_details.all %}
+                            <tr>
+                                <td><span class="badge bg-warning text-dark">{{ case.case_type }}</span></td>
+                                <td>{{ case.case_number }}</td>
+                                <td>{{ case.gstin }}</td>
+                                <td>{{ case.officer_name }}</td>
+                                <td>
+                                    {% if case.status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark">{{ case.status }}</span>
+                                    {% elif case.status == 'Submitted' %}
+                                    <span class="badge bg-success">{{ case.status }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ case.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ case.date_of_notice|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'service_detail' service_id=service.id detail_id=case.gst_case_id %}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                            {% elif 'Income Tax Cases' in service_name or 'Income Tax Case' in service_name %}
+
+                            {% for service in services %}
+                            {% for case in service.incometax_case_details.all %}
+                            <tr>
+                                <td><span class="badge bg-info">{{ case.case_type }}</span></td>
+                                <td>{{ case.notice_number|default:"-" }}</td>
+                                <td>{{ case.ao_name }}</td>
+                                <td>{{ case.ward_circle|default:"-" }}</td>
+                                <td>
+                                    {% if case.status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark">{{ case.status }}</span>
+                                    {% elif case.status == 'Submitted' %}
+                                    <span class="badge bg-success">{{ case.status }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ case.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ case.next_hearing_date|date:"M d, Y"|default:"-" }}</td>
+                                <td>
+                                    <a href="{% url 'service_detail' service_id=service.id detail_id=case.case_id %}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-calendar"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                            {% elif 'ITR' in service_name %}
+                            {% for service in services %}
+                            {% for itr in service.itr_details.all %}
+                            <tr>
+                                <td><strong>{{ itr.assessment_year }}</strong></td>
+                                <td>{{ itr.itr_type }}</td>
+                                <td>{{ itr.pan_number }}</td>
+                                <td>{{ itr.income_source }}</td>
+                                <td>{{ itr.filing_mode }}</td>
+                                <td>₹{{ service.agreed_fee }}</td>
+                                <td>
+                                    <a href="{% url 'service_detail' service_id=service.id detail_id=itr.itr_id %}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                            {% elif 'Audit' in service_name %}
+                            {% for service in services %}
+                            {% for audit in service.audit_details.all %}
+                            <tr>
+                                <td><strong>{{ audit.financial_year }}</strong></td>
+                                <td>{{ audit.audit_type }}</td>
+                                <td>{{ audit.auditor_name }}</td>
+                                <td>{{ audit.audit_start_date|date:"M d, Y"|default:"-" }}</td>
+                                <td>{{ audit.audit_end_date|date:"M d, Y"|default:"-" }}</td>
+                                <td>₹{{ service.agreed_fee }}</td>
+                                <td>
+                                    <a href="{% url 'service_detail' service_id=service.id detail_id=audit.audit_id %}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                            {% endif %}
+
+                            <!-- Show empty message if no rows were generated -->
+                            {% if 'GST Cases' in service_name or 'GST Case' in service_name %}
+                            {% for service in services %}
+                            {% if not service.gst_case_details.all %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="bi bi-exclamation-triangle display-4 text-muted mb-3"></i>
+                                    <p class="text-muted">No GST case details found for Service ID {{ service.id }}.</p>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                            {% elif 'Income Tax Cases' in service_name or 'Income Tax Case' in service_name %}
+                            {% for service in services %}
+                            {% if not service.incometax_case_details.all %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="bi bi-shield-exclamation display-4 text-muted mb-3"></i>
+                                    <p class="text-muted">No income tax case details found for Service ID {{
+                                        service.id}}.</p>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
             </div>
         </div>
+    </div>
     {% endfor %}
 </div>

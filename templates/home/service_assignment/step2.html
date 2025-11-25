@@ -342,39 +342,75 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Add real-time validation feedback
-    document.querySelectorAll('input[required], select[required], textarea[required]').forEach(function(field) {
+    const requiredFields = document.querySelectorAll('input[required], select[required], textarea[required]');
+
+    function showRequiredError(field) {
+        field.classList.add('is-invalid');
+
+        // Create or update error message
+        let errorDiv = field.parentNode.querySelector('.invalid-feedback');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback';
+            field.parentNode.appendChild(errorDiv);
+        }
+        errorDiv.textContent = 'This field is required.';
+        errorDiv.style.display = 'block';
+    }
+
+    function clearRequiredError(field) {
+        if (field.classList.contains('is-invalid')) {
+            field.classList.remove('is-invalid');
+        }
+        const errorDiv = field.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv && errorDiv.textContent === 'This field is required.') {
+            errorDiv.style.display = 'none';
+        }
+    }
+
+    requiredFields.forEach(function(field) {
         field.addEventListener('blur', function() {
             if (this.value.trim() === '') {
-                this.classList.add('is-invalid');
-
-                // Create or update error message
-                let errorDiv = this.parentNode.querySelector('.invalid-feedback');
-                if (!errorDiv) {
-                    errorDiv = document.createElement('div');
-                    errorDiv.className = 'invalid-feedback';
-                    this.parentNode.appendChild(errorDiv);
-                }
-                errorDiv.textContent = 'This field is required.';
-                errorDiv.style.display = 'block';
+                showRequiredError(this);
             } else {
-                this.classList.remove('is-invalid');
-                const errorDiv = this.parentNode.querySelector('.invalid-feedback');
-                if (errorDiv && errorDiv.textContent === 'This field is required.') {
-                    errorDiv.style.display = 'none';
-                }
+                clearRequiredError(this);
             }
         });
 
         field.addEventListener('input', function() {
-            if (this.classList.contains('is-invalid') && this.value.trim() !== '') {
-                this.classList.remove('is-invalid');
-                const errorDiv = this.parentNode.querySelector('.invalid-feedback');
-                if (errorDiv && errorDiv.textContent === 'This field is required.') {
-                    errorDiv.style.display = 'none';
-                }
+            if (this.value.trim() === '') {
+                // Immediately show error while typing if field becomes empty
+                showRequiredError(this);
+            } else {
+                clearRequiredError(this);
             }
         });
     });
+
+    // Prevent form submission if required fields are empty
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            let formIsValid = true;
+
+            requiredFields.forEach(function(field) {
+                if (field.value.trim() === '') {
+                    showRequiredError(field);
+                    if (formIsValid) {
+                        formIsValid = false;
+                    }
+                }
+            });
+
+            if (!formIsValid) {
+                event.preventDefault();
+                const firstInvalid = form.querySelector('.is-invalid');
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                }
+            }
+        });
+    }
 });
 </script>
 

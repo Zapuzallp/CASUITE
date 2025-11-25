@@ -186,6 +186,7 @@ class ServiceType(models.Model):
     form_name = models.CharField(max_length=100, help_text="Form class name from forms.py (e.g., 'GSTDetailsForm')")
     model_name = models.CharField(max_length=100, help_text="Model class name for service details (e.g., 'GSTDetails')")
     allow_multiple = models.BooleanField(default=False, help_text="Can one client have multiple instances of this service?")
+    is_task = models.BooleanField(default=False, help_text="Mark this service type as task-only.")
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

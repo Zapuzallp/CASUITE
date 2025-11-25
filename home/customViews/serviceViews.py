@@ -255,9 +255,21 @@ class ServiceAssignmentStep3View(LoginRequiredMixin, View):
                 if 'service_form_type' in request.session:
                     del request.session['service_form_type']
 
-                messages.success(request,
-                                 f"✅ Service '{service_type.service_name}' has been successfully assigned to {client.client_name}!")
-                return redirect('client_details', pk=client.id)
+                messages.success(
+                    request,
+                    f" Service '{service_type.service_name}' has been successfully assigned to {client.client_name}!"
+                )
+
+                context = {
+                    'client': client,
+                    'service_type': service_type,
+                    'service_assignment_data': service_assignment_data,
+                    'service_specific_data': service_specific_data,
+                    'step': 3,
+                    'total_steps': 3,
+                    'success': True,
+                }
+                return render(request, self.template_name, context)
 
         except Exception as e:
             messages.error(request, f"Error saving service assignment: {str(e)}")
@@ -365,9 +377,10 @@ class AvailableServicesView(LoginRequiredMixin, View):
             'GST Case'
         ]
 
-        # Get all active services that match our main service types
+        # Get all active, non-task services that match our main service types
         active_services = ServiceType.objects.filter(
             active=True,
+            is_task=False,
             service_name__in=main_services
         ).order_by('service_name')
 
@@ -395,3 +408,68 @@ class AvailableServicesView(LoginRequiredMixin, View):
             })
 
         return JsonResponse({'services': services_data})
+
+
+class ServiceDetailView(LoginRequiredMixin, View):
+    """
+    View for displaying complete service details with credentials
+    """
+    template_name = 'client/service_detail.html'
+
+    def get(self, request, service_id, detail_id):
+        try:
+            # Get the client service
+            client_service = get_object_or_404(
+                ClientService.objects.select_related('client', 'service'),
+                id=service_id
+            )
+
+            client = client_service.client
+            service_type = client_service.service.service_name
+
+            # Get service-specific details based on service type
+            service_detail = None
+
+            if 'GST Services' in service_type:
+                service_detail = get_object_or_404(
+                    GSTDetails,
+                    gst_id=detail_id,
+                    client_service=client_service
+                )
+            elif 'ITR' in service_type:
+                service_detail = get_object_or_404(
+                    ITRDetails,
+                    itr_id=detail_id,
+                    client_service=client_service
+                )
+            elif 'Audit' in service_type:
+                service_detail = get_object_or_404(
+                    AuditDetails,
+                    audit_id=detail_id,
+                    client_service=client_service
+                )
+            elif 'GST Case' in service_type:
+                service_detail = get_object_or_404(
+                    GSTCaseDetails,
+                    gst_case_id=detail_id,
+                    client_service=client_service
+                )
+            elif 'Income Tax Case' in service_type:
+                service_detail = get_object_or_404(
+                    IncomeTaxCaseDetails,
+                    case_id=detail_id,
+                    client_service=client_service
+                )
+
+            context = {
+                'client': client,
+                'client_service': client_service,
+                'service_type': service_type,
+                'service_detail': service_detail,
+            }
+
+            return render(request, self.template_name, context)
+
+        except Exception as e:
+            messages.error(request, f"Error loading service details: {str(e)}")
+            return redirect('dashboard')

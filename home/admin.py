@@ -104,10 +104,10 @@ class HUFDetailsAdmin(admin.ModelAdmin):
 # -------------------------
 @admin.register(ServiceType)
 class ServiceTypeAdmin(admin.ModelAdmin):
-    list_display = ['service_name', 'category', 'frequency', 'default_due_days', 'active']
-    list_filter = ['category', 'frequency', 'active']
+    list_display = ['service_name', 'category', 'frequency', 'default_due_days', 'is_task', 'active']
+    list_filter = ['category', 'frequency', 'is_task', 'active']
     search_fields = ['service_name', 'description']
-    list_editable = ['active']
+    list_editable = ['is_task', 'active']
     readonly_fields = ['created_at']
 
 

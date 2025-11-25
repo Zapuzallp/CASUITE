@@ -333,10 +333,9 @@
                                         data-bs-target="#addServiceModal">
                                     <i class="bi bi-plus-lg me-2"></i>Add Service
                                 </button>
-                                <button class="btn btn-success btn-sm" data-bs-toggle="modal"
-                                        data-bs-target="#addTaskModal">
+                                <a class="btn btn-success btn-sm" href="{% url 'add_task' client.id %}">
                                     <i class="bi bi-plus-lg me-2"></i>Add Task
-                                </button>
+                                </a>
                                 <button class="btn btn-info btn-sm">
                                     <i class="bi bi-upload me-2"></i>Upload Document
                                 </button>
@@ -631,108 +630,130 @@
                                         <h5 class="mb-0 fw-bold">
                                             <i class="bi bi-list-check me-2"></i>Service Tasks
                                         </h5>
-                                        <button class="btn btn-light btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#addTaskModal">
+                                        <a class="btn btn-light btn-sm" href="{% url 'add_task' client.id %}">
                                             <i class="bi bi-plus-lg me-2"></i>Add Task
-                                        </button>
+                                        </a>
                                     </div>
                                 </div>
                                 <div class="card-body">
-                                    <!-- Task Filters -->
-                                    <div class="btn-group mb-3" role="group">
-                                        <input type="radio" class="btn-check" name="taskFilter" id="allTasks" checked>
-                                        <label class="btn btn-outline-primary" for="allTasks">All (15)</label>
+                                    {% if total_tasks %}
+                                        <div class="btn-group mb-3" role="group" aria-label="Task status filter">
+                                            <a href="?tab=tasks" class="btn btn-outline-primary {% if status_filter == 'all' or not status_filter %}active{% endif %}">
+                                                All <span class="badge bg-primary text-white ms-1">{{ status_counts.all|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=Pending" class="btn btn-outline-warning {% if status_filter == 'Pending' %}active{% endif %}">
+                                                Pending <span class="badge bg-warning text-dark ms-1">{{ status_counts.Pending|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=In+Progress" class="btn btn-outline-info {% if status_filter == 'In Progress' %}active{% endif %}">
+                                                In Progress <span class="badge bg-info text-dark ms-1">{{ status_counts.In_Progress|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=Submitted" class="btn btn-outline-secondary {% if status_filter == 'Submitted' %}active{% endif %}">
+                                                Submitted <span class="badge bg-secondary text-white ms-1">{{ status_counts.Submitted|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=Completed" class="btn btn-outline-success {% if status_filter == 'Completed' %}active{% endif %}">
+                                                Completed <span class="badge bg-success text-white ms-1">{{ status_counts.Completed|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=Delayed" class="btn btn-outline-danger {% if status_filter == 'Delayed' %}active{% endif %}">
+                                                Delayed <span class="badge bg-danger text-white ms-1">{{ status_counts.Delayed|default:'0' }}</span>
+                                            </a>
+                                            <a href="?tab=tasks&status=Cancelled" class="btn btn-outline-dark {% if status_filter == 'Cancelled' %}active{% endif %}">
+                                                Cancelled <span class="badge bg-dark text-white ms-1">{{ status_counts.Cancelled|default:'0' }}</span>
+                                            </a>
+                                        </div>
 
-                                        <input type="radio" class="btn-check" name="taskFilter" id="pendingTasks">
-                                        <label class="btn btn-outline-warning" for="pendingTasks">Pending (8)</label>
-
-                                        <input type="radio" class="btn-check" name="taskFilter" id="completedTasks">
-                                        <label class="btn btn-outline-success" for="completedTasks">Completed
-                                            (7)</label>
-                                    </div>
-
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle">
-                                            <thead class="table-light">
-                                            <tr>
-                                                <th>Task Title</th>
-                                                <th>Service Type</th>
-                                                <th>Period</th>
-                                                <th>Due Date</th>
-                                                <th>Assigned To</th>
-                                                <th>Status</th>
-                                                <th>Action</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr>
-                                                <td><strong>ITR-2 Filing for AY 2024-25</strong></td>
-                                                <td><span class="badge bg-info">ITR</span></td>
-                                                <td>2024-25</td>
-                                                <td class="text-danger">Nov 30, 2025</td>
-                                                <td>CA Priya Mehta</td>
-                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>GSTR-1 Filing October 2025</strong></td>
-                                                <td><span class="badge bg-success">GST</span></td>
-                                                <td>Oct 2025</td>
-                                                <td class="text-danger">Nov 11, 2025</td>
-                                                <td>CA Amit Shah</td>
-                                                <td><span class="badge bg-danger">Overdue</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-danger action-btn">
-                                                        <i class="bi bi-exclamation-triangle"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Annual Audit Report Preparation</strong></td>
-                                                <td><span class="badge bg-warning text-dark">Audit</span></td>
-                                                <td>2023-24</td>
-                                                <td>Dec 15, 2025</td>
-                                                <td>CA Priya Mehta</td>
-                                                <td><span class="badge bg-info">Scheduled</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>TDS Return Q2 Filing</strong></td>
-                                                <td><span class="badge bg-secondary">TDS</span></td>
-                                                <td>Q2 2025-26</td>
-                                                <td>Oct 31, 2025</td>
-                                                <td>CA Amit Shah</td>
-                                                <td><span class="badge bg-success">Completed</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-check-circle"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Balance Sheet Finalization</strong></td>
-                                                <td><span class="badge bg-primary">Accounting</span></td>
-                                                <td>2023-24</td>
-                                                <td>Nov 20, 2025</td>
-                                                <td>CA Priya Mehta</td>
-                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                        {% for group in grouped_tasks %}
+                                            <div class="card mb-3">
+                                                <div class="card-header d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong>{{ group.service_name }}</strong>
+                                                    </div>
+                                                    <div>
+                                                        <span class="badge bg-secondary me-2">{{ group.total_count }} Tasks</span>
+                                                        {% if group.pending_count %}
+                                                            <span class="badge bg-warning text-dark">{{ group.pending_count }} Pending</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-hover align-middle mb-0">
+                                                            <thead class="table-light">
+                                                            <tr>
+                                                                <th>Task Title</th>
+                                                                <th>Period</th>
+                                                                <th>Due Date</th>
+                                                                <th>Assigned To</th>
+                                                                <th>Status</th>
+                                                                <th>Action</th>
+                                                            </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                            {% for task in group.tasks %}
+                                                                <tr>
+                                                                    <td><strong>{{ task.task_title }}</strong></td>
+                                                                    <td>
+                                                                        {% if task.period_from or task.period_to %}
+                                                                            {% if task.period_from %}
+                                                                                {{ task.period_from|date:"M d, Y" }}
+                                                                            {% endif %}
+                                                                            {% if task.period_to %}
+                                                                                	-	{{ task.period_to|date:"M d, Y" }}
+                                                                            {% endif %}
+                                                                        {% else %}
+                                                                            -
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td>
+                                                                        {{ task.due_date|date:"M d, Y" }}
+                                                                    </td>
+                                                                    <td>
+                                                                        {% if task.assigned_to %}
+                                                                            {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                                                                        {% else %}
+                                                                            -
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td>
+                                                                        {% if task.task_status == 'Pending' %}
+                                                                            <span class="badge bg-warning text-dark">Pending</span>
+                                                                        {% elif task.task_status == 'In Progress' %}
+                                                                            <span class="badge bg-info text-dark">In Progress</span>
+                                                                        {% elif task.task_status == 'Submitted' %}
+                                                                            <span class="badge bg-primary">Submitted</span>
+                                                                        {% elif task.task_status == 'Completed' %}
+                                                                            <span class="badge bg-success">Completed</span>
+                                                                        {% elif task.task_status == 'Delayed' %}
+                                                                            <span class="badge bg-danger">Delayed</span>
+                                                                        {% elif task.task_status == 'Cancelled' %}
+                                                                            <span class="badge bg-secondary">Cancelled</span>
+                                                                        {% else %}
+                                                                            <span class="badge bg-light text-dark">{{ task.task_status }}</span>
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td>
+                                                                        <a href="{% url 'task_detail' task.id %}"
+                                                                           class="btn btn-sm btn-outline-primary action-btn">
+                                                                            <i class="bi bi-eye"></i>
+                                                                        </a>
+                                                                    </td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center py-5">
+                                            <i class="bi bi-list-check display-4 text-muted mb-3"></i>
+                                            <h5 class="text-muted">No Tasks Added Yet</h5>
+                                            <p class="text-muted mb-3">Create tasks for this client to track work against their services.</p>
+                                            <a class="btn btn-primary" href="{% url 'add_task' client.id %}">
+                                                <i class="bi bi-plus-lg me-2"></i>Add First Task
+                                            </a>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -1307,74 +1328,7 @@
             </div>
         </div>
 
-        <!-- Add Task Modal -->
-        <div class="modal fade" id="addTaskModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title">
-                            <i class="bi bi-plus-circle me-2"></i>Add New Task
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label fw-bold">Task Title <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" placeholder="Enter task title">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Service Type <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select">
-                                        <option>Select Service</option>
-                                        <option>ITR Filing</option>
-                                        <option>GST Filing</option>
-                                        <option>Audit Services</option>
-                                        <option>TDS Return</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Priority <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select">
-                                        <option>Normal</option>
-                                        <option>High</option>
-                                        <option>Urgent</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Due Date <span
-                                            class="text-danger">*</span></label>
-                                    <input type="date" class="form-control">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">Assign To <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select">
-                                        <option>CA Priya Mehta</option>
-                                        <option>CA Amit Shah</option>
-                                        <option>CA Rahul Verma</option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label fw-bold">Description</label>
-                                    <textarea class="form-control" rows="3" placeholder="Task description"></textarea>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-success">
-                            <i class="bi bi-check-lg me-2"></i>Create Task
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+
     </main>
 
     <script>

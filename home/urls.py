@@ -1,10 +1,10 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView
+from home.customViews import authView, documentsUploadView, clientView, taskView
 from home.views import HomeView
 from home.customViews.serviceViews import (
     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
-    EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView
+    EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView
 )
 
 urlpatterns = [
@@ -39,4 +39,13 @@ urlpatterns = [
          AvailableServicesView.as_view(), name='get_available_services'),
     path('api/client/<int:client_id>/suggestions/',
          ClientSuggestionsView.as_view(), name='get_client_suggestions'),
+
+    # Service Detail View
+    path('service/<int:service_id>/detail/<int:detail_id>/',
+         ServiceDetailView.as_view(), name='service_detail'),
+
+    # Tasks
+    path('tasks/', taskView.tasks_dashboard, name='tasks_dashboard'),
+    path('tasks/<int:task_id>/', taskView.task_detail, name='task_detail'),
+    path('client/<int:client_id>/tasks/add/', taskView.add_task, name='add_task'),
 ]
