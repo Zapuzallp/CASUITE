@@ -185,97 +185,94 @@
                             </div>
                         </div>
                         <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                    <tr>
-                                        <th class="ps-4">Request Title</th>
-                                        <th>Due Date</th>
-                                        <th>Progress</th>
-                                        <th>Status</th>
-                                        <th class="text-center">Action</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr>
-                                        <td class="ps-4">
-                                            <i class="bi bi-folder2 text-primary me-2"></i>
-                                            <strong>Q4 Financial Documents</strong>
-                                        </td>
-                                        <td><span class="text-muted">Nov 30, 2025</span></td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                                    <div class="progress-bar bg-success" style="width: 75%"></div>
-                                                </div>
-                                                <small class="text-muted">75%</small>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-warning text-dark">In Progress</span></td>
-                                        <td class="text-center">
-                                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="ps-4">
-                                            <i class="bi bi-folder2 text-primary me-2"></i>
-                                            <strong>Tax Return Documents 2024</strong>
-                                        </td>
-                                        <td><span class="text-danger">Nov 15, 2025</span></td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                                    <div class="progress-bar bg-danger" style="width: 30%"></div>
-                                                </div>
-                                                <small class="text-muted">30%</small>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-danger">Overdue</span></td>
-                                        <td class="text-center">
-                                            <a href="#" class="btn btn-sm btn-outline-danger">Urgent</a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="ps-4">
-                                            <i class="bi bi-folder2 text-primary me-2"></i>
-                                            <strong>Annual Audit Papers</strong>
-                                        </td>
-                                        <td><span class="text-muted">Dec 10, 2025</span></td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                                    <div class="progress-bar bg-success" style="width: 100%"></div>
-                                                </div>
-                                                <small class="text-muted">100%</small>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-success">Completed</span></td>
-                                        <td class="text-center">
-                                            <a href="#" class="btn btn-sm btn-outline-secondary">View</a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="ps-4">
-                                            <i class="bi bi-folder2 text-primary me-2"></i>
-                                            <strong>GST Compliance Documents</strong>
-                                        </td>
-                                        <td><span class="text-muted">Dec 5, 2025</span></td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                                    <div class="progress-bar bg-info" style="width: 50%"></div>
-                                                </div>
-                                                <small class="text-muted">50%</small>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge bg-info">In Review</span></td>
-                                        <td class="text-center">
-                                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
-                                        </td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                            {% if no_clients_message %}
+                                <div class="text-center py-5">
+                                    <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
+                                    <h6 class="mt-3 text-warning">{{ no_clients_message }}</h6>
+                                </div>
+                            {% elif not clients_with_requests %}
+                                <div class="text-center py-5">
+                                    <i class="bi bi-inbox display-4 text-muted"></i>
+                                    <h6 class="mt-3 text-muted">No document requests found</h6>
+                                    <p class="text-muted">No document requests for your assigned clients.</p>
+                                </div>
+                            {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">Client & Request</th>
+                                            <th>Due Date</th>
+                                            <th>Progress</th>
+                                            <th>Status</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for client_data in clients_with_requests %}
+                                            {% for request_data in client_data.requests|slice:":2" %}
+                                                <tr>
+                                                    <td class="ps-4">
+                                                        <div>
+                                                            <i class="bi bi-person-circle text-primary me-2"></i>
+                                                            <strong class="text-primary">{{ client_data.client.client_name }}</strong>
+                                                        </div>
+                                                        <div class="ms-4">
+                                                            <i class="bi bi-folder2 text-secondary me-2"></i>
+                                                            <span>{{ request_data.request.title }}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="{% if request_data.request.is_overdue %}text-danger{% else %}text-muted{% endif %}">
+                                                            {{ request_data.request.due_date|date:"M d, Y" }}
+                                                        </span>
+                                                        {% if request_data.request.is_overdue %}
+                                                            <br><small class="badge bg-danger">Overdue</small>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                                {% if request_data.total_count > 0 %}
+                                                                    {% widthratio request_data.uploaded_count request_data.total_count 100 as percentage %}
+                                                                    <div class="progress-bar {% if percentage == 100 %}bg-success{% elif percentage > 0 %}bg-warning{% else %}bg-danger{% endif %}"
+                                                                         style="width: {{ percentage|default:0 }}%"></div>
+                                                                {% endif %}
+                                                            </div>
+                                                            <small class="text-muted">
+                                                                {% if request_data.total_count > 0 %}
+                                                                    {% widthratio request_data.uploaded_count request_data.total_count 100 as percentage %}
+                                                                    {{ percentage|default:0 }}%
+                                                                {% else %}
+                                                                    0%
+                                                                {% endif %}
+                                                            </small>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        {% if request_data.status == 'completed' %}
+                                                            <span class="badge bg-success">Completed</span>
+                                                        {% elif request_data.status == 'partial' %}
+                                                            <span class="badge bg-warning text-dark">In Progress</span>
+                                                        {% elif request_data.request.is_overdue %}
+                                                            <span class="badge bg-danger">Overdue</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">Pending</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <a href="{% url 'document_requests' %}"
+                                                           class="btn btn-sm {% if request_data.request.is_overdue %}btn-outline-danger{% else %}btn-outline-primary{% endif %}">
+                                                            {% if request_data.request.is_overdue %}Urgent{% else %}View{% endif %}
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

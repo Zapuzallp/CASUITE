@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<main id="main" class="main">
+    <div class="container-fluid py-4">
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-4">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-person-badge me-2"></i>Client</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-1 text-muted small">Client</p>
+                        <h5 class="fw-bold mb-0">{{ client.client_name }}</h5>
+                        <p class="text-muted mb-0 small">PAN: {{ client.pan_no }}</p>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-briefcase me-2"></i>Service</h6>
+                        <p class="mb-1 text-muted small">Service Type</p>
+                        <h6 class="fw-bold mb-1">{{ service_type_obj.service_name }}</h6>
+                        <p class="mb-1 text-muted small">Billing Cycle: {{ client_service.get_billing_cycle_display }}</p>
+                        <p class="mb-1 text-muted small">Start: {{ client_service.start_date }}</p>
+                        <p class="mb-1 text-muted small">End: {{ client_service.end_date|default:'-' }}</p>
+                        <p class="mb-0 text-muted small">Agreed Fee: {{ client_service.agreed_fee }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-9 col-md-8">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-primary text-white py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-check2-square me-2"></i>Task Details
+                            </h5>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'client_details' pk=client.id %}" class="btn btn-outline-light btn-sm">
+                                    <i class="bi bi-arrow-left me-1"></i>Back to Client
+                                </a>
+                                <a href="{% url 'tasks_dashboard' %}" class="btn btn-outline-light btn-sm">
+                                    <i class="bi bi-list-check me-1"></i>All Tasks
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-8">
+                                <h4 class="fw-bold mb-1">{{ task.task_title }}</h4>
+                                <p class="text-muted mb-2">Service: {{ service_type_obj.service_name }}</p>
+                                {% if task.remarks %}
+                                    <p class="mb-0">{{ task.remarks }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <p class="mb-1 text-muted small">Status</p>
+                                <p class="mb-2">
+                                    {% if task.task_status == 'Pending' %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    {% elif task.task_status == 'In Progress' %}
+                                        <span class="badge bg-info text-dark">In Progress</span>
+                                    {% elif task.task_status == 'Submitted' %}
+                                        <span class="badge bg-primary">Submitted</span>
+                                    {% elif task.task_status == 'Completed' %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% elif task.task_status == 'Delayed' %}
+                                        <span class="badge bg-danger">Delayed</span>
+                                    {% elif task.task_status == 'Cancelled' %}
+                                        <span class="badge bg-secondary">Cancelled</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">{{ task.task_status }}</span>
+                                    {% endif %}
+                                </p>
+                                <p class="mb-1 text-muted small">Due Date</p>
+                                <p class="mb-2 fw-semibold">{{ task.due_date|date:'M d, Y' }}</p>
+                                {% if task.assigned_to %}
+                                    <p class="mb-1 text-muted small">Assigned To</p>
+                                    <p class="mb-0 fw-semibold">{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 h-100">
+                                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-calendar-range me-2"></i>Period</h6>
+                                    <p class="mb-1 text-muted small">From</p>
+                                    <p class="fw-semibold">{{ task.period_from|date:'M d, Y'|default:'-' }}</p>
+                                    <p class="mb-1 text-muted small">To</p>
+                                    <p class="fw-semibold">{{ task.period_to|date:'M d, Y'|default:'-' }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 h-100">
+                                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-arrow-repeat me-2"></i>Recurrence</h6>
+                                    <p class="mb-1 text-muted small">Frequency</p>
+                                    <p class="fw-semibold">{{ task.get_recurrence_display }}</p>
+                                    <p class="mb-1 text-muted small">Created</p>
+                                    <p class="fw-semibold">{{ task.created_at|date:'M d, Y' }}</p>
+                                    <p class="mb-1 text-muted small">Completed</p>
+                                    <p class="fw-semibold">{{ task.completion_date|date:'M d, Y'|default:'-' }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 h-100">
+                                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-file-earmark-arrow-down me-2"></i>Documents</h6>
+                                    {% if task.document_link %}
+                                        <p class="mb-2 text-muted small">Attached File</p>
+                                        <a href="{{ task.document_link.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye me-1"></i>View Document
+                                        </a>
+                                    {% else %}
+                                        <p class="text-muted mb-0 small">No document attached.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if gst_detail or itr_detail or audit_detail or income_tax_case or gst_case %}
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-success text-white py-3">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-info-circle me-2"></i>Service Specific Details
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            {% if gst_detail %}
+                                <h6 class="fw-bold mb-2">GST Details</h6>
+                                <p class="mb-1 text-muted small">GSTIN: {{ gst_detail.gst_number }}</p>
+                                <p class="mb-1 text-muted small">Filing Frequency: {{ gst_detail.get_filing_frequency_display }}</p>
+                                <p class="mb-3 text-muted small">State Code: {{ gst_detail.state_code }}</p>
+                            {% endif %}
+
+                            {% if itr_detail %}
+                                <h6 class="fw-bold mb-2">ITR Details</h6>
+                                <p class="mb-1 text-muted small">PAN: {{ itr_detail.pan_number }}</p>
+                                <p class="mb-1 text-muted small">ITR Type: {{ itr_detail.get_itr_type_display }}</p>
+                                <p class="mb-3 text-muted small">Assessment Year: {{ itr_detail.assessment_year }}</p>
+                            {% endif %}
+
+                            {% if audit_detail %}
+                                <h6 class="fw-bold mb-2">Audit Details</h6>
+                                <p class="mb-1 text-muted small">Type: {{ audit_detail.get_audit_type_display }}</p>
+                                <p class="mb-1 text-muted small">Financial Year: {{ audit_detail.financial_year }}</p>
+                                <p class="mb-3 text-muted small">Auditor: {{ audit_detail.auditor_name }}</p>
+                            {% endif %}
+
+                            {% if income_tax_case %}
+                                <h6 class="fw-bold mb-2">Income Tax Case</h6>
+                                <p class="mb-1 text-muted small">Case Type: {{ income_tax_case.get_case_type_display }}</p>
+                                <p class="mb-1 text-muted small">Notice No.: {{ income_tax_case.notice_number }}</p>
+                                <p class="mb-3 text-muted small">Status: {{ income_tax_case.get_status_display }}</p>
+                            {% endif %}
+
+                            {% if gst_case %}
+                                <h6 class="fw-bold mb-2">GST Case</h6>
+                                <p class="mb-1 text-muted small">Case Type: {{ gst_case.get_case_type_display }}</p>
+                                <p class="mb-1 text-muted small">Case No.: {{ gst_case.case_number }}</p>
+                                <p class="mb-3 text-muted small">Status: {{ gst_case.get_status_display }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
