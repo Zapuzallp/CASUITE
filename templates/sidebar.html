@@ -1,3 +1,4 @@
+{% load sidebar_tags %}
 <style>
     /* Compact White Sidebar Styles */
     .sidebar {
@@ -170,11 +171,15 @@
         <!-- Documents -->
         <li class="nav-heading">Documents</li>
 
+        {% get_sidebar_counts as sidebar_counts %}
+
         <li class="nav-item">
             <a class="nav-link" href="{% url 'document_requests' %}">
                 <i class="bi bi-file-earmark-text"></i>
                 <span>Document Requests</span>
-                <span class="nav-badge">3</span>
+                {% if sidebar_counts.pending_documents %}
+                    <span class="nav-badge">{{ sidebar_counts.pending_documents }}</span>
+                {% endif %}
             </a>
         </li>
 
@@ -244,10 +249,12 @@
         <li class="nav-heading">Operations</li>
 
         <li class="nav-item">
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{% url 'tasks_dashboard' %}">
                 <i class="bi bi-list-check"></i>
                 <span>Tasks</span>
-                <span class="nav-badge">8</span>
+                {% if sidebar_counts.pending_tasks %}
+                    <span class="nav-badge">{{ sidebar_counts.pending_tasks }}</span>
+                {% endif %}
             </a>
         </li>
 

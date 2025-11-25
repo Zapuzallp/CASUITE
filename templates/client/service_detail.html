@@ -1,0 +1,466 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<main id="main" class="main">
+    <div class="container-fluid py-4">
+        <!-- Back Button and Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <a href="{% url 'client_details' pk=client.id %}" class="btn btn-outline-secondary mb-3">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Client Details
+                </a>
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <h2 class="mb-1 fw-bold">
+                            <i class="bi bi-info-circle text-primary me-2"></i>
+                            Service Details
+                        </h2>
+                        <p class="text-muted mb-0">Complete information for {{ client.client_name }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Details Card -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header"
+                        style="background: linear-gradient(135deg, {% if 'ITR' in service_type %}#0d6efd, #084298{% elif 'GST' in service_type and 'Case' not in service_type %}#198754, #0f5132{% elif 'Audit' in service_type %}#fd7e14, #b85c00{% elif 'GST Case' in service_type %}#dc3545, #842029{% elif 'Income Tax Case' in service_type %}#6f42c1, #432874{% else %}#6c757d, #495057{% endif %}); color: white;">
+                        <h4 class="mb-0">
+                            {% if 'ITR' in service_type %}
+                            <i class="bi bi-file-text me-2"></i>
+                            {% elif 'GST' in service_type and 'Case' not in service_type %}
+                            <i class="bi bi-receipt me-2"></i>
+                            {% elif 'Audit' in service_type %}
+                            <i class="bi bi-search me-2"></i>
+                            {% elif 'GST Case' in service_type %}
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            {% elif 'Income Tax Case' in service_type %}
+                            <i class="bi bi-shield-exclamation me-2"></i>
+                            {% endif %}
+                            {{ service_type }}
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+
+                        <!-- Basic Service Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3"><i class="bi bi-gear me-2"></i>Service Information</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Start Date</small>
+                                            <strong>{{ client_service.start_date|date:"M d, Y" }}</strong>
+                                        </div>
+                                    </div>
+                                    {% if client_service.end_date %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">End Date</small>
+                                            <strong>{{ client_service.end_date|date:"M d, Y" }}</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Billing Cycle</small>
+                                            <strong>{{ client_service.billing_cycle }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Agreed Fee</small>
+                                            <strong class="text-success">₹{{ client_service.agreed_fee }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Status</small>
+                                            {% if client_service.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if client_service.remarks %}
+                                <div class="mt-3">
+                                    <small class="text-muted d-block mb-1">Remarks</small>
+                                    <p class="mb-0">{{ client_service.remarks }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- GST Services Details -->
+                        {% if service_detail.gst_number %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-success mb-3"><i class="bi bi-building me-2"></i>GST Registration
+                                    Details</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">GSTIN</small>
+                                            <strong>{{ service_detail.gst_number }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Registration Type</small>
+                                            <strong>{{ service_detail.type_of_registration }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Filing Frequency</small>
+                                            <strong>{{ service_detail.filing_frequency }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">State Code</small>
+                                            <strong>{{ service_detail.state_code }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Registration Date</small>
+                                            <strong>{{ service_detail.date_of_registration|date:"M d, Y"|default:"Not
+                                                specified" }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Principal Place of Business</small>
+                                            <strong>{{ service_detail.principal_place_of_business }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GST Credentials Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-warning mb-3"><i class="bi bi-key me-2"></i>GST Portal Credentials</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Username</small>
+                                            <strong>{{ service_detail.gst_username }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Password</small>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <strong id="password-field" class="password-hidden">••••••••</strong>
+                                                <button class="btn btn-sm btn-outline-primary" id="toggle-password"
+                                                    type="button">
+                                                    <i class="bi bi-eye" id="eye-icon"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- ITR Services Details -->
+                        {% if service_detail.pan_number %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3"><i class="bi bi-file-text me-2"></i>Income Tax Return
+                                    Details</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">PAN Number</small>
+                                            <strong>{{ service_detail.pan_number }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Assessment Year</small>
+                                            <strong>{{ service_detail.assessment_year }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">ITR Type</small>
+                                            <strong>{{ service_detail.itr_type }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Income Source</small>
+                                            <strong>{{ service_detail.income_source }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Filing Mode</small>
+                                            <strong>{{ service_detail.filing_mode }}</strong>
+                                        </div>
+                                    </div>
+                                    {% if service_detail.aadhaar_number %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Aadhaar Number</small>
+                                            <strong>{{ service_detail.aadhaar_number }}</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if service_detail.last_itr_ack_no %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Last ITR Acknowledgement No.</small>
+                                            <strong>{{ service_detail.last_itr_ack_no }}</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Audit Services Details -->
+                        {% if service_detail.audit_type %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-warning mb-3"><i class="bi bi-search me-2"></i>Audit Details</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Audit Type</small>
+                                            <strong>{{ service_detail.audit_type }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Financial Year</small>
+                                            <strong>{{ service_detail.financial_year }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Auditor Name</small>
+                                            <strong>{{ service_detail.auditor_name }}</strong>
+                                        </div>
+                                    </div>
+                                    {% if service_detail.audit_start_date %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Audit Start Date</small>
+                                            <strong>{{ service_detail.audit_start_date|date:"M d, Y" }}</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if service_detail.audit_end_date %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Audit End Date</small>
+                                            <strong>{{ service_detail.audit_end_date|date:"M d, Y" }}</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- GST Case Details -->
+                        {% if service_detail.case_type and service_detail.gstin %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-danger mb-3"><i class="bi bi-exclamation-triangle me-2"></i>GST Case
+                                    Details</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Case Type</small>
+                                            <strong><span class="badge bg-warning text-dark">{{
+                                                    service_detail.case_type}}</span></strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Case Number</small>
+                                            <strong>{{ service_detail.case_number }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">GSTIN</small>
+                                            <strong>{{ service_detail.gstin }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Officer Name</small>
+                                            <strong>{{ service_detail.officer_name }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Jurisdiction</small>
+                                            <strong>{{ service_detail.jurisdiction }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Date of Notice</small>
+                                            <strong>{{ service_detail.date_of_notice|date:"M d, Y" }}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Status</small>
+                                            <strong>
+                                                {% if service_detail.status == 'Pending' %}
+                                                <span class="badge bg-warning text-dark">{{
+                                                    service_detail.status}}</span>
+                                                {% elif service_detail.status == 'Submitted' %}
+                                                <span class="badge bg-success">{{ service_detail.status }}</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ service_detail.status }}</span>
+                                                {% endif %}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Income Tax Case Details -->
+                        {% if service_detail.case_type and service_detail.ao_name %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-purple mb-3"><i class="bi bi-shield-exclamation me-2"></i>Income Tax
+                                    Case Details</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Case Type</small>
+                                            <strong><span class="badge bg-info">{{
+                                                    service_detail.case_type}}</span></strong>
+                                        </div>
+                                    </div>
+                                    {% if service_detail.notice_number %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Notice Number</small>
+                                            <strong>{{ service_detail.notice_number }}</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Assessing Officer</small>
+                                            <strong>{{ service_detail.ao_name }}</strong>
+                                        </div>
+                                    </div>
+                                    {% if service_detail.ward_circle %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Ward/Circle</small>
+                                            <strong>{{ service_detail.ward_circle }}</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if service_detail.notice_date %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Notice Date</small>
+                                            <strong>{{ service_detail.notice_date|date:"M d, Y" }}</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if service_detail.last_hearing_date %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Last Hearing Date</small>
+                                            <strong>{{ service_detail.last_hearing_date|date:"M d, Y" }}</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if service_detail.next_hearing_date %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Next Hearing Date</small>
+                                            <strong>{{ service_detail.next_hearing_date|date:"M d, Y" }}</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-md-4">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Status</small>
+                                            <strong>
+                                                {% if service_detail.status == 'Pending' %}
+                                                <span class="badge bg-warning text-dark">{{
+                                                    service_detail.status}}</span>
+                                                {% elif service_detail.status == 'Submitted' %}
+                                                <span class="badge bg-success">{{ service_detail.status }}</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ service_detail.status }}</span>
+                                                {% endif %}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if service_detail.remarks %}
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded">
+                                    <small class="text-muted d-block mb-1">Additional Remarks</small>
+                                    <p class="mb-0">{{ service_detail.remarks }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleButton = document.getElementById('toggle-password');
+        const passwordField = document.getElementById('password-field');
+        const eyeIcon = document.getElementById('eye-icon');
+
+        if (toggleButton && passwordField) {
+            const actualPassword = '{{ service_detail.gst_password|default:"" }}';
+            let isVisible = false;
+
+            toggleButton.addEventListener('click', function () {
+                if (isVisible) {
+                    passwordField.textContent = '••••••••';
+                    eyeIcon.className = 'bi bi-eye';
+                    isVisible = false;
+                } else {
+                    passwordField.textContent = actualPassword;
+                    eyeIcon.className = 'bi bi-eye-slash';
+                    isVisible = true;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     "rangefilter",
-    'django_admin_listfilter_dropdown'
+    'django_admin_listfilter_dropdown',
+    'django_apscheduler',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"

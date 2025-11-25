@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+
+{% block title %}Service Assignment - Step 1 - CA Suite 2.0{% endblock %}
+
+{% block body %}
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h1>Service Assignment Wizard</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                <li class="breadcrumb-item">Clients</li>
+                <li class="breadcrumb-item active">Service Assignment</li>
+            </ol>
+        </nav>
+    </div>
+
+    <section class="section">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-gear"></i> Assign {{ service_type.service_name }} service to {{ client.client_name }}
+                        </h5>
+                        
+                        <!-- Progress Steps -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-center">
+                                    <div class="d-flex align-items-center">
+                                        <div class="text-center">
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mb-2" style="width: 40px; height: 40px;">
+                                                <i class="bi bi-1-circle-fill"></i>
+                                            </div>
+                                            <small class="fw-bold">Basic Details</small>
+                                        </div>
+                                        <div class="bg-light mx-3" style="width: 80px; height: 2px;"></div>
+                                        <div class="text-center">
+                                            <div class="bg-light text-muted rounded-circle d-flex align-items-center justify-content-center mb-2" style="width: 40px; height: 40px;">
+                                                <i class="bi bi-2-circle"></i>
+                                            </div>
+                                            <small class="text-muted">Service Specific</small>
+                                        </div>
+                                        <div class="bg-light mx-3" style="width: 80px; height: 2px;"></div>
+                                        <div class="text-center">
+                                            <div class="bg-light text-muted rounded-circle d-flex align-items-center justify-content-center mb-2" style="width: 40px; height: 40px;">
+                                                <i class="bi bi-3-circle"></i>
+                                            </div>
+                                            <small class="text-muted">Review & Submit</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Client & Service Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card border-primary h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-primary">
+                                            <i class="bi bi-person-fill"></i> Client Information
+                                        </h6>
+                                        <p class="mb-1"><strong>Name:</strong> {{ client.client_name }}</p>
+                                        <p class="mb-1"><strong>Email:</strong> {{ client.email }}</p>
+                                        <p class="mb-1"><strong>Phone:</strong> {{ client.phone_number }}</p>
+                                        <p class="mb-0"><strong>Type:</strong> {{ client.get_client_type_display }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-success h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-success">
+                                            <i class="bi bi-gear-fill"></i> Service Information
+                                        </h6>
+                                        <p class="mb-1"><strong>Service:</strong> {{ service_type.service_name }}</p>
+                                        <p class="mb-1"><strong>Category:</strong> {{ service_type.get_category_display }}</p>
+                                        <p class="mb-1"><strong>Frequency:</strong> {{ service_type.get_frequency_display }}</p>
+                                        <p class="mb-0"><strong>Default Due Days:</strong> {{ service_type.default_due_days }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Messages -->
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-{% if message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'success' %}check-circle{% else %}info-circle{% endif %} me-1"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <!-- Form Section -->
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="bi bi-pencil-square"></i> Basic Service Assignment Details
+                                </h5>
+                                <p class="text-muted">Please fill in the basic details for assigning this service to the client.</p>
+                                
+                                <form method="post" novalidate>
+                                    {% csrf_token %}
+                                    
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="{{ form.start_date.id_for_label }}" class="form-label">
+                                                <i class="bi bi-calendar-event"></i> Start Date <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="date" name="{{ form.start_date.name }}"
+                                                   class="form-control{% if form.start_date.errors %} is-invalid{% endif %}"
+                                                   id="{{ form.start_date.id_for_label }}"
+                                                   value="{{ form.start_date.value|default:'' }}" required>
+                                            {% if form.start_date.errors %}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.start_date.errors %}{{ error }}{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="{{ form.end_date.id_for_label }}" class="form-label">
+                                                <i class="bi bi-calendar-x"></i> End Date
+                                            </label>
+                                            <input type="date" name="{{ form.end_date.name }}"
+                                                   class="form-control{% if form.end_date.errors %} is-invalid{% endif %}"
+                                                   id="{{ form.end_date.id_for_label }}"
+                                                   value="{{ form.end_date.value|default:'' }}">
+                                            {% if form.end_date.errors %}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.end_date.errors %}{{ error }}{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            <div class="form-text">Leave blank for ongoing services</div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="{{ form.billing_cycle.id_for_label }}" class="form-label">
+                                                <i class="bi bi-arrow-repeat"></i> Billing Cycle <span class="text-danger">*</span>
+                                            </label>
+                                            <select name="{{ form.billing_cycle.name }}"
+                                                    class="form-control{% if form.billing_cycle.errors %} is-invalid{% endif %}"
+                                                    id="{{ form.billing_cycle.id_for_label }}" required>
+                                                <option value="">Select billing cycle</option>
+                                                {% for value, label in form.billing_cycle.field.choices %}
+                                                    <option value="{{ value }}" {% if form.billing_cycle.value == value %}selected{% endif %}>{{ label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            {% if form.billing_cycle.errors %}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.billing_cycle.errors %}{{ error }}{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="{{ form.agreed_fee.id_for_label }}" class="form-label">
+                                                <i class="bi bi-currency-rupee"></i> Agreed Fee <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="number" name="{{ form.agreed_fee.name }}"
+                                                   class="form-control{% if form.agreed_fee.errors %} is-invalid{% endif %}"
+                                                   id="{{ form.agreed_fee.id_for_label }}"
+                                                   value="{{ form.agreed_fee.value|default:'' }}"
+                                                   step="0.01" min="0" required>
+                                            {% if form.agreed_fee.errors %}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.agreed_fee.errors %}{{ error }}{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label for="{{ form.remarks.id_for_label }}" class="form-label">
+                                                <i class="bi bi-chat-text"></i> Remarks
+                                            </label>
+                                            <textarea name="{{ form.remarks.name }}"
+                                                      class="form-control{% if form.remarks.errors %} is-invalid{% endif %}"
+                                                      id="{{ form.remarks.id_for_label }}"
+                                                      rows="3"
+                                                      placeholder="Optional internal notes...">{{ form.remarks.value|default:'' }}</textarea>
+                                            {% if form.remarks.errors %}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.remarks.errors %}{{ error }}{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="col-12">
+                                            <div class="form-check">
+                                                {{ form.is_active }}
+                                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                                    <i class="bi bi-check-circle"></i> Service is Active
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!-- Navigation Buttons -->
+                                        <div class="col-12">
+                                            <div class="d-flex justify-content-between mt-4">
+                                                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                                                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                                                </a>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="bi bi-arrow-right"></i> Next: Service Details
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Bootstrap validation classes to all form fields with errors
+    document.querySelectorAll('.invalid-feedback').forEach(function(errorDiv) {
+        const fieldContainer = errorDiv.closest('.col-md-6, .col-12, .form-group');
+        if (fieldContainer) {
+            const field = fieldContainer.querySelector('input, select, textarea');
+            if (field) {
+                field.classList.add('is-invalid');
+
+                // Add red border for better visibility
+                field.style.borderColor = '#dc3545';
+                field.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+
+                // Focus on first invalid field
+                if (!document.querySelector('.is-invalid:focus')) {
+                    field.focus();
+                }
+            }
+        }
+    });
+
+    // Add real-time validation feedback
+    const requiredFields = document.querySelectorAll('input[required], select[required], textarea[required]');
+
+    function showRequiredError(field) {
+        field.classList.add('is-invalid');
+
+        // Create or update error message
+        let errorDiv = field.parentNode.querySelector('.invalid-feedback');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback';
+            field.parentNode.appendChild(errorDiv);
+        }
+        errorDiv.textContent = 'This field is required.';
+        errorDiv.style.display = 'block';
+    }
+
+    function clearRequiredError(field) {
+        if (field.classList.contains('is-invalid')) {
+            field.classList.remove('is-invalid');
+        }
+        const errorDiv = field.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv && errorDiv.textContent === 'This field is required.') {
+            errorDiv.style.display = 'none';
+        }
+    }
+
+    requiredFields.forEach(function(field) {
+        field.addEventListener('blur', function() {
+            if (this.value.trim() === '') {
+                showRequiredError(this);
+            } else {
+                clearRequiredError(this);
+            }
+        });
+
+        field.addEventListener('input', function() {
+            if (this.value.trim() === '') {
+                // Immediately show error while typing if field becomes empty
+                showRequiredError(this);
+            } else {
+                clearRequiredError(this);
+            }
+        });
+    });
+
+    // Prevent form submission if required fields are empty
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            let formIsValid = true;
+
+            requiredFields.forEach(function(field) {
+                if (field.value.trim() === '') {
+                    showRequiredError(field);
+                    if (formIsValid) {
+                        formIsValid = false;
+                    }
+                }
+            });
+
+            if (!formIsValid) {
+                event.preventDefault();
+                const firstInvalid = form.querySelector('.is-invalid');
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
