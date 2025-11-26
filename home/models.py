@@ -214,6 +214,10 @@ class ServiceType(models.Model):
     frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES)
     default_due_days = models.IntegerField()
     description = models.TextField(blank=True, null=True)
+    form_name = models.CharField(max_length=100, help_text="Form class name from forms.py (e.g., 'GSTDetailsForm')")
+    model_name = models.CharField(max_length=100, help_text="Model class name for service details (e.g., 'GSTDetails')")
+    allow_multiple = models.BooleanField(default=False, help_text="Can one client have multiple instances of this service?")
+    is_task = models.BooleanField(default=False, help_text="Mark this service type as task-only.")
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -458,6 +462,25 @@ class GSTCaseDetails(models.Model):
         return f"{self.case_type} - {self.case_number}"
 
 
+# -------------------------
+# Client User Mapping
+# -------------------------
+class ClientUserEntitle(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='client_mappings')
+    clients = models.ManyToManyField(Client, related_name='user_mappings')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        client_names = ", ".join([client.client_name for client in self.clients.all()[:3]])
+        if self.clients.count() > 3:
+            client_names += f" and {self.clients.count() - 3} more"
+        return f"{self.user.username} - {client_names}"
+
+    class Meta:
+        unique_together = ('user',)
+
+
 class DocumentMaster(models.Model):
     category = models.CharField(max_length=100)
     document_name = models.CharField(max_length=200)
@@ -469,7 +492,7 @@ class DocumentMaster(models.Model):
 
 class DocumentRequest(models.Model):
     # Represents a document collection cycle for one client (or optionally all clients)
-    client = models.ForeignKey(User, on_delete=models.CASCADE)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='document_requests')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     due_date = models.DateField()
@@ -479,7 +502,7 @@ class DocumentRequest(models.Model):
     for_all_clients = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.title} ({self.client}) - due {self.due_date}"
+        return f"{self.title} ({self.client.client_name}) - due {self.due_date}"
 
     @property
     def is_overdue(self):
@@ -504,12 +527,13 @@ class ClientDocumentUpload(models.Model):
         ('Overdue', 'Overdue'),
     ]
 
-    client = models.ForeignKey(User, on_delete=models.CASCADE)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='document_uploads')
     requested_document = models.ForeignKey(RequestedDocument, related_name='uploads', on_delete=models.CASCADE)
     uploaded_file = models.FileField(upload_to='client_documents/%Y/%m/%d/')
     upload_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     remarks = models.TextField(blank=True, null=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, help_text="User who uploaded the document")
 
     def save(self, *args, **kwargs):
         if self.uploaded_file:
@@ -521,5 +545,5 @@ class ClientDocumentUpload(models.Model):
             pass
         super().save(*args, **kwargs)
 
-        def __str__(self):
-            return f"Upload by {self.client} for {self.requested_document}"
+    def __str__(self):
+        return f"Upload by {self.client.client_name} for {self.requested_document}"

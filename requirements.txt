@@ -24,3 +24,6 @@ typing_extensions==4.12.2
 tzdata==2024.1
 urllib3==2.2.1
 whitenoise==6.6.0
+apscheduler==3.10.4
+django-apscheduler==0.6.2
+python-dateutil==2.9.0
