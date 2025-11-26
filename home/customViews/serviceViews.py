@@ -170,6 +170,7 @@ class ServiceAssignmentStep2View(LoginRequiredMixin, View):
             messages.error(request, f"Error processing form: {str(e)}")
             return redirect('service_assignment_step2', client_id=client_id, service_id=service_id)
 
+
     def get_service_form_class(self, service_type_obj):
         """Get form class dynamically"""
         if not service_type_obj or not service_type_obj.form_name:
