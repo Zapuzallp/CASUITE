@@ -205,8 +205,8 @@
                             </div>
                         </div>
                         <div class="col">
-                            <h2 class="mb-1 fw-bold">Rajesh Kumar Sharma</h2>
-                            <p class="mb-2 opacity-75">PAN: ABCDE1234F | Client ID: CLT-2024-001</p>
+                            <h2 class="mb-1 fw-bold">{{client.client_name}}</h2>
+                            <p class="mb-2 opacity-75">PAN: {{client.pan_no}} | Client ID: CLT-2024-001</p>
                             <div class="d-flex flex-wrap gap-2">
                                 <span class="badge bg-success badge-status">Active</span>
                                 <span class="badge bg-info badge-status">Individual</span>
@@ -264,7 +264,9 @@
                         <div class="col-md-3">
                             <div class="stat-box text-center">
                                 <i class="bi bi-calendar-check fs-2 text-info mb-2"></i>
-                                <h4 class="mb-0 fw-bold">3 Years</h4>
+                                {% if client_since_date %}
+                                <h4 class="mb-0 fw-bold">{{client_since_date}} Days</h4>
+                                {% endif %}
                                 <small class="text-muted">Client Since</small>
                             </div>
                         </div>
@@ -288,7 +290,11 @@
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-bs-toggle="pill" href="#companies">
-                                        <i class="bi bi-building me-2"></i>Companies
+                                        <i class="bi bi-building me-2"></i>{% if client.client_type == "Entity" %}
+                                        Directors
+                                        {% else %}
+                                        Companies
+                                        {% endif %}
                                     </a>
                                 </li>
                                 <li class="nav-item">
@@ -353,7 +359,7 @@
                             <div class="card shadow-sm mb-4">
                                 <div class="card-header bg-primary text-white py-3">
                                     <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-person-badge me-2"></i>Personal Information
+                                        <i class="bi bi-person-badge me-2"></i>{% if client.client_type == "Entity" %} Entity Information {% else %} Personal Information {% endif %}
                                     </h5>
                                 </div>
                                 <div class="card-body p-4">
@@ -361,37 +367,37 @@
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Full Name:</span>
-                                                <span class="ms-auto">Rajesh Kumar Sharma</span>
+                                                <span class="ms-auto">{{client.client_name}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">PAN Number:</span>
-                                                <span class="ms-auto">ABCDE1234F</span>
+                                                <span class="ms-auto">{{client.pan_no}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Aadhar Number:</span>
-                                                <span class="ms-auto">XXXX-XXXX-5678</span>
+                                                <span class="ms-auto">{{client.aadhar}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Email:</span>
-                                                <span class="ms-auto">rajesh.sharma@example.com</span>
+                                                <span class="ms-auto">{{client.email}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Phone:</span>
-                                                <span class="ms-auto">+91 98765 43210</span>
+                                                <span class="ms-auto">+91 {{client.phone_number}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">DIN Number:</span>
-                                                <span class="ms-auto">DIN12345678</span>
+                                                <span class="ms-auto">{{client.din_no}}</span>
                                             </div>
                                         </div>
                                         <div class="col-12">
@@ -399,7 +405,7 @@
                                             <div class="d-flex">
                                                 <span class="info-label">Address:</span>
                                                 <span class="ms-auto text-end">
-                                                    123, MG Road, Bangalore, Karnataka - 560001, India
+                                                    {{client.address_line1}}, {{client.city}}, {{client.state}},{{client.postal_code}}, {{client.country}}
                                                 </span>
                                             </div>
                                         </div>
@@ -407,26 +413,26 @@
                                             <div class="d-flex">
                                                 <span class="info-label">Client Type:</span>
                                                 <span class="ms-auto"><span
-                                                        class="badge bg-info">Individual</span></span>
+                                                        class="badge bg-info">{{client.client_type}}</span></span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Status:</span>
                                                 <span class="ms-auto"><span
-                                                        class="badge bg-success">Active</span></span>
+                                                        class="badge bg-success">{{client.status}}</span></span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Engagement Date:</span>
-                                                <span class="ms-auto">Jan 15, 2022</span>
+                                                <span class="ms-auto">{{client.date_of_engagement}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Assigned CA:</span>
-                                                <span class="ms-auto">CA Priya Mehta</span>
+                                                <span class="ms-auto">{{client.assigned_ca}}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -445,13 +451,13 @@
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Primary Contact:</span>
-                                                <span class="ms-auto">+91 98765 43210</span>
+                                                <span class="ms-auto">+91 {{client.phone_number}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="d-flex">
                                                 <span class="info-label">Alternate Contact:</span>
-                                                <span class="ms-auto">+91 98765 43211</span>
+                                                <span class="ms-auto">+91 {{client.phone_number}}</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
@@ -471,6 +477,7 @@
                             </div>
                         </div>
 
+                        {% if client.client_type == "Individual" %}
                         <!-- Companies Tab -->
                         <div class="tab-pane fade" id="companies">
                             <div class="card shadow-sm mb-4">
@@ -485,14 +492,41 @@
                                     </div>
                                 </div>
                                 <div class="card-body p-4">
+
+                                    {% if PVT %}
+
+                                    <!-- JS for PVT company view details pop up and hide -->
+                                    <script>
+                                        function handleCompanyDetailHide(CIN){
+                                            let companyClassName = "company-detail-" + CIN;
+                                            const elements = document.getElementsByClassName(companyClassName);
+
+                                            for(el of elements){
+                                                el.classList.add("d-none");
+                                            }
+                                        }
+
+                                        function handleCompanyDetailShow(CIN){
+                                            let companyClassName = "company-detail-" + CIN;
+                                            const elements = document.getElementsByClassName(companyClassName);
+
+
+                                            for(el of elements){
+                                                el.classList.remove("d-none");
+                                            }
+                                        }
+                                    </script>
+
+                                    {% for company in PVT %}
+
                                     <!-- Company 1 -->
-                                    <div class="company-card card mb-3">
-                                        <div class="card-body">
+                                    <div class="company-card card mb-3 position-relative">
+                                        <div class="card-body pt-3">
                                             <div class="row">
                                                 <div class="col-md-8">
-                                                    <h5 class="fw-bold mb-2">Tech Innovators Private Limited</h5>
+                                                    <h5 class="fw-bold mb-2">{{company.proposed_company_name}}</h5>
                                                     <p class="text-muted mb-2"><strong>CIN:</strong>
-                                                        U72900KA2020PTC135790</p>
+                                                        {{company.CIN}}</p>
                                                     <p class="text-muted mb-2"><strong>Type:</strong> Private Limited
                                                     </p>
                                                     <div class="mb-2">
@@ -501,14 +535,14 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-4 text-end">
-                                                    <p class="mb-2"><strong>Incorporation:</strong> Jan 2020</p>
-                                                    <p class="mb-2"><strong>Authorized Capital:</strong> ₹10,00,000</p>
-                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹5,00,000</p>
+                                                    <p class="mb-2"><strong>Incorporation:</strong> {{company.date_of_incorporation}}</p>
+                                                    <p class="mb-2"><strong>Authorized Capital:</strong> ₹{{company.authorised_share_capital}}</p>
+                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹{{company.paid_up_share_capital}}</p>
                                                 </div>
                                             </div>
                                             <hr>
                                             <div class="d-flex gap-2">
-                                                <button class="btn btn-sm btn-outline-primary">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="handleCompanyDetailShow('{{company.CIN}}')">
                                                     <i class="bi bi-eye me-1"></i>View Details
                                                 </button>
                                                 <button class="btn btn-sm btn-outline-info">
@@ -521,13 +555,80 @@
                                         </div>
                                     </div>
 
+
+                                     <!-- Company Detail Tab -->
+                                    <div class="company-detail-{{company.CIN}} position-absolute top-0 start-0 w-100 h-100 bg-white z-3 p-4 overflow-auto d-none">
+                                        <div class="d-flex justify-content-end">
+                                            <button class="btn btn-light" onclick="handleCompanyDetailHide('{{company.CIN}}')">X</button>
+                                        </div>
+
+                                         <div class="container bg-light p-4 rounded shadow-sm" style="max-width: 600px;">
+                                              <h3 class="fw-bold mb-3">Company Details</h3>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Company Name:</span>
+                                                 <span>{{ company.proposed_company_name }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">CIN:</span>
+                                                 <span>{{ company.CIN }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Authorised Share Capital:</span>
+                                                 <span>{{ company.authorised_share_capital }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Paid Up Share Capital:</span>
+                                                 <span>{{ company.paid_up_share_capital }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">No of Directors:</span>
+                                                 <span>{{ company.number_of_directors }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">No of Shareholders:</span>
+                                                 <span>{{ company.number_of_shareholders }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">CIN:</span>
+                                                 <span>{{ company.CIN }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Registered Office Address:</span>
+                                                 <span>{{ company.registered_office_address }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Date of Incorporation:</span>
+                                                 <span>{{ company.date_of_incorporation }}</span>
+                                             </div>
+
+                                             <div class="mb-3 d-flex justify-content-between">
+                                                 <span class="text-muted">Udyam Registration:</span>
+                                                 <span>{{ company.udyam_registration }}</span>
+                                             </div>
+                                         </div>
+                                    </div>
+
+                                    {% endfor %}
+                                    {% endif %}
+
+                                    {% if LLP %}
+                                    {% for company in LLP %}
                                     <!-- Company 2 -->
                                     <div class="company-card card mb-3">
-                                        <div class="card-body">
+                                        <div class="card-body pt-3">
                                             <div class="row">
                                                 <div class="col-md-8">
-                                                    <h5 class="fw-bold mb-2">Digital Solutions LLP</h5>
-                                                    <p class="text-muted mb-2"><strong>LLP IN:</strong> AAL-5678</p>
+                                                    <h5 class="fw-bold mb-2">{{company.llp_name}}</h5>
+                                                    <p class="text-muted mb-2"><strong>LLP IN:</strong> {{company.llp_registration_no}}</p>
                                                     <p class="text-muted mb-2"><strong>Type:</strong> Limited Liability
                                                         Partnership</p>
                                                     <div class="mb-2">
@@ -536,9 +637,9 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-4 text-end">
-                                                    <p class="mb-2"><strong>Registration:</strong> Mar 2021</p>
-                                                    <p class="mb-2"><strong>Capital:</strong> ₹3,00,000</p>
-                                                    <p class="mb-2"><strong>Partners:</strong> 2</p>
+                                                    <p class="mb-2"><strong>Registration:</strong> {{company.date_of_registration_llp}}</p>
+                                                    <p class="mb-2"><strong>Capital:</strong> ₹{{company.paid_up_capital_llp}}</p>
+                                                    <p class="mb-2"><strong>Partners:</strong> {{company.designated_partners.count}}</p>
                                                 </div>
                                             </div>
                                             <hr>
@@ -555,15 +656,19 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% endfor %}
+                                    {% endif %}
 
+                                    {% if OPC %}
+                                    {% for company in OPC %}
                                     <!-- Company 3 -->
                                     <div class="company-card card">
-                                        <div class="card-body">
+                                        <div class="card-body pt-3">
                                             <div class="row">
                                                 <div class="col-md-8">
-                                                    <h5 class="fw-bold mb-2">Sharma Enterprises (OPC)</h5>
+                                                    <h5 class="fw-bold mb-2">{{company.opc_name}}</h5>
                                                     <p class="text-muted mb-2"><strong>CIN:</strong>
-                                                        U74999DL2019OPC350123</p>
+                                                        {{company.opc_cin}}</p>
                                                     <p class="text-muted mb-2"><strong>Type:</strong> One Person Company
                                                     </p>
                                                     <div class="mb-2">
@@ -572,9 +677,9 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-4 text-end">
-                                                    <p class="mb-2"><strong>Incorporation:</strong> Dec 2019</p>
+                                                    <p class="mb-2"><strong>Incorporation:</strong> {{company.date_of_incorporation_opc}}</p>
                                                     <p class="mb-2"><strong>Authorized Capital:</strong> ₹5,00,000</p>
-                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹2,00,000</p>
+                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹{{company.paid_up_share_capital_opc}}</p>
                                                 </div>
                                             </div>
                                             <hr>
@@ -591,12 +696,60 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% endfor %}
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
 
                         <!-- Services Tab -->
                         <div class="tab-pane fade" id="services">
+
+                            {% if ITR %}
+                            <!-- ITR Services -->
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-info text-white py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-file-text me-2"></i>Income Tax Return (ITR) Services
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Assessment Year</th>
+                                                <th>ITR Type</th>
+                                                <th>Filing Status</th>
+                                                <th>Acknowledgment</th>
+                                                <th>Amount</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+
+                                            {% for itr in ITR %}
+                                            <tr>
+                                                <td><strong>{{itr.assessment_year}}</strong></td>
+                                                <td>{{itr.itr_type}}</td>
+                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                                <td>-</td>
+                                                <td>₹{{itr.client_service.agreed_fee}}</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-pencil"></i> Edit
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+
+
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h4 class="mb-0">
                                     <i class="bi bi-briefcase me-2"></i>Client Services
@@ -605,7 +758,121 @@
                                     <i class="bi bi-plus-lg me-2"></i>Add New Service
                                 </button>
                             </div>
+                            {% endif %}
 
+
+                            {% if GST %}
+                            <!-- GST Services -->
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header bg-success text-white py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-receipt me-2"></i>GST Services
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-light rounded">
+                                                <p class="mb-1"><strong>GSTIN:</strong>{{GST.0.gst_number}}</p>
+                                                <p class="mb-1"><strong>Registration Type:</strong> {{GST.0.type_of_registration}}</p>
+                                                <p class="mb-0"><strong>Filing Frequency:</strong> {{GST.0.filing_frequency}}</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-light rounded">
+                                                <p class="mb-1"><strong>State:</strong> Karnataka</p>
+                                                <p class="mb-1"><strong>Registration Date:</strong>{{GST.0.date_of_registration}}</p>
+                                                <p class="mb-0"><strong>Status:</strong> <span class="badge bg-success">Active</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Period</th>
+                                                <th>Return Type</th>
+                                                <th>Status</th>
+                                                <th>ARN</th>
+                                                <th>Due Date</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <td><strong>Oct 2025</strong></td>
+                                                <td>GSTR-1</td>
+                                                <td><span class="badge bg-warning text-dark">Pending</span></td>
+                                                <td>-</td>
+                                                <td>Nov 11, 2025</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-upload"></i> File
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Sep 2025</strong></td>
+                                                <td>GSTR-3B</td>
+                                                <td><span class="badge bg-success">Filed</span></td>
+                                                <td>ARN123456789012</td>
+                                                <td>Oct 20, 2025</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+
+
+                            {% if Audit %}
+                            <!-- Audit Services -->
+                            <div class="card shadow-sm">
+                                <div class="card-header bg-warning text-dark py-3">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="bi bi-clipboard-check me-2"></i>Audit Services
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Financial Year</th>
+                                                <th>Audit Type</th>
+                                                <th>Auditor</th>
+                                                <th>Status</th>
+                                                <th>Report Date</th>
+                                                <th>Action</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for audit in Audit %}
+                                            <tr>
+                                                <td><strong>{{audit.financial_year}}</strong></td>
+                                                <td>{{audit.audit_type}}</td>
+                                                <td>{{audit.auditor_name}}</td>
+                                                <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                                <td>-</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary action-btn">
+                                                        <i class="bi bi-eye"></i> Track
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             <!-- Include the new services accordion template -->
                             {% include 'client/services_accordion.html' %}
 

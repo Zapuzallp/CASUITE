@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+from .models import DocumentMaster, DocumentRequest, RequestedDocument, ClientDocumentUpload, Client, PrivateLimitedDetails, ITRDetails, ClientService, ServiceType, GSTDetails, AuditDetails, LLPDetails, OPCDetails
 from .models import (
     Client, CompanyDetails, LLPDetails, OPCDetails, Section8CompanyDetails, HUFDetails,
     ServiceType, ClientService, GSTDetails, ITRDetails, AuditDetails,
@@ -274,9 +276,21 @@ class ClientDocumentUploadAdmin(admin.ModelAdmin):
         'uploaded_by__username',
         'requested_document__document_master__document_name',
     )
-    readonly_fields = ('upload_date', 'status')
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "client":
-            kwargs["queryset"] = Client.objects.select_related().order_by('client_name')
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+admin.site.register(Client)
+admin.site.register(PrivateLimitedDetails)
+admin.site.register(ClientService)
+admin.site.register(ITRDetails)
+admin.site.register(ServiceType)
+admin.site.register(AuditDetails)
+admin.site.register(GSTDetails)
+admin.site.register(LLPDetails)
+admin.site.register(OPCDetails)
+
+readonly_fields = ('upload_date', 'status')
+
+def formfield_for_foreignkey(self, db_field, request, **kwargs):
+    if db_field.name == "client":
+        kwargs["queryset"] = Client.objects.select_related().order_by('client_name')
+    return super().formfield_for_foreignkey(db_field, request, **kwargs)
