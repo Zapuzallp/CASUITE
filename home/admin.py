@@ -278,16 +278,6 @@ class ClientDocumentUploadAdmin(admin.ModelAdmin):
     )
 
 
-admin.site.register(Client)
-admin.site.register(PrivateLimitedDetails)
-admin.site.register(ClientService)
-admin.site.register(ITRDetails)
-admin.site.register(ServiceType)
-admin.site.register(AuditDetails)
-admin.site.register(GSTDetails)
-admin.site.register(LLPDetails)
-admin.site.register(OPCDetails)
-
 readonly_fields = ('upload_date', 'status')
 
 def formfield_for_foreignkey(self, db_field, request, **kwargs):
