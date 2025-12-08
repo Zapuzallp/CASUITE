@@ -17,6 +17,7 @@ class Client(models.Model):
         ('LLP', 'LLP'),
         ('OPC', 'OPC'),
         ('Section 8', 'Section 8'),
+        ('HUF', 'HUF'),
     ]
 
     STATUS_CHOICES = [
@@ -43,10 +44,13 @@ class Client(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='clients_assigned'
     )
     client_type = models.CharField(max_length=20, choices=CLIENT_TYPE_CHOICES)
-    business_structure = models.CharField(max_length=50, choices=BUSINESS_STRUCTURE_CHOICES)
+    business_structure = models.CharField(max_length=50, choices=BUSINESS_STRUCTURE_CHOICES, blank=True, null=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Prospect')
     remarks = models.TextField(blank=True, null=True)
     din_no = models.CharField(max_length=50, blank=True, null=True)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='clients_created'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -61,7 +65,6 @@ class CompanyDetails(models.Model):
     COMPANY_TYPE_CHOICES = [
         ('Private Limited', 'Private Limited'),
         ('Public Limited', 'Public Limited'),
-        ('One Person Company', 'One Person Company'),
     ]
 
     client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='company_details')
@@ -148,7 +151,7 @@ class HUFDetails(models.Model):
     number_of_coparceners = models.PositiveIntegerField()
     number_of_members = models.PositiveIntegerField()
     residential_address = models.TextField()
-    bank_account_details = models.JSONField(blank=True, null=True)
+    bank_account_details = models.JSONField(blank=True)
     deed_of_declaration_file = models.FileField(upload_to='huf_docs/deeds/', blank=True, null=True)
     business_activity = models.CharField(max_length=255, blank=True, null=True)
     remarks = models.TextField(blank=True, null=True)
