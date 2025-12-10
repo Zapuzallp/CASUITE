@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+    <style>
+        /* Editor Styling */
+        #editor-container {
+            height: 150px;
+            background: white;
+            font-size: 1rem;
+        }
+
+        .ql-toolbar {
+            background: #f8f9fa;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .ql-container {
+            border-radius: 0 0 5px 5px;
+        }
+
+        /* Form Polish */
+        .form-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+        }
+
+        .card-title {
+            border-bottom: 2px solid #f1f1f1;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* Highlight dynamic section */
+        #extendedFieldsSection {
+            background: #fdfdfd;
+            border: 1px dashed #ced4da;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+    </style>
+
+    <main id="main" class="main">
+
+        <div class="pagetitle mb-4">
+            <h1>{% if task %}Edit Task{% else %}Create New Task{% endif %}</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a
+                            href="{% url 'client_details' client.id %}">{{ client.client_name }}</a></li>
+                    <li class="breadcrumb-item active">Task Details</li>
+                </ol>
+            </nav>
+        </div>
+
+        <section class="section">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-4">
+
+                            <form method="post" enctype="multipart/form-data" id="taskForm">
+                                {% csrf_token %}
+
+                                <h5 class="card-title text-primary"><i class="bi bi-gear-fill me-2"></i>Core Details
+                                </h5>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">Service Type <span
+                                                class="text-danger">*</span></label>
+                                        {{ task_form.service_type }}
+                                    </div>
+
+                                    <div class="col-md-9">
+                                        <label class="form-label fw-bold">Task Title</label>
+                                        {{ task_form.task_title }}
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Due Date <span
+                                                class="text-danger">*</span></label>
+                                        {{ task_form.due_date }}
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Priority</label>
+                                        {{ task_form.priority }}
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Assign Team</label>
+                                        {{ task_form.assignees }}
+                                    </div>
+                                </div>
+
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">Description / Instructions</label>
+                                        <input type="hidden" name="description" id="hiddenDescription">
+
+                                        <div id="editor-container">
+                                            {% if task.description %}{{ task.description|safe }}{% endif %}</div>
+                                    </div>
+                                </div>
+
+                                <div id="extendedFieldsSection" style="display:none;">
+                                    <h5 class="card-title text-success border-0 pb-0 mb-3" id="extendedHeader">
+                                        <i class="bi bi-sliders me-2"></i>Additional Info
+                                    </h5>
+                                    <div class="row g-3">
+                                        {% for field in extended_form %}
+                                            <div class="col-md-4 field-wrapper" data-field-name="{{ field.name }}">
+                                                <label class="form-label fw-bold"
+                                                       id="label_{{ field.name }}">{{ field.label }}</label>
+                                                {{ field }}
+                                                {% if field.errors %}
+                                                    <div class="text-danger small">{{ field.errors.0 }}</div>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end mt-5 gap-2">
+                                    {% if task %}
+                                        <a href="{% url 'task_detail' task.id %}" class="btn btn-light border px-4">Cancel</a>
+                                    {% else %}
+                                        <a href="{% url 'client_details' client.id %}"
+                                           class="btn btn-light border px-4">Cancel</a>
+                                    {% endif %}
+
+                                    <button type="submit" class="btn btn-primary px-5 fw-bold">
+                                        <i class="bi bi-check-lg me-1"></i> {% if task %}Update Task{% else %}Create
+                                        Task{% endif %}
+                                    </button>
+                                </div>
+
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    {{ task_config|json_script:"task-config-data" }}
+    {{ client_data_json|json_script:"client-data-source" }}
+
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // --- 1. INITIALIZE QUILL EDITOR ---
+            var quill = new Quill('#editor-container', {
+                theme: 'snow',
+                placeholder: 'Type task details, instructions, or paste images here...',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{'list': 'ordered'}, {'list': 'bullet'}],
+                        [{'header': [1, 2, 3, false]}],
+                        ['link', 'clean']
+                    ]
+                }
+            });
+
+            // FIX 1: Sync Quill content to Hidden Input on Submit
+            const form = document.getElementById('taskForm');
+            form.addEventListener('submit', function () {
+                const hiddenDesc = document.getElementById('hiddenDescription');
+                hiddenDesc.value = quill.root.innerHTML;
+            });
+
+
+            // --- 2. DYNAMIC FIELD LOGIC ---
+            const serviceSelect = document.getElementById('id_service_type');
+            const extendedSection = document.getElementById('extendedFieldsSection');
+            const extendedHeader = document.getElementById('extendedHeader');
+            const dueDateInput = document.getElementById('id_due_date');
+            const allWrappers = document.querySelectorAll('.field-wrapper');
+
+            // Load Data
+            let config = {};
+            let clientData = {};
+            try {
+                config = JSON.parse(document.getElementById('task-config-data').textContent);
+                clientData = JSON.parse(document.getElementById('client-data-source').textContent);
+            } catch (e) {
+                console.error("Data Load Error", e);
+            }
+
+            function updateForm() {
+                const selectedValue = serviceSelect.value;
+
+                if (!selectedValue) {
+                    extendedSection.style.display = 'none';
+                    return;
+                }
+
+                if (config[selectedValue]) {
+                    const rules = config[selectedValue];
+                    extendedSection.style.display = 'block';
+                    extendedHeader.innerHTML = `<i class="bi bi-sliders me-2"></i> ${selectedValue} Specifics`;
+
+                    // Only set default due date if field is empty (Create Mode)
+                    if (!dueDateInput.value && rules.default_due_days) {
+                        const today = new Date();
+                        today.setDate(today.getDate() + rules.default_due_days);
+                        dueDateInput.value = today.toISOString().split('T')[0];
+                    }
+
+                    // Show/Hide Fields
+                    const allowedFields = rules.fields.include || [];
+                    const labels = rules.labels || {};
+                    const readonlys = rules.fields.readonly || [];
+                    const defaults = rules.dynamic_defaults || {};
+
+                    allWrappers.forEach(wrapper => {
+                        const fieldName = wrapper.getAttribute('data-field-name');
+                        const labelEl = document.getElementById(`label_${fieldName}`);
+                        const inputEl = wrapper.querySelector('input, select, textarea');
+
+                        // Reset label
+                        if (labelEl && !labelEl.dataset.originalLabel) labelEl.dataset.originalLabel = labelEl.textContent;
+
+                        if (allowedFields.includes(fieldName)) {
+                            wrapper.style.display = 'block';
+
+                            // Rename Label
+                            if (labelEl) labelEl.textContent = labels[fieldName] || labelEl.dataset.originalLabel;
+
+                            // Handle Readonly & Styling
+                            if (inputEl) {
+                                if (readonlys.includes(fieldName)) {
+                                    inputEl.setAttribute('readonly', true);
+                                    inputEl.classList.add('bg-light');
+                                    if (inputEl.tagName === 'SELECT') {
+                                        inputEl.style.pointerEvents = 'none';
+                                        inputEl.style.backgroundColor = '#e9ecef';
+                                    }
+                                } else {
+                                    inputEl.removeAttribute('readonly');
+                                    inputEl.classList.remove('bg-light');
+                                    if (inputEl.tagName === 'SELECT') {
+                                        inputEl.style.pointerEvents = 'auto';
+                                        inputEl.style.backgroundColor = '';
+                                    }
+                                }
+
+                                // Auto-Fill (Only if empty)
+                                if (defaults[fieldName]) {
+                                    const clientAttr = defaults[fieldName];
+                                    const autoValue = clientData[clientAttr];
+
+                                    // FIX 2: Only auto-fill if input is empty (Don't overwrite Edit data)
+                                    if (autoValue && !inputEl.value) {
+                                        inputEl.value = autoValue;
+                                        inputEl.style.backgroundColor = '#e8f5e9';
+                                        setTimeout(() => {
+                                            inputEl.style.backgroundColor = '';
+                                        }, 1500);
+                                    }
+                                }
+                            }
+                        } else {
+                            wrapper.style.display = 'none';
+                            // DO NOT clear value here during Edit, or you lose hidden data
+                            // if (inputEl) inputEl.value = ''; 
+                        }
+                    });
+
+                } else {
+                    extendedSection.style.display = 'none';
+                }
+            }
+
+            if (serviceSelect) serviceSelect.addEventListener('change', updateForm);
+
+            // FIX 3: Run logic immediately on page load (For Edit Mode)
+            updateForm();
+        });
+    </script>
+{% endblock body %}

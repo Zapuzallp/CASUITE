@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block body %}
+    <main id="main" class="main">
+
+        {% if messages %}
+            <div class="container mt-3">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="container mt-4">
+            <h2 class="mb-4 text-primary fw-bold">Onboard New Client</h2>
+
+            <form method="post" enctype="multipart/form-data" id="onboardingForm" novalidate>
+                {% csrf_token %}
+
+                <div class="card mb-4 shadow-sm border-0">
+                    <div class="card-header bg-primary text-white">Basic Information</div>
+                    <div class="card-body p-4">
+                        <div class="row" id="clientFieldsContainer">
+                            {% for field in client_form %}
+                                <div class="col-md-6 mb-3 field-wrapper client-field-wrapper"
+                                     data-field-name="{{ field.name }}">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold"
+                                           id="label_{{ field.name }}">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4 shadow-sm border-0" id="businessProfileSection">
+                    <div class="card-header bg-secondary text-white">
+                        <span id="profileHeader">Entity Details</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row" id="profileFieldsContainer">
+                            {% for field in profile_form %}
+                                <div class="col-md-6 mb-3 field-wrapper profile-field-wrapper"
+                                     data-field-name="{{ field.name }}">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold"
+                                           id="label_{{ field.name }}">
+                                        {{ field.label }}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg">Complete Onboarding</button>
+            </form>
+        </div>
+    </main>
+
+    {{ structure_config|json_script:"structure-config-data" }}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const clientTypeSelect = document.getElementById('id_client_type');
+            const structureSelect = document.getElementById('id_business_structure');
+            const profileSection = document.getElementById('businessProfileSection');
+            const profileHeader = document.getElementById('profileHeader');
+
+            // Get ALL available fields from the DOM initially
+            const clientDOMFields = Array.from(document.querySelectorAll('.client-field-wrapper'));
+            const profileDOMFields = Array.from(document.querySelectorAll('.profile-field-wrapper'));
+
+            // Helper: Get list of field names from DOM elements
+            const getFieldNames = (domList) => domList.map(el => el.getAttribute('data-field-name'));
+
+            // Load Config
+            let configData = {};
+            try {
+                configData = JSON.parse(document.getElementById('structure-config-data').textContent);
+            } catch (e) {
+                console.error("Config Load Error", e);
+            }
+
+
+            // --- LOGIC: Calculate Final Visible List ---
+            function calculateFinalList(allAvailableNames, rules) {
+                if (!rules) return [];
+
+                let include = rules.include || [];
+                let exclude = rules.exclude || [];
+                let finalList = [];
+
+                // 1. Handle Include
+                if (include.length === 0) {
+                    // Include [] means "Include All"
+                    finalList = [...allAvailableNames];
+                } else {
+                    // Include specific fields only
+                    finalList = [...include];
+                }
+
+                // 2. Handle Exclude (Remove excluded items from finalList)
+                finalList = finalList.filter(name => !exclude.includes(name));
+
+                return finalList;
+            }
+
+
+            function updateFormVisibility() {
+                const cType = clientTypeSelect.value;
+                const sType = structureSelect.value;
+
+                let activeKey = null;
+                if (sType && configData[sType]) {
+                    activeKey = sType;
+                } else if (cType === 'Individual' && configData['Individual']) {
+                    activeKey = 'Individual';
+                }
+
+                if (activeKey) {
+                    const config = configData[activeKey];
+                    const customLabels = config.labels || {};
+                    const conditionalRules = config.conditional_rules || [];
+
+                    // --- 1. PROCESS CLIENT FIELDS (Basic Info) ---
+                    const allClientNames = getFieldNames(clientDOMFields);
+                    const visibleClientFields = calculateFinalList(allClientNames, config.client);
+
+                    clientDOMFields.forEach(wrapper => {
+                        const name = wrapper.getAttribute('data-field-name');
+                        const labelEl = document.getElementById(`label_${name}`);
+
+                        // Save original label
+                        if (labelEl && !labelEl.dataset.originalLabel) labelEl.dataset.originalLabel = labelEl.textContent;
+
+                        if (visibleClientFields.includes(name)) {
+                            wrapper.style.display = 'block';
+                            if (labelEl && customLabels[name]) labelEl.textContent = customLabels[name];
+                            else if (labelEl) labelEl.textContent = labelEl.dataset.originalLabel;
+                        } else {
+                            wrapper.style.display = 'none';
+                        }
+                    });
+
+                    // --- 2. PROCESS PROFILE FIELDS (Entity Info) ---
+                    const allProfileNames = getFieldNames(profileDOMFields);
+                    const visibleProfileFields = calculateFinalList(allProfileNames, config.profile);
+
+                    // Show/Hide Section based on if any fields are visible
+                    if (visibleProfileFields.length > 0 && !visibleProfileFields.includes('_none')) {
+                        profileSection.style.display = 'block';
+                        profileHeader.textContent = (activeKey === 'Individual') ? 'Additional Details' : `${activeKey} Details`;
+
+                        profileDOMFields.forEach(wrapper => {
+                            const name = wrapper.getAttribute('data-field-name');
+                            const labelEl = document.getElementById(`label_${name}`);
+
+                            if (labelEl && !labelEl.dataset.originalLabel) labelEl.dataset.originalLabel = labelEl.textContent;
+
+                            if (visibleProfileFields.includes(name)) {
+                                wrapper.style.display = 'block';
+                                if (labelEl && customLabels[name]) labelEl.textContent = customLabels[name];
+                                else if (labelEl) labelEl.textContent = labelEl.dataset.originalLabel;
+                            } else {
+                                wrapper.style.display = 'none';
+                            }
+                        });
+                    } else {
+                        profileSection.style.display = 'none';
+                    }
+
+                    // --- 3. APPLY CONDITIONALS ---
+                    applyConditionalRules(conditionalRules);
+
+                } else {
+                    // Fallback: If no structure selected, hide profile, show basic defaults?
+                    // For now, let's just hide the profile section
+                    profileSection.style.display = 'none';
+                }
+            }
+
+            // --- Conditional Logic (Checkbox triggers) ---
+            function applyConditionalRules(rules) {
+                if (!rules || rules.length === 0) return;
+
+                rules.forEach(rule => {
+                    const triggerName = rule.trigger_field;
+                    const targetNames = rule.targets;
+                    const requiredValue = rule.trigger_value;
+
+                    const triggerInput = document.querySelector(`[name="${triggerName}"]`);
+                    if (triggerInput) {
+                        const checkCondition = () => {
+                            let currentValue = (triggerInput.type === 'checkbox')
+                                ? (triggerInput.checked ? 'true' : 'false')
+                                : triggerInput.value;
+
+                            const isMatch = (currentValue === requiredValue);
+
+                            targetNames.forEach(targetName => {
+                                // Find field in either section
+                                const targetWrapper = document.querySelector(`.field-wrapper[data-field-name="${targetName}"]`);
+                                if (targetWrapper) {
+                                    targetWrapper.style.display = isMatch ? 'block' : 'none';
+                                }
+                            });
+                        };
+
+                        checkCondition(); // Run now
+                        if (!triggerInput.dataset.listenerAttached) {
+                            triggerInput.addEventListener('change', checkCondition);
+                            triggerInput.dataset.listenerAttached = "true";
+                        }
+                    }
+                });
+            }
+
+            if (clientTypeSelect) clientTypeSelect.addEventListener('change', updateFormVisibility);
+            if (structureSelect) structureSelect.addEventListener('change', updateFormVisibility);
+
+            updateFormVisibility();
+        });
+    </script>
+{% endblock %}

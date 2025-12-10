@@ -4,401 +4,166 @@
 {% block body %}
 <main id="main" class="main">
     <div class="pagetitle">
-        <h1>Tasks</h1>
+        <h1>All Tasks</h1>
         <nav>
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'client_dashboard' %}">Home</a></li>
-                <li class="breadcrumb-item">Tasks</li>
-                <li class="breadcrumb-item active">All Tasks</li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                <li class="breadcrumb-item active">Tasks</li>
             </ol>
         </nav>
-    </div><!-- End Page Title -->
+    </div>
 
     <section class="section">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Task Overview</h5>
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
 
-                        <!-- Client Selection and Add Task -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center my-3">
+                    <h5 class="card-title m-0">Task Management</h5>
+
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#selectClientModal">
+                        <i class="bi bi-plus-lg me-1"></i> Add New Task
+                    </button>
+                </div>
+
+                <table class="table table-hover datatable align-middle">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Client</th>
+                        <th>Service</th>
+                        <th>Due Date</th>
+                        <th>Team</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for task in tasks %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'task_detail' task.id %}"
+                                   class="fw-bold text-primary text-decoration-none">
+                                    {{ task.task_title }}
+                                </a>
+                                {% if task.priority == 'High' %}
+                                    <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">HIGH</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'client_details' task.client.id %}"
+                                   class="text-dark text-decoration-none">
+                                    {{ task.client.client_name }}
+                                </a>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ task.service_type }}</span></td>
+                            <td>
+                                <span class="{% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
+                                    {{ task.due_date|date:"M d, Y" }}
+                                </span>
+                            </td>
+                            <td>
                                 <div class="d-flex align-items-center">
-                                    {% if user_clients %}
-                                    <form method="get" action="{% url 'tasks_dashboard' %}" class="d-flex gap-2 w-100">
-                                        <select name="client_id" class="form-select" style="max-width: 300px;" required>
-                                            <option value="">Select Client</option>
-                                            {% for c in user_clients %}
-                                            <option value="{{ c.id }}" {% if client_id|stringformat:'s' == c.id|stringformat:'s' %}selected{% endif %}>
-                                                {{ c.client_name }}
-                                            </option>
-                                            {% endfor %}
-                                        </select>
-                                        <button class="btn btn-primary" type="submit">
-                                            <i class="bi bi-plus-lg me-1"></i>Add Task
-                                        </button>
-                                    </form>
+                                    {% for user in task.assignees.all|slice:":3" %}
+                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};"
+                                             title="{{ user.first_name }}">
+                                            {{ user.first_name|slice:":1"|upper }}
+                                        </div>
+                                    {% empty %}
+                                        <span class="text-muted small fst-italic">Unassigned</span>
+                                    {% endfor %}
+                                    {% if task.assignees.count > 3 %}
+                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                             style="width: 28px; height: 28px; font-size: 10px; z-index: 0;">
+                                            +{{ task.assignees.count|add:"-3" }}
+                                        </div>
                                     {% endif %}
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Status Filter Buttons -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <div class="btn-group" role="group" aria-label="Task status filter">
-                                    <a href="{% url 'tasks_dashboard' %}"
-                                       class="btn btn-outline-primary {% if status_filter == 'all' %}active{% endif %}">
-                                        All <span class="badge bg-primary text-white ms-1">{{ status_counts.all }}</span>
-                                    </a>
-                                    <a href="{% url 'tasks_dashboard' %}?status=Pending"
-                                       class="btn btn-outline-warning {% if status_filter == 'Pending' %}active{% endif %}">
-                                        Pending <span class="badge bg-warning text-dark ms-1">{{ status_counts.Pending|default:'0' }}</span>
-                                    </a>
-                                    <a href="{% url 'tasks_dashboard' %}?status=In+Progress"
-                                       class="btn btn-outline-info {% if status_filter == 'In Progress' %}active{% endif %}">
-                                        In Progress <span class="badge bg-info text-dark ms-1">{{ status_counts.In_Progress|default:'0' }}</span>
-                                    </a>
-                                    <a href="{% url 'tasks_dashboard' %}?status=Submitted"
-                                       class="btn btn-outline-secondary {% if status_filter == 'Submitted' %}active{% endif %}">
-                                        Submitted <span class="badge bg-secondary text-white ms-1">{{ status_counts.Submitted|default:'0' }}</span>
-                                    </a>
-                                    <a href="{% url 'tasks_dashboard' %}?status=Completed"
-                                       class="btn btn-outline-success {% if status_filter == 'Completed' %}active{% endif %}">
-                                        Completed <span class="badge bg-success text-white ms-1">{{ status_counts.Completed|default:'0' }}</span>
-                                    </a>
-                                    <a href="{% url 'tasks_dashboard' %}?status=Delayed"
-                                       class="btn btn-outline-danger {% if status_filter == 'Delayed' %}active{% endif %}">
-                                        Delayed <span class="badge bg-danger text-white ms-1">{{ status_counts.Delayed|default:'0' }}</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Stats Cards -->
-                        <div class="row mb-4">
-                            <div class="col-md-6 col-lg-3 mb-3">
-                                <div class="card info-card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">Clients <span>| Total</span></h5>
-                                        <div class="d-flex align-items-center">
-                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                                <i class="bi bi-people"></i>
-                                            </div>
-                                            <div class="ps-3">
-                                                <h6>{{ clients_with_tasks|length }}</h6>
-                                                <span class="text-muted small pt-2 ps-1">Active Clients</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3 mb-3">
-                                <div class="card info-card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">Pending <span>| Tasks</span></h5>
-                                        <div class="d-flex align-items-center">
-                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center bg-warning text-white">
-                                                <i class="bi bi-hourglass-split"></i>
-                                            </div>
-                                            <div class="ps-3">
-                                                <h6>{{ pending_tasks }}</h6>
-                                                <span class="text-muted small pt-2 ps-1">Pending Tasks</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3 mb-3">
-                                <div class="card info-card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">In Progress <span>| Tasks</span></h5>
-                                        <div class="d-flex align-items-center">
-                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center bg-info text-white">
-                                                <i class="bi bi-arrow-repeat"></i>
-                                            </div>
-                                            <div class="ps-3">
-                                                <h6>{{ status_counts.In_Progress|default:'0' }}</h6>
-                                                <span class="text-muted small pt-2 ps-1">In Progress</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3 mb-3">
-                                <div class="card info-card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">Completed <span>| Tasks</span></h5>
-                                        <div class="d-flex align-items-center">
-                                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center bg-success text-white">
-                                                <i class="bi bi-check-circle"></i>
-                                            </div>
-                                            <div class="ps-3">
-                                                <h6>{{ status_counts.Completed|default:'0' }}</h6>
-                                                <span class="text-muted small pt-2 ps-1">Completed</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% if no_clients_message %}
-                        <div class="card">
-                            <div class="card-body text-center py-5">
-                                <div class="mb-3">
-                                    <i class="bi bi-folder-x display-4 text-muted"></i>
-                                </div>
-                                <h5 class="text-muted">{{ no_clients_message }}</h5>
-                                <p class="text-muted">Start by adding your first client to create tasks.</p>
-                                <a href="{% url 'add_client' %}" class="btn btn-primary mt-3">
-                                    <i class="bi bi-plus-circle me-1"></i> Add Client
-                                </a>
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="accordion" id="clientTasksAccordion">
-                            {% for client_data in clients_with_tasks %}
-                            <div class="accordion-item mb-4 shadow-sm border-0 rounded-3 overflow-hidden">
-                                <h2 class="accordion-header" id="heading{{ client_data.client.id }}">
-                                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}"
-                                        type="button" data-bs-toggle="collapse"
-                                        data-bs-target="#collapse{{ client_data.client.id }}"
-                                        aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}"
-                                        aria-controls="collapse{{ client_data.client.id }}"
-                                        style="background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%); color: white; border: none; font-size: 1.05rem;">
-                                        <div class="w-100 d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <strong>{{ client_data.client.client_name }}</strong><br>
-                                                <small class="opacity-75">{{ client_data.client.email }}</small>
-                                            </div>
-                                            <div class="d-flex gap-2 align-items-center">
-                                                <span class="badge bg-light text-dark">{{ client_data.total_tasks }}
-                                                    Tasks</span>
-                                                {% if client_data.pending_tasks %}
-                                                <span class="badge bg-warning text-dark">{{ client_data.pending_tasks }}
-                                                    Pending</span>
-                                                {% endif %}
-                                                <div></div>
-                                            </div>
-                                        </div>
-                                    </button>
-                                </h2>
-                                <div id="collapse{{ client_data.client.id }}"
-                                    class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
-                                    aria-labelledby="heading{{ client_data.client.id }}" data-bs-parent="#clientTasksAccordion">
-                                    <div class="accordion-body p-3">
-                                        {% for group in client_data.groups %}
-                                        <div class="card mb-3">
-                                            <div class="card-header d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <strong>{{ group.service_name }}</strong>
-                                                </div>
-                                                <div>
-                                                    <span class="badge bg-secondary me-2">{{ group.total_count }} Tasks</span>
-                                                    {% if group.pending_count %}
-                                                    <span class="badge bg-warning text-dark">{{ group.pending_count }}
-                                                        Pending</span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="table-responsive">
-                                                    <table class="table table-hover align-middle mb-0">
-                                                        <thead class="table-light">
-                                                            <tr>
-                                                                <th>Task Title</th>
-                                                                <th>Period</th>
-                                                                <th>Due Date</th>
-                                                                <th>Assigned To</th>
-                                                                <th>Status</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {% for task in group.tasks %}
-                                                            <tr>
-                                                                <td><strong>{{ task.task_title }}</strong></td>
-                                                                <td>
-                                                                    {% if task.period_from or task.period_to %}
-                                                                    {% if task.period_from %}
-                                                                    {{ task.period_from|date:"M d, Y" }}
-                                                                    {% endif %}
-                                                                    {% if task.period_to %}
-                                                                    - {{ task.period_to|date:"M d, Y" }}
-                                                                    {% endif %}
-                                                                    {% else %}
-                                                                    -
-                                                                    {% endif %}
-                                                                </td>
-                                                                <td>{{ task.due_date|date:"M d, Y" }}</td>
-                                                                <td>
-                                                                    {% if task.assigned_to %}
-                                                                    {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
-                                                                    {% else %}
-                                                                    -
-                                                                    {% endif %}
-                                                                </td>
-                                                                <td>
-                                                                    {% if task.task_status == 'Pending' %}
-                                                                    <span class="badge bg-warning text-dark">Pending</span>
-                                                                    {% elif task.task_status == 'In Progress' %}
-                                                                    <span class="badge bg-info text-dark">In Progress</span>
-                                                                    {% elif task.task_status == 'Submitted' %}
-                                                                    <span class="badge bg-primary">Submitted</span>
-                                                                    {% elif task.task_status == 'Completed' %}
-                                                                    <span class="badge bg-success">Completed</span>
-                                                                    {% elif task.task_status == 'Delayed' %}
-                                                                    <span class="badge bg-danger">Delayed</span>
-                                                                    {% elif task.task_status == 'Cancelled' %}
-                                                                    <span class="badge bg-secondary">Cancelled</span>
-                                                                    {% else %}
-                                                                    <span class="badge bg-light text-dark">{{
-                                                                        task.task_status}}</span>
-                                                                    {% endif %}
-                                                                </td>
-                                                            </tr>
-                                                            {% endfor %}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div><!-- End Card Body -->
-                </div><!-- End Card -->
-            </div><!-- End Col -->
-        </div><!-- End Row -->
+                            </td>
+                            <td>
+                                <span class="badge {% if task.status == 'Completed' %}bg-success{% elif task.status == 'Pending' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
+                                    {{ task.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'task_detail' task.id %}" class="btn btn-sm btn-outline-primary"><i
+                                        class="bi bi-eye"></i></a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                No tasks found. Use the 'Add New Task' button to create one.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </section>
+
+    <div class="modal fade" id="selectClientModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-person-plus-fill me-2"></i>Select Client
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Choose a client to start a new task for.</p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Client Name</label>
+                        <select id="clientSelector" class="form-select form-select-lg">
+                            <option value="" selected disabled>-- Select a Client --</option>
+                            {% for client in clients %}
+                                <option value="{{ client.id }}">{{ client.client_name }} ({{ client.status }})</option>
+                            {% empty %}
+                                <option disabled>No active clients found.</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4" id="btnProceedTask" disabled>
+                        Proceed <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </main>
 
-<style>
-    /* NiceAdmin Card Styles */
-    .card {
-        margin-bottom: 30px;
-        border: none;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
-    }
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const clientSelect = document.getElementById('clientSelector');
+            const proceedBtn = document.getElementById('btnProceedTask');
 
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-    }
+            // Enable button only when client is selected
+            clientSelect.addEventListener('change', function () {
+                if (this.value) {
+                    proceedBtn.disabled = false;
+                } else {
+                    proceedBtn.disabled = true;
+                }
+            });
 
-    .card-title {
-        color: #4154f1;
-        font-weight: 600;
-        font-size: 1.25rem;
-        margin-bottom: 1.5rem;
-    }
+            // Handle Redirection
+            proceedBtn.addEventListener('click', function () {
+                const clientId = clientSelect.value;
+                if (clientId) {
+                    // Construct URL: /client/ID/create-task/
+                    // Note: Ensure this matches your urls.py pattern exactly
+                    const url = `/client/${clientId}/create-task/`;
+                    window.location.href = url;
+                }
+            });
+        });
+    </script>
 
-    .card-title span {
-        color: #6c757d;
-        font-size: 0.9rem;
-        font-weight: 400;
-    }
-
-    /* Info Card Styles */
-    .info-card {
-        border-left: 4px solid #4154f1;
-    }
-
-    .info-card .card-icon {
-        font-size: 2rem;
-        line-height: 0;
-        width: 64px;
-        height: 64px;
-        background-color: #f6f6fe;
-        color: #4154f1;
-    }
-
-    .info-card h6 {
-        font-size: 1.75rem;
-        font-weight: 700;
-        margin-bottom: 0;
-    }
-
-    /* Status Badges */
-    .badge {
-        font-weight: 500;
-        padding: 0.4em 0.8em;
-        font-size: 0.75rem;
-    }
-
-    /* Filter Buttons */
-    .btn-group .btn {
-        border-radius: 5px;
-        margin-right: 5px;
-        margin-bottom: 5px;
-    }
-
-    /* Table Styling */
-    .table {
-        font-size: 0.9rem;
-    }
-
-    .table thead th {
-        background-color: #f8f9fa;
-        border-bottom: 2px solid #e9ecef;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
-        color: #6c757d;
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: rgba(65, 84, 241, 0.05);
-    }
-
-    /* Accordion Styling */
-    .accordion-button {
-        font-weight: 600;
-        padding: 1rem 1.25rem;
-    }
-
-    .accordion-button:not(.collapsed) {
-        background: linear-gradient(135deg, #4154f1 0%, #6776f4 100%);
-        color: white;
-        box-shadow: none;
-    }
-
-    .accordion-button:focus {
-        box-shadow: none;
-        border-color: transparent;
-    }
-
-    .accordion-item {
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        border-radius: 8px !important;
-        margin-bottom: 1rem;
-        overflow: hidden;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .btn-group .btn {
-            padding: 0.35rem 0.5rem;
-            font-size: 0.75rem;
-        }
-
-        .info-card .card-icon {
-            width: 48px;
-            height: 48px;
-            font-size: 1.5rem;
-        }
-
-        .info-card h6 {
-            font-size: 1.5rem;
-        }
-    }
-</style>
-{% endblock %}
+{% endblock body %}

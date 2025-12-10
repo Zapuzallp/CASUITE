@@ -3,1453 +3,470 @@
 
 {% block body %}
     <style>
-        .card {
-            border-radius: 15px;
+        /* Scope styles to this page */
+        .profile-header-card {
             border: none;
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
-        }
-
-        .profile-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px 15px 0 0;
-        }
-
-        .avatar-lg {
-            width: 120px;
-            height: 120px;
-            border: 5px solid white;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .nav-pills .nav-link {
             border-radius: 10px;
-            margin-bottom: 0.5rem;
-            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0px 0 30px rgba(1, 41, 112, 0.08);
+            margin-bottom: 20px;
+            padding: 20px;
         }
 
-        .nav-pills .nav-link:hover {
-            background-color: #f8f9fa;
-            transform: translateX(5px);
-        }
-
-        .nav-pills .nav-link.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: #6c757d;
-            min-width: 140px;
-        }
-
-        .badge-status {
-            padding: 0.5em 1em;
-            font-weight: 600;
-        }
-
-        .company-card {
-            border-left: 4px solid #667eea;
-            transition: all 0.3s ease;
-        }
-
-        .company-card:hover {
-            border-left-color: #764ba2;
-            transform: translateX(5px);
-        }
-
-        .timeline-item {
-            position: relative;
-            padding-left: 30px;
-            padding-bottom: 20px;
-            border-left: 2px solid #e9ecef;
-        }
-
-        .timeline-item:last-child {
-            border-left: none;
-        }
-
-        .timeline-badge {
-            position: absolute;
-            left: -8px;
-            top: 0;
-            width: 16px;
-            height: 16px;
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            font-size: 2rem;
+            background: linear-gradient(45deg, #4154f1, #2eca6a);
+            color: white;
             border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(65, 84, 241, 0.3);
         }
 
-        .stat-box {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 10px;
-            padding: 1rem;
+        /* Grid layout for Key-Value pairs to kill whitespace */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 Columns on PC */
+            gap: 15px;
+        }
+
+        .detail-item {
+            background: #f6f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #4154f1;
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            color: #899bbd;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 1rem;
+            color: #012970;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        /* Document Cards */
+        .doc-card {
+            border: 1px solid #eef1f4;
+            border-radius: 8px;
             transition: all 0.3s ease;
         }
 
-        .stat-box:hover {
+        .doc-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border-color: #4154f1;
         }
 
-        .btn {
-            border-radius: 8px;
+        .nav-tabs-bordered .nav-link {
+            margin-bottom: -2px;
+            border: none;
+            color: #2c384e;
         }
 
-        .table-hover tbody tr:hover {
-            background-color: rgba(102, 126, 234, 0.05);
-        }
-
-        .action-btn {
-            padding: 0.25rem 0.75rem;
-            font-size: 0.875rem;
-        }
-
-        /* Service Card Animations */
-        .service-card {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .service-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .service-card:hover::before {
-            left: 100%;
-        }
-
-        .service-card.selected {
-            animation: cardSelect 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes cardSelect {
-            0% {
-                transform: translateY(0) scale(1);
-            }
-            50% {
-                transform: translateY(-8px) scale(1.02);
-            }
-            100% {
-                transform: translateY(-5px) scale(1);
-            }
-        }
-
-        .service-card.selected .selection-indicator {
-            animation: checkmarkAppear 0.3s ease-out 0.2s both;
-        }
-
-        @keyframes checkmarkAppear {
-            0% {
-                opacity: 0;
-                transform: scale(0) rotate(-180deg);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) rotate(0deg);
-            }
-        }
-
-        .service-card:not(.selected):hover {
-            animation: cardHover 0.3s ease-out;
-        }
-
-        @keyframes cardHover {
-            0% {
-                transform: translateY(0);
-            }
-            100% {
-                transform: translateY(-3px);
-            }
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-            100% {
-                transform: scale(1);
-            }
+        .nav-tabs-bordered .nav-link.active {
+            background-color: transparent;
+            color: #4154f1;
+            border-bottom: 2px solid #4154f1;
         }
     </style>
 
-    <main id="main" class="main" data-client-id="{{ client.id|default:1 }}">
-        <div class="container-fluid py-4">
-            <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
+    <main id="main" class="main">
+
+        <div class="pagetitle mb-3">
+            <h1>Client Profile</h1>
+            <nav>
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="#"><i class="bi bi-house-door me-1"></i>Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="#">Clients</a></li>
-                    <li class="breadcrumb-item active">Client Details</li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'clients' %}">Clients</a></li>
+                    <li class="breadcrumb-item active">{{ client.client_name }}</li>
                 </ol>
             </nav>
+        </div>
 
-            <!-- Client Profile Header -->
-            <div class="card shadow-sm mb-4">
-                <div class="profile-header text-white p-4">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <div class="avatar-lg rounded-circle bg-white d-flex align-items-center justify-content-center">
-                                <i class="bi bi-person-fill display-3 text-primary"></i>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <h2 class="mb-1 fw-bold">Rajesh Kumar Sharma</h2>
-                            <p class="mb-2 opacity-75">PAN: ABCDE1234F | Client ID: CLT-2024-001</p>
-                            <div class="d-flex flex-wrap gap-2">
-                                <span class="badge bg-success badge-status">Active</span>
-                                <span class="badge bg-info badge-status">Individual</span>
-                                <span class="badge bg-warning text-dark badge-status">Premium Client</span>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <button class="btn btn-light btn-lg me-2">
-                                <i class="bi bi-pencil-square me-2"></i>Edit Profile
-                            </button>
-                            <div class="btn-group">
-                                <button class="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
-                                    <i class="bi bi-three-dots-vertical"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-envelope me-2"></i>Send Email</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-telephone me-2"></i>Call
-                                        Client</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>Delete
-                                        Client</a></li>
-                                </ul>
-                            </div>
-                        </div>
+        {% if messages %}
+            <div class="container-fluid px-0 mb-3">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0">
+                        <i class="bi bi-info-circle me-1"></i> {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="profile-header-card d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+            <div class="d-flex align-items-center mb-3 mb-md-0">
+                <div class="profile-avatar me-4">
+                    {{ client.client_name|slice:":1"|upper }}
                 </div>
+                <div>
+                    <h2 class="mb-1 text-primary fw-bold" style="font-size: 1.75rem;">{{ client.client_name }}</h2>
+                    <div class="d-flex align-items-center gap-3 text-muted">
+                    <span class="badge bg-light text-secondary border">
+                        <i class="bi bi-briefcase me-1"></i>
+                        {% if client.business_structure %}{{ client.business_structure }}{% else %}
+                            {{ client.client_type }}{% endif %}
+                    </span>
 
-                <!-- Quick Stats -->
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <div class="stat-box text-center">
-                                <i class="bi bi-briefcase fs-2 text-primary mb-2"></i>
-                                <h4 class="mb-0 fw-bold">8</h4>
-                                <small class="text-muted">Active Services</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-box text-center">
-                                <i class="bi bi-building fs-2 text-success mb-2"></i>
-                                <h4 class="mb-0 fw-bold">3</h4>
-                                <small class="text-muted">Companies</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-box text-center">
-                                <i class="bi bi-list-check fs-2 text-warning mb-2"></i>
-                                <h4 class="mb-0 fw-bold">15</h4>
-                                <small class="text-muted">Pending Tasks</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-box text-center">
-                                <i class="bi bi-calendar-check fs-2 text-info mb-2"></i>
-                                <h4 class="mb-0 fw-bold">3 Years</h4>
-                                <small class="text-muted">Client Since</small>
-                            </div>
-                        </div>
-                    </div>
+                        {% if client.email %}
+                            <small><i class="bi bi-envelope me-1"></i> {{ client.email }}</small>
+                        {% endif %}
+
+                        {% if client.phone_number %}
+                            <small><i class="bi bi-phone me-1"></i> {{ client.phone_number }}</small>
+                        {% endif %}
+                </div>
                 </div>
             </div>
 
-            <div class="row g-4">
-                <!-- Left Sidebar - Navigation -->
-                <div class="col-lg-3">
-                    <div class="card shadow-sm sticky-top" style="top: 20px;">
-                        <div class="card-body">
-                            <h6 class="fw-bold mb-3 text-primary">
-                                <i class="bi bi-list-ul me-2"></i>Sections
-                            </h6>
-                            <ul class="nav nav-pills flex-column">
-                                <li class="nav-item">
-                                    <a class="nav-link active" data-bs-toggle="pill" href="#overview">
-                                        <i class="bi bi-info-circle me-2"></i>Overview
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-bs-toggle="pill" href="#companies">
-                                        <i class="bi bi-building me-2"></i>Companies
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-bs-toggle="pill" href="#services">
-                                        <i class="bi bi-briefcase me-2"></i>Services
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-bs-toggle="pill" href="#tasks">
-                                        <i class="bi bi-list-check me-2"></i>Tasks
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-bs-toggle="pill" href="#financial">
-                                        <i class="bi bi-currency-rupee me-2"></i>Financial
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-bs-toggle="pill" href="#documents">
-                                        <i class="bi bi-file-earmark-text me-2"></i>Documents
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-bs-toggle="pill" href="#cases">
-                                        <i class="bi bi-briefcase-fill me-2"></i>Legal Cases
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-bs-toggle="pill" href="#activity">
-                                        <i class="bi bi-clock-history me-2"></i>Activity
-                                    </a>
-                                </li>
-                            </ul>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createRequestModal">
+                    <i class="bi bi-plus-square me-1"></i> Request Docs
+                </button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+                    <i class="bi bi-cloud-upload me-1"></i> Upload
+                </button>
+                <a href="{% url 'create_service_task' client.id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> Add Task
+                </a>
+            </div>
+        </div>
 
-                            <hr>
+        <section class="section profile">
+            <div class="card shadow-sm border-0">
+                <div class="card-body pt-3">
 
-                            <h6 class="fw-bold mb-3 text-primary">
-                                <i class="bi bi-plus-circle me-2"></i>Quick Actions
-                            </h6>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                        data-bs-target="#addServiceModal">
-                                    <i class="bi bi-plus-lg me-2"></i>Add Service
+                    <ul class="nav nav-tabs nav-tabs-bordered w-100 mb-4">
+                        <li class="nav-item">
+                            <button class="nav-link active fw-bold" data-bs-toggle="tab"
+                                    data-bs-target="#profile-overview">
+                                <i class="bi bi-grid me-2"></i>Overview
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-documents">
+                                <i class="bi bi-file-earmark-text me-2"></i>Documents
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-services">
+                                <i class="bi bi-briefcase me-2"></i>Services
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-linked">
+                                <i class="bi bi-link-45deg me-2"></i>
+                                {% if link_type == 'businesses' %}Linked Businesses{% else %}Partners /
+                                    Directors{% endif %}
+                            </button>
+                        </li>
+                        {% if client.client_type == 'Entity' %}
+                            <li class="nav-item">
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-entity">
+                                    <i class="bi bi-building me-2"></i>Entity Details
                                 </button>
-                                <a class="btn btn-success btn-sm" href="{% url 'add_task' client.id %}">
-                                    <i class="bi bi-plus-lg me-2"></i>Add Task
-                                </a>
-                                <button class="btn btn-info btn-sm">
-                                    <i class="bi bi-upload me-2"></i>Upload Document
-                                </button>
-                            </div>
+                            </li>
+                        {% endif %}
+                    </ul>
+
+                    <div class="tab-content pt-2">
+
+                        <div class="tab-pane fade show active" id="profile-overview">
+                            <h5 class="card-title text-primary"><i class="bi bi-person-lines-fill me-2"></i>Basic
+                                Information</h5>
+
+                            <div class="detail-grid">
+                                {% for field in client_fields %}
+                                    <div class="detail-item">
+                                        <div class="detail-label">{{ field.label }}</div>
+                                        <div class="detail-value">{{ field.value }}</div>
+                                    </div>
+                                {% endfor %}
                         </div>
                     </div>
-                </div>
 
-                <!-- Main Content Area -->
-                <div class="col-lg-9">
-                    <div class="tab-content">
-                        <!-- Overview Tab -->
-                        <div class="tab-pane fade show active" id="overview">
-                            <!-- Personal Information -->
-                            <div class="card shadow-sm mb-4">
-                                <div class="card-header bg-primary text-white py-3">
-                                    <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-person-badge me-2"></i>Personal Information
-                                    </h5>
-                                </div>
-                                <div class="card-body p-4">
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Full Name:</span>
-                                                <span class="ms-auto">Rajesh Kumar Sharma</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">PAN Number:</span>
-                                                <span class="ms-auto">ABCDE1234F</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Aadhar Number:</span>
-                                                <span class="ms-auto">XXXX-XXXX-5678</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Email:</span>
-                                                <span class="ms-auto">rajesh.sharma@example.com</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Phone:</span>
-                                                <span class="ms-auto">+91 98765 43210</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">DIN Number:</span>
-                                                <span class="ms-auto">DIN12345678</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <hr>
-                                            <div class="d-flex">
-                                                <span class="info-label">Address:</span>
-                                                <span class="ms-auto text-end">
-                                                    123, MG Road, Bangalore, Karnataka - 560001, India
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Client Type:</span>
-                                                <span class="ms-auto"><span
-                                                        class="badge bg-info">Individual</span></span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Status:</span>
-                                                <span class="ms-auto"><span
-                                                        class="badge bg-success">Active</span></span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Engagement Date:</span>
-                                                <span class="ms-auto">Jan 15, 2022</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Assigned CA:</span>
-                                                <span class="ms-auto">CA Priya Mehta</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="tab-pane fade" id="profile-documents">
 
-                            <!-- Contact Information -->
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-success text-white py-3">
-                                    <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-telephone me-2"></i>Contact & Emergency Information
-                                    </h5>
-                                </div>
-                                <div class="card-body p-4">
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Primary Contact:</span>
-                                                <span class="ms-auto">+91 98765 43210</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Alternate Contact:</span>
-                                                <span class="ms-auto">+91 98765 43211</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Emergency Contact:</span>
-                                                <span class="ms-auto">+91 98765 43212</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="d-flex">
-                                                <span class="info-label">Preferred Communication:</span>
-                                                <span class="ms-auto">Email & Phone</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Companies Tab -->
-                        <div class="tab-pane fade" id="companies">
-                            <div class="card shadow-sm mb-4">
-                                <div class="card-header bg-primary text-white py-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0 fw-bold">
-                                            <i class="bi bi-building me-2"></i>Associated Companies
-                                        </h5>
-                                        <button class="btn btn-light btn-sm">
-                                            <i class="bi bi-plus-lg me-2"></i>Add Company
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="card-body p-4">
-                                    <!-- Company 1 -->
-                                    <div class="company-card card mb-3">
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-8">
-                                                    <h5 class="fw-bold mb-2">Tech Innovators Private Limited</h5>
-                                                    <p class="text-muted mb-2"><strong>CIN:</strong>
-                                                        U72900KA2020PTC135790</p>
-                                                    <p class="text-muted mb-2"><strong>Type:</strong> Private Limited
-                                                    </p>
-                                                    <div class="mb-2">
-                                                        <span class="badge bg-success me-2">Director</span>
-                                                        <span class="badge bg-info">25% Shareholding</span>
+                            {% if pending_requests %}
+                                <div class="alert alert-warning border-warning d-flex align-items-center mb-4 shadow-sm"
+                                     role="alert">
+                                    <div class="me-3 fs-1"><i class="bi bi-exclamation-triangle"></i></div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="alert-heading fw-bold mb-1">Pending Requests</h5>
+                                        <div class="row g-2">
+                                            {% for req in pending_requests %}
+                                                <div class="col-md-6 col-lg-4">
+                                                    <div class="bg-white p-2 rounded border border-warning d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <strong>{{ req.document_master.document_name }}</strong><br>
+                                                            <small class="text-muted">Due: {{ req.document_request.due_date|date:"M d" }}</small>
+                                                        </div>
+                                                        <button class="btn btn-sm btn-warning"
+                                                                onclick="openUploadModal('{{ req.id }}')">
+                                                            <i class="bi bi-upload"></i>
+                                                        </button>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-4 text-end">
-                                                    <p class="mb-2"><strong>Incorporation:</strong> Jan 2020</p>
-                                                    <p class="mb-2"><strong>Authorized Capital:</strong> ₹10,00,000</p>
-                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹5,00,000</p>
-                                                </div>
-                                            </div>
-                                            <hr>
-                                            <div class="d-flex gap-2">
-                                                <button class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye me-1"></i>View Details
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-info">
-                                                    <i class="bi bi-graph-up me-1"></i>Financial Records
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-success">
-                                                    <i class="bi bi-file-text me-1"></i>Documents
-                                                </button>
-                                            </div>
+                                            {% endfor %}
                                         </div>
                                     </div>
-
-                                    <!-- Company 2 -->
-                                    <div class="company-card card mb-3">
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-8">
-                                                    <h5 class="fw-bold mb-2">Digital Solutions LLP</h5>
-                                                    <p class="text-muted mb-2"><strong>LLP IN:</strong> AAL-5678</p>
-                                                    <p class="text-muted mb-2"><strong>Type:</strong> Limited Liability
-                                                        Partnership</p>
-                                                    <div class="mb-2">
-                                                        <span class="badge bg-success me-2">Designated Partner</span>
-                                                        <span class="badge bg-info">50% Partnership</span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-4 text-end">
-                                                    <p class="mb-2"><strong>Registration:</strong> Mar 2021</p>
-                                                    <p class="mb-2"><strong>Capital:</strong> ₹3,00,000</p>
-                                                    <p class="mb-2"><strong>Partners:</strong> 2</p>
-                                                </div>
-                                            </div>
-                                            <hr>
-                                            <div class="d-flex gap-2">
-                                                <button class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye me-1"></i>View Details
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-info">
-                                                    <i class="bi bi-graph-up me-1"></i>Financial Records
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-success">
-                                                    <i class="bi bi-file-text me-1"></i>Documents
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Company 3 -->
-                                    <div class="company-card card">
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-8">
-                                                    <h5 class="fw-bold mb-2">Sharma Enterprises (OPC)</h5>
-                                                    <p class="text-muted mb-2"><strong>CIN:</strong>
-                                                        U74999DL2019OPC350123</p>
-                                                    <p class="text-muted mb-2"><strong>Type:</strong> One Person Company
-                                                    </p>
-                                                    <div class="mb-2">
-                                                        <span class="badge bg-success me-2">Sole Member</span>
-                                                        <span class="badge bg-info">100% Ownership</span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-4 text-end">
-                                                    <p class="mb-2"><strong>Incorporation:</strong> Dec 2019</p>
-                                                    <p class="mb-2"><strong>Authorized Capital:</strong> ₹5,00,000</p>
-                                                    <p class="mb-2"><strong>Paid-up Capital:</strong> ₹2,00,000</p>
-                                                </div>
-                                            </div>
-                                            <hr>
-                                            <div class="d-flex gap-2">
-                                                <button class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye me-1"></i>View Details
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-info">
-                                                    <i class="bi bi-graph-up me-1"></i>Financial Records
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-success">
-                                                    <i class="bi bi-file-text me-1"></i>Documents
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Services Tab -->
-                        <div class="tab-pane fade" id="services">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h4 class="mb-0">
-                                    <i class="bi bi-briefcase me-2"></i>Client Services
-                                </h4>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
-                                    <i class="bi bi-plus-lg me-2"></i>Add New Service
-                                </button>
-                            </div>
-
-                            <!-- Include the new services accordion template -->
-                            {% include 'client/services_accordion.html' %}
-
-                            <!-- Empty State (show when no services) -->
-                            {% if not client_services %}
-                            <div class="text-center py-5" id="emptyServicesState">
-                                <i class="bi bi-briefcase display-1 text-muted mb-3"></i>
-                                <h5 class="text-muted">No Services Added Yet</h5>
-                                <p class="text-muted mb-4">Start by adding services for this client to manage their compliance and taxation needs.</p>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
-                                    <i class="bi bi-plus-lg me-2"></i>Add First Service
-                                </button>
                             </div>
                             {% endif %}
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title m-0 text-primary"><i class="bi bi-folder2-open me-2"></i>Uploaded
+                                    Repository</h5>
                         </div>
 
-                        <!-- Tasks Tab -->
-                        <div class="tab-pane fade" id="tasks">
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-primary text-white py-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0 fw-bold">
-                                            <i class="bi bi-list-check me-2"></i>Service Tasks
-                                        </h5>
-                                        <a class="btn btn-light btn-sm" href="{% url 'add_task' client.id %}">
-                                            <i class="bi bi-plus-lg me-2"></i>Add Task
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    {% if total_tasks %}
-                                        <div class="btn-group mb-3" role="group" aria-label="Task status filter">
-                                            <a href="?tab=tasks" class="btn btn-outline-primary {% if status_filter == 'all' or not status_filter %}active{% endif %}">
-                                                All <span class="badge bg-primary text-white ms-1">{{ status_counts.all|default:'0' }}</span>
-                                            </a>
-                                            <a href="?tab=tasks&status=Pending" class="btn btn-outline-warning {% if status_filter == 'Pending' %}active{% endif %}">
-                                                Pending <span class="badge bg-warning text-dark ms-1">{{ status_counts.Pending|default:'0' }}</span>
-                                            </a>
-                                            <a href="?tab=tasks&status=In+Progress" class="btn btn-outline-info {% if status_filter == 'In Progress' %}active{% endif %}">
-                                                In Progress <span class="badge bg-info text-dark ms-1">{{ status_counts.In_Progress|default:'0' }}</span>
-                                            </a>
-                                            <a href="?tab=tasks&status=Submitted" class="btn btn-outline-secondary {% if status_filter == 'Submitted' %}active{% endif %}">
-                                                Submitted <span class="badge bg-secondary text-white ms-1">{{ status_counts.Submitted|default:'0' }}</span>
-                                            </a>
-                                            <a href="?tab=tasks&status=Completed" class="btn btn-outline-success {% if status_filter == 'Completed' %}active{% endif %}">
-                                                Completed <span class="badge bg-success text-white ms-1">{{ status_counts.Completed|default:'0' }}</span>
-                                            </a>
-                                            <a href="?tab=tasks&status=Delayed" class="btn btn-outline-danger {% if status_filter == 'Delayed' %}active{% endif %}">
-                                                Delayed <span class="badge bg-danger text-white ms-1">{{ status_counts.Delayed|default:'0' }}</span>
-                                            </a>
-                                            <a href="?tab=tasks&status=Cancelled" class="btn btn-outline-dark {% if status_filter == 'Cancelled' %}active{% endif %}">
-                                                Cancelled <span class="badge bg-dark text-white ms-1">{{ status_counts.Cancelled|default:'0' }}</span>
+                            <div class="row g-3">
+                                {% for doc in documents %}
+                                    <div class="col-md-6 col-lg-4 col-xl-3">
+                                        <div class="card doc-card h-100 p-3">
+                                            <div class="d-flex align-items-start justify-content-between mb-2">
+                                                <div class="rounded p-2 bg-light text-primary fs-3">
+                                                    <i class="bi bi-file-earmark-text"></i>
+                                                </div>
+                                                <span class="badge bg-light text-secondary border">{{ doc.category }}</span>
+                                            </div>
+                                            <h6 class="fw-bold text-dark mb-1 text-truncate"
+                                                title="{{ doc.name }}">{{ doc.name }}</h6>
+                                            <p class="text-muted small mb-3">{{ doc.date|date:"M d, Y" }}</p>
+                                            <a href="{{ doc.url }}" target="_blank"
+                                               class="btn btn-sm btn-outline-primary w-100 mt-auto">
+                                                <i class="bi bi-download me-1"></i> View / Download
                                             </a>
                                         </div>
+                                    </div>
+                                {% empty %}
+                                    <div class="col-12 text-center py-5 text-muted bg-light rounded">
+                                        <i class="bi bi-folder-x display-4 opacity-50"></i>
+                                        <p class="mt-2">No documents uploaded yet.</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
 
-                                        {% for group in grouped_tasks %}
-                                            <div class="card mb-3">
-                                                <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="tab-pane fade" id="profile-services">
+                            <h5 class="card-title text-primary"><i class="bi bi-briefcase-fill me-2"></i>Active Services
+                            </h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle border">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Service Name</th>
+                                        <th>Billing Cycle</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-end">Fee</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for service in services %}
+                                        <tr>
+                                            <td class="fw-bold text-primary">{{ service.service.service_name }}</td>
+                                            <td>{{ service.billing_cycle }}</td>
+                                            <td class="text-center"><span
+                                                    class="badge bg-success rounded-pill">Active</span></td>
+                                            <td class="text-end fw-bold">₹{{ service.agreed_fee }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">No active services
+                                                found.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="profile-linked">
+                            <h5 class="card-title text-primary">
+                                {% if link_type == 'businesses' %}Linked Businesses{% else %}Key Associates{% endif %}
+                            </h5>
+
+                            <div class="row g-3">
+                                {% if link_type == 'businesses' %}
+                                    {% for profile in linked_data %}
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card doc-card h-100">
+                                                <div class="card-body p-3 d-flex align-items-center">
+                                                    <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center me-3"
+                                                         style="width: 50px; height: 50px;">
+                                                        <i class="bi bi-building fs-4"></i>
+                                                    </div>
+                                                    <div class="overflow-hidden">
+                                                        <h6 class="mb-0 fw-bold text-truncate">{{ profile.client.client_name }}</h6>
+                                                        <small class="text-muted d-block">{{ profile.client.business_structure }}</small>
+                                                        <a href="#" class="stretched-link"></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    </div>
+                                    {% empty %}
+                                        <div class="col-12 text-center text-muted py-4">No linked businesses.</div>
+                                    {% endfor %}
+                                {% else %}
+                                    {% for person in linked_data %}
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card doc-card h-100">
+                                                <div class="card-body p-3 d-flex align-items-center">
+                                                    <div class="rounded-circle bg-light text-success d-flex align-items-center justify-content-center me-3"
+                                                         style="width: 50px; height: 50px;">
+                                                        <i class="bi bi-person-fill fs-4"></i>
+                                                    </div>
                                                     <div>
-                                                        <strong>{{ group.service_name }}</strong>
-                                                    </div>
-                                                    <div>
-                                                        <span class="badge bg-secondary me-2">{{ group.total_count }} Tasks</span>
-                                                        {% if group.pending_count %}
-                                                            <span class="badge bg-warning text-dark">{{ group.pending_count }} Pending</span>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="table-responsive">
-                                                        <table class="table table-hover align-middle mb-0">
-                                                            <thead class="table-light">
-                                                            <tr>
-                                                                <th>Task Title</th>
-                                                                <th>Period</th>
-                                                                <th>Due Date</th>
-                                                                <th>Assigned To</th>
-                                                                <th>Status</th>
-                                                                <th>Action</th>
-                                                            </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                            {% for task in group.tasks %}
-                                                                <tr>
-                                                                    <td><strong>{{ task.task_title }}</strong></td>
-                                                                    <td>
-                                                                        {% if task.period_from or task.period_to %}
-                                                                            {% if task.period_from %}
-                                                                                {{ task.period_from|date:"M d, Y" }}
-                                                                            {% endif %}
-                                                                            {% if task.period_to %}
-                                                                                	-	{{ task.period_to|date:"M d, Y" }}
-                                                                            {% endif %}
-                                                                        {% else %}
-                                                                            -
-                                                                        {% endif %}
-                                                                    </td>
-                                                                    <td>
-                                                                        {{ task.due_date|date:"M d, Y" }}
-                                                                    </td>
-                                                                    <td>
-                                                                        {% if task.assigned_to %}
-                                                                            {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
-                                                                        {% else %}
-                                                                            -
-                                                                        {% endif %}
-                                                                    </td>
-                                                                    <td>
-                                                                        {% if task.task_status == 'Pending' %}
-                                                                            <span class="badge bg-warning text-dark">Pending</span>
-                                                                        {% elif task.task_status == 'In Progress' %}
-                                                                            <span class="badge bg-info text-dark">In Progress</span>
-                                                                        {% elif task.task_status == 'Submitted' %}
-                                                                            <span class="badge bg-primary">Submitted</span>
-                                                                        {% elif task.task_status == 'Completed' %}
-                                                                            <span class="badge bg-success">Completed</span>
-                                                                        {% elif task.task_status == 'Delayed' %}
-                                                                            <span class="badge bg-danger">Delayed</span>
-                                                                        {% elif task.task_status == 'Cancelled' %}
-                                                                            <span class="badge bg-secondary">Cancelled</span>
-                                                                        {% else %}
-                                                                            <span class="badge bg-light text-dark">{{ task.task_status }}</span>
-                                                                        {% endif %}
-                                                                    </td>
-                                                                    <td>
-                                                                        <a href="{% url 'task_detail' task.id %}"
-                                                                           class="btn btn-sm btn-outline-primary action-btn">
-                                                                            <i class="bi bi-eye"></i>
-                                                                        </a>
-                                                                    </td>
-                                                                </tr>
-                                                            {% endfor %}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    {% else %}
-                                        <div class="text-center py-5">
-                                            <i class="bi bi-list-check display-4 text-muted mb-3"></i>
-                                            <h5 class="text-muted">No Tasks Added Yet</h5>
-                                            <p class="text-muted mb-3">Create tasks for this client to track work against their services.</p>
-                                            <a class="btn btn-primary" href="{% url 'add_task' client.id %}">
-                                                <i class="bi bi-plus-lg me-2"></i>Add First Task
-                                            </a>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Financial Tab -->
-                        <div class="tab-pane fade" id="financial">
-                            <!-- Billing Summary -->
-                            <div class="row g-4 mb-4">
-                                <div class="col-md-3">
-                                    <div class="card shadow-sm border-start border-primary border-4">
-                                        <div class="card-body">
-                                            <h6 class="text-muted text-uppercase small mb-2">Total Billed</h6>
-                                            <h3 class="mb-0 fw-bold text-primary">₹2,45,000</h3>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="card shadow-sm border-start border-success border-4">
-                                        <div class="card-body">
-                                            <h6 class="text-muted text-uppercase small mb-2">Total Paid</h6>
-                                            <h3 class="mb-0 fw-bold text-success">₹2,10,000</h3>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="card shadow-sm border-start border-warning border-4">
-                                        <div class="card-body">
-                                            <h6 class="text-muted text-uppercase small mb-2">Pending</h6>
-                                            <h3 class="mb-0 fw-bold text-warning">₹35,000</h3>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="card shadow-sm border-start border-info border-4">
-                                        <div class="card-body">
-                                            <h6 class="text-muted text-uppercase small mb-2">Next Due</h6>
-                                            <h3 class="mb-0 fw-bold text-info">₹15,000</h3>
-                                            <small class="text-muted">Nov 30, 2025</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Invoice History -->
-                            <div class="card shadow-sm mb-4">
-                                <div class="card-header bg-primary text-white py-3">
-                                    <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-receipt me-2"></i>Invoice History
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle">
-                                            <thead class="table-light">
-                                            <tr>
-                                                <th>Invoice No.</th>
-                                                <th>Date</th>
-                                                <th>Service</th>
-                                                <th>Amount</th>
-                                                <th>Status</th>
-                                                <th>Due Date</th>
-                                                <th>Action</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr>
-                                                <td><strong>INV-2025-089</strong></td>
-                                                <td>Nov 01, 2025</td>
-                                                <td>ITR Filing - AY 2024-25</td>
-                                                <td>₹15,000</td>
-                                                <td><span class="badge bg-warning text-dark">Pending</span></td>
-                                                <td>Nov 30, 2025</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-download"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>INV-2025-078</strong></td>
-                                                <td>Oct 15, 2025</td>
-                                                <td>GST Filing - Q2</td>
-                                                <td>₹12,000</td>
-                                                <td><span class="badge bg-success">Paid</span></td>
-                                                <td>Oct 31, 2025</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-download"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>INV-2025-067</strong></td>
-                                                <td>Sep 20, 2025</td>
-                                                <td>Audit Services - FY 2023-24</td>
-                                                <td>₹50,000</td>
-                                                <td><span class="badge bg-success">Paid</span></td>
-                                                <td>Oct 20, 2025</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-download"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Payment History -->
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-success text-white py-3">
-                                    <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-credit-card me-2"></i>Payment History
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle">
-                                            <thead class="table-light">
-                                            <tr>
-                                                <th>Payment Date</th>
-                                                <th>Invoice No.</th>
-                                                <th>Amount</th>
-                                                <th>Payment Mode</th>
-                                                <th>Transaction ID</th>
-                                                <th>Status</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr>
-                                                <td>Oct 25, 2025</td>
-                                                <td>INV-2025-078</td>
-                                                <td>₹12,000</td>
-                                                <td>Online Transfer</td>
-                                                <td>TXN123456789</td>
-                                                <td><span class="badge bg-success">Success</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>Oct 18, 2025</td>
-                                                <td>INV-2025-067</td>
-                                                <td>₹50,000</td>
-                                                <td>Cheque</td>
-                                                <td>CHQ987654321</td>
-                                                <td><span class="badge bg-success">Cleared</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>Sep 15, 2025</td>
-                                                <td>INV-2025-056</td>
-                                                <td>₹8,500</td>
-                                                <td>UPI</td>
-                                                <td>UPI456789123</td>
-                                                <td><span class="badge bg-success">Success</span></td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Documents Tab -->
-                        <div class="tab-pane fade" id="documents">
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-primary text-white py-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0 fw-bold">
-                                            <i class="bi bi-folder2-open me-2"></i>Documents Repository
-                                        </h5>
-                                        <button class="btn btn-light btn-sm">
-                                            <i class="bi bi-upload me-2"></i>Upload Document
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <!-- Document Categories -->
-                                    <div class="accordion" id="documentAccordion">
-                                        <!-- Tax Documents -->
-                                        <div class="accordion-item border-0 mb-3">
-                                            <h2 class="accordion-header">
-                                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                                                        data-bs-target="#taxDocs">
-                                                    <i class="bi bi-file-earmark-text text-primary me-2"></i>
-                                                    Tax Documents (12)
-                                                </button>
-                                            </h2>
-                                            <div id="taxDocs" class="accordion-collapse collapse show"
-                                                 data-bs-parent="#documentAccordion">
-                                                <div class="accordion-body">
-                                                    <div class="list-group">
-                                                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                                                            <div>
-                                                                <i class="bi bi-file-pdf text-danger me-2"></i>
-                                                                <strong>ITR-2 AY 2023-24.pdf</strong>
-                                                                <small class="text-muted d-block ms-4">Uploaded on Oct
-                                                                    15, 2024</small>
-                                                            </div>
-                                                            <div>
-                                                                <button class="btn btn-sm btn-outline-primary me-2">
-                                                                    <i class="bi bi-download"></i>
-                                                                </button>
-                                                                <button class="btn btn-sm btn-outline-secondary">
-                                                                    <i class="bi bi-eye"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                                                            <div>
-                                                                <i class="bi bi-file-pdf text-danger me-2"></i>
-                                                                <strong>Form 16 - 2023-24.pdf</strong>
-                                                                <small class="text-muted d-block ms-4">Uploaded on May
-                                                                    20, 2024</small>
-                                                            </div>
-                                                            <div>
-                                                                <button class="btn btn-sm btn-outline-primary me-2">
-                                                                    <i class="bi bi-download"></i>
-                                                                </button>
-                                                                <button class="btn btn-sm btn-outline-secondary">
-                                                                    <i class="bi bi-eye"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
+                                                        <h6 class="mb-0 fw-bold">{{ person.client_name }}</h6>
+                                                        <small class="text-muted d-block">{{ person.pan_no }}</small>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
+                                    {% empty %}
+                                        <div class="col-12 text-center text-muted py-4">No associates found.</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
 
-                                        <!-- GST Documents -->
-                                        <div class="accordion-item border-0 mb-3">
-                                            <h2 class="accordion-header">
-                                                <button class="accordion-button collapsed" type="button"
-                                                        data-bs-toggle="collapse" data-bs-target="#gstDocs">
-                                                    <i class="bi bi-receipt text-success me-2"></i>
-                                                    GST Documents (8)
-                                                </button>
-                                            </h2>
-                                            <div id="gstDocs" class="accordion-collapse collapse"
-                                                 data-bs-parent="#documentAccordion">
-                                                <div class="accordion-body">
-                                                    <div class="list-group">
-                                                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                                                            <div>
-                                                                <i class="bi bi-file-excel text-success me-2"></i>
-                                                                <strong>GSTR-1 September 2025.xlsx</strong>
-                                                                <small class="text-muted d-block ms-4">Uploaded on Oct
-                                                                    10, 2025</small>
-                                                            </div>
-                                                            <div>
-                                                                <button class="btn btn-sm btn-outline-primary me-2">
-                                                                    <i class="bi bi-download"></i>
-                                                                </button>
-                                                                <button class="btn btn-sm btn-outline-secondary">
-                                                                    <i class="bi bi-eye"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                        {% if client.client_type == 'Entity' %}
+                            <div class="tab-pane fade" id="profile-entity">
+                                <h5 class="card-title text-primary"><i class="bi bi-building me-2"></i>Registration
+                                    Details</h5>
+                                <div class="detail-grid">
+                                    {% for field in entity_profile_fields %}
+                                        <div class="detail-item">
+                                            <div class="detail-label">{{ field.label }}</div>
+                                            <div class="detail-value">
+                                                {% if 'file' in field.name or 'document' in field.name %}
+                                                    <a href="/media/{{ field.value }}" target="_blank"
+                                                       class="text-primary text-decoration-none fw-bold">
+                                                        <i class="bi bi-paperclip me-1"></i>View File
+                                                    </a>
+                                                {% else %}
+                                                    {{ field.value }}
+                                                {% endif %}
                                             </div>
                                         </div>
-
-                                        <!-- Financial Statements -->
-                                        <div class="accordion-item border-0">
-                                            <h2 class="accordion-header">
-                                                <button class="accordion-button collapsed" type="button"
-                                                        data-bs-toggle="collapse" data-bs-target="#financialDocs">
-                                                    <i class="bi bi-graph-up text-info me-2"></i>
-                                                    Financial Statements (5)
-                                                </button>
-                                            </h2>
-                                            <div id="financialDocs" class="accordion-collapse collapse"
-                                                 data-bs-parent="#documentAccordion">
-                                                <div class="accordion-body">
-                                                    <div class="list-group">
-                                                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                                                            <div>
-                                                                <i class="bi bi-file-pdf text-danger me-2"></i>
-                                                                <strong>Balance Sheet 2023-24.pdf</strong>
-                                                                <small class="text-muted d-block ms-4">Uploaded on Sep
-                                                                    15, 2024</small>
-                                                            </div>
-                                                            <div>
-                                                                <button class="btn btn-sm btn-outline-primary me-2">
-                                                                    <i class="bi bi-download"></i>
-                                                                </button>
-                                                                <button class="btn btn-sm btn-outline-secondary">
-                                                                    <i class="bi bi-eye"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                    {% empty %}
+                                        <div class="col-12 alert alert-light border">Entity details not configured.
                                         </div>
-                                    </div>
+                                    {% endfor %}
                                 </div>
                             </div>
-                        </div>
+                        {% endif %}
 
-                        <!-- Legal Cases Tab -->
-                        <div class="tab-pane fade" id="cases">
-                            <!-- Income Tax Cases -->
-                            <div class="card shadow-sm mb-4">
-                                <div class="card-header bg-danger text-white py-3">
-                                    <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-briefcase me-2"></i>Income Tax Cases
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle">
-                                            <thead class="table-light">
-                                            <tr>
-                                                <th>Case Type</th>
-                                                <th>Notice No.</th>
-                                                <th>Assessment Year</th>
-                                                <th>Status</th>
-                                                <th>Next Hearing</th>
-                                                <th>Action</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr>
-                                                <td><span class="badge bg-warning text-dark">Scrutiny</span></td>
-                                                <td>SCN-2024-1234</td>
-                                                <td>2022-23</td>
-                                                <td><span class="badge bg-info">In Progress</span></td>
-                                                <td>Dec 05, 2025</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-eye"></i> View
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><span class="badge bg-danger">Appeal</span></td>
-                                                <td>APP-2023-5678</td>
-                                                <td>2021-22</td>
-                                                <td><span class="badge bg-success">Closed</span></td>
-                                                <td>-</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-secondary action-btn">
-                                                        <i class="bi bi-file-text"></i> Details
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- GST Cases -->
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-warning text-dark py-3">
-                                    <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-exclamation-triangle me-2"></i>GST Cases
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover align-middle">
-                                            <thead class="table-light">
-                                            <tr>
-                                                <th>Case Type</th>
-                                                <th>Case No.</th>
-                                                <th>GSTIN</th>
-                                                <th>Notice Date</th>
-                                                <th>Status</th>
-                                                <th>Action</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr>
-                                                <td><span class="badge bg-danger">Show Cause Notice</span></td>
-                                                <td>SCN/GST/2025/0123</td>
-                                                <td>29ABCDE1234F1Z5</td>
-                                                <td>Sep 15, 2025</td>
-                                                <td><span class="badge bg-warning text-dark">Pending</span></td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-primary action-btn">
-                                                        <i class="bi bi-eye"></i> View
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div class="alert alert-info mt-3 mb-0">
-                                        <i class="bi bi-info-circle-fill me-2"></i>
-                                        <strong>Note:</strong> Response to Show Cause Notice is due by November 20,
-                                        2025.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Activity Tab -->
-                        <div class="tab-pane fade" id="activity">
-                            <div class="card shadow-sm">
-                                <div class="card-header bg-info text-white py-3">
-                                    <h5 class="mb-0 fw-bold">
-                                        <i class="bi bi-clock-history me-2"></i>Activity Timeline
-                                    </h5>
-                                </div>
-                                <div class="card-body p-4">
-                                    <div class="timeline-item">
-                                        <div class="timeline-badge bg-success"></div>
-                                        <div>
-                                            <strong>Document Uploaded</strong>
-                                            <p class="text-muted mb-1">Uploaded "Balance Sheet Q3.pdf" for Tech
-                                                Innovators Pvt Ltd</p>
-                                            <small class="text-muted">
-                                                <i class="bi bi-clock me-1"></i>Today at 3:45 PM by CA Priya Mehta
-                                            </small>
-                                        </div>
-                                    </div>
-
-                                    <div class="timeline-item">
-                                        <div class="timeline-badge bg-primary"></div>
-                                        <div>
-                                            <strong>Service Added</strong>
-                                            <p class="text-muted mb-1">ITR Filing service added for AY 2024-25</p>
-                                            <small class="text-muted">
-                                                <i class="bi bi-clock me-1"></i>Today at 11:20 AM by CA Amit Shah
-                                            </small>
-                                        </div>
-                                    </div>
-
-                                    <div class="timeline-item">
-                                        <div class="timeline-badge bg-info"></div>
-                                        <div>
-                                            <strong>Task Completed</strong>
-                                            <p class="text-muted mb-1">GST Return Filing for September 2025
-                                                completed</p>
-                                            <small class="text-muted">
-                                                <i class="bi bi-clock me-1"></i>Yesterday at 5:30 PM by CA Priya Mehta
-                                            </small>
-                                        </div>
-                                    </div>
-
-                                    <div class="timeline-item">
-                                        <div class="timeline-badge bg-warning"></div>
-                                        <div>
-                                            <strong>Payment Received</strong>
-                                            <p class="text-muted mb-1">₹12,000 received for Invoice INV-2025-078</p>
-                                            <small class="text-muted">
-                                                <i class="bi bi-clock me-1"></i>2 days ago by Admin
-                                            </small>
-                                        </div>
-                                    </div>
-
-                                    <div class="timeline-item">
-                                        <div class="timeline-badge bg-danger"></div>
-                                        <div>
-                                            <strong>Case Filed</strong>
-                                            <p class="text-muted mb-1">GST Show Cause Notice case opened</p>
-                                            <small class="text-muted">
-                                                <i class="bi bi-clock me-1"></i>5 days ago by CA Amit Shah
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Add Service Modal -->
-        <div class="modal fade" id="addServiceModal" tabindex="-1">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
+        <div class="modal fade" id="uploadDocumentModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
                     <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">
-                            <i class="bi bi-plus-circle me-2"></i>Select Service Type
-                        </h5>
+                        <h5 class="modal-title fw-bold"><i class="bi bi-cloud-upload me-2"></i>Upload Document</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body p-4">
-                        <div class="text-center mb-4">
-                            <h6 class="text-muted">Choose a service to add for this client</h6>
-                        </div>
-                        <div class="row g-4">
-                            {% for service in available_services %}
-                            <div class="col-md-6 col-lg-4">
-                                <div class="service-card card h-100 border-0 shadow-sm"
-                                     data-service-id="{{ service.id }}"
-                                     data-service-name="{{ service.service_name }}"
-                                     style="cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(0px);">
-                                    <div class="card-body text-center p-4">
-                                        <div class="service-icon mb-3">
-                                            {% if service.category == 'Taxation' %}
-                                                {% if 'ITR' in service.service_name %}
-                                                    <i class="bi bi-file-text display-1 text-info"></i>
-                                                {% elif 'Case' in service.service_name %}
-                                                    <i class="bi bi-shield-exclamation display-1 text-primary"></i>
-                                                {% else %}
-                                                    <i class="bi bi-calculator display-1 text-danger"></i>
-                                                {% endif %}
-                                            {% elif service.category == 'Compliance' %}
-                                                {% if 'Case' in service.service_name %}
-                                                    <i class="bi bi-exclamation-triangle display-1 text-danger"></i>
-                                                {% else %}
-                                                    <i class="bi bi-receipt display-1 text-success"></i>
-                                                {% endif %}
-                                            {% elif service.category == 'Audit' %}
-                                                <i class="bi bi-search display-1 text-warning"></i>
-                                            {% elif service.category == 'Consulting' %}
-                                                <i class="bi bi-journal-text display-1 text-primary"></i>
-                                            {% else %}
-                                                <i class="bi bi-gear display-1 text-secondary"></i>
-                                            {% endif %}
-                                        </div>
-                                        <h5 class="card-title fw-bold mb-2">{{ service.service_name }}</h5>
-                                        <p class="card-text text-muted mb-3">{{ service.description|default:"Professional service for your business needs" }}</p>
-                                        <div class="service-features">
-                                            <small class="text-muted d-block">• Due in {{ service.default_due_days }} days</small>
-                                            <small class="text-muted d-block">• {{ service.get_frequency_display }} service</small>
-                                            <small class="text-muted d-block">• Professional support included</small>
-                                        </div>
-                                        <div class="mt-3">
-                                            {% if service.category == 'Taxation' %}
-                                                <span class="badge bg-info">{{ service.get_category_display }}</span>
-                                            {% elif service.category == 'Compliance' %}
-                                                <span class="badge bg-success">{{ service.get_category_display }}</span>
-                                            {% elif service.category == 'Audit' %}
-                                                <span class="badge bg-warning text-dark">{{ service.get_category_display }}</span>
-                                            {% elif service.category == 'Consulting' %}
-                                                <span class="badge bg-primary">{{ service.get_category_display }}</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">{{ service.get_category_display }}</span>
-                                            {% endif %}
-                                            <span class="badge bg-secondary">{{ service.get_frequency_display }}</span>
-                                        </div>
-                                    </div>
-                                    <!-- Selection indicator -->
-                                    <div class="selection-indicator position-absolute top-0 end-0 m-2" style="display: none;">
-                                        <i class="bi bi-check-circle-fill text-success fs-3"></i>
-                                    </div>
-                                </div>
+                    <form action="{% url 'upload_client_document' client.id %}" method="post"
+                          enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="modal-body p-4">
+                            <div class="alert alert-light border mb-3 small text-muted">
+                                <i class="bi bi-info-circle me-1"></i> Use this to fulfill a pending request.
                             </div>
-                            {% empty %}
-                            <div class="col-12">
-                                <div class="text-center py-5">
-                                    <i class="bi bi-exclamation-triangle display-1 text-muted mb-3"></i>
-                                    <h5 class="text-muted">No Services Available</h5>
-                                    <p class="text-muted">Please contact administrator to set up service types.</p>
-                                </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Document Type <span
+                                        class="text-danger">*</span></label>
+                                {{ upload_form.requested_document }}
                             </div>
-                            {% endfor %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Select File <span class="text-danger">*</span></label>
+                                {{ upload_form.uploaded_file }}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Remarks</label>
+                                {{ upload_form.remarks }}
+                            </div>
                         </div>
-
-                        <div class="text-center mt-4">
-                            <p class="text-muted mb-0">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Click on a service card to proceed with the setup
-                            </p>
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-4">Upload Now</button>
                         </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="bi bi-x-lg me-2"></i>Cancel
-                        </button>
-                        <button type="button" class="btn btn-primary" id="proceedBtn" disabled>
-                            <i class="bi bi-arrow-right me-2"></i>Proceed
-                        </button>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
 
+        <div class="modal fade" id="createRequestModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title fw-bold"><i class="bi bi-folder-plus me-2"></i>New Document Request</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="{% url 'create_client_doc_request' client.id %}" method="post">
+                        {% csrf_token %}
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" for="{{ request_form.title.id_for_label }}">Title <span
+                                    class="text-danger">*</span></label>
+                            {{ request_form.title }}
+                            {% if request_form.title.errors %}
+                                <div class="text-danger small">{{ request_form.title.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" for="{{ request_form.due_date.id_for_label }}">Due Date
+                                <span class="text-danger">*</span></label>
+                            {{ request_form.due_date }}
+                            {% if request_form.due_date.errors %}
+                                <div class="text-danger small">{{ request_form.due_date.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" for="{{ request_form.documents.id_for_label }}">Required
+                                Documents <span class="text-danger">*</span></label>
+                            {{ request_form.documents }}
+                            {% if request_form.documents.errors %}
+                                <div class="text-danger small">{{ request_form.documents.errors.0 }}</div>{% endif %}
+                            <div class="form-text small">Hold <strong>Ctrl/Cmd</strong> to select multiple.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold"
+                                   for="{{ request_form.description.id_for_label }}">Notes</label>
+                            {{ request_form.description }}
+                        </div>
+                    </div>
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success px-4">Create Request</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
     </main>
 
     <script>
-        // Auto-hide toasts
-        setTimeout(function () {
-            var toasts = document.querySelectorAll('.toast');
-            toasts.forEach(function (toast) {
-                var bsToast = new bootstrap.Toast(toast);
-                bsToast.hide();
-            });
-        }, 5000);
-
-        // Service selection functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const serviceCards = document.querySelectorAll('.service-card');
-            const proceedBtn = document.getElementById('proceedBtn');
-            let selectedServiceId = null;
-            let selectedServiceName = null;
-
-            // Add enhanced selection functionality
-            serviceCards.forEach(card => {
-                // Selection functionality with animations
-                card.addEventListener('click', function() {
-                    // Remove selection from all cards
-                    serviceCards.forEach(c => {
-                        c.classList.remove('selected');
-                        c.style.border = 'none';
-                        c.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-
-                        // Hide selection indicator
-                        const indicator = c.querySelector('.selection-indicator');
-                        if (indicator) {
-                            indicator.style.display = 'none';
-                        }
-                    });
-
-                    // Add selection to clicked card with animation
-                    this.classList.add('selected');
-                    this.style.border = '3px solid #0d6efd';
-                    this.style.boxShadow = '0 12px 35px rgba(13,110,253,0.4)';
-
-                    // Show selection indicator with animation
-                    const indicator = this.querySelector('.selection-indicator');
-                    if (indicator) {
-                        indicator.style.display = 'block';
-                    }
-
-                    // Store selected service data
-                    selectedServiceId = this.getAttribute('data-service-id');
-                    selectedServiceName = this.getAttribute('data-service-name');
-
-                    // Enable proceed button with animation
-                    proceedBtn.disabled = false;
-                    proceedBtn.classList.remove('btn-secondary');
-                    proceedBtn.classList.add('btn-primary');
-                    proceedBtn.innerHTML = `<i class="bi bi-arrow-right me-2"></i>Proceed with ${selectedServiceName}`;
-
-                    // Add button pulse animation
-                    proceedBtn.style.animation = 'pulse 0.6s ease-in-out';
-                    setTimeout(() => {
-                        proceedBtn.style.animation = '';
-                    }, 600);
-                });
-
-                // Enhanced hover effects
-                card.addEventListener('mouseenter', function() {
-                    if (!this.classList.contains('selected')) {
-                        this.style.transform = 'translateY(-3px)';
-                        this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-                    }
-                });
-
-                card.addEventListener('mouseleave', function() {
-                    if (!this.classList.contains('selected')) {
-                        this.style.transform = 'translateY(0)';
-                        this.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-                    }
-                });
-            });
-
-            // Proceed button functionality
-            proceedBtn.addEventListener('click', function() {
-                if (selectedServiceId) {
-                    // Get client ID from data attribute or URL
-                    const clientId = document.getElementById('main').getAttribute('data-client-id') ||
-                                   window.location.pathname.split('/')[2] || 1;
-
-                    // Add loading state
-                    this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Redirecting...';
-                    this.disabled = true;
-
-                    // Redirect to service form page
-                    setTimeout(() => {
-                        window.location.href = `/client/${clientId}/service/${selectedServiceId}/add/`;
-                    }, 500);
-                }
-            });
-
-            // Reset modal when closed
-            document.getElementById('addServiceModal').addEventListener('hidden.bs.modal', function() {
-                serviceCards.forEach(card => {
-                    card.classList.remove('selected');
-                    card.style.border = 'none';
-                    card.style.transform = 'translateY(0)';
-                    card.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-
-                    // Hide selection indicators
-                    const indicator = card.querySelector('.selection-indicator');
-                    if (indicator) {
-                        indicator.style.display = 'none';
-                    }
-                });
-
-                // Reset button state
-                selectedServiceId = null;
-                selectedServiceName = null;
-                proceedBtn.disabled = true;
-                proceedBtn.classList.remove('btn-primary');
-                proceedBtn.classList.add('btn-secondary');
-                proceedBtn.innerHTML = '<i class="bi bi-arrow-right me-2"></i>Proceed';
-            });
-        });
+        function openUploadModal(requestedDocId) {
+            var myModal = new bootstrap.Modal(document.getElementById('uploadDocumentModal'));
+            myModal.show();
+            var selectBox = document.querySelector('#uploadDocumentModal select[name="requested_document"]');
+            if (selectBox) {
+                selectBox.value = requestedDocId;
+            }
+        }
     </script>
-{% endblock %}
+{% endblock body %}

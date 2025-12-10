@@ -1,342 +1,328 @@
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
+import json
 
-from home.models import Client, ServiceType, ClientService, ClientUserEntitle, Task
-from home.forms import TaskForm
+from django.contrib.auth.decorators import login_required
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db import transaction
+
+from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
+from home.forms import TaskForm, TaskExtendedForm
+from home.models import Client, TaskComment, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.utils import timezone
+
+@login_required
+def create_task_view(request, client_id):
+    client = get_object_or_404(Client, id=client_id)
+
+    # 1. Prepare Client Data for Auto-Population
+    client_data_map = {
+        'pan_no': client.pan_no,
+        'email': client.email,
+        'phone': client.phone_number,
+        'din_no': client.din_no,
+        # Add other client fields you want to auto-fill here
+    }
+
+    if request.method == 'POST':
+        task_form = TaskForm(request.POST)
+        extended_form = TaskExtendedForm(request.POST, request.FILES)
+
+        if task_form.is_valid() and extended_form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Save Task
+                    task = task_form.save(commit=False)
+                    task.client = client
+                    task.created_by = request.user
+
+                    # Auto Title if empty: "GST Return Task"
+                    if not task.task_title:
+                        task.task_title = f"{task.get_service_type_display()} Task"
+
+                    task.save()
+
+                    # Save Extended Attributes
+                    extended = extended_form.save(commit=False)
+                    extended.task = task
+                    extended.save()
+
+                    messages.success(request, "Task created successfully!")
+                    return redirect('client_details', client_id=client.id)
+            except Exception as e:
+                messages.error(request, f"Error: {e}")
+        else:
+            messages.error(request, "Please check the form for errors.")
+    else:
+        task_form = TaskForm()
+        extended_form = TaskExtendedForm()
+
+    context = {
+        'client': client,
+        'task_form': task_form,
+        'extended_form': extended_form,
+
+        # Pass Config and Data to Template
+        'task_config': TASK_CONFIG,
+        'client_data_json': json.dumps(client_data_map, cls=DjangoJSONEncoder)
+    }
+    return render(request, 'client/create_task.html', context)
 
 
 @login_required
-def add_task(request, client_id):
-    client = get_object_or_404(Client, pk=client_id)
+def task_list_view(request):
+    tasks = Task.objects.select_related('client') \
+        .prefetch_related('assignees') \
+        .order_by('-created_at')
 
-    task_service_types = ServiceType.objects.filter(active=True, is_task=True).order_by("service_name")
-    base_client_services = ClientService.objects.filter(
-        client=client,
-        is_active=True,
-        service__is_task=False,
-    ).select_related("service").order_by("service__service_name")
+    clients = Client.objects.all().order_by('client_name')
 
-    if not base_client_services.exists():
-        messages.error(request, "Please assign at least one base service to this client before adding tasks.")
-        return redirect("client_details", pk=client.id)
+    context = {
+        'tasks': tasks,
+        'clients': clients,  # Pass to template
+        'today': timezone.now().date()
+    }
+    return render(request, 'client/tasks.html', context)
 
-    service_type_id = request.GET.get("service_type") or request.POST.get("service_type")
-    client_service_id = request.GET.get("client_service") or request.POST.get("client_service")
 
-    selected_service_type = None
-    selected_client_service = None
-
-    if service_type_id and client_service_id:
-        try:
-            selected_service_type = ServiceType.objects.get(
-                pk=service_type_id,
-                active=True,
-                is_task=True,
-            )
-            selected_client_service = ClientService.objects.select_related("service").get(
-                pk=client_service_id,
-                client=client,
-                is_active=True,
-                service__is_task=False,
-            )
-        except (ServiceType.DoesNotExist, ClientService.DoesNotExist):
-            messages.error(request, "Invalid task type or related service selection.")
-            return redirect("add_task", client_id=client.id)
-
-    if request.method == "POST" and selected_service_type and selected_client_service:
-        task_form = TaskForm(request.POST, request.FILES)
-        details_form = _get_task_details_form(
-            selected_service_type,
-            selected_client_service,
-            data=request.POST,
-            files=request.FILES,
+# ---------------------------------------------------------
+# HELPER: Initialize Status for Assignees
+# ---------------------------------------------------------
+def initialize_step_for_assignees(task):
+    """Creates TaskAssignmentStatus rows for all current assignees for the CURRENT task status."""
+    for user in task.assignees.all():
+        TaskAssignmentStatus.objects.get_or_create(
+            task=task,
+            user=user,
+            status_context=task.status,
+            defaults={'is_completed': False}
         )
 
-        if task_form.is_valid() and (details_form is None or details_form.is_valid()):
-            task = task_form.save(commit=False)
-            task.client_service = selected_client_service
-            task.save()
-
-            if details_form is not None:
-                details_instance = details_form.save(commit=False)
-                details_instance.client_service = selected_client_service
-                details_instance.save()
-
-            messages.success(
-                request,
-                f"Task '{task.task_title}' has been created under {selected_client_service.service.service_name}.",
-            )
-            # Instead of redirecting, render the same page with success flag to show modal
-            context = {
-                "client": client,
-                "task_service_types": task_service_types,
-                "client_services_for_tasks": base_client_services,
-                "stage": 2,
-                "selected_service_type": selected_service_type,
-                "selected_client_service": selected_client_service,
-                "task_form": TaskForm(),  # Reset form
-                "details_form": _get_task_details_form(selected_service_type, selected_client_service),
-                # Reset details form
-                "success": True,
-                "created_task_title": task.task_title
-            }
-            return render(request, "client/add-task.html", context)
-
-        context = {
-            "client": client,
-            "task_service_types": task_service_types,
-            "client_services_for_tasks": base_client_services,
-            "stage": 2,
-            "selected_service_type": selected_service_type,
-            "selected_client_service": selected_client_service,
-            "task_form": task_form,
-            "details_form": details_form,
-        }
-        return render(request, "client/add-task.html", context)
-
-    # Step 2 GET: show task form and optional details form with preview
-    if selected_service_type and selected_client_service:
-        from datetime import timedelta
-        from dateutil.relativedelta import relativedelta
-
-        # Get the last task if it exists
-        last_task = Task.objects.filter(
-            client_service=selected_client_service
-        ).order_by('-period_to').first()
-
-        # Calculate the next period start date
-        if last_task:
-            next_period_start = last_task.period_to + timedelta(days=1)
-        else:
-            next_period_start = selected_client_service.start_date
-
-        # Calculate period end based on frequency
-        frequency = selected_client_service.service.frequency
-        if frequency == 'Monthly':
-            period_end = next_period_start + relativedelta(months=1) - timedelta(days=1)
-        elif frequency == 'Quarterly':
-            period_end = next_period_start + relativedelta(months=3) - timedelta(days=1)
-        elif frequency == 'Yearly':
-            period_end = next_period_start + relativedelta(years=1) - timedelta(days=1)
-        else:  # Default for 'One-time' or other cases, a one-month period
-            period_end = next_period_start + relativedelta(months=1) - timedelta(days=1)
-
-        # Calculate due date based on period_end and default_due_days
-        due_date = period_end + timedelta(days=selected_client_service.service.default_due_days)
-
-        # Prepare initial form data
-        initial_data = {
-            'period_from': next_period_start,
-            'period_to': period_end,
-            'due_date': due_date,
-            'recurrence': frequency if frequency != 'One-time' else 'None',
-        }
-
-        task_form = TaskForm(initial=initial_data)
-        details_form = _get_task_details_form(selected_service_type, selected_client_service)
-
-        context = {
-            "client": client,
-            "task_service_types": task_service_types,
-            "client_services_for_tasks": base_client_services,
-            "stage": 2,
-            "selected_service_type": selected_service_type,
-            "selected_client_service": selected_client_service,
-            "task_form": task_form,
-            "details_form": details_form,
-            "due_days_meta": selected_client_service.service.default_due_days,  # Pass for JS auto-calculation
-            "frequency": frequency,  # Pass frequency for any frontend calculations
-        }
-        return render(request, "client/add-task.html", context)
-
-    # Step 1: select task type and related service
-    context = {
-        "client": client,
-        "task_service_types": task_service_types,
-        "client_services_for_tasks": base_client_services,
-        "stage": 1,
-    }
-    return render(request, "client/add-task.html", context)
-
-
-def _get_task_details_form(service_type_obj, client_service, data=None, files=None):
-    if not service_type_obj or not service_type_obj.form_name:
-        return None
-
-    from home import forms as forms_module
-
-    try:
-        form_class = getattr(forms_module, service_type_obj.form_name)
-    except AttributeError:
-        return None
-
-    initial = {}
-
-    if service_type_obj.form_name == "GSTCaseForm":
-        gst_detail = client_service.gst_details.first()
-        if gst_detail:
-            initial["gstin"] = gst_detail.gst_number
-
-    if data is not None or files is not None:
-        return form_class(data=data or None, files=files or None, initial=initial)
-
-    return form_class(initial=initial)
-
-
-def _get_user_clients(user):
-    try:
-        mapping = ClientUserEntitle.objects.get(user=user)
-        return mapping.clients.all()
-    except ClientUserEntitle.DoesNotExist:
-        return Client.objects.none()
-
 
 @login_required
-def tasks_dashboard(request):
-    user_clients = _get_user_clients(request.user)
+def task_detail_view(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
 
-    selected_client_id = request.GET.get("client_id")
-    if selected_client_id:
-        try:
-            client = user_clients.get(pk=selected_client_id)
-            return redirect("add_task", client_id=client.id)
-        except Client.DoesNotExist:
-            pass
+    # 1. Get Workflow from Config
+    config = TASK_CONFIG.get(task.service_type, {})
+    workflow_steps = config.get('workflow_steps', DEFAULT_WORKFLOW_STEPS)
 
-    if not user_clients.exists():
-        return render(request, "client/tasks.html", {
-            "clients_with_tasks": [],
-            "pending_tasks": 0,
-            "user_clients": user_clients,
-            "no_clients_message": "No clients assigned to you. Please contact your administrator.",
-            "status_counts": {},
+    # 2. Get Current Assignee Statuses (Who is pending?)
+    assignee_statuses = TaskAssignmentStatus.objects.filter(
+        task=task,
+        status_context=task.status
+    ).select_related('user')
+
+    # Calculate overall progress for this stage
+    total_assignees = assignee_statuses.count()
+    completed_assignees = assignee_statuses.filter(is_completed=True).count()
+
+    # Determine if Current User has a pending action
+    user_action_needed = False
+    my_status_entry = assignee_statuses.filter(user=request.user).first()
+    if my_status_entry and not my_status_entry.is_completed:
+        user_action_needed = True
+
+    # ----------------------------------------------------------------------
+    # HANDLE POST ACTIONS
+    # ----------------------------------------------------------------------
+    if request.method == 'POST':
+        action = request.POST.get('action_type')
+
+        # --- A. MARK MY PART COMPLETE ---
+        if action == 'complete_my_part':
+            if my_status_entry:
+                my_status_entry.is_completed = True
+                my_status_entry.completed_at = timezone.now()
+                my_status_entry.save()
+
+                # Log comment
+                TaskComment.objects.create(
+                    task=task, author=request.user,
+                    text=f"Marked their part for '{task.status}' as DONE."
+                )
+
+                # CHECK IF ALL ARE DONE -> ADVANCE STAGE
+                # We re-count because database just updated
+                pending_count = TaskAssignmentStatus.objects.filter(
+                    task=task, status_context=task.status, is_completed=False
+                ).count()
+
+                if pending_count == 0:
+                    # All assignees are done. Find next step.
+                    try:
+                        if task.status in workflow_steps:
+                            current_index = workflow_steps.index(task.status)
+
+                            # If there is a next step
+                            if current_index < len(workflow_steps) - 1:
+                                next_status = workflow_steps[current_index + 1]
+                                old_status = task.status
+
+                                # Log the transition
+                                task.log_status_change(
+                                    old_status, next_status, None,  # System change
+                                    "Auto-advanced: All assignees completed their part."
+                                )
+
+                                # Update Task
+                                task.status = next_status
+                                task.save()
+
+                                # Reset tracking for new stage
+                                initialize_step_for_assignees(task)
+
+                                messages.success(request, f"Stage complete! Task moved to {next_status}.")
+                            else:
+                                # End of workflow
+                                task.completed_date = timezone.now().date()
+                                task.save()
+                                messages.success(request, "Task fully completed! No further steps.")
+                        else:
+                            # Fallback if current status isn't in config list (maybe manually set)
+                            messages.warning(request,
+                                             "Current status not found in workflow configuration. Cannot auto-advance.")
+                    except ValueError:
+                        messages.warning(request, "Workflow configuration error.")
+                else:
+                    messages.success(request, "Your part is done. Waiting for other assignees.")
+
+        # --- B. UPDATE ASSIGNEES (Multi-Select) ---
+        elif action == 'update_assignees':
+            user_ids = request.POST.getlist('assignees')  # Get list of IDs
+            if user_ids:
+                new_users = User.objects.filter(id__in=user_ids)
+                task.assignees.set(new_users)  # Update M2M
+
+                # Re-initialize tracking for current step
+                # (Existing completions are kept, new users added as Pending)
+                initialize_step_for_assignees(task)
+
+                # Cleanup: Remove tracking for users who were removed from assignment
+                TaskAssignmentStatus.objects.filter(
+                    task=task, status_context=task.status
+                ).exclude(user__in=new_users).delete()
+
+                messages.success(request, "Team updated.")
+
+        # --- C. ADD COMMENT ---
+        elif action == 'add_comment':
+            text = request.POST.get('comment_text')
+            if text:
+                TaskComment.objects.create(task=task, author=request.user, text=text)
+                messages.success(request, "Comment posted.")
+
+        # --- D. UPLOAD DOCUMENT ---
+        elif action == 'upload_document':
+            file = request.FILES.get('document_file')
+            desc = request.POST.get('document_desc')
+            if file:
+                TaskDocument.objects.create(
+                    task=task, uploaded_by=request.user, file=file, description=desc
+                )
+                messages.success(request, "Document uploaded.")
+
+        return redirect('task_detail', task_id=task.id)
+
+    # ----------------------------------------------------------------------
+    # CONTEXT PREPARATION
+    # ----------------------------------------------------------------------
+    all_users = User.objects.filter(is_active=True)
+
+    # Aging & History
+    logs = task.status_logs.select_related('changed_by').order_by('created_at')
+    aging_timeline = []
+    last_time = task.created_at
+
+    for log in logs:
+        duration = log.created_at - last_time
+        aging_timeline.append({
+            'status': log.old_status,
+            'changed_by': log.changed_by,
+            'timestamp': log.created_at,
+            'duration': duration,
+            'remarks': log.remarks
+        })
+        last_time = log.created_at
+
+    if task.status != 'Completed':
+        current_duration = timezone.now() - last_time
+        aging_timeline.append({
+            'status': task.status,
+            'is_current': True,
+            'timestamp': timezone.now(),
+            'duration': current_duration
         })
 
-    # Get status filter from query parameters
-    status_filter = request.GET.get("status", "all")
-
-    tasks_qs = Task.objects.filter(
-        client_service__client__in=user_clients
-    ).select_related(
-        "client_service__client",
-        "client_service__service",
-        "assigned_to",
-    ).order_by(
-        "client_service__client__client_name",
-        "client_service__service__service_name",
-        "due_date",
-    )
-
-    # Apply status filter if not "all"
-    if status_filter != "all":
-        tasks_qs = tasks_qs.filter(task_status=status_filter)
-
-    # Calculate status counts for filter buttons
-    all_tasks = Task.objects.filter(client_service__client__in=user_clients)
-    status_counts = {
-        'all': all_tasks.count(),
-        'Pending': all_tasks.filter(task_status='Pending').count(),
-        'In_Progress': all_tasks.filter(task_status='In Progress').count(),
-        'Submitted': all_tasks.filter(task_status='Submitted').count(),
-        'Completed': all_tasks.filter(task_status='Completed').count(),
-        'Delayed': all_tasks.filter(task_status='Delayed').count(),
-        'Cancelled': all_tasks.filter(task_status='Cancelled').count(),
-    }
-
-    clients_with_tasks = {}
-    total_pending = 0
-
-    for task in tasks_qs:
-        client = task.client_service.client
-        service_name = task.client_service.service.service_name
-
-        if client.id not in clients_with_tasks:
-            clients_with_tasks[client.id] = {
-                "client": client,
-                "groups": {},
-            }
-
-        client_entry = clients_with_tasks[client.id]
-
-        if service_name not in client_entry["groups"]:
-            client_entry["groups"][service_name] = {
-                "service_name": service_name,
-                "tasks": [],
-                "pending_count": 0,
-                "total_count": 0,
-            }
-
-        group = client_entry["groups"][service_name]
-        group["tasks"].append(task)
-        group["total_count"] += 1
-        if task.task_status == "Pending":
-            group["pending_count"] += 1
-            total_pending += 1
-
-    clients_list = []
-    for client_data in clients_with_tasks.values():
-        groups = list(client_data["groups"].values())
-        groups.sort(key=lambda g: g["service_name"])
-        total_tasks_client = sum(g["total_count"] for g in groups)
-        pending_tasks_client = sum(g["pending_count"] for g in groups)
-
-        clients_list.append({
-            "client": client_data["client"],
-            "groups": groups,
-            "total_tasks": total_tasks_client,
-            "pending_tasks": pending_tasks_client,
-        })
-
-    clients_list.sort(key=lambda x: x["client"].client_name)
+    # Extended Fields
+    extended_fields = []
+    if hasattr(task, 'extended_attributes'):
+        attr = task.extended_attributes
+        exclude = ['id', 'task', 'task_id']
+        for field in attr._meta.fields:
+            if field.name not in exclude:
+                val = getattr(attr, field.name)
+                if val:
+                    extended_fields.append(
+                        {'label': field.verbose_name.title(), 'value': val, 'is_file': 'file' in field.name})
 
     context = {
-        "clients_with_tasks": clients_list,
-        "pending_tasks": total_pending,
-        "user_clients": user_clients,
-        "status_filter": status_filter,
-        "status_counts": status_counts,
+        'task': task,
+        'assignee_statuses': assignee_statuses,
+        'user_action_needed': user_action_needed,
+        'progress_percent': (completed_assignees / total_assignees * 100) if total_assignees > 0 else 0,
+        'all_users': all_users,
+        'workflow_steps': workflow_steps,
+        'aging_timeline': aging_timeline,
+        'extended_fields': extended_fields,
+        'comments': task.comments.select_related('author').order_by('-created_at'),
+        'documents': task.documents.select_related('uploaded_by').order_by('-uploaded_at')
     }
-    return render(request, "client/tasks.html", context)
+    return render(request, 'client/task-detail.html', context)
 
 
-@login_required
-def task_detail(request, task_id):
-    task = get_object_or_404(
-        Task.objects.select_related(
-            "client_service__client",
-            "client_service__service",
-            "assigned_to",
-        ),
-        pk=task_id,
-    )
+# ==============================================================================
+# 2. NEW EDIT VIEW (Handles Full Editing)
+# ==============================================================================
 
-    client_service = task.client_service
-    client = client_service.client
+@login_required()
+def edit_task_view(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    client = task.client  # <--- 1. GET CLIENT FROM TASK
 
-    user_clients = _get_user_clients(request.user)
-    if not request.user.is_staff and client not in user_clients:
-        return HttpResponseForbidden("Not allowed")
+    # 2. PREPARE CLIENT DATA (Needed for the JS Auto-fill to not crash)
+    client_data_map = {
+        'pan_no': client.pan_no,
+        'email': client.email,
+        'phone': client.phone_number,
+        'din_no': client.din_no,
+        # 'gst_number': client.gst_details.first().gst_number if ...
+    }
 
-    service_type_obj = client_service.service
+    if not hasattr(task, 'extended_attributes'):
+        TaskExtendedAttributes.objects.create(task=task)
 
-    gst_detail = client_service.gst_details.first() if hasattr(client_service, "gst_details") else None
-    itr_detail = client_service.itr_details.first() if hasattr(client_service, "itr_details") else None
-    audit_detail = client_service.audit_details.first() if hasattr(client_service, "audit_details") else None
-    income_tax_case = client_service.incometax_case_details.first() if hasattr(client_service,
-                                                                               "incometax_case_details") else None
-    gst_case = client_service.gst_case_details.first() if hasattr(client_service, "gst_case_details") else None
+    if request.method == 'POST':
+        task_form = TaskForm(request.POST, instance=task)
+        extended_form = TaskExtendedForm(request.POST, request.FILES, instance=task.extended_attributes)
+
+        if task_form.is_valid() and extended_form.is_valid():
+            task_form.save()
+            extended_form.save()
+            messages.success(request, "Task updated successfully.")
+            return redirect('task_detail', task_id=task.id)
+    else:
+        task_form = TaskForm(instance=task)
+        extended_form = TaskExtendedForm(instance=task.extended_attributes)
 
     context = {
-        "task": task,
-        "client": client,
-        "client_service": client_service,
-        "service_type_obj": service_type_obj,
-        "gst_detail": gst_detail,
-        "itr_detail": itr_detail,
-        "audit_detail": audit_detail,
-        "income_tax_case": income_tax_case,
-        "gst_case": gst_case,
+        'task': task,
+        'client': client,  # <--- 3. PASS CLIENT TO TEMPLATE (Fixes NoReverseMatch)
+        'task_form': task_form,
+        'extended_form': extended_form,
+        'task_config': TASK_CONFIG,
+        'client_data_json': json.dumps(client_data_map, cls=DjangoJSONEncoder)  # <--- 4. PASS JSON DATA
     }
-    return render(request, "client/task-detail.html", context)
+    return render(request, 'client/create_task.html', context)

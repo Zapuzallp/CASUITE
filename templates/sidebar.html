@@ -148,33 +148,54 @@
 </style>
 
 <aside id="sidebar" class="sidebar">
-    <!-- Sidebar Header -->
     <div class="sidebar-header">
         <h6><i class="bi bi-grid-3x3-gap me-2"></i>Menu</h6>
     </div>
 
     <ul class="sidebar-nav" id="sidebar-nav">
-        <!-- Main -->
         <li class="nav-heading">Main</li>
 
         <li class="nav-item">
-            <a class="nav-link active" href="{% url 'dashboard' %}">
+            <a class="nav-link" href="{% url 'dashboard' %}">
                 <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </a>
-            <a class="nav-link" href={% url "clients" %}>
+        </li>
+
+        <li class="nav-heading">Client Management</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'clients' %}">
                 <i class="bi bi-people"></i>
-                <span>Clients</span>
+                <span>All Clients</span>
             </a>
         </li>
 
-        <!-- Documents -->
-        <li class="nav-heading">Documents</li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'onboard_client' %}">
+                <i class="bi bi-person-plus"></i>
+                <span>Onboard New Client</span>
+            </a>
+        </li>
+
+        <li class="nav-heading">Operations</li>
 
         {% get_sidebar_counts as sidebar_counts %}
 
         <li class="nav-item">
-            <a class="nav-link" href="{% url 'document_requests' %}">
+            <a class="nav-link" href="{% url 'task_list' %}">
+                <i class="bi bi-list-check"></i>
+                <span>All Tasks</span>
+                {% if sidebar_counts.pending_tasks %}
+                    <span class="nav-badge">{{ sidebar_counts.pending_tasks }}</span>
+                {% endif %}
+            </a>
+        </li>
+
+        <li class="nav-heading">Documents</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
                 <i class="bi bi-file-earmark-text"></i>
                 <span>Document Requests</span>
                 {% if sidebar_counts.pending_documents %}
@@ -186,42 +207,10 @@
         <li class="nav-item">
             <a class="nav-link" href="#">
                 <i class="bi bi-cloud-upload"></i>
-                <span>Upload Documents</span>
+                <span>Recent Uploads</span>
             </a>
         </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-folder2-open"></i>
-                <span>My Documents</span>
-            </a>
-        </li>
-
-        <!-- Clients -->
-        <li class="nav-heading">Clients</li>
-
-        <li class="nav-item">
-            <a class="nav-link has-dropdown collapsed" data-bs-toggle="collapse" href="#clientsNav">
-                <i class="bi bi-people"></i>
-                <span>Client Management</span>
-            </a>
-            <ul id="clientsNav" class="nav-content collapse">
-                <li>
-                    <a class="nav-link" href={% url "clients" %}>
-                        <i class="bi bi-circle"></i>
-                        <span>All Clients</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="nav-link" href={% url "add_client" %}>
-                        <i class="bi bi-circle"></i>
-                        <span>Add Client</span>
-                    </a>
-                </li>
-            </ul>
-        </li>
-
-        <!-- Services -->
         <li class="nav-heading">Services</li>
 
         <li class="nav-item">
@@ -238,41 +227,6 @@
             </a>
         </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-clipboard-check"></i>
-                <span>Audit</span>
-            </a>
-        </li>
-
-        <!-- Operations -->
-        <li class="nav-heading">Operations</li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'tasks_dashboard' %}">
-                <i class="bi bi-list-check"></i>
-                <span>Tasks</span>
-                {% if sidebar_counts.pending_tasks %}
-                    <span class="nav-badge">{{ sidebar_counts.pending_tasks }}</span>
-                {% endif %}
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-calendar-event"></i>
-                <span>Calendar</span>
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-graph-up-arrow"></i>
-                <span>Reports</span>
-            </a>
-        </li>
-
-        <!-- System -->
         <li class="nav-heading">System</li>
 
         <li class="nav-item">
@@ -283,9 +237,9 @@
         </li>
 
         <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-question-circle"></i>
-                <span>Help</span>
+            <a class="nav-link" href="{% url 'logout' %}">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
             </a>
         </li>
     </ul>
@@ -297,9 +251,13 @@
         const navLinks = document.querySelectorAll('.sidebar-nav .nav-link:not(.has-dropdown)');
         
         navLinks.forEach(link => {
-            if (link.getAttribute('href') === currentPath) {
-                navLinks.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
+            // Check if href matches current path (handling trailing slashes)
+            let href = link.getAttribute('href');
+            if (href && href !== '#') {
+                if (currentPath === href || currentPath.startsWith(href) && href !== '/') {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                }
             }
         });
     });
