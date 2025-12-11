@@ -32,17 +32,21 @@ class HomeView(LoginRequiredMixin, TemplateView):
         today = timezone.now().date()
 
         # =========================================================
-        # 1. HIGH-LEVEL SUMMARY (CARDS)
+        # 1. GLOBAL STATISTICS & FINANCIALS
         # =========================================================
         all_tasks = Task.objects.all()
 
-        # Aggregate Global Stats
+        # Single query aggregation for performance
         stats = all_tasks.aggregate(
             total=Count('id'),
             completed=Count('id', filter=Q(status='Completed')),
+            # Active working states
             pending=Count('id', filter=Q(status__in=['Pending', 'In Progress', 'Data Collection'])),
+            # Approval queue
             review=Count('id', filter=Q(status='Review')),
+            # Overdue logic
             overdue=Count('id', filter=Q(due_date__lt=today) & ~Q(status='Completed')),
+
             # Financials
             billed=Sum('agreed_fee', filter=Q(fee_status='Billed')),
             paid=Sum('agreed_fee', filter=Q(fee_status='Paid')),
@@ -54,9 +58,16 @@ class HomeView(LoginRequiredMixin, TemplateView):
         new_clients = Client.objects.filter(created_at__month=today.month).count()
 
         # =========================================================
-        # 2. REPORT: TASK AGING ANALYSIS
+        # 2. REPORT: SERVICE DISTRIBUTION (Donut Chart)
         # =========================================================
-        # Group open tasks by how long they have been open
+        # Count tasks per service type
+        service_counts = all_tasks.values('service_type').annotate(count=Count('id')).order_by('-count')
+        service_chart_data = [{'name': x['service_type'], 'value': x['count']} for x in service_counts]
+
+        # =========================================================
+        # 3. REPORT: TASK AGING (Pie Chart)
+        # =========================================================
+        # Get creation dates of open tasks
         open_tasks = all_tasks.exclude(status='Completed').values('created_at')
 
         aging_data = {'0-7 Days': 0, '8-15 Days': 0, '15-30 Days': 0, '30+ Days': 0}
@@ -73,31 +84,30 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 aging_data['30+ Days'] += 1
 
         # =========================================================
-        # 3. REPORT: TOP SOLVERS (LEADERBOARD)
+        # 4. REPORT: LEADERBOARD (Top Solvers)
         # =========================================================
-        # Count completed assignment parts per user
+        # Count completed assignment steps per user (Collaborative Score)
         top_solvers = User.objects.filter(is_active=True).annotate(
             solved_count=Count('taskassignmentstatus',
                                filter=Q(taskassignmentstatus__is_completed=True))
         ).order_by('-solved_count')[:5]
 
         # =========================================================
-        # 4. USER SPECIFIC & LISTS
+        # 5. USER SPECIFIC ACTIONS (Clickable)
         # =========================================================
-        # My Actions
-        my_actions = TaskAssignmentStatus.objects.filter(
-            user=user, is_completed=False
-        ).count()
+        # "My Action Items" - Specific steps waiting for the logged-in user
+        my_actionable_items = TaskAssignmentStatus.objects.filter(
+            user=user,
+            is_completed=False,
+            task__status__in=['Pending', 'In Progress', 'Review']  # Only active workflows
+        ).select_related('task', 'task__client').order_by('task__due_date')
 
-        # Recent Activity
+        my_actions_count = my_actionable_items.count()
+
+        # =========================================================
+        # 6. RECENT ACTIVITY TABLE
+        # =========================================================
         recent_tasks = all_tasks.select_related('client').prefetch_related('assignees').order_by('-created_at')[:6]
-
-        # Upcoming Deadlines
-        next_week = today + timedelta(days=7)
-        deadlines = all_tasks.filter(
-            status__in=['Pending', 'In Progress'],
-            due_date__range=[today, next_week]
-        ).order_by('due_date')[:5]
 
         # =========================================================
         # CONTEXT PACKAGING
@@ -105,7 +115,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context.update({
             'today': today,
 
-            # Summary Cards
+            # Summary Stats
             'total_clients': total_clients,
             'new_clients': new_clients,
             'total_tasks': stats['total'],
@@ -114,19 +124,20 @@ class HomeView(LoginRequiredMixin, TemplateView):
             'review_tasks': stats['review'],
             'overdue_tasks': stats['overdue'],
 
-            # Financials (Handle None)
+            # Financials (Handle None if DB empty)
             'total_billed': stats['billed'] or 0,
             'total_paid': stats['paid'] or 0,
             'total_unbilled': stats['unbilled'] or 0,
 
-            # Reports
+            # Chart Data
+            'service_chart_data': service_chart_data,
             'aging_data': aging_data,
-            'top_solvers': top_solvers,
 
-            # Lists & User
-            'my_actions': my_actions,
+            # Lists
+            'top_solvers': top_solvers,
+            'my_actionable_items': my_actionable_items[:6],  # Show top 6
+            'my_actions_count': my_actions_count,
             'recent_tasks': recent_tasks,
-            'deadlines': deadlines,
         })
 
         return context

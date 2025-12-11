@@ -1,30 +1,35 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_filters %} {% block body %}
+{% load custom_filters %}
+
+{% block body %}
     <style>
-        /* Dashboard Specific Overrides */
+        /* Card Styles */
         .card {
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             box-shadow: 0px 0 30px rgba(1, 41, 112, 0.05);
-            margin-bottom: 25px;
             transition: all 0.3s ease-in-out;
+            /* Removed margin-bottom here to rely on Bootstrap g-4 spacing */
         }
-        .card:hover { transform: translateY(-3px); }
-        
-        /* Stats Cards */
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 30px rgba(1, 41, 112, 0.1);
+        }
+
+        /* Stats Icons */
         .stat-card-icon {
-            font-size: 32px;
-            line-height: 0;
-            width: 64px;
-            height: 64px;
-            flex-shrink: 0;
-            flex-grow: 0;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 28px;
         }
+
+        /* Icon Colors */
         .text-blue { color: #4154f1; background: #f6f9ff; }
         .text-success { color: #2eca6a; background: #e0f8e9; }
         .text-warning { color: #ff771d; background: #ffecdf; }
@@ -42,19 +47,14 @@
             font-weight: 700;
             display: flex; align-items: center; justify-content: center;
             border: 2px solid #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
-        /* Leaderboard */
         .leaderboard-item {
-            padding: 12px 15px;
+            padding: 12px 0;
             border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
         }
         .leaderboard-item:last-child { border-bottom: none; }
-        .rank-badge { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.75rem; font-weight: bold; }
     </style>
 
     <main id="main" class="main">
@@ -70,26 +70,24 @@
                 </nav>
             </div>
             <div class="d-flex gap-2">
-                <span class="badge bg-white text-secondary border p-2 px-3 rounded-pill">
+                <span class="badge bg-white text-secondary border p-2 px-3 rounded-pill shadow-sm">
                     <i class="bi bi-calendar3 me-1"></i> {{ today|date:"M d, Y" }}
                 </span>
-                <a href="{% url 'task_list' %}" class="btn btn-primary btn-sm rounded-pill px-3">
+                <a href="{% url 'task_list' %}" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
                     <i class="bi bi-plus-lg me-1"></i> New Task
                 </a>
             </div>
         </div>
 
         <section class="section dashboard">
-            
-            <div class="row">
+
+            <div class="row g-4 mb-4">
                 <div class="col-xxl-3 col-md-6">
-                    <div class="card info-card sales-card">
+                    <div class="card info-card sales-card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">Tasks <span>| Total Pending</span></h5>
+                            <h5 class="card-title">Tasks <span>| Pending</span></h5>
                             <div class="d-flex align-items-center">
-                                <div class="stat-card-icon text-blue">
-                                    <i class="bi bi-list-task"></i>
-                                </div>
+                                <div class="stat-card-icon text-blue"><i class="bi bi-list-task"></i></div>
                                 <div class="ps-3">
                                     <h6>{{ pending_tasks }}</h6>
                                     <span class="text-success small pt-1 fw-bold">{{ review_tasks }}</span> 
@@ -101,17 +99,15 @@
                 </div>
 
                 <div class="col-xxl-3 col-md-6">
-                    <div class="card info-card revenue-card">
+                    <div class="card info-card revenue-card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">Paid <span>| This Year</span></h5>
+                            <h5 class="card-title">Revenue <span>| Paid</span></h5>
                             <div class="d-flex align-items-center">
-                                <div class="stat-card-icon text-success">
-                                    <i class="bi bi-currency-rupee"></i>
-                                </div>
+                                <div class="stat-card-icon text-success"><i class="bi bi-currency-rupee"></i></div>
                                 <div class="ps-3">
                                     <h6>₹{{ total_paid|floatformat:0 }}</h6>
-                                    <span class="text-muted small pt-2 ps-1">Pending:</span>
                                     <span class="text-danger small pt-1 fw-bold">₹{{ total_billed|floatformat:0 }}</span>
+                                    <span class="text-muted small pt-2 ps-1">pending</span>
                                 </div>
                             </div>
                         </div>
@@ -119,17 +115,15 @@
                 </div>
 
                 <div class="col-xxl-3 col-md-6">
-                    <div class="card info-card customers-card">
+                    <div class="card info-card customers-card h-100">
                         <div class="card-body">
                             <h5 class="card-title">Clients <span>| Total</span></h5>
                             <div class="d-flex align-items-center">
-                                <div class="stat-card-icon text-warning">
-                                    <i class="bi bi-people"></i>
-                                </div>
+                                <div class="stat-card-icon text-warning"><i class="bi bi-people"></i></div>
                                 <div class="ps-3">
                                     <h6>{{ total_clients }}</h6>
-                                    <span class="text-success small pt-1 fw-bold">+{{ new_clients }}</span> 
-                                    <span class="text-muted small pt-2 ps-1">new this month</span>
+                                    <span class="text-success small pt-1 fw-bold">+{{ new_clients }}</span>
+                                    <span class="text-muted small pt-2 ps-1">new</span>
                                 </div>
                             </div>
                         </div>
@@ -137,16 +131,14 @@
                 </div>
 
                 <div class="col-xxl-3 col-md-6">
-                    <div class="card info-card">
+                    <div class="card info-card h-100">
                         <div class="card-body">
                             <h5 class="card-title">My Actions <span>| Urgent</span></h5>
                             <div class="d-flex align-items-center">
-                                <div class="stat-card-icon text-danger">
-                                    <i class="bi bi-exclamation-diamond"></i>
-                                </div>
+                                <div class="stat-card-icon text-danger"><i class="bi bi-exclamation-diamond"></i></div>
                                 <div class="ps-3">
-                                    <h6>{{ my_actions }}</h6>
-                                    <span class="text-muted small pt-2 ps-1">items require your attention</span>
+                                    <h6>{{ my_actions_count }}</h6>
+                                    <span class="text-muted small pt-2 ps-1">steps require input</span>
                                 </div>
                             </div>
                         </div>
@@ -154,58 +146,90 @@
                 </div>
             </div>
 
-            <div class="row">
-                
-                <div class="col-lg-8">
-                    <div class="card">
+            <div class="row g-4 mb-4">
+
+                <div class="col-lg-6">
+                    <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">Task Aging Report <span>| Open Tasks</span></h5>
-                            
-                            <div id="agingChart" style="min-height: 350px;" class="echart"></div>
-                            
-                            <div class="row text-center mt-3 border-top pt-3">
+                            <h5 class="card-title">Task Aging <span>| Open Items</span></h5>
+
+                            <div id="agingChart" style="min-height: 300px;" class="echart"></div>
+
+                            <div class="row text-center border-top pt-3 mt-2">
                                 <div class="col-3 border-end">
-                                    <h4 class="text-success fw-bold m-0">{{ aging_data|get_item:'0-7 Days' }}</h4>
-                                    <span class="small text-muted">0-7 Days</span>
+                                    <h5 class="text-success m-0">{{ aging_data|get_item:'0-7 Days' }}</h5><small
+                                        class="text-muted">Fresh</small>
                                 </div>
                                 <div class="col-3 border-end">
-                                    <h4 class="text-primary fw-bold m-0">{{ aging_data|get_item:'8-15 Days' }}</h4>
-                                    <span class="small text-muted">8-15 Days</span>
+                                    <h5 class="text-primary m-0">{{ aging_data|get_item:'8-15 Days' }}</h5><small
+                                        class="text-muted">Active</small>
                                 </div>
                                 <div class="col-3 border-end">
-                                    <h4 class="text-warning fw-bold m-0">{{ aging_data|get_item:'15-30 Days' }}</h4>
-                                    <span class="small text-muted">15-30 Days</span>
+                                    <h5 class="text-warning m-0">{{ aging_data|get_item:'15-30 Days' }}</h5><small
+                                        class="text-muted">Stale</small>
                                 </div>
                                 <div class="col-3">
-                                    <h4 class="text-danger fw-bold m-0">{{ aging_data|get_item:'30+ Days' }}</h4>
-                                    <span class="small text-muted">30+ Days</span>
+                                    <h5 class="text-danger m-0">{{ aging_data|get_item:'30+ Days' }}</h5><small
+                                        class="text-muted">Critical</small>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
 
-                            <script>
-                                document.addEventListener("DOMContentLoaded", () => {
-                                    echarts.init(document.querySelector("#agingChart")).setOption({
-                                        tooltip: { trigger: 'item' },
-                                        legend: { top: '5%', left: 'center' },
-                                        series: [{
-                                            name: 'Aging',
-                                            type: 'pie',
-                                            radius: ['40%', '70%'],
-                                            avoidLabelOverlap: false,
-                                            itemStyle: { borderRadius: 5, borderColor: '#fff', borderWidth: 2 },
-                                            label: { show: false, position: 'center' },
-                                            emphasis: { label: { show: true, fontSize: '18', fontWeight: 'bold' } },
-                                            labelLine: { show: false },
-                                            data: [
-                                                { value: {{ aging_data|get_item:'0-7 Days' }}, name: 'Fresh (0-7d)', itemStyle: {color: '#2eca6a'} },
-                                                { value: {{ aging_data|get_item:'8-15 Days' }}, name: 'Active (8-15d)', itemStyle: {color: '#4154f1'} },
-                                                { value: {{ aging_data|get_item:'15-30 Days' }}, name: 'Stale (15-30d)', itemStyle: {color: '#ffc107'} },
-                                                { value: {{ aging_data|get_item:'30+ Days' }}, name: 'Critical (30+d)', itemStyle: {color: '#dc3545'} }
-                                            ]
-                                        }]
-                                    });
-                                });
-                            </script>
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Workload Mix <span>| By Service</span></h5>
+                            <div id="serviceChart" style="min-height: 350px;" class="echart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+
+                <div class="col-lg-8">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Waiting For You <span>| {{ my_actions_count }} Items</span></h5>
+
+                            <div class="list-group list-group-flush">
+                                {% for item in my_actionable_items %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="stat-card-icon me-3 bg-warning text-white rounded-3"
+                                                 style="width:45px; height:45px; font-size:1.2rem;">
+                                                <i class="bi bi-exclamation-lg"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold text-dark">{{ item.task.task_title }}</h6>
+                                                <small class="text-muted">
+                                                    {{ item.task.client.client_name }} •
+                                                    <span class="text-primary">{{ item.task.status }}</span>
+                                                </small>
+                                                <div class="small text-danger mt-1">
+                                                    <i class="bi bi-clock"></i> Due: {{ item.task.due_date|date:"M d" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a href="{% url 'task_detail' item.task.id %}"
+                                           class="btn btn-outline-primary btn-sm fw-bold">
+                                            Take Action <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                {% empty %}
+                                    <div class="text-center py-5">
+                                        <div class="avatar-circle mx-auto bg-success text-white mb-3"
+                                             style="width:60px; height:60px; font-size:1.5rem;">
+                                            <i class="bi bi-check-lg"></i>
+                                        </div>
+                                        <h6 class="fw-bold text-muted">All Caught Up!</h6>
+                                        <p class="small text-muted">You have no pending actions assigned specifically to
+                                            you.</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -213,66 +237,42 @@
                 <div class="col-lg-4">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">Top Task Solvers <span>| Lifetime</span></h5>
-                            
+                            <h5 class="card-title">Top Solvers <span>| Lifetime</span></h5>
                             <div class="leaderboard mt-2">
                                 {% for solver in top_solvers %}
                                     <div class="leaderboard-item">
                                         <div class="d-flex align-items-center">
-                                            <span class="rank-badge 
-                                                {% if forloop.counter == 1 %}bg-warning text-white
-                                                {% elif forloop.counter == 2 %}bg-secondary text-white
-                                                {% elif forloop.counter == 3 %}bg-brown text-white style='background:#cd7f32'
-                                                {% else %}bg-light text-muted{% endif %} me-3">
-                                                {{ forloop.counter }}
-                                            </span>
-                                            
-                                            <div class="avatar-circle me-3">
-                                                {{ solver.first_name|slice:":1" }}
-                                            </div>
-                                            
+                                            <span class="badge bg-light text-dark border me-3">{{ forloop.counter }}</span>
+                                            <div class="avatar-circle me-3 bg-primary text-white">{{ solver.first_name|slice:":1" }}</div>
                                             <div>
-                                                <h6 class="mb-0 fw-bold text-dark">{{ solver.first_name }} {{ solver.last_name }}</h6>
+                                                <h6 class="mb-0 fw-bold">{{ solver.first_name }}</h6>
                                                 <small class="text-muted">{{ solver.username }}</small>
                                             </div>
                                         </div>
-                                        
-                                        <div class="text-end">
-                                            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
-                                                {{ solver.solved_count }} Tasks
-                                            </span>
-                                        </div>
+                                        <span class="badge bg-success bg-opacity-10 text-success">{{ solver.solved_count }} Done</span>
                                     </div>
                                 {% empty %}
-                                    <div class="text-center py-5 text-muted">
-                                        <i class="bi bi-trophy display-6 opacity-25"></i>
-                                        <p class="mt-2">No activity recorded yet.</p>
-                                    </div>
+                                    <div class="text-center text-muted py-4">No data yet.</div>
                                 {% endfor %}
                             </div>
-
                         </div>
                     </div>
                 </div>
-
             </div>
 
-            <div class="row">
-                
+            <div class="row g-4 mb-4">
                 <div class="col-12">
-                    <div class="card recent-sales overflow-auto">
+                    <div class="card recent-sales overflow-auto h-100">
                         <div class="card-body">
-                            <h5 class="card-title">Recent Tasks <span>| Global Activity</span></h5>
-
+                            <h5 class="card-title">Recent Activity <span>| Global</span></h5>
                             <table class="table table-borderless datatable">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Task Title</th>
-                                        <th scope="col">Client</th>
-                                        <th scope="col">Team</th>
-                                        <th scope="col">Due Date</th>
-                                        <th scope="col">Status</th>
-                                        <th scope="col">View</th>
+                                        <th>Task</th>
+                                        <th>Client</th>
+                                        <th>Team</th>
+                                        <th>Status</th>
+                                        <th>View</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -283,35 +283,91 @@
                                         <td>
                                             <div class="d-flex">
                                                 {% for user in task.assignees.all|slice:":3" %}
-                                                    <div class="avatar-circle" style="width:24px; height:24px; font-size:0.6rem; margin-right:-8px; background:#e9ecef; border:1px solid #fff;">
+                                                    <div class="avatar-circle"
+                                                         style="width:24px; height:24px; font-size:0.6rem; margin-right:-8px; border:1px solid #fff; background:#ccc; color:#fff;">
                                                         {{ user.first_name|slice:":1" }}
                                                     </div>
                                                 {% endfor %}
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="{% if task.due_date < today and task.status != 'Completed' %}text-danger{% endif %}">
-                                                {{ task.due_date|date:"M d" }}
+                                            <span class="badge rounded-pill 
+                                                {% if task.status == 'Completed' %}bg-success
+                                                {% elif task.status == 'Review' %}bg-warning text-dark
+                                                {% else %}bg-light text-dark border{% endif %}">
+                                                {{ task.status }}
                                             </span>
                                         </td>
-                                        <td>
-                                            {% if task.status == 'Completed' %}<span class="badge bg-success">Done</span>
-                                            {% elif task.status == 'Review' %}<span class="badge bg-warning text-dark">Review</span>
-                                            {% else %}<span class="badge bg-light text-dark border">{{ task.status }}</span>{% endif %}
-                                        </td>
-                                        <td><a href="{% url 'task_detail' task.id %}" class="btn btn-sm btn-light border"><i class="bi bi-eye"></i></a></td>
+                                        <td><a href="{% url 'task_detail' task.id %}" class="btn btn-light btn-sm"><i
+                                                class="bi bi-eye"></i></a></td>
                                     </tr>
-                                    {% empty %}
-                                    <tr><td colspan="6" class="text-center text-muted">No recent tasks found.</td></tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-
             </div>
 
         </section>
     </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            // 1. Task Aging Pie Chart
+            echarts.init(document.querySelector("#agingChart")).setOption({
+                tooltip: {trigger: 'item'},
+                legend: {top: '0%', left: 'center'},
+                series: [{
+                    name: 'Aging',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['50%', '60%'],
+                    avoidLabelOverlap: false,
+                    label: {show: false},
+                    emphasis: {label: {show: true, fontSize: '18', fontWeight: 'bold'}},
+                    labelLine: {show: false},
+                    data: [
+                        {
+                            value: {{ aging_data|get_item:'0-7 Days' }},
+                            name: 'Fresh (0-7d)',
+                            itemStyle: {color: '#2eca6a'}
+                        },
+                        {
+                            value: {{ aging_data|get_item:'8-15 Days' }},
+                            name: 'Active (8-15d)',
+                            itemStyle: {color: '#4154f1'}
+                        },
+                        {
+                            value: {{ aging_data|get_item:'15-30 Days' }},
+                            name: 'Stale (15-30d)',
+                            itemStyle: {color: '#ffc107'}
+                        },
+                        {
+                            value: {{ aging_data|get_item:'30+ Days' }},
+                            name: 'Critical (30+d)',
+                            itemStyle: {color: '#dc3545'}
+                        }
+                    ]
+                }]
+            });
+
+            // 2. Service Distribution Donut Chart
+            echarts.init(document.querySelector("#serviceChart")).setOption({
+                tooltip: {trigger: 'item'},
+                legend: {top: '0%', left: 'center'},
+                series: [{
+                    name: 'Service',
+                    type: 'doughnut',
+                    radius: ['40%', '70%'],
+                    center: ['50%', '60%'],
+                    avoidLabelOverlap: false,
+                    label: {show: false},
+                    data: {{ service_chart_data|safe }}
+                }]
+            });
+
+        });
+    </script>
 {% endblock body %}

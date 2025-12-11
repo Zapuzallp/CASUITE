@@ -1,286 +1,323 @@
-# from django.contrib import admin
-#
-# from .models import DocumentMaster, DocumentRequest, RequestedDocument, ClientDocumentUpload, Client, PrivateLimitedDetails, ITRDetails, ClientService, ServiceType, GSTDetails, AuditDetails, LLPDetails, OPCDetails
-# from .models import (
-#     Client, CompanyDetails, LLPDetails, OPCDetails, Section8CompanyDetails, HUFDetails,
-#     ServiceType, ClientService, GSTDetails, ITRDetails, AuditDetails,
-#     Task, TaskActivityLog, IncomeTaxCaseDetails, GSTCaseDetails,
-#     ClientUserEntitle, DocumentMaster, DocumentRequest, RequestedDocument, ClientDocumentUpload
-# )
-#
-# admin.site.site_header = 'CA Suite 2.0 Admin'
-# admin.site.site_title = 'CA Suite 2.0'
-# admin.site.index_title = 'Welcome to CA Suite 2.0 Admin'
-#
-#
-# # -------------------------
-# # Client Base Admin
-# # -------------------------
-# class DocumentRequestInline(admin.TabularInline):
-#     model = DocumentRequest
-#     readonly_fields = ('created_at', 'created_by')
-#     extra = 0
-#     fields = ('title', 'due_date', 'created_by', 'created_at')
-#
-#
-# @admin.register(Client)
-# class ClientAdmin(admin.ModelAdmin):
-#     list_display = ['client_name', 'primary_contact_name', 'pan_no', 'email', 'phone_number', 'client_type',
-#                     'business_structure', 'status', 'assigned_ca', 'date_of_engagement']
-#     list_filter = ['client_type', 'business_structure', 'status', 'assigned_ca', 'state', 'country']
-#     search_fields = ['client_name', 'primary_contact_name', 'pan_no', 'email', 'phone_number']
-#     list_editable = ['status', 'assigned_ca']
-#     readonly_fields = ['created_at', 'updated_at']
-#     inlines = [DocumentRequestInline]
-#     fieldsets = (
-#         ('Basic Information', {
-#             'fields': ('client_name', 'primary_contact_name', 'pan_no', 'email', 'phone_number', 'aadhar', 'din_no')
-#         }),
-#         ('Address', {
-#             'fields': ('address_line1', 'city', 'state', 'postal_code', 'country')
-#         }),
-#         ('Business Details', {
-#             'fields': ('client_type', 'business_structure', 'status', 'assigned_ca', 'date_of_engagement')
-#         }),
-#         ('Additional Information', {
-#             'fields': ('remarks',)
-#         }),
-#         ('Timestamps', {
-#             'fields': ('created_at', 'updated_at'),
-#             'classes': ('collapse',)
-#         })
-#     )
-#
-#
-# # -------------------------
-# # Entity-Specific Details Admin
-# # -------------------------
-# @admin.register(CompanyDetails)
-# class CompanyDetailsAdmin(admin.ModelAdmin):
-#     list_display = ['proposed_company_name', 'client', 'company_type', 'cin', 'authorised_share_capital',
-#                     'paid_up_share_capital', 'number_of_directors', 'date_of_incorporation']
-#     list_filter = ['company_type', 'date_of_incorporation']
-#     search_fields = ['proposed_company_name', 'client__client_name', 'cin']
-#     readonly_fields = ['created_at', 'updated_at']
-#     filter_horizontal = ['directors']
-#
-#
-# @admin.register(LLPDetails)
-# class LLPDetailsAdmin(admin.ModelAdmin):
-#     list_display = ['llp_name', 'client', 'llp_registration_no', 'paid_up_capital_llp', 'date_of_registration_llp']
-#     list_filter = ['date_of_registration_llp']
-#     search_fields = ['llp_name', 'client__client_name', 'llp_registration_no']
-#     readonly_fields = ['created_at', 'updated_at']
-#     filter_horizontal = ['designated_partners']
-#
-#
-# @admin.register(OPCDetails)
-# class OPCDetailsAdmin(admin.ModelAdmin):
-#     list_display = ['opc_name', 'client', 'opc_cin', 'sole_member_name', 'paid_up_share_capital_opc',
-#                     'date_of_incorporation_opc']
-#     list_filter = ['date_of_incorporation_opc']
-#     search_fields = ['opc_name', 'client__client_name', 'opc_cin']
-#     readonly_fields = ['created_at', 'updated_at']
-#
-#
-# @admin.register(Section8CompanyDetails)
-# class Section8CompanyDetailsAdmin(admin.ModelAdmin):
-#     list_display = ['section8_company_name', 'client', 'registration_no_section8', 'whether_licence_obtained',
-#                     'date_of_registration_s8']
-#     list_filter = ['whether_licence_obtained', 'date_of_registration_s8']
-#     search_fields = ['section8_company_name', 'client__client_name', 'registration_no_section8']
-#     readonly_fields = ['created_at', 'updated_at']
-#
-#
-# @admin.register(HUFDetails)
-# class HUFDetailsAdmin(admin.ModelAdmin):
-#     list_display = ['huf_name', 'client', 'pan_huf', 'karta_name', 'number_of_coparceners', 'number_of_members',
-#                     'date_of_creation']
-#     list_filter = ['date_of_creation']
-#     search_fields = ['huf_name', 'client__client_name', 'pan_huf', 'karta_name__client_name']
-#     readonly_fields = ['created_at', 'updated_at']
-#
-#
-# # -------------------------
-# # Service Master Admin
-# # -------------------------
-# @admin.register(ServiceType)
-# class ServiceTypeAdmin(admin.ModelAdmin):
-#     list_display = ['service_name', 'category', 'frequency', 'default_due_days', 'is_task', 'active']
-#     list_filter = ['category', 'frequency', 'is_task', 'active']
-#     search_fields = ['service_name', 'description']
-#     list_editable = ['is_task', 'active']
-#     readonly_fields = ['created_at']
-#
-#
-# @admin.register(ClientService)
-# class ClientServiceAdmin(admin.ModelAdmin):
-#     list_display = ['client', 'service', 'start_date', 'end_date', 'billing_cycle', 'agreed_fee', 'is_active']
-#     list_filter = ['service__category', 'billing_cycle', 'is_active', 'start_date']
-#     search_fields = ['client__client_name', 'service__service_name']
-#     list_editable = ['is_active']
-#     readonly_fields = ['created_at']
-#
-#
-# # -------------------------
-# # Financial & Compliance Admin
-# # -------------------------
-# @admin.register(GSTDetails)
-# class GSTDetailsAdmin(admin.ModelAdmin):
-#     list_display = ['gst_number', 'client_service', 'type_of_registration', 'filing_frequency', 'state_code',
-#                     'date_of_registration']
-#     list_filter = ['type_of_registration', 'filing_frequency', 'state_code', 'date_of_registration']
-#     search_fields = ['gst_number', 'client_service__client__client_name', 'gst_username']
-#     readonly_fields = ['created_at', 'updated_at']
-#
-#
-# @admin.register(ITRDetails)
-# class ITRDetailsAdmin(admin.ModelAdmin):
-#     list_display = ['pan_number', 'client_service', 'itr_type', 'assessment_year', 'income_source', 'filing_mode']
-#     list_filter = ['itr_type', 'assessment_year', 'filing_mode']
-#     search_fields = ['pan_number', 'client_service__client__client_name', 'aadhaar_number', 'last_itr_ack_no']
-#     readonly_fields = ['created_at', 'updated_at']
-#
-#
-# @admin.register(AuditDetails)
-# class AuditDetailsAdmin(admin.ModelAdmin):
-#     list_display = ['client_service', 'audit_type', 'financial_year', 'auditor_name', 'audit_start_date',
-#                     'audit_end_date']
-#     list_filter = ['audit_type', 'financial_year', 'audit_start_date']
-#     search_fields = ['client_service__client__client_name', 'auditor_name', 'financial_year']
-#     readonly_fields = ['created_at', 'updated_at']
-#
-#
-# # -------------------------
-# # Tasks & Activities Admin
-# # -------------------------
-# @admin.register(Task)
-# class TaskAdmin(admin.ModelAdmin):
-#     list_display = ['task_title', 'client_service', 'due_date', 'assigned_to', 'task_status', 'recurrence',
-#                     'completion_date']
-#     list_filter = ['task_status', 'recurrence', 'due_date', 'assigned_to']
-#     search_fields = ['task_title', 'client_service__client__client_name', 'assigned_to__username']
-#     list_editable = ['task_status', 'assigned_to']
-#     readonly_fields = ['created_at', 'updated_at']
-#     date_hierarchy = 'due_date'
-#
-#
-# @admin.register(TaskActivityLog)
-# class TaskActivityLogAdmin(admin.ModelAdmin):
-#     list_display = ['task', 'user', 'action', 'created_at']
-#     list_filter = ['action', 'created_at', 'user']
-#     search_fields = ['task__task_title', 'user__username', 'action']
-#     readonly_fields = ['created_at']
-#     date_hierarchy = 'created_at'
-#
-#
-# # -------------------------
-# # Legal Cases Admin
-# # -------------------------
-# @admin.register(IncomeTaxCaseDetails)
-# class IncomeTaxCaseDetailsAdmin(admin.ModelAdmin):
-#     list_display = ['client_service', 'case_type', 'notice_number', 'notice_date', 'ao_name', 'status',
-#                     'next_hearing_date']
-#     list_filter = ['case_type', 'status', 'notice_date', 'last_hearing_date', 'next_hearing_date']
-#     search_fields = ['client_service__client__client_name', 'notice_number', 'ao_name', 'ward_circle']
-#     list_editable = ['status']
-#     readonly_fields = ['created_at', 'updated_at']
-#     date_hierarchy = 'notice_date'
-#
-#
-# @admin.register(GSTCaseDetails)
-# class GSTCaseDetailsAdmin(admin.ModelAdmin):
-#     list_display = ['client_service', 'case_type', 'gstin', 'case_number', 'date_of_notice', 'officer_name', 'status']
-#     list_filter = ['case_type', 'status', 'date_of_notice', 'jurisdiction']
-#     search_fields = ['client_service__client__client_name', 'gstin', 'case_number', 'officer_name']
-#     list_editable = ['status']
-#     readonly_fields = ['created_at', 'updated_at']
-#     date_hierarchy = 'date_of_notice'
-#
-#
-# class RequestedDocumentInline(admin.TabularInline):
-#     model = RequestedDocument
-#     extra = 1
-#
-#
-# class ClientDocumentUploadInline(admin.TabularInline):
-#     model = ClientDocumentUpload
-#     readonly_fields = ('upload_date', 'client', 'status', 'uploaded_by')
-#     extra = 0
-#
-#     def get_queryset(self, request):
-#         return super().get_queryset(request).select_related('client', 'uploaded_by')
-#
-#
-# @admin.register(DocumentMaster)
-# class DocumentMasterAdmin(admin.ModelAdmin):
-#     list_display = ('document_name', 'category', 'is_active')
-#     list_filter = ('category', 'is_active')
-#     search_fields = ('document_name', 'category')
-#
-#
-# # -------------------------
-# # Client User Entitle Admin
-# # -------------------------
-# @admin.register(ClientUserEntitle)
-# class ClientUserEntitleAdmin(admin.ModelAdmin):
-#     list_display = ['user', 'get_client_count', 'get_client_names', 'created_at']
-#     list_filter = ['created_at', 'updated_at']
-#     search_fields = ['user__username', 'user__email', 'user__first_name', 'user__last_name', 'clients__client_name']
-#     filter_horizontal = ['clients']
-#     readonly_fields = ['created_at', 'updated_at']
-#
-#     def get_client_count(self, obj):
-#         return obj.clients.count()
-#
-#     get_client_count.short_description = 'Number of Clients'
-#
-#     def get_client_names(self, obj):
-#         clients = obj.clients.all()[:3]
-#         names = [client.client_name for client in clients]
-#         if obj.clients.count() > 3:
-#             names.append(f"and {obj.clients.count() - 3} more...")
-#         return ", ".join(names) if names else "No clients assigned"
-#
-#     get_client_names.short_description = 'Assigned Clients'
-#
-#
-# @admin.register(DocumentRequest)
-# class DocumentRequestAdmin(admin.ModelAdmin):
-#     list_display = ('title', 'client', 'due_date', 'created_by', 'created_at')
-#     list_filter = ('due_date', 'created_by', 'client__client_type', 'client__status')
-#     search_fields = ('title', 'client__client_name', 'client__email', 'client__pan_no')
-#     inlines = (RequestedDocumentInline,)
-#
-#     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-#         if db_field.name == "client":
-#             kwargs["queryset"] = Client.objects.select_related().order_by('client_name')
-#         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-#
-#
-# @admin.register(RequestedDocument)
-# class RequestedDocumentAdmin(admin.ModelAdmin):
-#     list_display = ('document_request', 'document_master')
-#     search_fields = ('document_master__document_name', 'document_request__title')
-#     inlines = (ClientDocumentUploadInline,)
-#
-#
-# @admin.register(ClientDocumentUpload)
-# class ClientDocumentUploadAdmin(admin.ModelAdmin):
-#     list_display = ('client', 'requested_document', 'status', 'upload_date', 'uploaded_by')
-#     list_filter = ('status', 'upload_date', 'uploaded_by', 'client__client_type')
-#     search_fields = (
-#         'client__client_name',
-#         'client__email',
-#         'client__pan_no',
-#         'uploaded_by__username',
-#         'requested_document__document_master__document_name',
-#     )
-#
-#
-# readonly_fields = ('upload_date', 'status')
-#
-# def formfield_for_foreignkey(self, db_field, request, **kwargs):
-#     if db_field.name == "client":
-#         kwargs["queryset"] = Client.objects.select_related().order_by('client_name')
-#     return super().formfield_for_foreignkey(db_field, request, **kwargs)
+from django.contrib import admin
+from django.utils.html import format_html
+
+from .models import (
+    Client,
+    ClientBusinessProfile,
+    ClientUserEntitle,
+    DocumentMaster,
+    DocumentRequest,
+    RequestedDocument,
+    ClientDocumentUpload,
+    Task,
+    TaskAssignmentStatus,
+    TaskStatusLog,
+    TaskExtendedAttributes,
+    TaskComment,
+    TaskDocument,
+    GSTDetails,
+)
+
+
+@admin.register(Client)
+class ClientAdmin(admin.ModelAdmin):
+    list_display = (
+        "client_name",
+        "primary_contact_name",
+        "client_type",
+        "business_structure",
+        "pan_no",
+        "email",
+        "phone_number",
+        "city",
+        "state",
+        "status",
+        "assigned_ca",
+        "created_at",
+    )
+    list_filter = (
+        "client_type",
+        "business_structure",
+        "status",
+        "state",
+        "city",
+        "assigned_ca",
+        "created_at",
+    )
+    search_fields = (
+        "client_name",
+        "primary_contact_name",
+        "pan_no",
+        "aadhar",
+        "din_no",
+        "tan_no",
+        "email",
+        "phone_number",
+        "city",
+        "state",
+    )
+    date_hierarchy = "created_at"
+    autocomplete_fields = ("assigned_ca", "created_by")
+
+
+@admin.register(ClientBusinessProfile)
+class ClientBusinessProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        "client",
+        "registration_number",
+        "date_of_incorporation",
+        "authorised_capital",
+        "paid_up_capital",
+        "number_of_directors",
+        "number_of_shareholders",
+        "number_of_members",
+        "is_section8_license_obtained",
+    )
+    list_filter = (
+        "client__business_structure",
+        "date_of_incorporation",
+        "is_section8_license_obtained",
+    )
+    search_fields = (
+        "client__client_name",
+        "registration_number",
+        "udyam_registration",
+        "opc_nominee_name",
+    )
+    autocomplete_fields = ("client", "karta", "key_persons")
+
+
+@admin.register(ClientUserEntitle)
+class ClientUserEntitleAdmin(admin.ModelAdmin):
+    list_display = ("user", "get_clients", "created_at", "updated_at")
+    search_fields = ("user__username", "user__email", "clients__client_name")
+    filter_horizontal = ("clients",)
+
+    def get_clients(self, obj):
+        names = [c.client_name for c in obj.clients.all()[:3]]
+        label = ", ".join(names)
+        if obj.clients.count() > 3:
+            label += f" (+{obj.clients.count() - 3} more)"
+        return label
+
+    get_clients.short_description = "Clients"
+
+
+@admin.register(DocumentMaster)
+class DocumentMasterAdmin(admin.ModelAdmin):
+    list_display = ("category", "document_name", "is_active")
+    list_filter = ("category", "is_active")
+    search_fields = ("category", "document_name")
+
+
+@admin.register(DocumentRequest)
+class DocumentRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "client",
+        "due_date",
+        "for_all_clients",
+        "created_by",
+        "created_at",
+        "is_overdue_flag",
+    )
+    list_filter = (
+        "for_all_clients",
+        "due_date",
+        "created_by",
+        "created_at",
+        "client__status",
+    )
+    search_fields = ("title", "description", "client__client_name", "client__pan_no")
+    date_hierarchy = "due_date"
+    autocomplete_fields = ("client", "created_by")
+
+    def is_overdue_flag(self, obj):
+        color = "red" if obj.is_overdue else "green"
+        text = "Yes" if obj.is_overdue else "No"
+        return format_html('<span style="color:{};">{}</span>', color, text)
+
+    is_overdue_flag.short_description = "Overdue"
+
+
+@admin.register(RequestedDocument)
+class RequestedDocumentAdmin(admin.ModelAdmin):
+    list_display = ("document_request", "document_master")
+    list_filter = ("document_master__category", "document_request__due_date")
+    search_fields = (
+        "document_request__title",
+        "document_request__client__client_name",
+        "document_master__document_name",
+    )
+    autocomplete_fields = ("document_request", "document_master")
+
+
+@admin.register(ClientDocumentUpload)
+class ClientDocumentUploadAdmin(admin.ModelAdmin):
+    list_display = (
+        "client",
+        "requested_document",
+        "status",
+        "upload_date",
+        "uploaded_by",
+    )
+    list_filter = ("status", "upload_date", "uploaded_by")
+    search_fields = (
+        "client__client_name",
+        "client__pan_no",
+        "requested_document__document_master__document_name",
+    )
+    date_hierarchy = "upload_date"
+    autocomplete_fields = ("client", "requested_document", "uploaded_by")
+
+
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    list_display = (
+        "task_title",
+        "client",
+        "service_type",
+        "status",
+        "priority",
+        "due_date",
+        "is_recurring",
+        "recurrence_period",
+        "agreed_fee",
+        "fee_status",
+        "created_by",
+        "created_at",
+    )
+    list_filter = (
+        "service_type",
+        "status",
+        "priority",
+        "is_recurring",
+        "recurrence_period",
+        "fee_status",
+        "due_date",
+        "created_at",
+        "client__status",
+    )
+    search_fields = (
+        "task_title",
+        "description",
+        "client__client_name",
+        "client__pan_no",
+        "client__email",
+    )
+    date_hierarchy = "due_date"
+    autocomplete_fields = ("client", "created_by", "assignees")
+    filter_horizontal = ("assignees",)
+
+
+@admin.register(TaskAssignmentStatus)
+class TaskAssignmentStatusAdmin(admin.ModelAdmin):
+    list_display = (
+        "task",
+        "user",
+        "status_context",
+        "is_completed",
+        "completed_at",
+        "order",
+    )
+    list_filter = ("status_context", "is_completed", "completed_at")
+    search_fields = (
+        "task__task_title",
+        "task__client__client_name",
+        "user__username",
+        "user__email",
+    )
+    autocomplete_fields = ("task", "user")
+
+
+@admin.register(TaskStatusLog)
+class TaskStatusLogAdmin(admin.ModelAdmin):
+    list_display = ("task", "old_status", "new_status", "changed_by", "created_at")
+    list_filter = ("old_status", "new_status", "changed_by", "created_at")
+    search_fields = (
+        "task__task_title",
+        "task__client__client_name",
+        "changed_by__username",
+    )
+    date_hierarchy = "created_at"
+    autocomplete_fields = ("task", "changed_by")
+
+
+@admin.register(TaskExtendedAttributes)
+class TaskExtendedAttributesAdmin(admin.ModelAdmin):
+    list_display = (
+        "task",
+        "period_month",
+        "period_year",
+        "financial_year",
+        "assessment_year",
+        "gst_return_type",
+        "total_turnover",
+        "tax_payable",
+        "refund_amount",
+    )
+    list_filter = (
+        "period_month",
+        "period_year",
+        "financial_year",
+        "assessment_year",
+        "gst_return_type",
+        "task__service_type",
+    )
+    search_fields = (
+        "task__task_title",
+        "task__client__client_name",
+        "pan_number",
+        "gstin_number",
+        "ack_number",
+        "arn_number",
+        "udin_number",
+        "srn_number",
+    )
+    autocomplete_fields = ("task",)
+
+
+@admin.register(TaskComment)
+class TaskCommentAdmin(admin.ModelAdmin):
+    list_display = ("task", "author", "short_text", "created_at")
+    list_filter = ("author", "created_at")
+    search_fields = (
+        "task__task_title",
+        "task__client__client_name",
+        "author__username",
+        "text",
+    )
+    date_hierarchy = "created_at"
+    autocomplete_fields = ("task", "author")
+
+    def short_text(self, obj):
+        return (obj.text[:75] + "...") if len(obj.text) > 75 else obj.text
+
+    short_text.short_description = "Comment"
+
+
+@admin.register(TaskDocument)
+class TaskDocumentAdmin(admin.ModelAdmin):
+    list_display = ("task", "uploaded_by", "description", "uploaded_at")
+    list_filter = ("uploaded_at", "uploaded_by")
+    search_fields = (
+        "task__task_title",
+        "task__client__client_name",
+        "uploaded_by__username",
+        "description",
+    )
+    date_hierarchy = "uploaded_at"
+    autocomplete_fields = ("task", "uploaded_by")
+
+
+@admin.register(GSTDetails)
+class GSTDetailsAdmin(admin.ModelAdmin):
+    list_display = ("client", "gst_number", "state", "registered_address")
+    list_filter = ("state",)
+    search_fields = (
+        "client__client_name",
+        "client__pan_no",
+        "gst_number",
+        "state",
+    )
+    autocomplete_fields = ("client",)

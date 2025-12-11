@@ -186,61 +186,71 @@ REQUIRED_FIELDS_MAP = {
 }
 
 # ==============================================================================
-# SERVICE TASK CONFIGURATION
-# Defines fields, statuses, and validation for every service type.
+# CONFIGURATION DOCUMENTATION
 # ==============================================================================
+#
+# 1. 'workflow_steps': A list of strings defining the sequential stages of the task.
+#    e.g., ['Pending', 'Draft', 'Review', 'Completed']
+#
+# 2. 'fields':
+#    - 'include': List of field names from TaskExtendedAttributes to show in the form.
+#    - 'readonly': List of field names that should be visible but not editable.
+#
+# 3. 'labels': Dictionary to rename fields on the UI.
+#    e.g., {'gstin_number': 'Select GSTIN'}
+#
+# 4. 'dynamic_defaults': (1-to-1 Mapping)
+#    Auto-populates a field from a direct attribute of the Client model.
+#    e.g., {'pan_number': 'pan_no'} -> Sets Task.pan_number = Client.pan_no
+#
+# ==============================================================================
+
 DEFAULT_WORKFLOW_STEPS = ['Pending', 'In Progress', 'Review', 'Completed']
+
 TASK_CONFIG = {
     # --------------------------------------------------------------------------
-    # 1. GST RETURN (Complex Workflow)
+    # 1. GST RETURN (Uses Dynamic Dropdown)
     # --------------------------------------------------------------------------
     'GST Return': {
         'default_due_days': 20,
-        # LINEAR WORKFLOW: The system moves strictly from index 0 -> 1 -> 2
-        'workflow_steps': [
-            'Pending',
-            'Data Collection',
-            'Draft Preparation',
-            'Review',
-            'Filed',
-            'Completed'
-        ],
+        'workflow_steps': ['Pending', 'Data Collection', 'Draft Preparation', 'Review', 'Filed', 'Completed'],
         'fields': {
             'include': [
-                'gstin_number', 'period_month', 'period_year', 'total_turnover','gst_return_type',
+                'gstin_number', 'period_month', 'period_year', 'total_turnover',
                 'tax_payable', 'arn_number', 'filing_date', 'json_file'
             ],
-            'readonly': [
-                # 'gstin_number'
-            ]
+            'readonly': []
         },
         'labels': {
-            'gstin_number': 'GSTIN (Auto-Filled)',
+            'gstin_number': 'Select GSTIN',
             'total_turnover': 'Taxable Value'
         },
-        'dynamic_defaults': {
-             # 'gstin_number': 'gst_number'
+
+        # LOGIC: Look at client.gst_details.all(), take 'gst_number', show "GST - State"
+        'data_sources': {
+            'gstin_number': {
+                'relation': 'gst_details',
+                'value_field': 'gst_number',
+                'label_field': 'gst_number',
+                'extra_label': 'state'
+            }
         }
     },
 
     # --------------------------------------------------------------------------
-    # 2. ITR FILING
+    # 2. ITR FILING (Uses Simple Auto-Fill)
     # --------------------------------------------------------------------------
     'ITR Filing': {
         'default_due_days': 120,
-        'workflow_steps': [
-            'Pending', 'Docs Received', 'Computation', 'Review', 'Filed', 'Completed'
-        ],
+        'workflow_steps': ['Pending', 'Docs Received', 'Computation', 'Review', 'Filed', 'Completed'],
         'fields': {
-            'include': [
-                'pan_number', 'assessment_year', 'gross_total_income',
-                'tax_payable', 'refund_amount', 'ack_number', 'computation_file'
-            ],
+            'include': ['pan_number', 'assessment_year', 'gross_total_income', 'tax_payable', 'refund_amount',
+                        'ack_number', 'computation_file'],
             'readonly': ['pan_number']
         },
-        'labels': {
-            'pan_number': 'Client PAN'
-        },
+        'labels': {'pan_number': 'Client PAN'},
+
+        # LOGIC: Set pan_number = client.pan_no
         'dynamic_defaults': {
             'pan_number': 'pan_no'
         }
@@ -253,10 +263,8 @@ TASK_CONFIG = {
         'default_due_days': 180,
         'workflow_steps': ['Planning', 'Fieldwork', 'Draft Report', 'Partner Review', 'Signed', 'Completed'],
         'fields': {
-            'include': [
-                'financial_year', 'audit_fee', 'turnover_audited',
-                'udin_number', 'date_of_signing', 'audit_report_file'
-            ]
+            'include': ['financial_year', 'audit_fee', 'turnover_audited', 'udin_number', 'date_of_signing',
+                        'audit_report_file']
         },
         'dynamic_defaults': {}
     },
@@ -268,10 +276,9 @@ TASK_CONFIG = {
         'default_due_days': 30,
         'workflow_steps': ['Pending', 'Drafting', 'Signatures', 'Filed', 'Completed'],
         'fields': {
-            'include': [
-                'srn_number', 'din_numbers', 'meeting_date', 'remarks'
-            ]
+            'include': ['srn_number', 'din_numbers', 'meeting_date', 'remarks']
         },
+        # LOGIC: Set din_numbers = client.din_no
         'dynamic_defaults': {
             'din_numbers': 'din_no'
         }

@@ -78,6 +78,14 @@ class Client(models.Model):
         return self.client_name
 
 
+class GSTDetails(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='gst_details')
+    gst_number = models.CharField(max_length=15)
+    registered_address = models.TextField(blank=True, null=True)
+    state = models.CharField(max_length=50, blank=True)
+
+    def __str__(self):
+        return f"{self.gst_number} - {self.state}"
 # -------------------------
 # 2. Universal Business Profile
 # -------------------------
@@ -314,8 +322,10 @@ class TaskAssignmentStatus(models.Model):
     is_completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
-
+    order = models.PositiveIntegerField(default=0)
     class Meta:
+        unique_together = ('task', 'user', 'status_context')
+        ordering = ['order']
         unique_together = ('task', 'user', 'status_context')
 
     def __str__(self):
@@ -356,7 +366,7 @@ class TaskExtendedAttributes(models.Model):
 
     # --- Identifiers ---
     pan_number = models.CharField(max_length=20, blank=True, null=True)
-    gstin_number = models.CharField(max_length=20, blank=True, null=True)
+    gstin_number = models.ForeignKey(GSTDetails, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
     ack_number = models.CharField(max_length=50, blank=True, null=True)
     arn_number = models.CharField(max_length=50, blank=True, null=True)
     udin_number = models.CharField(max_length=50, blank=True, null=True)
@@ -424,3 +434,4 @@ class TaskDocument(models.Model):
     file = models.FileField(upload_to='task_documents/%Y/%m/')
     description = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+

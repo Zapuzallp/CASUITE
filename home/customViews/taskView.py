@@ -23,7 +23,6 @@ def create_task_view(request, client_id):
         'email': client.email,
         'phone': client.phone_number,
         'din_no': client.din_no,
-        # Add other client fields you want to auto-fill here
     }
 
     if request.method == 'POST':
@@ -66,7 +65,7 @@ def create_task_view(request, client_id):
 
         # Pass Config and Data to Template
         'task_config': TASK_CONFIG,
-        'client_data_json': json.dumps(client_data_map, cls=DjangoJSONEncoder)
+        'client_data_json': client_data_map
     }
     return render(request, 'client/create_task.html', context)
 
@@ -86,177 +85,205 @@ def task_list_view(request):
     }
     return render(request, 'client/tasks.html', context)
 
-
 # ---------------------------------------------------------
-# HELPER: Initialize Status for Assignees
+# HELPER: Initialize Status Sequence
 # ---------------------------------------------------------
 def initialize_step_for_assignees(task):
-    """Creates TaskAssignmentStatus rows for all current assignees for the CURRENT task status."""
-    for user in task.assignees.all():
+    """
+    Creates Status rows for the current task status.
+    Preserves the order based on the M2M field or ID.
+    """
+    current_assignees = task.assignees.all()
+    # We use a simple counter to set the order (1, 2, 3...)
+    for index, user in enumerate(current_assignees):
         TaskAssignmentStatus.objects.get_or_create(
             task=task,
             user=user,
             status_context=task.status,
-            defaults={'is_completed': False}
+            defaults={
+                'is_completed': False,
+                'order': index + 1  # 1-based sequence
+            }
         )
 
 
 @login_required
 def task_detail_view(request, task_id):
     task = get_object_or_404(Task, id=task_id)
+    user = request.user
+    is_admin = user.is_superuser
 
-    # 1. Get Workflow from Config
+    # 1. Load Workflow Config
     config = TASK_CONFIG.get(task.service_type, {})
     workflow_steps = config.get('workflow_steps', DEFAULT_WORKFLOW_STEPS)
 
-    # 2. Get Current Assignee Statuses (Who is pending?)
+    # 2. Get Team Status (Ordered by Sequence)
     assignee_statuses = TaskAssignmentStatus.objects.filter(
-        task=task,
-        status_context=task.status
-    ).select_related('user')
+        task=task, status_context=task.status
+    ).select_related('user').order_by('order')
 
-    # Calculate overall progress for this stage
-    total_assignees = assignee_statuses.count()
-    completed_assignees = assignee_statuses.filter(is_completed=True).count()
-
-    # Determine if Current User has a pending action
+    # 3. Determine User State (Active, Locked, or Admin)
     user_action_needed = False
-    my_status_entry = assignee_statuses.filter(user=request.user).first()
-    if my_status_entry and not my_status_entry.is_completed:
-        user_action_needed = True
+    waiting_for_previous = False
+    my_status_entry = None
 
-    # ----------------------------------------------------------------------
+    # Identify the "Active Step" (The first uncompleted step in the sequence)
+    active_step = assignee_statuses.filter(is_completed=False).first()
+
+    if active_step:
+        # Scenario A: It is MY turn
+        if active_step.user == user:
+            user_action_needed = True
+            my_status_entry = active_step
+
+        # Scenario B: I am an Admin (I can act on the active step regardless of owner)
+        elif is_admin:
+            user_action_needed = True
+            my_status_entry = active_step  # Admin acts on the active bottleneck
+
+        # Scenario C: I am assigned later in the sequence (Locked)
+        elif assignee_statuses.filter(user=user, is_completed=False).exists():
+            waiting_for_previous = True
+
+    # ==========================================================================
     # HANDLE POST ACTIONS
-    # ----------------------------------------------------------------------
+    # ==========================================================================
     if request.method == 'POST':
         action = request.POST.get('action_type')
 
-        # --- A. MARK MY PART COMPLETE ---
+        # --- A. COMPLETE PART (Sequential Check) ---
         if action == 'complete_my_part':
-            if my_status_entry:
-                my_status_entry.is_completed = True
-                my_status_entry.completed_at = timezone.now()
-                my_status_entry.save()
+            target_id = request.POST.get('target_entry_id')
 
-                # Log comment
-                TaskComment.objects.create(
-                    task=task, author=request.user,
-                    text=f"Marked their part for '{task.status}' as DONE."
-                )
+            # Select the entry to complete
+            if is_admin and target_id:
+                entry_to_complete = get_object_or_404(TaskAssignmentStatus, id=target_id)
+            else:
+                entry_to_complete = my_status_entry
 
-                # CHECK IF ALL ARE DONE -> ADVANCE STAGE
-                # We re-count because database just updated
-                pending_count = TaskAssignmentStatus.objects.filter(
-                    task=task, status_context=task.status, is_completed=False
-                ).count()
+            if entry_to_complete:
+                # Security: Ensure no LOWER order is pending (unless Admin override)
+                previous_pending = TaskAssignmentStatus.objects.filter(
+                    task=task, status_context=task.status,
+                    order__lt=entry_to_complete.order, is_completed=False
+                ).exists()
 
-                if pending_count == 0:
-                    # All assignees are done. Find next step.
-                    try:
-                        if task.status in workflow_steps:
-                            current_index = workflow_steps.index(task.status)
-
-                            # If there is a next step
-                            if current_index < len(workflow_steps) - 1:
-                                next_status = workflow_steps[current_index + 1]
-                                old_status = task.status
-
-                                # Log the transition
-                                task.log_status_change(
-                                    old_status, next_status, None,  # System change
-                                    "Auto-advanced: All assignees completed their part."
-                                )
-
-                                # Update Task
-                                task.status = next_status
-                                task.save()
-
-                                # Reset tracking for new stage
-                                initialize_step_for_assignees(task)
-
-                                messages.success(request, f"Stage complete! Task moved to {next_status}.")
-                            else:
-                                # End of workflow
-                                task.completed_date = timezone.now().date()
-                                task.save()
-                                messages.success(request, "Task fully completed! No further steps.")
-                        else:
-                            # Fallback if current status isn't in config list (maybe manually set)
-                            messages.warning(request,
-                                             "Current status not found in workflow configuration. Cannot auto-advance.")
-                    except ValueError:
-                        messages.warning(request, "Workflow configuration error.")
+                if previous_pending and not is_admin:
+                    messages.error(request, "Cannot complete yet. Previous team member must finish first.")
                 else:
-                    messages.success(request, "Your part is done. Waiting for other assignees.")
+                    # Mark Done
+                    entry_to_complete.is_completed = True
+                    entry_to_complete.completed_at = timezone.now()
+                    entry_to_complete.save()
 
-        # --- B. UPDATE ASSIGNEES (Multi-Select) ---
+                    # Log Action
+                    actor_name = "Admin" if (is_admin and entry_to_complete.user != user) else user.first_name
+                    TaskComment.objects.create(
+                        task=task, author=user,
+                        text=f"[{task.status}] Step {entry_to_complete.order} ({entry_to_complete.user.first_name}) marked DONE by {actor_name}."
+                    )
+
+                    # Check for Workflow Advancement
+                    remaining_pending = TaskAssignmentStatus.objects.filter(
+                        task=task, status_context=task.status, is_completed=False
+                    ).count()
+
+                    if remaining_pending == 0:
+                        # Advance Workflow
+                        try:
+                            if task.status in workflow_steps:
+                                idx = workflow_steps.index(task.status)
+                                if idx < len(workflow_steps) - 1:
+                                    next_status = workflow_steps[idx + 1]
+                                    task.log_status_change(task.status, next_status, None,
+                                                           "Auto-advanced: Sequence complete.")
+                                    task.status = next_status
+                                    task.save()
+                                    initialize_step_for_assignees(task)  # Create rows for new status
+                                    messages.success(request, f"Stage Complete! Moving to {next_status}.")
+                                else:
+                                    task.status = 'Completed'
+                                    task.completed_date = timezone.now().date()
+                                    task.save()
+                                    messages.success(request, "Task Fully Completed!")
+                        except ValueError:
+                            pass
+                    else:
+                        messages.success(request, "Step completed. Passing to next in sequence.")
+
+        # --- B. UPDATE ASSIGNEES (Preserve Order) ---
         elif action == 'update_assignees':
-            user_ids = request.POST.getlist('assignees')  # Get list of IDs
+            user_ids = request.POST.getlist('assignees')  # Gets IDs in selection order
             if user_ids:
                 new_users = User.objects.filter(id__in=user_ids)
-                task.assignees.set(new_users)  # Update M2M
+                task.assignees.set(new_users)
 
-                # Re-initialize tracking for current step
-                # (Existing completions are kept, new users added as Pending)
-                initialize_step_for_assignees(task)
+                # Update Sequence for CURRENT Status
+                current_context = task.status
 
-                # Cleanup: Remove tracking for users who were removed from assignment
+                # We wipe pending statuses and recreate them to ensure the new order is applied
+                # Completed statuses are kept for history
                 TaskAssignmentStatus.objects.filter(
-                    task=task, status_context=task.status
-                ).exclude(user__in=new_users).delete()
+                    task=task, status_context=current_context, is_completed=False
+                ).delete()
 
-                messages.success(request, "Team updated.")
+                for index, uid in enumerate(user_ids):
+                    u_obj = new_users.get(id=uid)
+                    # Get or Create (Use update_defaults to set new order)
+                    obj, created = TaskAssignmentStatus.objects.get_or_create(
+                        task=task, user=u_obj, status_context=current_context
+                    )
+                    if not obj.is_completed:
+                        obj.order = index + 1
+                        obj.save()
 
-        # --- C. ADD COMMENT ---
+                messages.success(request, "Team sequence updated.")
+
+        # --- C. OTHER ACTIONS (Comments, Uploads, Financials) ---
         elif action == 'add_comment':
-            text = request.POST.get('comment_text')
-            if text:
-                TaskComment.objects.create(task=task, author=request.user, text=text)
-                messages.success(request, "Comment posted.")
+            txt = request.POST.get('comment_text')
+            if txt: TaskComment.objects.create(task=task, author=user, text=txt)
 
-        # --- D. UPLOAD DOCUMENT ---
         elif action == 'upload_document':
-            file = request.FILES.get('document_file')
-            desc = request.POST.get('document_desc')
-            if file:
-                TaskDocument.objects.create(
-                    task=task, uploaded_by=request.user, file=file, description=desc
-                )
-                messages.success(request, "Document uploaded.")
+            f = request.FILES.get('document_file')
+            d = request.POST.get('document_desc')
+            if f: TaskDocument.objects.create(task=task, uploaded_by=user, file=f, description=d)
+
+        elif action == 'update_financials':
+            task.agreed_fee = request.POST.get('agreed_fee', 0)
+            task.fee_status = request.POST.get('fee_status')
+            task.save()
 
         return redirect('task_detail', task_id=task.id)
 
-    # ----------------------------------------------------------------------
+    # ==========================================================================
     # CONTEXT PREPARATION
-    # ----------------------------------------------------------------------
-    all_users = User.objects.filter(is_active=True)
+    # ==========================================================================
 
-    # Aging & History
+    # 1. Aging Calculation
     logs = task.status_logs.select_related('changed_by').order_by('created_at')
     aging_timeline = []
     last_time = task.created_at
-
     for log in logs:
         duration = log.created_at - last_time
         aging_timeline.append({
-            'status': log.old_status,
-            'changed_by': log.changed_by,
-            'timestamp': log.created_at,
-            'duration': duration,
-            'remarks': log.remarks
+            'status': log.old_status, 'changed_by': log.changed_by,
+            'timestamp': log.created_at, 'duration': duration, 'remarks': log.remarks
         })
         last_time = log.created_at
 
     if task.status != 'Completed':
-        current_duration = timezone.now() - last_time
         aging_timeline.append({
-            'status': task.status,
-            'is_current': True,
-            'timestamp': timezone.now(),
-            'duration': current_duration
+            'status': task.status, 'is_current': True,
+            'timestamp': timezone.now(), 'duration': timezone.now() - last_time
         })
 
-    # Extended Fields
+    # 2. Calculate Progress %
+    total_assignees = assignee_statuses.count()
+    completed_count = assignee_statuses.filter(is_completed=True).count()
+    progress_percent = (completed_count / total_assignees * 100) if total_assignees > 0 else 0
+
+    # 3. Extended Fields
     extended_fields = []
     if hasattr(task, 'extended_attributes'):
         attr = task.extended_attributes
@@ -264,24 +291,27 @@ def task_detail_view(request, task_id):
         for field in attr._meta.fields:
             if field.name not in exclude:
                 val = getattr(attr, field.name)
-                if val:
-                    extended_fields.append(
-                        {'label': field.verbose_name.title(), 'value': val, 'is_file': 'file' in field.name})
+                if val: extended_fields.append(
+                    {'label': field.verbose_name.title(), 'value': val, 'is_file': 'file' in field.name})
 
     context = {
         'task': task,
-        'assignee_statuses': assignee_statuses,
+        'assignee_statuses': assignee_statuses,  # Ordered list
         'user_action_needed': user_action_needed,
-        'progress_percent': (completed_assignees / total_assignees * 100) if total_assignees > 0 else 0,
-        'all_users': all_users,
+        'my_status_entry': my_status_entry,
+        'waiting_for_previous': waiting_for_previous,
+        'is_admin': is_admin,
+        'active_step': active_step,  # For template highlighting
         'workflow_steps': workflow_steps,
+        'progress_percent': progress_percent,
         'aging_timeline': aging_timeline,
         'extended_fields': extended_fields,
+        'all_users': User.objects.filter(is_active=True),
         'comments': task.comments.select_related('author').order_by('-created_at'),
         'documents': task.documents.select_related('uploaded_by').order_by('-uploaded_at')
     }
-    return render(request, 'client/task-detail.html', context)
 
+    return render(request, 'client/task-detail.html', context)
 
 # ==============================================================================
 # 2. NEW EDIT VIEW (Handles Full Editing)
