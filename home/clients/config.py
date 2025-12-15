@@ -67,7 +67,7 @@ STRUCTURE_CONFIG = {
                 'key_persons', 'constitution_document_1', 'constitution_document_2',
                 'udyam_registration', 'registered_office_address'
             ],
-            'exclude': [],
+            'exclude': ['aadhar'],
             'readonly': []
         },
         'labels': {
@@ -102,7 +102,7 @@ STRUCTURE_CONFIG = {
                 'registration_number', 'date_of_incorporation', 'paid_up_capital',
                 'key_persons', 'constitution_document_1', 'registered_office_address'
             ],
-            'exclude': []
+            'exclude': ['aadhar'],
         },
         'labels': {
             'client_name': 'LLP Name',
@@ -135,7 +135,7 @@ STRUCTURE_CONFIG = {
                 'key_persons',
                 'constitution_document_1'
             ],
-            'exclude': []
+            'exclude': ['aadhar'],
         },
         'conditional_rules': [
             {
@@ -162,7 +162,7 @@ STRUCTURE_CONFIG = {
                 'karta', 'date_of_incorporation', 'number_of_coparceners',
                 'number_of_members', 'constitution_document_1'
             ],
-            'exclude': []
+            'exclude': ['aadhar'],
         },
         'labels': {
             'client_name': 'HUF Name',
