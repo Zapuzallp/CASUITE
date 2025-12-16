@@ -263,22 +263,28 @@
                             </h5>
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle border">
+                                <!-- Added New headers and New Table Data-->
                                     <thead class="table-light">
                                     <tr>
-                                        <th>Service Name</th>
-                                        <th>Billing Cycle</th>
-                                        <th class="text-center">Status</th>
-                                        <th class="text-end">Fee</th>
+                                        <th>Title</th>
+                                        <th>Service</th>
+                                        <th>Due Date</th>
+                                        <th>Team</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     {% for service in services %}
+
                                         <tr>
-                                            <td class="fw-bold text-primary">{{ service.service.service_name }}</td>
-                                            <td>{{ service.billing_cycle }}</td>
+                                            <td class="fw-bold text-primary">{{ service.task_title }}</td>
+                                            <td>{{ service.service_type }}</td>
                                             <td class="text-center"><span
-                                                    class="badge bg-success rounded-pill">Active</span></td>
-                                            <td class="text-end fw-bold">₹{{ service.agreed_fee }}</td>
+                                                    class="badge bg-success rounded-pill">{{ service.due_date }}</span></td>
+                                            <td class="text-end fw-bold">₹{{ service.assignees }}</td>
+                                            <td class="text-end fw-bold">₹{{ service.status }}</td>
+                                            <td class="text-end fw-bold">₹{{ service.fee_status}}</td>
                                         </tr>
                                     {% empty %}
                                         <tr>
