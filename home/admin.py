@@ -16,6 +16,7 @@ from .models import (
     TaskComment,
     TaskDocument,
     GSTDetails,
+    Employee,
 )
 
 
@@ -321,3 +322,33 @@ class GSTDetailsAdmin(admin.ModelAdmin):
         "state",
     )
     autocomplete_fields = ("client",)
+
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "designation",
+        "personal_phone",
+        "work_phone",
+        "personal_email",
+        "created_at",
+    )
+
+    list_filter = (
+        "designation",
+        "created_at",
+    )
+
+    search_fields = (
+        "user__username",
+        "user__first_name",
+        "user__last_name",
+        "personal_email",
+        "personal_phone",
+        "work_phone",
+    )
+
+    autocomplete_fields = ("user",)
+
+    date_hierarchy = "created_at"
