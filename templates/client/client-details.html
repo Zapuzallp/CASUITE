@@ -278,14 +278,16 @@
                                     {% for service in services %}
 
                                         <tr>
-                                            <td class="fw-bold text-primary">{{ service.task_title }}</td>
-                                            <td>{{ service.service_type }}</td>
-                                            <td class="text-center"><span
-                                                    class="badge bg-success rounded-pill">{{ service.due_date }}</span></td>
-                                            <td class="text-end fw-bold">₹{{ service.assignees }}</td>
-                                            <td class="text-end fw-bold">₹{{ service.status }}</td>
-                                            <td class="text-end fw-bold">₹{{ service.fee_status}}</td>
+                                            <td class="fw-bold text-primary" > <a href="{% url "task_detail" service.client_id %}">{{ service.task_title }}</td>
+                                            <td ><span class="badge bg-light text-dark border">{{ service.service_type }}</span></td>
+                                            <td >{{ service.due_date|date:"M d, Y" }}</td>
+                                            <td >{{service.assignees.first|default:"Unassigned"}}</td>
+                                            <td > <span class="badge {% if service.status == 'Completed' %}bg-success{% elif service.status == 'Pending' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
+                                    {{ service.status }}</span></td>
+                                            <td > <a href="{% url "task_detail" service.client_id %}" class="btn btn-sm btn-outline-primary"><i
+                                        class="bi bi-eye"></i></a></td>
                                         </tr>
+
                                     {% empty %}
                                         <tr>
                                             <td colspan="4" class="text-center text-muted py-4">No active services
