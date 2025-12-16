@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block body %}
+
+<main id="main" class="main">
+
+    <div class="pagetitle">
+        <h1>Attendance Logs</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item active">Attendance</li>
+            </ol>
+        </nav>
+    </div>
+
+    <section class="section">
+
+        <div class="card">
+            <div class="card-body">
+
+                <h5 class="card-title">Clock In Report</h5>
+
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Clock In</th>
+                            <th>Clock Out</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Location</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.date }}</td>
+
+                            <td>
+                                {{ log.clock_in|date:"h:i A"|default:"-" }}
+                            </td>
+
+                            <td>
+                                {{ log.clock_out|date:"h:i A"|default:"-" }}
+                            </td>
+
+                            <td>
+                                {{ log.duration|default:"-" }}
+                            </td>
+
+                            <td>
+                                <span class="badge
+                                    {% if log.status == 'Present' %}bg-success
+                                    {% elif log.status == 'Incomplete' %}bg-warning text-dark
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ log.status }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {{ log.location_name|default:"-" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No attendance records found
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+
+    </section>
+
+</main>
+
+{% endblock %}

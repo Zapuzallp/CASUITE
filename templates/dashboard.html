@@ -146,6 +146,91 @@
                 </div>
             </div>
 
+            <div class="col-xxl-3 col-md-6">
+                <div class="card info-card h-100">
+                    <div class="card-body text-center">
+
+                        <h5 class="card-title">
+                            Attendance <span>| Today</span>
+                        </h5>
+
+                        {% if attendance %}
+                            {% if attendance.clock_in and not attendance.clock_out %}
+
+                                <div class="mb-2 text-muted small">
+                                    Clocked In At
+                                </div>
+
+                                <h6 class="fw-bold text-primary">
+                                    {{ attendance.clock_in|date:"h:i A" }}
+                                </h6>
+
+                                {% if attendance.location_name %}
+                                    <div class="small text-muted mb-3">
+                                        <i class="bi bi-geo-alt"></i>
+                                        {{ attendance.location_name }}
+                                    </div>
+                                {% endif %}
+
+                                <form method="post" action="{% url 'clock_out' %}">
+                                    {% csrf_token %}
+                                    <button class="btn btn-danger btn-sm rounded-pill px-4">
+                                        <i class="bi bi-box-arrow-right me-1"></i>
+                                        Clock Out
+                                    </button>
+                                </form>
+
+                            {% elif attendance.clock_out %}
+
+                                <div class="avatar-circle mx-auto bg-success text-white mb-3"
+                                    style="width:60px;height:60px;font-size:1.5rem;">
+                                    <i class="bi bi-check-lg"></i>
+                                </div>
+
+                                <h6 class="fw-bold text-success">
+                                    Attendance Completed
+                                </h6>
+
+                                <div class="small text-muted">
+                                    {{ attendance.duration }}
+                                </div>
+
+                            {% else %}
+
+                                <form method="post" action="{% url 'clock_in' %}">
+                                    {% csrf_token %}
+                                    <button class="btn btn-success btn-sm rounded-pill px-4">
+                                        <i class="bi bi-box-arrow-in-right me-1"></i>
+                                        Clock In
+                                    </button>
+                                </form>
+
+                            {% endif %}
+                        {% else %}
+
+                            <form method="post" action="{% url 'clock_in' %}">
+                                {% csrf_token %}
+                                <button class="btn btn-success btn-sm rounded-pill px-4">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i>
+                                    Clock In
+                                </button>
+                            </form>
+
+                        {% endif %}
+
+                        <hr class="my-3">
+
+                        <a href="{% url 'attendance_logs' %}"
+                        class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                            <i class="bi bi-clock-history me-1"></i>
+                            View Logs
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+
+
             <div class="row g-4 mb-4">
 
                 <div class="col-lg-6">

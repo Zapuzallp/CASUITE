@@ -435,3 +435,39 @@ class TaskDocument(models.Model):
     description = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
+from datetime import timedelta
+
+class Attendance(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField()
+
+    clock_in = models.DateTimeField(null=True, blank=True)
+    clock_out = models.DateTimeField(null=True, blank=True)
+
+    duration = models.DurationField(null=True, blank=True)
+
+    status = models.CharField(
+        max_length=20,
+        default="Absent"   # Absent / Present / Incomplete
+    )
+
+    remark = models.CharField(max_length=255, null=True, blank=True)
+
+    location_name = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        unique_together = ('user', 'date')
+
+    def save(self, *args, **kwargs):
+        if self.clock_in and self.clock_out:
+            self.duration = self.clock_out - self.clock_in
+            self.status = "Present"
+        elif self.clock_in and not self.clock_out:
+            self.status = "Incomplete"
+        else:
+            self.status = "Absent"
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date}"
