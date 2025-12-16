@@ -282,7 +282,6 @@ class Task(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
 
     # --- Recurrence & Financials ---
-    is_recurring = models.BooleanField(default=False)
     recurrence_period = models.CharField(max_length=20, choices=RECURRENCE_CHOICES, default='None')
 
     agreed_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
