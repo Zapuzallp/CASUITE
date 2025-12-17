@@ -18,9 +18,12 @@ from django.db.models import Count, Sum, Q
 from django.utils import timezone
 from datetime import timedelta
 
+
 # Import your models
 from home.models import Client
 from home.models import Task, TaskAssignmentStatus
+
+from django.contrib.auth.decorators import login_required
 
 
 class HomeView(LoginRequiredMixin, TemplateView):
@@ -41,11 +44,13 @@ class HomeView(LoginRequiredMixin, TemplateView):
             total=Count('id'),
             completed=Count('id', filter=Q(status='Completed')),
             # Active working states
-            pending=Count('id', filter=Q(status__in=['Pending', 'In Progress', 'Data Collection'])),
+            pending=Count('id', filter=Q(
+                status__in=['Pending', 'In Progress', 'Data Collection'])),
             # Approval queue
             review=Count('id', filter=Q(status='Review')),
             # Overdue logic
-            overdue=Count('id', filter=Q(due_date__lt=today) & ~Q(status='Completed')),
+            overdue=Count('id', filter=Q(due_date__lt=today)
+                          & ~Q(status='Completed')),
 
             # Financials
             billed=Sum('agreed_fee', filter=Q(fee_status='Billed')),
@@ -55,14 +60,17 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         # Client Counts
         total_clients = Client.objects.count()
-        new_clients = Client.objects.filter(created_at__month=today.month).count()
+        new_clients = Client.objects.filter(
+            created_at__month=today.month).count()
 
         # =========================================================
         # 2. REPORT: SERVICE DISTRIBUTION (Donut Chart)
         # =========================================================
         # Count tasks per service type
-        service_counts = all_tasks.values('service_type').annotate(count=Count('id')).order_by('-count')
-        service_chart_data = [{'name': x['service_type'], 'value': x['count']} for x in service_counts]
+        service_counts = all_tasks.values('service_type').annotate(
+            count=Count('id')).order_by('-count')
+        service_chart_data = [{'name': x['service_type'],
+                               'value': x['count']} for x in service_counts]
 
         # =========================================================
         # 3. REPORT: TASK AGING (Pie Chart)
@@ -70,7 +78,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # Get creation dates of open tasks
         open_tasks = all_tasks.exclude(status='Completed').values('created_at')
 
-        aging_data = {'0-7 Days': 0, '8-15 Days': 0, '15-30 Days': 0, '30+ Days': 0}
+        aging_data = {'0-7 Days': 0, '8-15 Days': 0,
+                      '15-30 Days': 0, '30+ Days': 0}
 
         for t in open_tasks:
             age = (timezone.now() - t['created_at']).days
@@ -99,7 +108,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
         my_actionable_items = TaskAssignmentStatus.objects.filter(
             user=user,
             is_completed=False,
-            task__status__in=['Pending', 'In Progress', 'Review']  # Only active workflows
+            task__status__in=['Pending', 'In Progress',
+                              'Review']  # Only active workflows
         ).select_related('task', 'task__client').order_by('task__due_date')
 
         my_actions_count = my_actionable_items.count()
@@ -107,7 +117,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # =========================================================
         # 6. RECENT ACTIVITY TABLE
         # =========================================================
-        recent_tasks = all_tasks.select_related('client').prefetch_related('assignees').order_by('-created_at')[:6]
+        recent_tasks = all_tasks.select_related('client').prefetch_related(
+            'assignees').order_by('-created_at')[:6]
 
         # =========================================================
         # CONTEXT PACKAGING
@@ -149,3 +160,23 @@ class ClientView(LoginRequiredMixin, ListView):
     template_name = 'client/clients_all.html'
     context_object_name = 'clients'
     paginate_by = 10
+
+
+@login_required
+def clock_toggle(request):
+    if request.method == 'POST':
+        user = request.user
+        # Find the most recent active visit
+        active_visit = user.visits.filter(check_out__isnull=True).first()
+
+        if active_visit:
+            # Clock Out
+            active_visit.check_out = timezone.now()
+            active_visit.save()
+        else:
+            # Clock In
+            WorkVisit.objects.create(worker=user, check_in=timezone.now())
+
+    # Redirect to whichever page the user was just on, or a main dashboard
+    # Change 'dashboard_name' to the name of your main view URL
+    return redirect('dashboard_name')

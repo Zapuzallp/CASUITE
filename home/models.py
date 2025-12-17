@@ -1,5 +1,4 @@
 from django.contrib.auth.models import User
-from django.contrib.auth.models import User
 # -------------------------
 # Client Base Table
 # -------------------------
@@ -36,15 +35,20 @@ class Client(models.Model):
     ]
 
     # --- Basic Identity ---
-    client_name = models.CharField(max_length=255, help_text="Name of Individual or Entity")
-    primary_contact_name = models.CharField(max_length=255, help_text="Name of the person to contact")
+    client_name = models.CharField(
+        max_length=255, help_text="Name of Individual or Entity")
+    primary_contact_name = models.CharField(
+        max_length=255, help_text="Name of the person to contact")
 
     # --- Identifiers ---
-    pan_no = models.CharField(max_length=20, unique=True, verbose_name="PAN Number")
-    aadhar = models.CharField(max_length=20, blank=True, null=True, verbose_name="Aadhar Number")
+    pan_no = models.CharField(
+        max_length=20, unique=True, verbose_name="PAN Number")
+    aadhar = models.CharField(
+        max_length=20, blank=True, null=True, verbose_name="Aadhar Number")
     din_no = models.CharField(max_length=50, blank=True, null=True, verbose_name="DIN",
                               help_text="Director Identification Number (if Individual)")
-    tan_no = models.CharField(max_length=20, blank=True, null=True, verbose_name="TAN")
+    tan_no = models.CharField(
+        max_length=20, blank=True, null=True, verbose_name="TAN")
 
     # --- Contact Info ---
     email = models.EmailField()
@@ -64,8 +68,10 @@ class Client(models.Model):
 
     # --- Classification ---
     client_type = models.CharField(max_length=20, choices=CLIENT_TYPE_CHOICES)
-    business_structure = models.CharField(max_length=50, choices=BUSINESS_STRUCTURE_CHOICES, blank=True, null=True)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Prospect')
+    business_structure = models.CharField(
+        max_length=50, choices=BUSINESS_STRUCTURE_CHOICES, blank=True, null=True)
+    status = models.CharField(
+        max_length=50, choices=STATUS_CHOICES, default='Prospect')
 
     # --- Meta ---
     remarks = models.TextField(blank=True, null=True)
@@ -79,7 +85,8 @@ class Client(models.Model):
 
 
 class GSTDetails(models.Model):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='gst_details')
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name='gst_details')
     gst_number = models.CharField(max_length=15)
     registered_address = models.TextField(blank=True, null=True)
     state = models.CharField(max_length=50, blank=True)
@@ -89,29 +96,37 @@ class GSTDetails(models.Model):
 # -------------------------
 # 2. Universal Business Profile
 # -------------------------
+
+
 class ClientBusinessProfile(models.Model):
     """
     Stores entity-specific details.
     Fields are nullable in DB but enforced as 'Required' in Forms/UI based on business_structure.
     """
-    client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name='business_profile')
+    client = models.OneToOneField(
+        Client, on_delete=models.CASCADE, related_name='business_profile')
 
     # --- Registration Details ---
     # Maps to: CIN (Companies), LLPIN (LLP), Registration No (Section 8/Trust)
-    registration_number = models.CharField(max_length=50, blank=True, null=True, verbose_name="CIN / LLPIN / Reg No")
-    date_of_incorporation = models.DateField(blank=True, null=True, verbose_name="Date of Incorp/Formation")
+    registration_number = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name="CIN / LLPIN / Reg No")
+    date_of_incorporation = models.DateField(
+        blank=True, null=True, verbose_name="Date of Incorp/Formation")
     registered_office_address = models.TextField(blank=True, null=True)
-    udyam_registration = models.CharField(max_length=100, blank=True, null=True, verbose_name="MSME/Udyam Reg")
+    udyam_registration = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="MSME/Udyam Reg")
 
     # --- Capital Info (Companies / LLP / OPC) ---
-    authorised_capital = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    authorised_capital = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
     paid_up_capital = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True,
                                           verbose_name="Paid-up Capital / Contribution")
 
     # --- Structure Counts ---
     number_of_directors = models.PositiveIntegerField(blank=True, null=True)
     number_of_shareholders = models.PositiveIntegerField(blank=True, null=True)
-    number_of_members = models.PositiveIntegerField(blank=True, null=True)  # For HUF, Section 8, OPC
+    number_of_members = models.PositiveIntegerField(
+        blank=True, null=True)  # For HUF, Section 8, OPC
 
     # --- Key Personnel Relationships ---
     # HUF Karta
@@ -133,14 +148,18 @@ class ClientBusinessProfile(models.Model):
     )
 
     # --- Specific Clauses ---
-    object_clause = models.TextField(blank=True, null=True, help_text="Main Objects / Business Activity")
-    is_section8_license_obtained = models.BooleanField(default=False, verbose_name="Section 8 License Obtained?")
+    object_clause = models.TextField(
+        blank=True, null=True, help_text="Main Objects / Business Activity")
+    is_section8_license_obtained = models.BooleanField(
+        default=False, verbose_name="Section 8 License Obtained?")
 
     # --- Documents (Generic Slots) ---
     # Document 1: MOA / LLP Agreement / HUF Deed / Partnership Deed
-    constitution_document_1 = models.FileField(upload_to='entity_docs/const_1/', blank=True, null=True)
+    constitution_document_1 = models.FileField(
+        upload_to='entity_docs/const_1/', blank=True, null=True)
     # Document 2: AOA / By-Laws
-    constitution_document_2 = models.FileField(upload_to='entity_docs/const_2/', blank=True, null=True)
+    constitution_document_2 = models.FileField(
+        upload_to='entity_docs/const_2/', blank=True, null=True)
 
     def __str__(self):
         return f"Profile: {self.client.client_name}"
@@ -148,14 +167,18 @@ class ClientBusinessProfile(models.Model):
 # -------------------------
 # Client User Mapping
 # -------------------------
+
+
 class ClientUserEntitle(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='client_mappings')
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='client_mappings')
     clients = models.ManyToManyField(Client, related_name='user_mappings')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        client_names = ", ".join([client.client_name for client in self.clients.all()[:3]])
+        client_names = ", ".join(
+            [client.client_name for client in self.clients.all()[:3]])
         if self.clients.count() > 3:
             client_names += f" and {self.clients.count() - 3} more"
         return f"{self.user.username} - {client_names}"
@@ -175,11 +198,13 @@ class DocumentMaster(models.Model):
 
 class DocumentRequest(models.Model):
     # Represents a document collection cycle for one client (or optionally all clients)
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='document_requests')
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name='document_requests')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     due_date = models.DateField()
-    created_by = models.ForeignKey(User, related_name='created_requests', on_delete=models.SET_NULL, null=True)
+    created_by = models.ForeignKey(
+        User, related_name='created_requests', on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     for_all_clients = models.BooleanField(default=False)
@@ -193,8 +218,10 @@ class DocumentRequest(models.Model):
 
 
 class RequestedDocument(models.Model):
-    document_request = models.ForeignKey(DocumentRequest, related_name='required_documents', on_delete=models.CASCADE)
-    document_master = models.ForeignKey(DocumentMaster, on_delete=models.PROTECT)
+    document_request = models.ForeignKey(
+        DocumentRequest, related_name='required_documents', on_delete=models.CASCADE)
+    document_master = models.ForeignKey(
+        DocumentMaster, on_delete=models.PROTECT)
 
     class Meta:
         unique_together = ('document_request', 'document_master')
@@ -210,13 +237,17 @@ class ClientDocumentUpload(models.Model):
         ('Overdue', 'Overdue'),
     ]
 
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='document_uploads')
-    requested_document = models.ForeignKey(RequestedDocument, related_name='uploads', on_delete=models.CASCADE)
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name='document_uploads')
+    requested_document = models.ForeignKey(
+        RequestedDocument, related_name='uploads', on_delete=models.CASCADE)
     uploaded_file = models.FileField(upload_to='client_documents/%Y/%m/%d/')
     upload_date = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='Pending')
     remarks = models.TextField(blank=True, null=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, help_text="User who uploaded the document")
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL,
+                                    null=True, blank=True, help_text="User who uploaded the document")
 
     def save(self, *args, **kwargs):
         if self.uploaded_file:
@@ -262,30 +293,38 @@ class Task(models.Model):
     ]
 
     # --- Core Links ---
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='tasks')
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_tasks')
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name='tasks')
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name='created_tasks')
 
     # CHANGED: Multi-User Assignment
-    assignees = models.ManyToManyField(User, related_name='assigned_tasks', blank=True)
+    assignees = models.ManyToManyField(
+        User, related_name='assigned_tasks', blank=True)
 
     # --- Task Details ---
-    service_type = models.CharField(max_length=50, choices=SERVICE_TYPE_CHOICES)
+    service_type = models.CharField(
+        max_length=50, choices=SERVICE_TYPE_CHOICES)
     task_title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
 
     # --- Dates & Status ---
     due_date = models.DateField()
     completed_date = models.DateField(blank=True, null=True)
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='Medium')
+    priority = models.CharField(
+        max_length=20, choices=PRIORITY_CHOICES, default='Medium')
 
     # Current Overall Stage (Controlled by Workflow)
-    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
+    status = models.CharField(
+        max_length=50, choices=STATUS_CHOICES, default='Pending')
 
     # --- Recurrence & Financials ---
     is_recurring = models.BooleanField(default=False)
-    recurrence_period = models.CharField(max_length=20, choices=RECURRENCE_CHOICES, default='None')
+    recurrence_period = models.CharField(
+        max_length=20, choices=RECURRENCE_CHOICES, default='None')
 
-    agreed_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    agreed_fee = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0.00)
     fee_status = models.CharField(max_length=20, default='Unbilled', choices=[
         ('Unbilled', 'Unbilled'), ('Billed', 'Billed'), ('Paid', 'Paid')
     ])
@@ -313,7 +352,8 @@ class TaskAssignmentStatus(models.Model):
     Tracks individual completion for the CURRENT status workflow step.
     This allows 'Collaboration': 2 people assigned, both must finish before task moves.
     """
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='assignment_statuses')
+    task = models.ForeignKey(
+        Task, on_delete=models.CASCADE, related_name='assignment_statuses')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     # Which status workflow step are they working on?
@@ -323,6 +363,7 @@ class TaskAssignmentStatus(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
+
     class Meta:
         unique_together = ('task', 'user', 'status_context')
         ordering = ['order']
@@ -336,7 +377,8 @@ class TaskStatusLog(models.Model):
     """
     Tracks the history of status changes to calculate aging and who moved it.
     """
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='status_logs')
+    task = models.ForeignKey(
+        Task, on_delete=models.CASCADE, related_name='status_logs')
     old_status = models.CharField(max_length=50)
     new_status = models.CharField(max_length=50)
     changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
@@ -351,22 +393,29 @@ class TaskExtendedAttributes(models.Model):
     """
     SUPERSET TABLE: Contains fields for ALL possible service types.
     """
-    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name='extended_attributes')
+    task = models.OneToOneField(
+        Task, on_delete=models.CASCADE, related_name='extended_attributes')
 
     # --- Financials ---
     period_month = models.CharField(max_length=20, blank=True, null=True)
     period_year = models.CharField(max_length=10, blank=True, null=True)
     financial_year = models.CharField(max_length=10, blank=True, null=True)
     assessment_year = models.CharField(max_length=10, blank=True, null=True)
-    total_turnover = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    gross_total_income = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    tax_payable = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    refund_amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    audit_fee = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    total_turnover = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    gross_total_income = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    tax_payable = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    refund_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    audit_fee = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
 
     # --- Identifiers ---
     pan_number = models.CharField(max_length=20, blank=True, null=True)
-    gstin_number = models.ForeignKey(GSTDetails, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
+    gstin_number = models.ForeignKey(
+        GSTDetails, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
     ack_number = models.CharField(max_length=50, blank=True, null=True)
     arn_number = models.CharField(max_length=50, blank=True, null=True)
     udin_number = models.CharField(max_length=50, blank=True, null=True)
@@ -379,10 +428,13 @@ class TaskExtendedAttributes(models.Model):
     meeting_date = models.DateField(blank=True, null=True)
 
     # --- Files ---
-    json_file = models.FileField(upload_to='tasks/json/', blank=True, null=True)
-    computation_file = models.FileField(upload_to='tasks/computations/', blank=True, null=True)
+    json_file = models.FileField(
+        upload_to='tasks/json/', blank=True, null=True)
+    computation_file = models.FileField(
+        upload_to='tasks/computations/', blank=True, null=True)
     ack_file = models.FileField(upload_to='tasks/ack/', blank=True, null=True)
-    audit_report_file = models.FileField(upload_to='tasks/audit_reports/', blank=True, null=True)
+    audit_report_file = models.FileField(
+        upload_to='tasks/audit_reports/', blank=True, null=True)
 
     GST_RETURN_TYPES = [
         ('GSTR-1', 'GSTR-1'),
@@ -401,20 +453,30 @@ class TaskExtendedAttributes(models.Model):
     )
 
     # Granular Tax Breakup
-    taxable_value = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    igst_amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    cgst_amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    sgst_amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    cess_amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    taxable_value = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    igst_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    cgst_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    sgst_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    cess_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
 
     # Input Tax Credit (ITC)
-    itc_available = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    itc_claimed = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    itc_available = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    itc_claimed = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
 
     # Penalties & Payments
-    late_fee_amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    interest_amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
-    challan_amount = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    late_fee_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    interest_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
+    challan_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, blank=True, null=True)
     challan_date = models.DateField(blank=True, null=True)
 
     def __str__(self):
@@ -422,16 +484,17 @@ class TaskExtendedAttributes(models.Model):
 
 
 class TaskComment(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
+    task = models.ForeignKey(
+        Task, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 class TaskDocument(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='documents')
+    task = models.ForeignKey(
+        Task, on_delete=models.CASCADE, related_name='documents')
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
     file = models.FileField(upload_to='task_documents/%Y/%m/')
     description = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-

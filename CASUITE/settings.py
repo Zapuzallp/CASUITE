@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+from import_export.formats.base_formats import CSV
 import os
 
 from pathlib import Path
@@ -39,6 +40,7 @@ INSTALLED_APPS = [
     "rangefilter",
     'django_admin_listfilter_dropdown',
     'django_apscheduler',
+    'office',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -135,7 +137,6 @@ SIMPLEUI_DEFAULT_THEME = 'purple.css'
 LANGUAGE_CODE = 'en-us'
 USE_I18N = True
 USE_L10N = True
-from import_export.formats.base_formats import CSV
 
 IMPORT_FORMATS = [CSV]
 EXPORT_FORMATS = [CSV]
