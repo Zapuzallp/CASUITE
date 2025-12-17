@@ -59,6 +59,35 @@ class ClientAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     autocomplete_fields = ("assigned_ca", "created_by")
 
+    # CORE: restrict visible clients
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+
+        # Admin / superuser sees everything
+        if request.user.is_superuser:
+            return qs
+
+        # Normal staff → only entitled clients
+        return qs.filter(
+            user_mappings__user=request.user
+        ).distinct()
+
+    # Prevent direct URL access to other clients
+    def has_view_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return True
+
+        if obj is None:
+            return True
+
+        return obj.user_mappings.filter(user=request.user).exists()
+
+    def has_change_permission(self, request, obj=None):
+        return self.has_view_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        return self.has_view_permission(request, obj)
+
 
 @admin.register(ClientBusinessProfile)
 class ClientBusinessProfileAdmin(admin.ModelAdmin):

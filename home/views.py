@@ -142,10 +142,3 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         return context
 
-
-class ClientView(LoginRequiredMixin, ListView):
-    """View for displaying client list page"""
-    model = Client
-    template_name = 'client/clients_all.html'
-    context_object_name = 'clients'
-    paginate_by = 10
