@@ -151,70 +151,56 @@
                     <div class="card-body text-center">
 
                         <h5 class="card-title">
-                            Attendance <span>| Today</span>
+                            Attendance
+                            {% if attendance and attendance.clock_in %}
+                                <span class="text-muted">
+                                    | {{ attendance.clock_in|date:"l, d M Y" }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">| Today</span>
+                            {% endif %}
                         </h5>
 
-                        {% if attendance %}
-                            {% if attendance.clock_in and not attendance.clock_out %}
+                        {% if attendance and attendance.clock_in and not attendance.clock_out %}
 
-                                <div class="mb-2 text-muted small">
-                                    Clocked In At
+                            <div class="mb-2 text-muted small">Clocked In At</div>
+
+                            <h6 class="fw-bold text-primary">
+                                {{ attendance.clock_in|date:"h:i A" }}
+                            </h6>
+
+                            {% if attendance.location_name %}
+                                <div class="small text-muted mb-3">
+                                    <i class="bi bi-geo-alt"></i>
+                                    {{ attendance.location_name }}
                                 </div>
-
-                                <h6 class="fw-bold text-primary">
-                                    {{ attendance.clock_in|date:"h:i A" }}
-                                </h6>
-
-                                {% if attendance.location_name %}
-                                    <div class="small text-muted mb-3">
-                                        <i class="bi bi-geo-alt"></i>
-                                        {{ attendance.location_name }}
-                                    </div>
-                                {% endif %}
-
-                                <form method="post" action="{% url 'clock_out' %}">
-                                    {% csrf_token %}
-                                    <button class="btn btn-danger btn-sm rounded-pill px-4">
-                                        <i class="bi bi-box-arrow-right me-1"></i>
-                                        Clock Out
-                                    </button>
-                                </form>
-
-                            {% elif attendance.clock_out %}
-
-                                <div class="avatar-circle mx-auto bg-success text-white mb-3"
-                                    style="width:60px;height:60px;font-size:1.5rem;">
-                                    <i class="bi bi-check-lg"></i>
-                                </div>
-
-                                <h6 class="fw-bold text-success">
-                                    Attendance Completed
-                                </h6>
-
-                                <div class="small text-muted">
-                                    {{ attendance.duration }}
-                                </div>
-
-                            {% else %}
-
-                                <form method="post" action="{% url 'clock_in' %}">
-                                    {% csrf_token %}
-                                    <button class="btn btn-success btn-sm rounded-pill px-4">
-                                        <i class="bi bi-box-arrow-in-right me-1"></i>
-                                        Clock In
-                                    </button>
-                                </form>
-
                             {% endif %}
+
+                            <button class="btn btn-danger btn-sm rounded-pill px-4"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#clockOutModal">
+                                <i class="bi bi-box-arrow-right me-1"></i>
+                                Clock Out
+                            </button>
+
+                        {% elif attendance and attendance.clock_out %}
+
+                            <div class="avatar-circle mx-auto bg-success text-white mb-3"
+                                style="width:60px;height:60px;font-size:1.5rem;">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+
+                            <h6 class="fw-bold text-success">Attendance Completed</h6>
+                            <div class="small text-muted">{{ attendance.formatted_duration }}</div>
+
                         {% else %}
 
-                            <form method="post" action="{% url 'clock_in' %}">
-                                {% csrf_token %}
-                                <button class="btn btn-success btn-sm rounded-pill px-4">
-                                    <i class="bi bi-box-arrow-in-right me-1"></i>
-                                    Clock In
-                                </button>
-                            </form>
+                            <button class="btn btn-success btn-sm rounded-pill px-4"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#clockInModal">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>
+                                Clock In
+                            </button>
 
                         {% endif %}
 
@@ -229,7 +215,6 @@
                     </div>
                 </div>
             </div>
-
 
             <div class="row g-4 mb-4">
 
@@ -455,4 +440,253 @@
 
         });
     </script>
+
+    <div class="modal fade" id="clockInModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+
+                <form method="post" action="{% url 'clock_in' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="lat" id="clockin-lat">
+                    <input type="hidden" name="long" id="clockin-long">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Clock In</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p class="text-muted">
+                            <i class="bi bi-clock"></i>
+                            {{ now|date:"l, d M Y, h:i A" }}
+                        </p>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Location</label>
+                                <select class="form-select" name="location_name" required>
+                                    <option value="">Select</option>
+                                    <option>Kolkata</option>
+                                    <option>Hyderabad</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Working From</label>
+                                <select class="form-select" name="working_from" required>
+                                    <option>Home</option>
+                                    <option>Office</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Clock In
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="clockOutModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+
+                <form method="post" action="{% url 'clock_out' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="lat" id="clockout-lat">
+                    <input type="hidden" name="long" id="clockout-long">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Attendance Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row">
+
+                            <div class="col-md-6 text-center">
+                                <h6>
+                                    Date – {{ attendance.clock_in|date:"l, d M Y" }}
+                                </h6>
+
+                                <p class="mt-3">Clock In</p>
+                                <h5>{{ attendance.clock_in|date:"h:i A" }}</h5>
+
+                                <div class="my-4">
+                                    <h4>{{ attendance.duration|default:"Running..." }}</h4>
+                                </div>
+
+                                <p class="text-muted">
+                                    Current Time:
+                                    <strong><span id="currentTime">--:--</span></strong>
+                                </p>
+
+                            </div>
+
+                            <div class="col-md-6">
+                                <h6>Activity</h6>
+
+                                <ul class="list-unstyled">
+                                    <li>
+                                        ✔ Clock In –
+                                        {{ attendance.clock_in|date:"d M Y h:i A" }}
+                                    </li>
+                                    <li class="text-muted">
+                                        ⏳ Clock Out – Pending
+                                    </li>
+                                </ul>
+
+                                <hr>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label>Location</label>
+                                        <select class="form-select" name="location_name">
+                                            <option>{{ attendance.location_name }}</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label>Working From</label>
+                                        <select class="form-select" name="working_from">
+                                            <option>Office</option>
+                                            <option>Home</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-danger">
+                            Clock Out
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GEO LOCATION (CLOCK IN / OUT)
+        function getUserLocation(successCallback) {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    successCallback(
+                        parseFloat(position.coords.latitude),
+                        parseFloat(position.coords.longitude)
+                    );
+                },
+                function () {
+                    alert("Location access denied. Please allow location.");
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        // CLOCK IN HANDLER
+        document.getElementById("clockInModal")?.addEventListener("show.bs.modal", function () {
+            getUserLocation(function (lat, long) {
+                document.getElementById("clockin-lat").value = lat || null;
+                document.getElementById("clockin-long").value = long || null;
+            });
+        });
+
+        // CLOCK OUT HANDLER
+        document.getElementById("clockOutModal")?.addEventListener("show.bs.modal", function () {
+            getUserLocation(function (lat, long) {
+                document.getElementById("clockout-lat").value = lat || null;
+                document.getElementById("clockout-long").value = long || null;
+            });
+        });
+
+        // LIVE TIMER (CLOCK OUT POPUP)
+        {% if attendance and attendance.clock_in and not attendance.clock_out %}
+        (function () {
+            const clockInTime = new Date("{{ attendance.clock_in|date:'Y-m-d H:i:s' }}");
+
+            function updateDuration() {
+                const now = new Date();
+                let diff = Math.floor((now - clockInTime) / 1000);
+
+                const hours = Math.floor(diff / 3600);
+                diff %= 3600;
+                const minutes = Math.floor(diff / 60);
+                const seconds = diff % 60;
+
+                const text =
+                    (hours ? hours + "h " : "") +
+                    minutes + "m " +
+                    seconds + "s";
+
+                const el = document.querySelector("#clockOutModal h4");
+                if (el) el.innerText = text;
+            }
+
+            setInterval(updateDuration, 1000);
+        })();
+        {% endif %}
+
+        // LIVE CURRENT TIME (inside modals)
+        function startLiveClock(elId) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+
+            function update() {
+                const now = new Date();
+                el.innerText = now.toLocaleTimeString("en-IN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: true
+                });
+            }
+
+            update();
+            return setInterval(update, 1000);
+        }
+
+        let clockInterval;
+
+        // Start clock ONLY when Clock-Out modal opens
+        document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
+            clockInterval = startLiveClock("currentTime");
+        });
+
+        // Stop clock when modal closes
+        document.getElementById("clockOutModal")?.addEventListener("hidden.bs.modal", function () {
+            clearInterval(clockInterval);
+        });
+
+        // Optional: Start live clock for Clock-In modal as well
+        document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
+            clockInterval = startLiveClock("currentTime");
+        });
+        document.getElementById("clockInModal")?.addEventListener("hidden.bs.modal", function () {
+            clearInterval(clockInterval);
+        });
+    </script>
+
+
+
 {% endblock body %}

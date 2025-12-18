@@ -435,7 +435,7 @@ class TaskDocument(models.Model):
     description = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-from datetime import timedelta
+from datetime import time, date, timedelta
 
 class Attendance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -454,20 +454,57 @@ class Attendance(models.Model):
     remark = models.CharField(max_length=255, null=True, blank=True)
 
     location_name = models.CharField(max_length=255, null=True, blank=True)
+    clock_in_lat = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    clock_in_long = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    clock_out_lat = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    clock_out_long = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+
+    requires_approval = models.BooleanField(default=False)
+    approved_by_admin = models.BooleanField(default=False)
+
 
     class Meta:
         unique_together = ('user', 'date')
 
     def save(self, *args, **kwargs):
         if self.clock_in and self.clock_out:
+            # Ensure clock_out is always after clock_in
+            if self.clock_out < self.clock_in:
+                self.clock_out += timedelta(days=1)  # adjust for cross-day clock-out
+
             self.duration = self.clock_out - self.clock_in
             self.status = "Present"
         elif self.clock_in and not self.clock_out:
             self.status = "Incomplete"
+            self.duration = None
         else:
             self.status = "Absent"
+            self.duration = None
 
         super().save(*args, **kwargs)
+    
+    def formatted_duration(self):
+        if not self.duration:
+            return "-"
+
+        total_seconds = int(self.duration.total_seconds())
+
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+        return f"{minutes}m {seconds}s"
+
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"

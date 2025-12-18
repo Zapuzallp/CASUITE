@@ -334,8 +334,8 @@ class AttendanceAdmin(admin.ModelAdmin):
         "clock_out",
         "duration",
         "status",
+        "requires_approval",
         "location_name",
     )
-    list_filter = ("status", "date")
+    list_filter = ("status", "requires_approval", "date")
     search_fields = ("user__username", "location_name")
-    ordering = ("-date",)
