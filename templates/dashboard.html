@@ -447,8 +447,11 @@
 
                 <form method="post" action="{% url 'clock_in' %}">
                     {% csrf_token %}
+
+                    <!-- Hidden GPS Fields -->
                     <input type="hidden" name="lat" id="clockin-lat">
                     <input type="hidden" name="long" id="clockin-long">
+                    <input type="hidden" name="location_name" id="clockin-location">
 
                     <div class="modal-header">
                         <h5 class="modal-title">Clock In</h5>
@@ -456,29 +459,22 @@
                     </div>
 
                     <div class="modal-body">
-                        <p class="text-muted">
+
+                        <p class="text-muted mb-2">
                             <i class="bi bi-clock"></i>
                             {{ now|date:"l, d M Y, h:i A" }}
                         </p>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label class="form-label">Location</label>
-                                <select class="form-select" name="location_name" required>
-                                    <option value="">Select</option>
-                                    <option>Kolkata</option>
-                                    <option>Hyderabad</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Working From</label>
-                                <select class="form-select" name="working_from" required>
-                                    <option>Home</option>
-                                    <option>Office</option>
-                                </select>
-                            </div>
+                        <!-- MAP -->
+                        <div id="clockInMap"
+                            style="height:200px"
+                            class="rounded border mb-3">
                         </div>
+
+                        <p class="small text-muted text-center">
+                            Location is captured automatically
+                        </p>
+
                     </div>
 
                     <div class="modal-footer">
@@ -501,8 +497,11 @@
 
                 <form method="post" action="{% url 'clock_out' %}">
                     {% csrf_token %}
+
+                    <!-- Hidden GPS Fields -->
                     <input type="hidden" name="lat" id="clockout-lat">
                     <input type="hidden" name="long" id="clockout-long">
+                    <input type="hidden" name="location_name" id="clockout-location">
 
                     <div class="modal-header">
                         <h5 class="modal-title">Attendance Details</h5>
@@ -512,57 +511,38 @@
                     <div class="modal-body">
                         <div class="row">
 
+                            <!-- LEFT -->
                             <div class="col-md-6 text-center">
                                 <h6>
-                                    Date – {{ attendance.clock_in|date:"l, d M Y" }}
+                                    {{ attendance.clock_in|date:"l, d M Y" }}
                                 </h6>
 
                                 <p class="mt-3">Clock In</p>
                                 <h5>{{ attendance.clock_in|date:"h:i A" }}</h5>
 
                                 <div class="my-4">
-                                    <h4>{{ attendance.duration|default:"Running..." }}</h4>
+                                    <h4 id="runningDuration">Running…</h4>
                                 </div>
 
                                 <p class="text-muted">
                                     Current Time:
                                     <strong><span id="currentTime">--:--</span></strong>
                                 </p>
-
                             </div>
 
+                            <!-- RIGHT -->
                             <div class="col-md-6">
-                                <h6>Activity</h6>
+                                <h6>Location</h6>
 
-                                <ul class="list-unstyled">
-                                    <li>
-                                        ✔ Clock In –
-                                        {{ attendance.clock_in|date:"d M Y h:i A" }}
-                                    </li>
-                                    <li class="text-muted">
-                                        ⏳ Clock Out – Pending
-                                    </li>
-                                </ul>
-
-                                <hr>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <label>Location</label>
-                                        <select class="form-select" name="location_name">
-                                            <option>{{ attendance.location_name }}</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label>Working From</label>
-                                        <select class="form-select" name="working_from">
-                                            <option>Office</option>
-                                            <option>Home</option>
-                                        </select>
-                                    </div>
+                                <!-- MAP -->
+                                <div id="clockOutMap"
+                                    style="height:200px"
+                                    class="rounded border mb-3">
                                 </div>
 
+                                <p class="small text-muted">
+                                    Location captured automatically
+                                </p>
                             </div>
 
                         </div>
@@ -582,72 +562,47 @@
         </div>
     </div>
 
-    <script>
-        // GEO LOCATION (CLOCK IN / OUT)
-        function getUserLocation(successCallback) {
-            if (!navigator.geolocation) {
-                alert("Geolocation is not supported by your browser");
-                return;
-            }
 
-            navigator.geolocation.getCurrentPosition(
-                function (position) {
-                    successCallback(
-                        parseFloat(position.coords.latitude),
-                        parseFloat(position.coords.longitude)
-                    );
-                },
-                function () {
-                    alert("Location access denied. Please allow location.");
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
+    <script>
+        function initMap(mapId, latInput, longInput, locationInput) {
+            navigator.geolocation.getCurrentPosition(async function (pos) {
+                const lat = pos.coords.latitude;
+                const long = pos.coords.longitude;
+
+                document.getElementById(latInput).value = lat;
+                document.getElementById(longInput).value = long;
+
+                // Reverse geocode
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${long}`
+                );
+                const data = await res.json();
+                document.getElementById(locationInput).value =
+                    data.display_name || "Unknown location";
+
+                // Init map
+                const map = L.map(mapId).setView([lat, long], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+
+                L.marker([lat, long]).addTo(map)
+                    .bindPopup("You are here")
+                    .openPopup();
+            }, function () {
+                alert("Please allow location access.");
+            });
         }
 
-        // CLOCK IN HANDLER
-        document.getElementById("clockInModal")?.addEventListener("show.bs.modal", function () {
-            getUserLocation(function (lat, long) {
-                document.getElementById("clockin-lat").value = lat || null;
-                document.getElementById("clockin-long").value = long || null;
-            });
+        // Clock In
+        document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
+            initMap("clockInMap", "clockin-lat", "clockin-long", "clockin-location");
         });
 
-        // CLOCK OUT HANDLER
-        document.getElementById("clockOutModal")?.addEventListener("show.bs.modal", function () {
-            getUserLocation(function (lat, long) {
-                document.getElementById("clockout-lat").value = lat || null;
-                document.getElementById("clockout-long").value = long || null;
-            });
+        // Clock Out
+        document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
+            initMap("clockOutMap", "clockout-lat", "clockout-long", "clockout-location");
         });
-
-        // LIVE TIMER (CLOCK OUT POPUP)
-        {% if attendance and attendance.clock_in and not attendance.clock_out %}
-        (function () {
-            const clockInTime = new Date("{{ attendance.clock_in|date:'Y-m-d H:i:s' }}");
-
-            function updateDuration() {
-                const now = new Date();
-                let diff = Math.floor((now - clockInTime) / 1000);
-
-                const hours = Math.floor(diff / 3600);
-                diff %= 3600;
-                const minutes = Math.floor(diff / 60);
-                const seconds = diff % 60;
-
-                const text =
-                    (hours ? hours + "h " : "") +
-                    minutes + "m " +
-                    seconds + "s";
-
-                const el = document.querySelector("#clockOutModal h4");
-                if (el) el.innerText = text;
-            }
-
-            setInterval(updateDuration, 1000);
-        })();
-        {% endif %}
-
-        // LIVE CURRENT TIME (inside modals)
         function startLiveClock(elId) {
             const el = document.getElementById(elId);
             if (!el) return;
@@ -666,27 +621,45 @@
             return setInterval(update, 1000);
         }
 
-        let clockInterval;
+        let clockInterval = null;
 
-        // Start clock ONLY when Clock-Out modal opens
-        document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
-            clockInterval = startLiveClock("currentTime");
-        });
+        document.addEventListener("DOMContentLoaded", function () {
 
-        // Stop clock when modal closes
-        document.getElementById("clockOutModal")?.addEventListener("hidden.bs.modal", function () {
-            clearInterval(clockInterval);
-        });
+            const clockOutModal = document.getElementById("clockOutModal");
 
-        // Optional: Start live clock for Clock-In modal as well
-        document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
-            clockInterval = startLiveClock("currentTime");
-        });
-        document.getElementById("clockInModal")?.addEventListener("hidden.bs.modal", function () {
-            clearInterval(clockInterval);
+            if (clockOutModal) {
+                clockOutModal.addEventListener("shown.bs.modal", function () {
+                    clockInterval = startLiveClock("currentTime");
+                });
+
+                clockOutModal.addEventListener("hidden.bs.modal", function () {
+                    if (clockInterval) clearInterval(clockInterval);
+                });
+            }
+            {% if attendance and attendance.clock_in and not attendance.clock_out %}
+            const clockInTime = new Date("{{ attendance.clock_in|date:'Y-m-d H:i:s' }}");
+
+            function updateRunningDuration() {
+                const now = new Date();
+                let diff = Math.floor((now - clockInTime) / 1000);
+
+                const hours = Math.floor(diff / 3600);
+                diff %= 3600;
+                const minutes = Math.floor(diff / 60);
+                const seconds = diff % 60;
+
+                let text = "";
+                if (hours) text += hours + "h ";
+                text += minutes + "m " + seconds + "s";
+
+                const el = document.getElementById("runningDuration");
+                if (el) el.innerText = text;
+            }
+
+            setInterval(updateRunningDuration, 1000);
+            updateRunningDuration();
+            {% endif %}
         });
     </script>
-
-
 
 {% endblock body %}

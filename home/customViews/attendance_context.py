@@ -1,4 +1,5 @@
 from datetime import date
+from django.utils import timezone
 from home.models import Attendance
 
 def attendance_context(request):
@@ -11,5 +12,6 @@ def attendance_context(request):
         attendance = None
 
     return {
-        "attendance": attendance
+        "attendance": attendance,
+        "now": timezone.now(),
     }

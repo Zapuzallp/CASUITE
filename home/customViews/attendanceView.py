@@ -28,8 +28,14 @@ class ClockInView(LoginRequiredMixin, View):
         )
 
         if not attendance.clock_in:
+            lat = request.POST.get("lat")
+            long = request.POST.get("long")
+            location_name = request.POST.get("location_name")
+
             attendance.clock_in = timezone.now()
-            attendance.location_name = request.POST.get("location_name", "")
+            attendance.clock_in_lat = lat
+            attendance.clock_in_long = long
+            attendance.location_name = location_name
             attendance.save()
 
         return redirect("dashboard")
@@ -41,7 +47,6 @@ class ClockOutView(LoginRequiredMixin, View):
     def post(self, request):
         lat = request.POST.get("lat")
         long = request.POST.get("long")
-        location_name = request.POST.get("location_name")
 
         # Get last open attendance
         attendance = Attendance.objects.filter(
@@ -63,19 +68,33 @@ class ClockOutView(LoginRequiredMixin, View):
             attendance.remark = "Auto clock-out (forgot to clock out)"
             attendance.requires_approval = True
         else:
-            # Normal same-day clock-out
             attendance.clock_out = now
 
+        # Save clock-out location
         attendance.clock_out_lat = lat
         attendance.clock_out_long = long
 
-        # Approval logic (location mismatch)
-        if attendance.location_name != location_name:
-            attendance.requires_approval = True
-            if attendance.remark:
-                attendance.remark += " | Location mismatch"
-            else:
-                attendance.remark = "Clock-in and Clock-out locations differ"
+        # 📏 Distance validation (PM requirement)
+        if (
+            attendance.clock_in_lat
+            and attendance.clock_in_long
+            and attendance.clock_out_lat
+            and attendance.clock_out_long
+        ):
+            distance = get_distance(
+                float(attendance.clock_in_lat),
+                float(attendance.clock_in_long),
+                float(attendance.clock_out_lat),
+                float(attendance.clock_out_long),
+            )
+
+            if distance > 100:
+                attendance.requires_approval = True
+
+                if attendance.remark:
+                    attendance.remark += f" | Location mismatch ({int(distance)}m)"
+                else:
+                    attendance.remark = f"Location mismatch ({int(distance)}m)"
 
         attendance.save()
         return redirect("dashboard")
