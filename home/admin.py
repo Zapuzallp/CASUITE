@@ -16,6 +16,7 @@ from .models import (
     TaskComment,
     TaskDocument,
     GSTDetails,
+    Employee,
 )
 
 
@@ -180,7 +181,6 @@ class TaskAdmin(admin.ModelAdmin):
         "status",
         "priority",
         "due_date",
-        "is_recurring",
         "recurrence_period",
         "agreed_fee",
         "fee_status",
@@ -191,7 +191,6 @@ class TaskAdmin(admin.ModelAdmin):
         "service_type",
         "status",
         "priority",
-        "is_recurring",
         "recurrence_period",
         "fee_status",
         "due_date",
@@ -339,3 +338,33 @@ class AttendanceAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "requires_approval", "date")
     search_fields = ("user__username", "location_name")
+
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "designation",
+        "personal_phone",
+        "work_phone",
+        "personal_email",
+        "created_at",
+    )
+
+    list_filter = (
+        "designation",
+        "created_at",
+    )
+
+    search_fields = (
+        "user__username",
+        "user__first_name",
+        "user__last_name",
+        "personal_email",
+        "personal_phone",
+        "work_phone",
+    )
+
+    autocomplete_fields = ("user",)
+
+    date_hierarchy = "created_at"

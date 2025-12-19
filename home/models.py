@@ -282,7 +282,6 @@ class Task(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
 
     # --- Recurrence & Financials ---
-    is_recurring = models.BooleanField(default=False)
     recurrence_period = models.CharField(max_length=20, choices=RECURRENCE_CHOICES, default='None')
 
     agreed_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
@@ -508,3 +507,24 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
+
+
+#------------------------------------
+# Employee Details
+#------------------------------------
+
+class Employee(models.Model):
+    user = models.OneToOneField(User,on_delete=models.CASCADE,related_name='employee')
+    designation = models.CharField(max_length=255,blank=True,null=True)
+    personal_phone = models.CharField(max_length=20,blank=True,null=True)
+    work_phone = models.CharField(max_length=20,blank=True,null=True)
+    personal_email = models.EmailField(blank=True,null=True)
+    address = models.TextField(blank=True,null=True)
+    profile_pic = models.ImageField(upload_to='profile_pics/',blank=True,null=True  )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username}"
+
