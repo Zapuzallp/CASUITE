@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 # -------------------------
 from django.db import models
 from django.utils import timezone
+from django.db import models
+from django.contrib.auth.models import User
 
 
 # -------------------------
@@ -455,3 +457,37 @@ class Employee(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username}"
 
+# notification
+class Notification(models.Model):
+    TAG_CHOICES = (
+        ('info', 'Info'),
+        ('success', 'Success'),
+        ('warning', 'Warning'),
+        ('error', 'Error'),
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="notifications"
+    )
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    tag = models.CharField(
+        max_length=20,
+        choices=TAG_CHOICES,
+        default='info'
+    )
+    target_url = models.CharField(
+        max_length=255,
+        blank=True
+    )
+
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} → {self.user.username}"

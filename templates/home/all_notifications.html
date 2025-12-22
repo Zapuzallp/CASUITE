@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h4 class="mb-3">All Notifications</h4>
+
+    <ul class="list-group">
+        {% for n in notifications %}
+        <li class="list-group-item {% if not n.is_read %}fw-bold{% endif %}">
+            <a href="{% url 'view_notification' n.id %}" class="text-decoration-none">
+                <h6>{{ n.title }}</h6>
+                <p class="mb-1 text-muted">{{ n.message }}</p>
+                <small>{{ n.created_at }}</small>
+            </a>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-center text-muted">
+            No notifications
+        </li>
+        {% endfor %}
+    </ul>
+
+</div>
+{% endblock %}

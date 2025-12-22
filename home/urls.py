@@ -10,6 +10,14 @@ from home.views import (
     ClientView
 )
 
+from django.urls import path
+from home.customViews.notificationView import dashboard
+from home.customViews.notificationView import (
+    read_all_notifications,
+    view_notification,
+    all_notifications,
+)
+
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
     path('accounts/login/', authView.LoginView.as_view(), name='login'),
@@ -27,4 +35,9 @@ urlpatterns = [
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
+    path('', dashboard, name='dashboard'),
+    #NOTIFICATIONS
+    path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
+    path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
+    path("notifications/", all_notifications, name="all_notifications"),
 ]
