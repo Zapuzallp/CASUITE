@@ -255,7 +255,7 @@ class Task(models.Model):
     ]
 
     RECURRENCE_CHOICES = [
-        ('None', 'One-time'),
+        ('None', 'One-time (Not Recurring)'),
         ('Monthly', 'Monthly'),
         ('Quarterly', 'Quarterly'),
         ('Yearly', 'Yearly'),
