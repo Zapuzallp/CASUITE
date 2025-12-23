@@ -3,100 +3,99 @@
 {% load custom_filters %}
 
 {% block body %}
-<style>
-    /* Card Styles */
-    .card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0px 0 30px rgba(1, 41, 112, 0.05);
-        transition: all 0.3s ease-in-out;
-        /* Removed margin-bottom here to rely on Bootstrap g-4 spacing */
-    }
+    <style>
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0px 0 30px rgba(1, 41, 112, 0.05);
+            transition: all 0.3s ease-in-out;
+            /* Removed margin-bottom here to rely on Bootstrap g-4 spacing */
+        }
 
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 30px rgba(1, 41, 112, 0.1);
-    }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 30px rgba(1, 41, 112, 0.1);
+        }
 
-    /* Stats Icons */
-    .stat-card-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28px;
-    }
+        /* Stats Icons */
+        .stat-card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
 
-    /* Icon Colors */
-    .text-blue { color: #4154f1; background: #f6f9ff; }
-    .text-success { color: #2eca6a; background: #e0f8e9; }
-    .text-warning { color: #ff771d; background: #ffecdf; }
-    .text-danger { color: #dc3545; background: #fdf2f3; }
+        /* Icon Colors */
+        .text-blue { color: #4154f1; background: #f6f9ff; }
+        .text-success { color: #2eca6a; background: #e0f8e9; }
+        .text-warning { color: #ff771d; background: #ffecdf; }
+        .text-danger { color: #dc3545; background: #fdf2f3; }
 
-    /* Tables & Lists */
-    .table-borderless th { color: #899bbd; font-weight: 600; font-size: 0.85rem; }
-    .table-borderless td { vertical-align: middle; }
+        /* Tables & Lists */
+        .table-borderless th { color: #899bbd; font-weight: 600; font-size: 0.85rem; }
+        .table-borderless td { vertical-align: middle; }
 
-    .avatar-circle {
-        width: 36px; height: 36px;
-        border-radius: 50%;
-        background: #f6f9ff;
-        color: #4154f1;
-        font-weight: 700;
-        display: flex; align-items: center; justify-content: center;
-        border: 2px solid #fff;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
+        .avatar-circle {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: #f6f9ff;
+            color: #4154f1;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
 
-    .leaderboard-item {
-        padding: 12px 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-    .leaderboard-item:last-child { border-bottom: none; }
-</style>
+        .leaderboard-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .leaderboard-item:last-child { border-bottom: none; }
+    </style>
 
-<main class="main" id="main">
+    <main id="main" class="main">
 
-    <div class="pagetitle d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1>Dashboard</h1>
-            <nav>
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="#">Home</a></li>
-                    <li class="breadcrumb-item active">Overview</li>
-                </ol>
-            </nav>
-        </div>
-        <div class="d-flex gap-2">
+        <div class="pagetitle d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Dashboard</h1>
+                <nav>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#">Home</a></li>
+                        <li class="breadcrumb-item active">Overview</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="d-flex gap-2">
                 <span class="badge bg-white text-secondary border p-2 px-3 rounded-pill shadow-sm">
                     <i class="bi bi-calendar3 me-1"></i> {{ today|date:"M d, Y" }}
                 </span>
-            <a class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" href="{% url 'task_list' %}">
-                <i class="bi bi-plus-lg me-1"></i> New Task
-            </a>
+                <a href="{% url 'task_list' %}" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                    <i class="bi bi-plus-lg me-1"></i> New Task
+                </a>
+            </div>
         </div>
-    </div>
 
-    <section class="section dashboard">
-
-        <div class="row g-4 mb-4">
-            <div class="col-xxl-3 col-md-6">
-                <div class="card info-card sales-card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Tasks <span>| Pending</span></h5>
-                        <div class="d-flex align-items-center">
-                            <div class="stat-card-icon text-blue"><i class="bi bi-list-task"></i></div>
-                            <div class="ps-3">
-                                <h6>{{ pending_tasks }}</h6>
-                                <span class="text-success small pt-1 fw-bold">{{ review_tasks }}</span>
-                                <span class="text-muted small pt-2 ps-1">in review</span>
+        <section class="section dashboard">
+            <div class="row g-4 mb-4">
+                <div class="col-xxl-3 col-md-6">
+                    <div class="card info-card sales-card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Tasks <span>| Pending</span></h5>
+                            <div class="d-flex align-items-center">
+                                <div class="stat-card-icon text-blue"><i class="bi bi-list-task"></i></div>
+                                <div class="ps-3">
+                                    <h6>{{ pending_tasks }}</h6>
+                                    <span class="text-success small pt-1 fw-bold">{{ review_tasks }}</span>
+                                    <span class="text-muted small pt-2 ps-1">in review</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
             <div class="col-xxl-3 col-md-6">
                 <div class="card info-card revenue-card h-100">
@@ -118,18 +117,33 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-xxl-3 col-md-6">
-                <div class="card info-card customers-card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Clients <span>| Total</span></h5>
-                        <div class="d-flex align-items-center">
-                            <div class="stat-card-icon text-warning"><i class="bi bi-people"></i></div>
-                            <div class="ps-3">
-                                <h6>{{ total_clients }}</h6>
-                                <span class="text-success small pt-1 fw-bold">+{{ new_clients }}</span>
-                                <span class="text-muted small pt-2 ps-1">new</span>
+                <div class="col-xxl-3 col-md-6">
+                    <div class="card info-card customers-card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Clients <span>| Total</span></h5>
+                            <div class="d-flex align-items-center">
+                                <div class="stat-card-icon text-warning"><i class="bi bi-people"></i></div>
+                                <div class="ps-3">
+                                    <h6>{{ total_clients }}</h6>
+                                    <span class="text-success small pt-1 fw-bold">+{{ new_clients }}</span>
+                                    <span class="text-muted small pt-2 ps-1">new</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xxl-3 col-md-6">
+                    <div class="card info-card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">My Actions <span>| Urgent</span></h5>
+                            <div class="d-flex align-items-center">
+                                <div class="stat-card-icon text-danger"><i class="bi bi-exclamation-diamond"></i></div>
+                                <div class="ps-3">
+                                    <h6>{{ my_actions_count }}</h6>
+                                    <span class="text-muted small pt-2 ps-1">steps require input</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -138,244 +152,539 @@
 
             <div class="col-xxl-3 col-md-6">
                 <div class="card info-card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">My Actions <span>| Urgent</span></h5>
-                        <div class="d-flex align-items-center">
-                            <div class="stat-card-icon text-danger"><i class="bi bi-exclamation-diamond"></i></div>
-                            <div class="ps-3">
-                                <h6>{{ my_actions_count }}</h6>
-                                <span class="text-muted small pt-2 ps-1">steps require input</span>
+                    <div class="card-body text-center">
+
+                        <h5 class="card-title">
+                            Attendance
+                            {% if attendance and attendance.clock_in %}
+                                <span class="text-muted">
+                                    | {{ attendance.clock_in|date:"l, d M Y" }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">| Today</span>
+                            {% endif %}
+                        </h5>
+
+                        {% if attendance and attendance.clock_in and not attendance.clock_out %}
+
+                            <div class="mb-2 text-muted small">Clocked In At</div>
+
+                            <h6 class="fw-bold text-primary">
+                                {{ attendance.clock_in|date:"h:i A" }}
+                            </h6>
+
+                            {% if attendance.location_name %}
+                                <div class="small text-muted mb-3">
+                                    <i class="bi bi-geo-alt"></i>
+                                    {{ attendance.location_name }}
+                                </div>
+                            {% endif %}
+
+                            <button class="btn btn-danger btn-sm rounded-pill px-4"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#clockOutModal">
+                                <i class="bi bi-box-arrow-right me-1"></i>
+                                Clock Out
+                            </button>
+
+                        {% elif attendance and attendance.clock_out %}
+
+                            <div class="avatar-circle mx-auto bg-success text-white mb-3"
+                                style="width:60px;height:60px;font-size:1.5rem;">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+
+                            <h6 class="fw-bold text-success">Attendance Completed</h6>
+                            <div class="small text-muted">{{ attendance.formatted_duration }}</div>
+
+                        {% else %}
+
+                            <button class="btn btn-success btn-sm rounded-pill px-4"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#clockInModal">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>
+                                Clock In
+                            </button>
+
+                        {% endif %}
+
+                        <hr class="my-3">
+
+                        <a href="{% url 'attendance_logs' %}"
+                        class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                            <i class="bi bi-clock-history me-1"></i>
+                            View Logs
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Task Aging <span>| Open Items</span></h5>
+
+                            <div id="agingChart" style="min-height: 300px;" class="echart"></div>
+
+                            <div class="row text-center border-top pt-3 mt-2">
+                                <div class="col-3 border-end">
+                                    <h5 class="text-success m-0">{{ aging_data|get_item:'0-7 Days' }}</h5><small
+                                        class="text-muted">Fresh</small>
+                                </div>
+                                <div class="col-3 border-end">
+                                    <h5 class="text-primary m-0">{{ aging_data|get_item:'8-15 Days' }}</h5><small
+                                        class="text-muted">Active</small>
+                                </div>
+                                <div class="col-3 border-end">
+                                    <h5 class="text-warning m-0">{{ aging_data|get_item:'15-30 Days' }}</h5><small
+                                        class="text-muted">Stale</small>
+                                </div>
+                                <div class="col-3">
+                                    <h5 class="text-danger m-0">{{ aging_data|get_item:'30+ Days' }}</h5><small
+                                        class="text-muted">Critical</small>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+<div class="col-lg-6">
+    <div class="card h-100">
+        <div class="card-body">
+            <h5 class="card-title">
+                Client Distribution <span class="text-muted">| Type</span>
+            </h5>
+            <div id="clientTypeChart"
+                 style="min-height: 280px;"
+                 class="echart d-flex justify-content-center align-items-center">
             </div>
-        </div>
 
-        <div class="row g-4 mb-4">
-
-            <div class="col-lg-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Task Aging <span>| Open Items</span></h5>
-
-                        <div class="echart" id="agingChart" style="min-height: 300px;"></div>
-
-                        <div class="row text-center border-top pt-3 mt-2">
-                            <div class="col-3 border-end">
-                                <h5 class="text-success m-0">{{ aging_data|get_item:'0-7 Days' }}</h5><small
-                                    class="text-muted">Fresh</small>
-                            </div>
-                            <div class="col-3 border-end">
-                                <h5 class="text-primary m-0">{{ aging_data|get_item:'8-15 Days' }}</h5><small
-                                    class="text-muted">Active</small>
-                            </div>
-                            <div class="col-3 border-end">
-                                <h5 class="text-warning m-0">{{ aging_data|get_item:'15-30 Days' }}</h5><small
-                                    class="text-muted">Stale</small>
-                            </div>
-                            <div class="col-3">
-                                <h5 class="text-danger m-0">{{ aging_data|get_item:'30+ Days' }}</h5><small
-                                    class="text-muted">Critical</small>
-                            </div>
+            <div class="row text-center border-top pt-3 mt-2">
+                {% for item in client_distribution_chart_data %}
+                    <div class="col-2 mb-2 {% if not forloop.last %}border-end{% endif %}">
+                        <div class="fs-6 fw-semibold text-dark">
+                            {{ item.value }}
                         </div>
+                        <small class="text-muted">
+                            {{ item.name }}
+                        </small>
                     </div>
-                </div>
+                {% endfor %}
             </div>
 
-            <div class="col-lg-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Workload Mix <span>| By Service</span></h5>
-                        <div class="echart" id="serviceChart" style="min-height: 350px;"></div>
-                    </div>
-                </div>
-            </div>
         </div>
+    </div>
+</div>
 
-        <div class="row g-4 mb-4">
 
-            <div class="col-lg-8">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Waiting For You <span>| {{ my_actions_count }} Items</span></h5>
+            </div>
 
-                        <div class="list-group list-group-flush">
-                            {% for item in my_actionable_items %}
-                            <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="stat-card-icon me-3 bg-warning text-white rounded-3"
-                                         style="width:45px; height:45px; font-size:1.2rem;">
-                                        <i class="bi bi-exclamation-lg"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0 fw-bold text-dark">{{ item.task.task_title }}</h6>
-                                        <small class="text-muted">
-                                            {{ item.task.client.client_name }} •
-                                            <span class="text-primary">{{ item.task.status }}</span>
-                                        </small>
-                                        <div class="small text-danger mt-1">
-                                            <i class="bi bi-clock"></i> Due: {{ item.task.due_date|date:"M d" }}
+            <div class="row g-4 mb-4">
+
+                <div class="col-lg-8">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Waiting For You <span>| {{ my_actions_count }} Items</span></h5>
+
+                            <div class="list-group list-group-flush">
+                                {% for item in my_actionable_items %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="stat-card-icon me-3 bg-warning text-white rounded-3"
+                                                 style="width:45px; height:45px; font-size:1.2rem;">
+                                                <i class="bi bi-exclamation-lg"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold text-dark">{{ item.task.task_title }}</h6>
+                                                <small class="text-muted">
+                                                    {{ item.task.client.client_name }} •
+                                                    <span class="text-primary">{{ item.task.status }}</span>
+                                                </small>
+                                                <div class="small text-danger mt-1">
+                                                    <i class="bi bi-clock"></i> Due: {{ item.task.due_date|date:"M d" }}
+                                                </div>
+                                            </div>
                                         </div>
+                                        <a href="{% url 'task_detail' item.task.id %}"
+                                           class="btn btn-outline-primary btn-sm fw-bold">
+                                            Take Action <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
                                     </div>
-                                </div>
-                                <a class="btn btn-outline-primary btn-sm fw-bold"
-                                   href="{% url 'task_detail' item.task.id %}">
-                                    Take Action <i class="bi bi-arrow-right ms-1"></i>
-                                </a>
-                            </div>
-                            {% empty %}
-                            <div class="text-center py-5">
-                                <div class="avatar-circle mx-auto bg-success text-white mb-3"
-                                     style="width:60px; height:60px; font-size:1.5rem;">
-                                    <i class="bi bi-check-lg"></i>
-                                </div>
-                                <h6 class="fw-bold text-muted">All Caught Up!</h6>
-                                <p class="small text-muted">You have no pending actions assigned specifically to
-                                    you.</p>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Top Solvers <span>| Lifetime</span></h5>
-                        <div class="leaderboard mt-2">
-                            {% for solver in top_solvers %}
-                            <div class="leaderboard-item">
-                                <div class="d-flex align-items-center">
-                                    <span class="badge bg-light text-dark border me-3">{{ forloop.counter }}</span>
-                                    <div class="avatar-circle me-3 bg-primary text-white">{{
-                                        solver.first_name|slice:":1" }}
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0 fw-bold">{{ solver.first_name }}</h6>
-                                        <small class="text-muted">{{ solver.username }}</small>
-                                    </div>
-                                </div>
-                                <span class="badge bg-success bg-opacity-10 text-success">{{ solver.solved_count }} Done</span>
-                            </div>
-                            {% empty %}
-                            <div class="text-center text-muted py-4">No data yet.</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-12">
-                <div class="card recent-sales overflow-auto h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Recent Activity <span>| Global</span></h5>
-                        <table class="table table-borderless datatable">
-                            <thead>
-                            <tr>
-                                <th>Task</th>
-                                <th>Client</th>
-                                <th>Team</th>
-                                <th>Status</th>
-                                <th>View</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for task in recent_tasks %}
-                            <tr>
-                                <td class="fw-bold text-primary">{{ task.task_title }}</td>
-                                <td>{{ task.client.client_name }}</td>
-                                <td>
-                                    <div class="d-flex">
-                                        {% for user in task.assignees.all|slice:":3" %}
-                                        <div class="avatar-circle"
-                                             style="width:24px; height:24px; font-size:0.6rem; margin-right:-8px; border:1px solid #fff; background:#ccc; color:#fff;">
-                                            {{ user.first_name|slice:":1" }}
+                                {% empty %}
+                                    <div class="text-center py-5">
+                                        <div class="avatar-circle mx-auto bg-success text-white mb-3"
+                                             style="width:60px; height:60px; font-size:1.5rem;">
+                                            <i class="bi bi-check-lg"></i>
                                         </div>
-                                        {% endfor %}
+                                        <h6 class="fw-bold text-muted">All Caught Up!</h6>
+                                        <p class="small text-muted">You have no pending actions assigned specifically to
+                                            you.</p>
                                     </div>
-                                </td>
-                                <td>
-                                            <span class="badge rounded-pill 
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Top Solvers <span>| Lifetime</span></h5>
+                            <div class="leaderboard mt-2">
+                                {% for solver in top_solvers %}
+                                    <div class="leaderboard-item">
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-light text-dark border me-3">{{ forloop.counter }}</span>
+                                            <div class="avatar-circle me-3 bg-primary text-white">{{ solver.first_name|slice:":1" }}</div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold">{{ solver.first_name }}</h6>
+                                                <small class="text-muted">{{ solver.username }}</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-success bg-opacity-10 text-success">{{ solver.solved_count }} Done</span>
+                                    </div>
+                                {% empty %}
+                                    <div class="text-center text-muted py-4">No data yet.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card recent-sales overflow-auto h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Recent Activity <span>| Global</span></h5>
+                            <table class="table table-borderless datatable">
+                                <thead>
+                                    <tr>
+                                        <th>Task</th>
+                                        <th>Client</th>
+                                        <th>Team</th>
+                                        <th>Status</th>
+                                        <th>View</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for task in recent_tasks %}
+                                    <tr>
+                                        <td class="fw-bold text-primary">{{ task.task_title }}</td>
+                                        <td>{{ task.client.client_name }}</td>
+                                        <td>
+                                            <div class="d-flex">
+                                                {% for user in task.assignees.all|slice:":3" %}
+                                                    <div class="avatar-circle"
+                                                         style="width:24px; height:24px; font-size:0.6rem; margin-right:-8px; border:1px solid #fff; background:#ccc; color:#fff;">
+                                                        {{ user.first_name|slice:":1" }}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge rounded-pill
                                                 {% if task.status == 'Completed' %}bg-success
                                                 {% elif task.status == 'Review' %}bg-warning text-dark
                                                 {% else %}bg-light text-dark border{% endif %}">
                                                 {{ task.status }}
                                             </span>
-                                </td>
-                                <td><a class="btn btn-light btn-sm" href="{% url 'task_detail' task.id %}"><i
-                                        class="bi bi-eye"></i></a></td>
-                            </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
+                                        </td>
+                                        <td><a href="{% url 'task_detail' task.id %}" class="btn btn-light btn-sm"><i
+                                                class="bi bi-eye"></i></a></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
+
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            // 1. Task Aging Pie Chart
+            echarts.init(document.querySelector("#agingChart")).setOption({
+                tooltip: {trigger: 'item'},
+                legend: {top: '0%', left: 'center'},
+                series: [{
+                    name: 'Aging',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['50%', '60%'],
+                    avoidLabelOverlap: false,
+                    label: {show: false},
+                    emphasis: {label: {show: true, fontSize: '18', fontWeight: 'bold'}},
+                    labelLine: {show: false},
+                    data: [
+                        {
+                            value: {{ aging_data|get_item:'0-7 Days' }},
+                            name: 'Fresh (0-7d)',
+                            itemStyle: {color: '#2eca6a'}
+                        },
+                        {
+                            value: {{ aging_data|get_item:'8-15 Days' }},
+                            name: 'Active (8-15d)',
+                            itemStyle: {color: '#4154f1'}
+                        },
+                        {
+                            value: {{ aging_data|get_item:'15-30 Days' }},
+                            name: 'Stale (15-30d)',
+                            itemStyle: {color: '#ffc107'}
+                        },
+                        {
+                            value: {{ aging_data|get_item:'30+ Days' }},
+                            name: 'Critical (30+d)',
+                            itemStyle: {color: '#dc3545'}
+                        }
+                    ]
+                }]
+            });
+
+            // 2.Client Distribution Pie Chart
+            echarts.init(document.querySelector("#clientTypeChart")).setOption({
+                tooltip: { trigger: 'item' },
+                legend: { top: '0%', left: 'center' },
+                series: [{
+                    name: 'Clients',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['50%', '60%'],
+                    avoidLabelOverlap: false,
+                    label: { show: false },
+                    emphasis: {label: {show: true, fontSize: '18', fontWeight: 'bold'}},
+                    labelLine: { show: false },
+                    data: {{ client_distribution_chart_data|safe }}
+                    }]
+                });
+        });
+    </script>
+
+    <div class="modal fade" id="clockInModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+
+                <form method="post" action="{% url 'clock_in' %}">
+                    {% csrf_token %}
+
+                    <!-- Hidden GPS Fields -->
+                    <input type="hidden" name="lat" id="clockin-lat">
+                    <input type="hidden" name="long" id="clockin-long">
+                    <input type="hidden" name="location_name" id="clockin-location">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Clock In</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-clock"></i>
+                            {{ now|date:"l, d M Y, h:i A" }}
+                        </p>
+
+                        <!-- MAP -->
+                        <div id="clockInMap"
+                            style="height:200px"
+                            class="rounded border mb-3">
+                        </div>
+
+                        <p class="small text-muted text-center">
+                            Location is captured automatically
+                        </p>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Clock In
+                        </button>
+                    </div>
+                </form>
+
+            </div>
         </div>
+    </div>
 
-    </section>
-</main>
+    <div class="modal fade" id="clockOutModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
 
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
+                <form method="post" action="{% url 'clock_out' %}">
+                    {% csrf_token %}
 
-        // 1. Task Aging Pie Chart
-        echarts.init(document.querySelector("#agingChart")).setOption({
-            tooltip: {trigger: 'item'},
-            legend: {top: '0%', left: 'center'},
-            series: [{
-                name: 'Aging',
-                type: 'pie',
-                radius: ['40%', '70%'],
-                center: ['50%', '60%'],
-                avoidLabelOverlap: false,
-                label: {show: false},
-                emphasis: {label: {show: true, fontSize: '18', fontWeight: 'bold'}},
-                labelLine: {show: false},
-                data: [
-                    {
-                        value: {{ aging_data|get_item:'0-7 Days' }},
-                        name: 'Fresh (0-7d)',
-                        itemStyle: {color: '#2eca6a'}
-                    },
-                    {
-                        value: {{ aging_data|get_item:'8-15 Days' }},
-                        name: 'Active (8-15d)',
-                        itemStyle: {color: '#4154f1'}
-                    },
-                    {
-                        value: {{ aging_data|get_item:'15-30 Days' }},
-                        name: 'Stale (15-30d)',
-                        itemStyle: {color: '#ffc107'}
-                    },
-                    {
-                        value: {{ aging_data|get_item:'30+ Days' }},
-                        name: 'Critical (30+d)',
-                        itemStyle: {color: '#dc3545'}
-                    }
-                ]
-            }]
+                    <!-- Hidden GPS Fields -->
+                    <input type="hidden" name="lat" id="clockout-lat">
+                    <input type="hidden" name="long" id="clockout-long">
+                    <input type="hidden" name="location_name" id="clockout-location">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Attendance Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row">
+
+                            <!-- LEFT -->
+                            <div class="col-md-6 text-center">
+                                <h6>
+                                    {{ attendance.clock_in|date:"l, d M Y" }}
+                                </h6>
+
+                                <p class="mt-3">Clock In</p>
+                                <h5>{{ attendance.clock_in|date:"h:i A" }}</h5>
+
+                                <div class="my-4">
+                                    <h4 id="runningDuration">Running…</h4>
+                                </div>
+
+                                <p class="text-muted">
+                                    Current Time:
+                                    <strong><span id="currentTime">--:--</span></strong>
+                                </p>
+                            </div>
+
+                            <!-- RIGHT -->
+                            <div class="col-md-6">
+                                <h6>Location</h6>
+
+                                <!-- MAP -->
+                                <div id="clockOutMap"
+                                    style="height:200px"
+                                    class="rounded border mb-3">
+                                </div>
+
+                                <p class="small text-muted">
+                                    Location captured automatically
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-danger">
+                            Clock Out
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        function initMap(mapId, latInput, longInput, locationInput) {
+            navigator.geolocation.getCurrentPosition(async function (pos) {
+                const lat = pos.coords.latitude;
+                const long = pos.coords.longitude;
+
+                document.getElementById(latInput).value = lat;
+                document.getElementById(longInput).value = long;
+
+                // Reverse geocode
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${long}`
+                );
+                const data = await res.json();
+                document.getElementById(locationInput).value =
+                    data.display_name || "Unknown location";
+
+                // Init map
+                const map = L.map(mapId).setView([lat, long], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+
+                L.marker([lat, long]).addTo(map)
+                    .bindPopup("You are here")
+                    .openPopup();
+            }, function () {
+                alert("Please allow location access.");
+            });
+        }
+
+        // Clock In
+        document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
+            initMap("clockInMap", "clockin-lat", "clockin-long", "clockin-location");
         });
 
-        // 2. Service Distribution Donut Chart
-        echarts.init(document.querySelector("#serviceChart")).setOption({
-            tooltip: {trigger: 'item'},
-            legend: {top: '0%', left: 'center'},
-            series: [{
-                name: 'Service',
-                type: 'doughnut',
-                radius: ['40%', '70%'],
-                center: ['50%', '60%'],
-                avoidLabelOverlap: false,
-                label: {show: false},
-                data: {{ service_chart_data|safe }}
-            }]
+        // Clock Out
+        document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
+            initMap("clockOutMap", "clockout-lat", "clockout-long", "clockout-location");
         });
+        function startLiveClock(elId) {
+            const el = document.getElementById(elId);
+            if (!el) return;
 
-    });
-</script>
+            function update() {
+                const now = new Date();
+                el.innerText = now.toLocaleTimeString("en-IN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: true
+                });
+            }
+
+            update();
+            return setInterval(update, 1000);
+        }
+
+        let clockInterval = null;
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const clockOutModal = document.getElementById("clockOutModal");
+
+            if (clockOutModal) {
+                clockOutModal.addEventListener("shown.bs.modal", function () {
+                    clockInterval = startLiveClock("currentTime");
+                });
+
+                clockOutModal.addEventListener("hidden.bs.modal", function () {
+                    if (clockInterval) clearInterval(clockInterval);
+                });
+            }
+            {% if attendance and attendance.clock_in and not attendance.clock_out %}
+            const clockInTime = new Date("{{ attendance.clock_in|date:'Y-m-d H:i:s' }}");
+
+            function updateRunningDuration() {
+                const now = new Date();
+                let diff = Math.floor((now - clockInTime) / 1000);
+
+                const hours = Math.floor(diff / 3600);
+                diff %= 3600;
+                const minutes = Math.floor(diff / 60);
+                const seconds = diff % 60;
+
+                let text = "";
+                if (hours) text += hours + "h ";
+                text += minutes + "m " + seconds + "s";
+
+                const el = document.getElementById("runningDuration");
+                if (el) el.innerText = text;
+            }
+
+            setInterval(updateRunningDuration, 1000);
+            updateRunningDuration();
+            {% endif %}
+        });
+    </script>
+
 {% endblock body %}

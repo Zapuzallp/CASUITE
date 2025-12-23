@@ -104,6 +104,8 @@ class ClientResource(resources.ModelResource):
         )
 
 
+from django.contrib import admin
+from .models import Notification
 
 @admin.register(Client)
 class ClientAdmin(ImportExportModelAdmin):
@@ -409,6 +411,24 @@ class GSTDetailsAdmin(admin.ModelAdmin):
     autocomplete_fields = ("client",)
 
 
+from .models import Attendance
+
+@admin.register(Attendance)
+class AttendanceAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "date",
+        "clock_in",
+        "clock_out",
+        "duration",
+        "status",
+        "requires_approval",
+        "location_name",
+    )
+    list_filter = ("status", "requires_approval", "date")
+    search_fields = ("user__username", "location_name")
+
+
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = (
@@ -437,3 +457,10 @@ class EmployeeAdmin(admin.ModelAdmin):
     autocomplete_fields = ("user",)
 
     date_hierarchy = "created_at"
+
+#notification
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'title', 'is_read', 'created_at')
+    list_filter = ('is_read', 'created_at')
+    search_fields = ('title', 'message', 'user__username')

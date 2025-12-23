@@ -1,6 +1,17 @@
 from django.urls import path
 
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView
+from home.customViews.attendanceView import (
+    ClockInView,
+    ClockOutView,
+    AttendanceLogsView
+)
+from home.customViews.notificationView import dashboard
+from home.customViews.notificationView import (
+    read_all_notifications,
+    view_notification,
+    all_notifications,
+)
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
@@ -27,4 +38,12 @@ urlpatterns = [
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
+    path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
+    path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
+    path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
+    path('', dashboard, name='dashboard'),
+    #NOTIFICATIONS
+    path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
+    path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
+    path("notifications/", all_notifications, name="all_notifications"),
 ]
