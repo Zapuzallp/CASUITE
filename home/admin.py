@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from import_export import resources, fields
+from import_export.admin import ImportExportModelAdmin
 
 from .models import (
     Client,
@@ -19,11 +21,96 @@ from .models import (
     Employee,
 )
 
+class ClientResource(resources.ModelResource):
+    # ===============================
+    # Business Profile Fields
+    # ===============================
+    registration_number = fields.Field(column_name='registration_number')
+    date_of_incorporation = fields.Field(column_name='date_of_incorporation')
+    registered_office_address = fields.Field(column_name='registered_office_address')
+    udyam_registration = fields.Field(column_name='udyam_registration')
+    authorised_capital = fields.Field(column_name='authorised_capital')
+    paid_up_capital = fields.Field(column_name='paid_up_capital')
+    number_of_directors = fields.Field(column_name='number_of_directors')
+    number_of_shareholders = fields.Field(column_name='number_of_shareholders')
+    number_of_members = fields.Field(column_name='number_of_members')
+    object_clause = fields.Field(column_name='object_clause')
+    is_section8_license_obtained = fields.Field(column_name='is_section8_license_obtained')
+
+    class Meta:
+        model = Client
+        import_id_fields = ('pan_no',)
+        fields = (
+            # Client fields
+            'client_name',
+            'primary_contact_name',
+            'pan_no',
+            'aadhar',
+            'din_no',
+            'tan_no',
+            'email',
+            'phone_number',
+            'city',
+            'state',
+            'postal_code',
+            'country',
+            'date_of_engagement',
+            'assigned_ca',
+            'client_type',
+            'business_structure',
+            'status',
+            'remarks',
+            'created_by',
+            'created_at',
+            'updated_at',
+
+            # Business profile fields
+            'registration_number',
+            'date_of_incorporation',
+            'registered_office_address',
+            'udyam_registration',
+            'authorised_capital',
+            'paid_up_capital',
+            'number_of_directors',
+            'number_of_shareholders',
+            'number_of_members',
+            'number_of_coparceners',
+            'opc_nominee_name',
+            'object_clause',
+            'is_section8_license_obtained',
+        )
+
+    def after_import_row(self, row, row_result, **kwargs):
+        client = Client.objects.get(pan_no=row['pan_no'])
+
+        ClientBusinessProfile.objects.update_or_create(
+            client=client,
+            defaults={
+                'registration_number': row.get('registration_number'),
+                'date_of_incorporation': row.get('date_of_incorporation'),
+                'registered_office_address': row.get('registered_office_address'),
+                'udyam_registration': row.get('udyam_registration'),
+                'authorised_capital': row.get('authorised_capital') or None,
+                'paid_up_capital': row.get('paid_up_capital') or None,
+                'key_persons': row.get('key_persons') or None,
+                'number_of_directors': row.get('number_of_directors') or None,
+                'number_of_shareholders': row.get('number_of_shareholders') or None,
+                'number_of_members': row.get('number_of_members') or None,
+                'number_of_coparceners': row.get('number_of_coparceners') or None,
+                'opc_nominee_name': row.get('opc_nominee_name'),
+                'object_clause': row.get('object_clause'),
+                'is_section8_license_obtained': row.get('is_section8_license_obtained') in ['1', 'True', 'true'],
+            }
+        )
+
+
 from django.contrib import admin
 from .models import Notification
 
 @admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
+class ClientAdmin(ImportExportModelAdmin):
+    resource_class = ClientResource
+
     list_display = (
         "client_name",
         "primary_contact_name",
@@ -322,6 +409,24 @@ class GSTDetailsAdmin(admin.ModelAdmin):
         "state",
     )
     autocomplete_fields = ("client",)
+
+
+from .models import Attendance
+
+@admin.register(Attendance)
+class AttendanceAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "date",
+        "clock_in",
+        "clock_out",
+        "duration",
+        "status",
+        "requires_approval",
+        "location_name",
+    )
+    list_filter = ("status", "requires_approval", "date")
+    search_fields = ("user__username", "location_name")
 
 
 @admin.register(Employee)

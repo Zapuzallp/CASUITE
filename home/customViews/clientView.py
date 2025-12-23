@@ -137,6 +137,7 @@ def client_details_view(request, client_id):
         'upload_form': upload_form,
         'request_form': request_form,
         'pending_requests': pending_requests,
+         'today':timezone.now().date(),
     }
 
     return render(request, 'client/client-details.html', context)
