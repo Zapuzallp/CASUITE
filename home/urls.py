@@ -9,7 +9,11 @@ from home.views import (
     HomeView,
     ClientView
 )
-
+from home.customViews.attendanceView import (
+    ClockInView,
+    ClockOutView,
+    AttendanceLogsView
+)
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
     path('accounts/login/', authView.LoginView.as_view(), name='login'),
@@ -27,4 +31,8 @@ urlpatterns = [
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
+    path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
+    path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
+    path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
 ]
+

@@ -409,6 +409,24 @@ class GSTDetailsAdmin(admin.ModelAdmin):
     autocomplete_fields = ("client",)
 
 
+from .models import Attendance
+
+@admin.register(Attendance)
+class AttendanceAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "date",
+        "clock_in",
+        "clock_out",
+        "duration",
+        "status",
+        "requires_approval",
+        "location_name",
+    )
+    list_filter = ("status", "requires_approval", "date")
+    search_fields = ("user__username", "location_name")
+
+
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = (
