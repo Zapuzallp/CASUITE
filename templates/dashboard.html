@@ -38,7 +38,7 @@
         /* Tables & Lists */
         .table-borderless th { color: #899bbd; font-weight: 600; font-size: 0.85rem; }
         .table-borderless td { vertical-align: middle; }
-        
+
         .avatar-circle {
             width: 36px; height: 36px;
             border-radius: 50%;
@@ -49,7 +49,7 @@
             border: 2px solid #fff;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        
+
         .leaderboard-item {
             padding: 12px 0;
             border-bottom: 1px solid #f0f0f0;
@@ -80,7 +80,6 @@
         </div>
 
         <section class="section dashboard">
-
             <div class="row g-4 mb-4">
                 <div class="col-xxl-3 col-md-6">
                     <div class="card info-card sales-card h-100">
@@ -90,7 +89,7 @@
                                 <div class="stat-card-icon text-blue"><i class="bi bi-list-task"></i></div>
                                 <div class="ps-3">
                                     <h6>{{ pending_tasks }}</h6>
-                                    <span class="text-success small pt-1 fw-bold">{{ review_tasks }}</span> 
+                                    <span class="text-success small pt-1 fw-bold">{{ review_tasks }}</span>
                                     <span class="text-muted small pt-2 ps-1">in review</span>
                                 </div>
                             </div>
@@ -246,15 +245,35 @@
                         </div>
                     </div>
                 </div>
+<div class="col-lg-6">
+    <div class="card h-100">
+        <div class="card-body">
+            <h5 class="card-title">
+                Client Distribution <span class="text-muted">| Type</span>
+            </h5>
+            <div id="clientTypeChart"
+                 style="min-height: 280px;"
+                 class="echart d-flex justify-content-center align-items-center">
+            </div>
 
-                <div class="col-lg-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Workload Mix <span>| By Service</span></h5>
-                            <div id="serviceChart" style="min-height: 350px;" class="echart"></div>
+            <div class="row text-center border-top pt-3 mt-2">
+                {% for item in client_distribution_chart_data %}
+                    <div class="col-2 mb-2 {% if not forloop.last %}border-end{% endif %}">
+                        <div class="fs-6 fw-semibold text-dark">
+                            {{ item.value }}
                         </div>
+                        <small class="text-muted">
+                            {{ item.name }}
+                        </small>
                     </div>
-                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
             </div>
 
             <div class="row g-4 mb-4">
@@ -361,7 +380,7 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="badge rounded-pill 
+                                            <span class="badge rounded-pill
                                                 {% if task.status == 'Completed' %}bg-success
                                                 {% elif task.status == 'Review' %}bg-warning text-dark
                                                 {% else %}bg-light text-dark border{% endif %}">
@@ -423,21 +442,22 @@
                 }]
             });
 
-            // 2. Service Distribution Donut Chart
-            echarts.init(document.querySelector("#serviceChart")).setOption({
-                tooltip: {trigger: 'item'},
-                legend: {top: '0%', left: 'center'},
+            // 2.Client Distribution Pie Chart
+            echarts.init(document.querySelector("#clientTypeChart")).setOption({
+                tooltip: { trigger: 'item' },
+                legend: { top: '0%', left: 'center' },
                 series: [{
-                    name: 'Service',
-                    type: 'doughnut',
+                    name: 'Clients',
+                    type: 'pie',
                     radius: ['40%', '70%'],
                     center: ['50%', '60%'],
                     avoidLabelOverlap: false,
-                    label: {show: false},
-                    data: {{ service_chart_data|safe }}
-                }]
-            });
-
+                    label: { show: false },
+                    emphasis: {label: {show: true, fontSize: '18', fontWeight: 'bold'}},
+                    labelLine: { show: false },
+                    data: {{ client_distribution_chart_data|safe }}
+                    }]
+                });
         });
     </script>
 
