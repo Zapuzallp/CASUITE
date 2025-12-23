@@ -271,6 +271,7 @@
                                         <th>Task</th>
                                         <th>Client</th>
                                         <th>Team</th>
+                                        <th>Due Date</th>
                                         <th>Status</th>
                                         <th>View</th>
                                     </tr>
@@ -289,6 +290,9 @@
                                                     </div>
                                                 {% endfor %}
                                             </div>
+                                        </td>
+                                        <td>
+                                            {{ task.due_date}}
                                         </td>
                                         <td>
                                             <span class="badge rounded-pill 
