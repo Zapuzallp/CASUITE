@@ -1,4 +1,6 @@
 {% load static %}
+{% load humanize %}
+
 
 <header id="header" class="header fixed-top d-flex align-items-center">
 
@@ -91,7 +93,8 @@
                                     {{ n.title }}
                                 </h6>
                                 <p class="mb-1 small text-muted">{{ n.message }}</p>
-                                <small class="text-muted">{{ n.created_at }}</small>
+                                <small class="text-muted">{{ n.created_at|timesince }} ago</small>
+
                             </div>
 
                         </a>
