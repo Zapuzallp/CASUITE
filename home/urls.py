@@ -1,6 +1,17 @@
 from django.urls import path
 
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView
+from home.customViews.attendanceView import (
+    ClockInView,
+    ClockOutView,
+    AttendanceLogsView
+)
+from home.customViews.notificationView import dashboard
+from home.customViews.notificationView import (
+    read_all_notifications,
+    view_notification,
+    all_notifications,
+)
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
@@ -8,19 +19,6 @@ from home.customViews import authView, documentsUploadView, clientView, taskView
 from home.views import (
     HomeView,
     ClientView
-)
-from home.customViews.attendanceView import (
-    ClockInView,
-    ClockOutView,
-    AttendanceLogsView
-)
-
-from django.urls import path
-from home.customViews.notificationView import dashboard
-from home.customViews.notificationView import (
-    read_all_notifications,
-    view_notification,
-    all_notifications,
 )
 
 urlpatterns = [
