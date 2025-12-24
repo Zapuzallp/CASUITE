@@ -49,7 +49,6 @@ class Client(models.Model):
     # --- Contact Info ---
     email = models.EmailField()
     phone_number = models.CharField(max_length=20)
-    Father_Name = models.CharField(max_length=200, blank=True, null=True)
 
     # --- Address ---
     address_line1 = models.TextField()
