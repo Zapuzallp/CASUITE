@@ -119,9 +119,16 @@ def initialize_step_for_assignees(task):
 
 @login_required
 def task_detail_view(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
     user = request.user
     is_admin = user.is_superuser
+    if user.is_superuser:
+        task = get_object_or_404(Task, id=task_id)
+    else:
+        task = get_object_or_404(
+            Task,
+            id=task_id,
+            client__assigned_ca=user
+        )
 
     # 1. Load Workflow Config
     config = TASK_CONFIG.get(task.service_type, {})
