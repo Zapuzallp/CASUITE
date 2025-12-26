@@ -45,15 +45,17 @@ def get_dynamic_fields(instance):
 
 @login_required
 def client_details_view(request, client_id):
-    client = get_object_or_404(Client, id=client_id)
-
+    user = request.user
+    if user.is_superuser:
+        client = get_object_or_404(Client, id=client_id)
+    else:
+        client = get_object_or_404(Client, id=client_id, assigned_ca=user)
+    
     # 1. Dynamic Basic Info & Linked Data (Keep your existing logic)
     client_fields = get_dynamic_fields(client)
-
     entity_profile_fields = []
     if hasattr(client, 'business_profile'):
         entity_profile_fields = get_dynamic_fields(client.business_profile)
-
     linked_data = []
     link_type = 'businesses' if client.client_type == 'Individual' else 'associates'
 
@@ -64,9 +66,7 @@ def client_details_view(request, client_id):
 
     # 2. Services
     services = Task.objects.filter(client = client).order_by('-created_at')
-
     unified_documents = []
-
     # A. Add Entity Constitution Documents (from Profile)
     if hasattr(client, 'business_profile'):
         prof = client.business_profile

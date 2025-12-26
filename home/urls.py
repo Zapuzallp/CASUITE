@@ -1,6 +1,6 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView,ClientListView
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
@@ -17,8 +17,7 @@ from home.customViews.notificationView import (
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
 # )
 from home.views import (
-    HomeView,
-    ClientView
+    HomeView
 )
 
 urlpatterns = [
@@ -33,7 +32,7 @@ urlpatterns = [
          name='create_client_doc_request'),
     path('client/<int:client_id>/create-task/', taskView.create_task_view, name='create_service_task'),
     # Client Management
-    path('clients/', ClientView.as_view(), name='clients'),
+    path('clients/', ClientListView.ClientView.as_view(), name='clients'),
     path('onboard/', clientOnboardingView.onboard_client_view, name='onboard_client'),
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),

@@ -35,6 +35,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # 1. GLOBAL STATISTICS & FINANCIALS
         # =========================================================
         all_tasks = Task.objects.all()
+        if not user.is_superuser:
+            all_tasks = all_tasks.filter(client__assigned_ca=user)
 
         # Single query aggregation for performance
         stats = all_tasks.aggregate(
@@ -204,9 +206,3 @@ def get_client_dashboard_data(user, today):
         'client_distribution_chart_data': client_distribution_chart_data,
     }
 
-class ClientView(LoginRequiredMixin, ListView):
-    """View for displaying client list page"""
-    model = Client
-    template_name = 'client/clients_all.html'
-    context_object_name = 'clients'
-    paginate_by = 10

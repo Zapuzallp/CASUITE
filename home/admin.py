@@ -148,6 +148,12 @@ class ClientAdmin(ImportExportModelAdmin):
     )
     date_hierarchy = "created_at"
     autocomplete_fields = ("assigned_ca", "created_by")
+    # Restrict client list in admin
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(assigned_ca=request.user)
 
 
 @admin.register(ClientBusinessProfile)
@@ -175,6 +181,12 @@ class ClientBusinessProfileAdmin(admin.ModelAdmin):
         "opc_nominee_name",
     )
     autocomplete_fields = ("client", "karta", "key_persons")
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(client__assigned_ca=request.user)
 
 
 @admin.register(ClientUserEntitle)
@@ -296,6 +308,14 @@ class TaskAdmin(admin.ModelAdmin):
     date_hierarchy = "due_date"
     autocomplete_fields = ("client", "created_by", "assignees")
     filter_horizontal = ("assignees",)
+    #-----------------------------------------------------------------
+    # Prevent staff users from viewing tasks of unassigned clients.
+    #-----------------------------------------------------------------
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(client__assigned_ca=request.user)
 
 
 @admin.register(TaskAssignmentStatus)
@@ -363,6 +383,13 @@ class TaskExtendedAttributesAdmin(admin.ModelAdmin):
         "srn_number",
     )
     autocomplete_fields = ("task",)
+
+    # Restrict admin visibility so staff users see only records linked to their assigned clients
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(task__client__assigned_ca=request.user)
 
 
 @admin.register(TaskComment)

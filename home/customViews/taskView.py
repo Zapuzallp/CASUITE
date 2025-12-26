@@ -72,11 +72,21 @@ def create_task_view(request, client_id):
 
 @login_required
 def task_list_view(request):
-    tasks = Task.objects.select_related('client') \
-        .prefetch_related('assignees') \
-        .order_by('-created_at')
-
-    clients = Client.objects.all().order_by('client_name')
+    #---------------------------------------------------------------------------------------------------
+    #The client list in the task creation form is filtered based on the logged-in user’s assigned client.
+    #---------------------------------------------------------------------------------------------------
+    user = request.user
+    if user.is_superuser:
+        tasks = Task.objects.select_related('client') \
+            .prefetch_related('assignees') \
+            .order_by('-created_at')
+        clients = Client.objects.all().order_by('client_name')
+    else:
+        tasks = Task.objects.select_related('client') \
+            .prefetch_related('assignees') \
+            .filter(client__assigned_ca=user) \
+            .order_by('-created_at')
+        clients = Client.objects.filter(assigned_ca=user).order_by('client_name')
 
     context = {
         'tasks': tasks,
