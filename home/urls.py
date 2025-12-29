@@ -32,5 +32,6 @@ urlpatterns = [
 
     # reset password
     path('password/change/', CustomPasswordChangeView.as_view(), name='password_change'),
+
     path('password/change/done/', CustomPasswordChangeDoneView.as_view(), name='password_change_done'),
 ]
