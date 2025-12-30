@@ -60,6 +60,8 @@ class ClientResource(resources.ModelResource):
             'client_type',
             'business_structure',
             'status',
+            'father_name',
+            'office_location',
             'remarks',
             'created_by',
             'created_at',
