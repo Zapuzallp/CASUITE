@@ -24,6 +24,8 @@ from .models import (
     OfficeDetails,
 )
 
+from .models import Shift, EmployeeShift, OfficeDetails
+
 class ClientResource(resources.ModelResource):
     # ===============================
     # Business Profile Fields
