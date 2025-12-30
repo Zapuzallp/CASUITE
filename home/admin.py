@@ -19,6 +19,9 @@ from .models import (
     TaskDocument,
     GSTDetails,
     Employee,
+    Shift,
+    EmployeeShift,
+    OfficeDetails,
 )
 
 class ClientResource(resources.ModelResource):
@@ -117,6 +120,7 @@ class ClientAdmin(ImportExportModelAdmin):
         "client_type",
         "business_structure",
         "pan_no",
+        "office_location",
         "email",
         "phone_number",
         "city",
@@ -464,3 +468,21 @@ class NotificationAdmin(admin.ModelAdmin):
     list_display = ('user', 'title', 'is_read', 'created_at')
     list_filter = ('is_read', 'created_at')
     search_fields = ('title', 'message', 'user__username')
+
+@admin.register(Shift)
+class ShiftAdmin(admin.ModelAdmin):
+    list_display = ('shift_name', 'shift_start_time',
+                    'shift_end_time', 'maximum_allowed_duration', 'days_off')
+
+
+@admin.register(EmployeeShift)
+class EmployeeShiftAdmin(admin.ModelAdmin):
+    list_display = ('user', 'shift', 'valid_from', 'valid_to')
+    list_filter = ('shift', 'valid_from', 'valid_to')
+
+
+@admin.register(OfficeDetails)
+class OfficeDetailsAdmin(admin.ModelAdmin):
+    list_display = ('office_name', 'contact_person_name',
+                    'office_contact_no', 'latitude', 'longitude')
+    search_fields = ('office_name', 'contact_person_name')

@@ -163,6 +163,10 @@ class ClientForm(BootstrapFormMixin, forms.ModelForm):
             'remarks': forms.Textarea(attrs={'rows': 2}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['office_location'].required = True
+
     def clean(self):
         cleaned_data = super().clean()
 

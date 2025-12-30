@@ -44,6 +44,7 @@
                                 <th scope="col">#</th>
                                 <th scope="col">Client Name</th>
                                 <th scope="col">Primary Contact</th>
+                                <th scope="col">Handling branch</th>
                                 <th scope="col">PAN / ID</th>
                                 <th scope="col">Structure</th>
                                 <th scope="col">Status</th>
@@ -68,6 +69,14 @@
                                     <td>
                                         {{ client.primary_contact_name }}<br>
                                         <span class="text-muted small">{{ client.phone_number }}</span>
+                                    </td>
+
+                                    <td>
+                                        {% if client.office_location %}
+                                            {{ client.office_location}}
+                                        {% else %}
+                                            <span class="text-muted fst-italic small">Not Assigned</span>
+                                        {% endif %}
                                     </td>
 
                                     <td>{{ client.pan_no }}</td>
