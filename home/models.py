@@ -1,13 +1,11 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.models import User
+from django.contrib.auth.models import User
+from django.db import models
 # -------------------------
 # Client Base Table
 # -------------------------
-from django.db import models
 from django.utils import timezone
-from django.db import models
-from django.contrib.auth.models import User
-
 
 
 # Create your models here.
@@ -578,7 +576,7 @@ class TaskDocument(models.Model):
     description = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-from datetime import time, date, timedelta
+from datetime import timedelta
 
 class Attendance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -807,36 +805,4 @@ class EmployeeShift(models.Model):
 
     def __str__(self):
         return f"{self.user.get_username()} assigned to {self.shift.shift_name}"
-
-# -----------------------------------------
-# 3. Office Details Table
-# -----------------------------------------
-
-
-class OfficeDetails(models.Model):
-    office_name = models.CharField(max_length=100)
-    state = models.CharField(
-        max_length=2,
-        choices=STATE_CHOICES,  # <--- Here we used the list of states.
-        blank=True,  #  allow blank in form
-        null=True,
-        default="West Bengal",
-        help_text="Choose you office state."
-    )
-    office_full_address = models.TextField()
-    contact_person_name = models.CharField(max_length=100)
-    office_contact_no = models.CharField(max_length=20)
-    # Store Lat/Long as Decimal fields for accuracy
-    latitude = models.DecimalField(
-        max_digits=9, decimal_places=6, blank=True, null=True)
-    longitude = models.DecimalField(
-        max_digits=9, decimal_places=6, blank=True, null=True)
-
-    class Meta:
-        verbose_name_plural = "Office details"
-
-        verbose_name = "Office detail"
-
-    def __str__(self):
-        return self.office_name
 

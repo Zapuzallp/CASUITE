@@ -1,4 +1,3 @@
-from django.contrib import admin
 from django.utils.html import format_html
 from import_export import resources, fields
 from import_export.admin import ImportExportModelAdmin
@@ -19,12 +18,9 @@ from .models import (
     TaskDocument,
     GSTDetails,
     Employee,
-    Shift,
-    EmployeeShift,
-    OfficeDetails,
+    Shift, EmployeeShift, OfficeDetails
 )
 
-from .models import Shift, EmployeeShift, OfficeDetails
 
 class ClientResource(resources.ModelResource):
     # ===============================
@@ -122,7 +118,6 @@ class ClientAdmin(ImportExportModelAdmin):
         "client_type",
         "business_structure",
         "pan_no",
-        "office_location",
         "email",
         "phone_number",
         "city",
@@ -514,4 +509,4 @@ class EmployeeShiftAdmin(admin.ModelAdmin):
 class OfficeDetailsAdmin(admin.ModelAdmin):
     list_display = ('office_name', 'contact_person_name',
                     'office_contact_no', 'latitude', 'longitude')
-    search_fields = ('office_name', 'contact_person_name')
+    # search_fields = ('office_name', 'contact_person_name')
