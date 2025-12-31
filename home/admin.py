@@ -16,6 +16,8 @@ from .models import (
     TaskComment,
     TaskDocument,
     GSTDetails,
+    Employee,
+    Leave
 )
 
 
@@ -321,3 +323,78 @@ class GSTDetailsAdmin(admin.ModelAdmin):
         "state",
     )
     autocomplete_fields = ("client",)
+
+#Registering the models - Employee, Leave
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "designation",
+        "sick_remaining",
+        "casual_remaining",
+        "earned_remaining",
+        "total_remaining",
+        "created_at",
+    )
+
+    readonly_fields = (
+        "sick_remaining",
+        "casual_remaining",
+        "earned_remaining",
+        "total_remaining",
+        "created_at",
+    )
+
+    # clean layout in change page
+    fieldsets = (
+        ("Employee Info", {
+            "fields": ("user", "designation"),
+        }),
+        ("Leave Balance (Read Only)", {
+            "fields": (
+                "sick_remaining",
+                "casual_remaining",
+                "earned_remaining",
+                "total_remaining",
+            ),
+        }),
+        ("Metadata", {
+            "fields": ("created_at",),
+        }),
+    )
+
+    def sick_remaining(self, obj):
+        return obj.get_leave_summary()["sick"]["remaining"]
+
+    def casual_remaining(self, obj):
+        return obj.get_leave_summary()["casual"]["remaining"]
+
+    def earned_remaining(self, obj):
+        return obj.get_leave_summary()["earned"]["remaining"]
+
+    def total_remaining(self, obj):
+        return obj.get_leave_summary()["total_remaining"]
+
+    sick_remaining.short_description = "Sick Leave"
+    casual_remaining.short_description = "Casual Leave"
+    earned_remaining.short_description = "Earned Leave"
+    total_remaining.short_description = "Total Leave"
+
+
+@admin.register(Leave)
+class LeaveAdmin(admin.ModelAdmin):
+    list_display = (
+        "employee",
+        "leave_type",
+        "status",
+        "start_date",
+        "end_date",
+    )
+    list_filter = ("status", "leave_type")
+    actions = ["approve_leave", "reject_leave"]
+
+    def approve_leave(self, request, queryset):
+        queryset.exclude(status="approved").update(status="approved")
+
+    def reject_leave(self, request, queryset):
+        queryset.update(status="rejected")

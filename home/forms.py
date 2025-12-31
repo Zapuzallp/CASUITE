@@ -8,6 +8,7 @@ from .models import (
     Task,
     ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes
 )
+from home.models import Leave
 
 
 class DocumentRequestForm(forms.ModelForm):
@@ -282,3 +283,28 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['total_turnover'].widget.attrs.update({'placeholder': '0.00'})
         self.fields['tax_payable'].widget.attrs.update({'placeholder': '0.00'})
+
+#Leave form
+class LeaveForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Leave
+        fields = ['leave_type', 'reason', 'start_date', 'end_date']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'reason': forms.Textarea(attrs={'rows': 5}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        leave_summary = kwargs.pop("leave_summary", None)
+        super().__init__(*args, **kwargs)
+
+        if leave_summary:
+            updated_choices = []
+            for value, label in self.fields["leave_type"].choices:
+                remaining = leave_summary.get(value, {}).get("remaining", 0)
+                updated_choices.append(
+                    (value, f"{label} ({remaining})")
+                )
+
+            self.fields["leave_type"].choices = updated_choices
