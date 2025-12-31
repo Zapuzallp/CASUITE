@@ -168,6 +168,9 @@ class Client(models.Model):
         ('On-hold', 'On-hold'),
     ]
 
+    # ----- File Number --------
+    file_number = models.CharField(max_length=10, unique=True, blank=True, null=True)
+
     # --- Basic Identity ---
     client_name = models.CharField(max_length=255, help_text="Name of Individual or Entity")
     primary_contact_name = models.CharField(max_length=255, help_text="Name of the person to contact")
