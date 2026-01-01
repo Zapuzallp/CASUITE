@@ -5,7 +5,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 
 from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
-from home.forms import TaskForm, TaskExtendedForm
+from home.forms import TaskForm, TaskExtendedForm, TaskSearchForm
 from home.models import Client, TaskComment, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -88,10 +88,37 @@ def task_list_view(request):
             .order_by('-created_at')
         clients = Client.objects.filter(assigned_ca=user).order_by('client_name')
 
+    #---------------------------------------------------------------------------------------------------
+    #Task Search Filters
+    #---------------------------------------------------------------------------------------------------
+    form =  TaskSearchForm(request.GET)
+
+    if form.is_valid():
+        cd = form.cleaned_data
+
+        if cd.get('client'):
+            tasks = tasks.filter(client=cd['client'])
+
+        if cd.get('service_type'):
+            tasks = tasks.filter(service_type=cd['service_type'])
+
+        if cd.get('assignee'):
+            tasks = tasks.filter(assignees=cd['assignee'])
+
+        if cd.get('status'):
+            tasks = tasks.filter(status=cd['status'])
+
+        if cd.get('due_start'):
+            tasks = tasks.filter(due_date__gte=cd['due_start'])
+
+        if cd.get('due_end'):
+            tasks = tasks.filter(due_date__lte=cd['due_end'])
+            
     context = {
         'tasks': tasks,
         'clients': clients,  # Pass to template
-        'today': timezone.now().date()
+        'today': timezone.now().date(),
+        'search_form': form
     }
     return render(request, 'client/tasks.html', context)
 

@@ -312,3 +312,34 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
                 )
 
             self.fields["leave_type"].choices = updated_choices
+from .models import Client, Task
+
+class TaskSearchForm(forms.Form):
+    client = forms.ModelChoiceField(
+        queryset=Client.objects.all().order_by('client_name'),
+        required=False,
+        empty_label="Select Client",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    service_type = forms.ChoiceField(
+        choices=[('', 'Select Type')] + list(Task.SERVICE_TYPE_CHOICES),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    assignee = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True).order_by('first_name'),
+        required=False,
+        empty_label="Select Assignee",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    due_start = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
+    due_end   = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
+
+    status = forms.ChoiceField(
+        choices=[('', 'Select Status')] + list(Task.STATUS_CHOICES),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
