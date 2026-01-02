@@ -18,7 +18,7 @@ from .models import (
     TaskDocument,
     GSTDetails,
     Employee,
-    Shift, EmployeeShift, OfficeDetails
+    Shift, EmployeeShift, OfficeDetails,
     Leave
 )
 
@@ -38,6 +38,10 @@ class ClientResource(resources.ModelResource):
     number_of_members = fields.Field(column_name='number_of_members')
     object_clause = fields.Field(column_name='object_clause')
     is_section8_license_obtained = fields.Field(column_name='is_section8_license_obtained')
+
+    # Add key_persons explicitly if you want to use widgets,
+    # otherwise we handle it manually in after_import_row
+    key_persons = fields.Field(column_name='key_persons')
 
     class Meta:
         model = Client
@@ -82,31 +86,83 @@ class ClientResource(resources.ModelResource):
             'opc_nominee_name',
             'object_clause',
             'is_section8_license_obtained',
+            'key_persons',  # Ensure this is in fields
         )
 
     def after_import_row(self, row, row_result, **kwargs):
-        client = Client.objects.get(pan_no=row['pan_no'])
+        # 1. Get the Main Client Instance
+        try:
+            # Strip whitespace just in case the PAN has spaces
+            pan = str(row.get('pan_no', '')).strip()
+            client = Client.objects.get(pan_no=pan)
+        except Client.DoesNotExist:
+            return
 
+        # --- HELPER FUNCTION TO CLEAN DATA ---
+        def clean_val(value):
+            """
+            Converts empty strings, 'None', 'nan' (from pandas), or whitespace
+            into a proper Python None object.
+            """
+            if value is None:
+                return None
+            # If it's already a date/number object, return it
+            if not isinstance(value, str):
+                return value
+
+            # Check string values
+            cleaned = value.strip()
+            if not cleaned or cleaned.lower() in ['none', 'null', 'nan']:
+                return None
+            return cleaned
+
+        # 2. Extract Many-to-Many data separately
+        key_persons_raw = row.get('key_persons')
+
+        # 3. Create or Update Profile
+        # We wrap fields in clean_val() to ensure no bad strings get passed to Date/Decimal fields
         ClientBusinessProfile.objects.update_or_create(
             client=client,
             defaults={
-                'registration_number': row.get('registration_number'),
-                'date_of_incorporation': row.get('date_of_incorporation'),
+                'registration_number': clean_val(row.get('registration_number')),
+
+                # DATE FIELDS: Crucial to use clean_val here
+                'date_of_incorporation': clean_val(row.get('date_of_incorporation')),
+
                 'registered_office_address': row.get('registered_office_address'),
                 'udyam_registration': row.get('udyam_registration'),
-                'authorised_capital': row.get('authorised_capital') or None,
-                'paid_up_capital': row.get('paid_up_capital') or None,
-                'key_persons': row.get('key_persons') or None,
-                'number_of_directors': row.get('number_of_directors') or None,
-                'number_of_shareholders': row.get('number_of_shareholders') or None,
-                'number_of_members': row.get('number_of_members') or None,
-                'number_of_coparceners': row.get('number_of_coparceners') or None,
+
+                # DECIMAL/INTEGER FIELDS: prevent "ValueError" on empty strings
+                'authorised_capital': clean_val(row.get('authorised_capital')),
+                'paid_up_capital': clean_val(row.get('paid_up_capital')),
+                'number_of_directors': clean_val(row.get('number_of_directors')),
+                'number_of_shareholders': clean_val(row.get('number_of_shareholders')),
+                'number_of_members': clean_val(row.get('number_of_members')),
+                'number_of_coparceners': clean_val(row.get('number_of_coparceners')),
+
                 'opc_nominee_name': row.get('opc_nominee_name'),
                 'object_clause': row.get('object_clause'),
-                'is_section8_license_obtained': row.get('is_section8_license_obtained') in ['1', 'True', 'true'],
+
+                # BOOLEAN FIELD HANDLING
+                'is_section8_license_obtained': str(row.get('is_section8_license_obtained')).lower() in ['1', 'true',
+                                                                                                         'yes'],
             }
         )
 
+        # 4. Handle Many-to-Many assignment
+        if key_persons_raw:
+            # Fetch the profile again to be safe
+            profile = client.business_profile
+
+            # Logic assuming input is "1, 2, 3" (IDs)
+            try:
+                # Ensure we are splitting a string
+                raw_str = str(key_persons_raw)
+                ids = [int(x.strip()) for x in raw_str.split(',') if x.strip().isdigit()]
+                if ids:
+                    profile.key_persons.set(ids)
+            except Exception:
+                pass
 
 from django.contrib import admin
 from .models import Notification
@@ -467,9 +523,6 @@ class EmployeeAdmin(admin.ModelAdmin):
     list_display = (
         "user",
         "designation",
-        "personal_phone",
-        "work_phone",
-        "personal_email",
         "created_at",
     )
 
@@ -515,62 +568,6 @@ class OfficeDetailsAdmin(admin.ModelAdmin):
     list_display = ('office_name', 'contact_person_name',
                     'office_contact_no', 'latitude', 'longitude')
     # search_fields = ('office_name', 'contact_person_name')
-
-#Registering the models - Employee, Leave
-@admin.register(Employee)
-class EmployeeAdmin(admin.ModelAdmin):
-    list_display = (
-        "user",
-        "designation",
-        "sick_remaining",
-        "casual_remaining",
-        "earned_remaining",
-        "total_remaining",
-        "created_at",
-    )
-
-    readonly_fields = (
-        "sick_remaining",
-        "casual_remaining",
-        "earned_remaining",
-        "total_remaining",
-        "created_at",
-    )
-
-    # clean layout in change page
-    fieldsets = (
-        ("Employee Info", {
-            "fields": ("user", "designation"),
-        }),
-        ("Leave Balance (Read Only)", {
-            "fields": (
-                "sick_remaining",
-                "casual_remaining",
-                "earned_remaining",
-                "total_remaining",
-            ),
-        }),
-        ("Metadata", {
-            "fields": ("created_at",),
-        }),
-    )
-
-    def sick_remaining(self, obj):
-        return obj.get_leave_summary()["sick"]["remaining"]
-
-    def casual_remaining(self, obj):
-        return obj.get_leave_summary()["casual"]["remaining"]
-
-    def earned_remaining(self, obj):
-        return obj.get_leave_summary()["earned"]["remaining"]
-
-    def total_remaining(self, obj):
-        return obj.get_leave_summary()["total_remaining"]
-
-    sick_remaining.short_description = "Sick Leave"
-    casual_remaining.short_description = "Casual Leave"
-    earned_remaining.short_description = "Earned Leave"
-    total_remaining.short_description = "Total Leave"
 
 
 @admin.register(Leave)

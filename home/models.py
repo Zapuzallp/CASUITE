@@ -137,7 +137,7 @@ class OfficeDetails(models.Model):
         verbose_name = "Office detail"
 
     def __str__(self):
-        return self.get_state_display()
+        return self.office_name
 
 
 # -------------------------
@@ -667,6 +667,8 @@ class Employee(models.Model):
     personal_email = models.EmailField(blank=True,null=True)
     address = models.TextField(blank=True,null=True)
     profile_pic = models.ImageField(upload_to='profile_pics/',blank=True,null=True  )
+    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE,
+                                        null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

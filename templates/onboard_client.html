@@ -14,13 +14,20 @@
         {% endif %}
 
         <div class="container mt-4">
-            <h2 class="mb-4 text-primary fw-bold">Onboard New Client</h2>
+            <!-- Dynamic Title based on View (Add vs Edit) -->
+            <h2 class="mb-4 text-primary fw-bold">{{ page_title|default:"Onboard New Client" }}</h2>
 
             <form method="post" enctype="multipart/form-data" id="onboardingForm" novalidate>
                 {% csrf_token %}
 
+                <!-- BASIC INFORMATION CARD -->
                 <div class="card mb-4 shadow-sm border-0">
-                    <div class="card-header bg-primary text-white">Basic Information</div>
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <span>Basic Information</span>
+                        {% if client_form.instance.pk %}
+                             <span class="badge bg-light text-primary small">File No: {{ client_form.instance.file_number|default:"Generating..." }}</span>
+                        {% endif %}
+                    </div>
                     <div class="card-body p-4">
                         <div class="row" id="clientFieldsContainer">
                             {% for field in client_form %}
@@ -33,13 +40,18 @@
                                     </label>
                                     {{ field }}
                                     {% if field.errors %}
-                                        <div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                                        <div class="text-danger small">{{ field.errors.0 }}</div>
+                                    {% endif %}
+                                    {% if field.help_text %}
+                                        <div class="form-text small text-muted">{{ field.help_text }}</div>
+                                    {% endif %}
                                 </div>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
 
+                <!-- BUSINESS PROFILE CARD (Dynamic Visibility) -->
                 <div class="card mb-4 shadow-sm border-0" id="businessProfileSection">
                     <div class="card-header bg-secondary text-white">
                         <span id="profileHeader">Entity Details</span>
@@ -55,14 +67,19 @@
                                     </label>
                                     {{ field }}
                                     {% if field.errors %}
-                                        <div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                                        <div class="text-danger small">{{ field.errors.0 }}</div>
+                                    {% endif %}
                                 </div>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-success btn-lg">Complete Onboarding</button>
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'clients' %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-success btn-lg px-5">{{ btn_text|default:"Complete Onboarding" }}</button>
+                </div>
+                
             </form>
         </div>
     </main>
@@ -183,9 +200,18 @@
                     applyConditionalRules(conditionalRules);
 
                 } else {
-                    // Fallback: If no structure selected, hide profile, show basic defaults?
-                    // For now, let's just hide the profile section
+                    // Fallback: If no structure selected (e.g. Entity selected but no structure yet),
+                    // hide profile but SHOW all basic client fields so user can see "Business Structure".
                     profileSection.style.display = 'none';
+
+                    clientDOMFields.forEach(wrapper => {
+                        wrapper.style.display = 'block';
+                        const name = wrapper.getAttribute('data-field-name');
+                        const labelEl = document.getElementById(`label_${name}`);
+                        if (labelEl && labelEl.dataset.originalLabel) {
+                            labelEl.textContent = labelEl.dataset.originalLabel;
+                        }
+                    });
                 }
             }
 
