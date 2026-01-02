@@ -1,10 +1,143 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.models import User
+from django.contrib.auth.models import User
+from django.db import models
 # -------------------------
 # Client Base Table
 # -------------------------
-from django.db import models
 from django.utils import timezone
+
+
+# Create your models here.
+
+# -----------------------------------------
+# 1. Shift Table
+# -----------------------------------------
+
+
+class Shift(models.Model):
+    DAY_CHOICES = (
+        ('Mon', 'Monday'),
+        ('Tue', 'Tuesday'),
+        ('Wed', 'Wednesday'),
+        ('Thu', 'Thursday'),
+        ('Fri', 'Friday'),
+        ('Sat', 'Saturday'),
+        ('Sun', 'Sunday'),
+    )
+
+    shift_name = models.CharField(max_length=100)
+    shift_start_time = models.TimeField()
+    shift_end_time = models.TimeField()
+    # Maximum allowed duration in hours (e.g., 8.5 for 8 hours 30 mins)
+    maximum_allowed_duration = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        help_text="Maximum permitted duration in hours (example: 8.5)"
+    )
+    # Day off stored as a comma-separated string (e.g., 'Sat,Sun')
+    days_off = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        choices=DAY_CHOICES
+    )
+
+    def __str__(self):
+        return self.shift_name
+
+# -----------------------------------------
+# 2. Employee Shift Table
+# -----------------------------------------
+
+
+class EmployeeShift(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='employee_shifts')
+    shift = models.ForeignKey(
+        Shift, on_delete=models.CASCADE, related_name='assigned_employees')
+    # Optional: Track this assignment validity
+    valid_from = models.DateField(auto_now_add=True)
+    valid_to = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.get_username()} assigned to {self.shift.shift_name}"
+
+
+STATE_CHOICES = (
+    ('01', 'Jammu and Kashmir'),
+    ('02', 'Himachal Pradesh'),
+    ('03', 'Punjab'),
+    ('04', 'Chandigarh'),
+    ('05', 'Uttarakhand'),
+    ('06', 'Haryana'),
+    ('07', 'Delhi'),
+    ('08', 'Rajasthan'),
+    ('09', 'Uttar Pradesh'),
+    ('10', 'Bihar'),
+    ('11', 'Sikkim'),
+    ('12', 'Arunachal Pradesh'),
+    ('13', 'Nagaland'),
+    ('14', 'Manipur'),
+    ('15', 'Mizoram'),
+    ('16', 'Tripura'),
+    ('17', 'Meghalaya'),
+    ('18', 'Assam'),
+    ('19', 'West Bengal'),
+    ('20', 'Jharkhand'),
+    ('21', 'Odisha'),
+    ('22', 'Chhattisgarh'),
+    ('23', 'Madhya Pradesh'),
+    ('24', 'Gujarat'),
+    # Note: 26 is the merged code for Daman, Diu, Dadra & Nagar Haveli
+    ('26', 'Dadra and Nagar Haveli and Daman and Diu'),
+    ('27', 'Maharashtra'),
+    ('29', 'Karnataka'),
+    ('30', 'Goa'),
+    ('31', 'Lakshadweep'),
+    ('32', 'Kerala'),
+    ('33', 'Tamil Nadu'),
+    ('34', 'Puducherry'),
+    ('35', 'Andaman and Nicobar Islands'),
+    ('36', 'Telangana'),
+    ('37', 'Andhra Pradesh'),
+    ('38', 'Ladakh'),
+    ('97', 'Other Territory'),
+)
+
+
+
+# -----------------------------------------
+# 3. Office Details Table
+# -----------------------------------------
+
+
+class OfficeDetails(models.Model):
+    office_name = models.CharField(max_length=100)
+    state = models.CharField(
+        max_length=2,
+        choices=STATE_CHOICES,  # <--- Here we used the list of states.
+        blank=True,  # allow blank in form
+        null=True,
+        default="West Bengal",
+        help_text="Choose you office state."
+    )
+    office_full_address = models.TextField()
+    contact_person_name = models.CharField(max_length=100)
+    office_contact_no = models.CharField(max_length=20)
+    # Store Lat/Long as Decimal fields for accuracy
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = "Office details"
+
+        verbose_name = "Office detail"
+
+    def __str__(self):
+        return self.get_state_display()
 
 
 # -------------------------
@@ -49,6 +182,7 @@ class Client(models.Model):
     # --- Contact Info ---
     email = models.EmailField()
     phone_number = models.CharField(max_length=20)
+    father_name = models.CharField(max_length=100, blank=True, null=True)
 
     # --- Address ---
     address_line1 = models.TextField()
@@ -56,6 +190,14 @@ class Client(models.Model):
     state = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=100, default='India')
+
+    office_location = models.ForeignKey(
+        OfficeDetails,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='clients'
+    )
 
     # --- Management ---
     date_of_engagement = models.DateField(default=models.functions.Now)
@@ -282,7 +424,6 @@ class Task(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
 
     # --- Recurrence & Financials ---
-    is_recurring = models.BooleanField(default=False)
     recurrence_period = models.CharField(max_length=20, choices=RECURRENCE_CHOICES, default='None')
 
     agreed_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
@@ -434,4 +575,234 @@ class TaskDocument(models.Model):
     file = models.FileField(upload_to='task_documents/%Y/%m/')
     description = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+from datetime import timedelta
+
+class Attendance(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField()
+
+    clock_in = models.DateTimeField(null=True, blank=True)
+    clock_out = models.DateTimeField(null=True, blank=True)
+
+    duration = models.DurationField(null=True, blank=True)
+
+    status = models.CharField(
+        max_length=20,
+        default="Absent"   # Absent / Present / Incomplete
+    )
+
+    remark = models.CharField(max_length=255, null=True, blank=True)
+
+    location_name = models.CharField(max_length=255, null=True, blank=True)
+    clock_in_lat = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    clock_in_long = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    clock_out_lat = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+    clock_out_long = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
+
+    requires_approval = models.BooleanField(default=False)
+    approved_by_admin = models.BooleanField(default=False)
+
+
+    class Meta:
+        unique_together = ('user', 'date')
+
+    def save(self, *args, **kwargs):
+        if self.clock_in and self.clock_out:
+            # Ensure clock_out is always after clock_in
+            if self.clock_out < self.clock_in:
+                self.clock_out += timedelta(days=1)  # adjust for cross-day clock-out
+
+            self.duration = self.clock_out - self.clock_in
+            self.status = "Present"
+        elif self.clock_in and not self.clock_out:
+            self.status = "Incomplete"
+            self.duration = None
+        else:
+            self.status = "Absent"
+            self.duration = None
+
+        super().save(*args, **kwargs)
+    
+    def formatted_duration(self):
+        if not self.duration:
+            return "-"
+
+        total_seconds = int(self.duration.total_seconds())
+
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+        return f"{minutes}m {seconds}s"
+
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date}"
+
+
+#------------------------------------
+# Employee Details
+#------------------------------------
+
+class Employee(models.Model):
+    user = models.OneToOneField(User,on_delete=models.CASCADE,related_name='employee')
+    designation = models.CharField(max_length=255,blank=True,null=True)
+    personal_phone = models.CharField(max_length=20,blank=True,null=True)
+    work_phone = models.CharField(max_length=20,blank=True,null=True)
+    personal_email = models.EmailField(blank=True,null=True)
+    address = models.TextField(blank=True,null=True)
+    profile_pic = models.ImageField(upload_to='profile_pics/',blank=True,null=True  )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username}"
+
+# notification
+class Notification(models.Model):
+    TAG_CHOICES = (
+        ('info', 'Info'),
+        ('success', 'Success'),
+        ('warning', 'Warning'),
+        ('error', 'Error'),
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="notifications"
+    )
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    tag = models.CharField(
+        max_length=20,
+        choices=TAG_CHOICES,
+        default='info'
+    )
+    target_url = models.CharField(
+        max_length=255,
+        blank=True
+    )
+
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} → {self.user.username}"
+
+#Code with Mohit Pandey
+
+STATE_CHOICES = (
+    ('01', 'Jammu and Kashmir'),
+    ('02', 'Himachal Pradesh'),
+    ('03', 'Punjab'),
+    ('04', 'Chandigarh'),
+    ('05', 'Uttarakhand'),
+    ('06', 'Haryana'),
+    ('07', 'Delhi'),
+    ('08', 'Rajasthan'),
+    ('09', 'Uttar Pradesh'),
+    ('10', 'Bihar'),
+    ('11', 'Sikkim'),
+    ('12', 'Arunachal Pradesh'),
+    ('13', 'Nagaland'),
+    ('14', 'Manipur'),
+    ('15', 'Mizoram'),
+    ('16', 'Tripura'),
+    ('17', 'Meghalaya'),
+    ('18', 'Assam'),
+    ('19', 'West Bengal'),
+    ('20', 'Jharkhand'),
+    ('21', 'Odisha'),
+    ('22', 'Chhattisgarh'),
+    ('23', 'Madhya Pradesh'),
+    ('24', 'Gujarat'),
+    # Note: 26 is the merged code for Daman, Diu, Dadra & Nagar Haveli
+    ('26', 'Dadra and Nagar Haveli and Daman and Diu'),
+    ('27', 'Maharashtra'),
+    ('29', 'Karnataka'),
+    ('30', 'Goa'),
+    ('31', 'Lakshadweep'),
+    ('32', 'Kerala'),
+    ('33', 'Tamil Nadu'),
+    ('34', 'Puducherry'),
+    ('35', 'Andaman and Nicobar Islands'),
+    ('36', 'Telangana'),
+    ('37', 'Andhra Pradesh'),
+    ('38', 'Ladakh'),
+    ('97', 'Other Territory'),
+)
+
+
+
+
+# Create your models here.
+
+# -----------------------------------------
+# 1. Shift Table
+# -----------------------------------------
+
+
+class Shift(models.Model):
+    DAY_CHOICES = (
+        ('Mon', 'Monday'),
+        ('Tue', 'Tuesday'),
+        ('Wed', 'Wednesday'),
+        ('Thu', 'Thursday'),
+        ('Fri', 'Friday'),
+        ('Sat', 'Saturday'),
+        ('Sun', 'Sunday'),
+    )
+
+    shift_name = models.CharField(max_length=100)
+    shift_start_time = models.TimeField()
+    shift_end_time = models.TimeField()
+    # Maximum allowed duration in hours (e.g., 8.5 for 8 hours 30 mins)
+    maximum_allowed_duration = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        help_text="Maximum permitted duration in hours (example: 8.5)"
+    )
+    # Day off stored as a comma-separated string (e.g., 'Sat,Sun')
+    days_off = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        choices=DAY_CHOICES
+    )
+
+    def __str__(self):
+        return self.shift_name
+
+# -----------------------------------------
+# 2. Employee Shift Table
+# -----------------------------------------
+
+
+class EmployeeShift(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='employee_shifts')
+    shift = models.ForeignKey(
+        Shift, on_delete=models.CASCADE, related_name='assigned_employees')
+    # Optional: Track this assignment validity
+    valid_from = models.DateField(auto_now_add=True)
+    valid_to = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.get_username()} assigned to {self.shift.shift_name}"
 

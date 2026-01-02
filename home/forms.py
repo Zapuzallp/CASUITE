@@ -163,6 +163,10 @@ class ClientForm(BootstrapFormMixin, forms.ModelForm):
             'remarks': forms.Textarea(attrs={'rows': 2}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['office_location'].required = True
+
     def clean(self):
         cleaned_data = super().clean()
 
@@ -239,7 +243,7 @@ class TaskForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         # CHANGED: 'assigned_to' -> 'assignees'
-        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description']
+        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description','recurrence_period']
         widgets = {
             'task_title': forms.TextInput(attrs={'placeholder': 'Auto-generated if left blank'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),

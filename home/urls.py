@@ -2,14 +2,24 @@ from django.urls import path
 from .customViews.resetPassword import CustomPasswordChangeView, CustomPasswordChangeDoneView
 
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView,ClientListView
+from home.customViews.attendanceView import (
+    ClockInView,
+    ClockOutView,
+    AttendanceLogsView
+)
+from home.customViews.notificationView import dashboard
+from home.customViews.notificationView import (
+    read_all_notifications,
+    view_notification,
+    all_notifications,
+)
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
 # )
 from home.views import (
-    HomeView,
-    ClientView
+    HomeView
 )
 
 urlpatterns = [
@@ -24,7 +34,7 @@ urlpatterns = [
          name='create_client_doc_request'),
     path('client/<int:client_id>/create-task/', taskView.create_task_view, name='create_service_task'),
     # Client Management
-    path('clients/', ClientView.as_view(), name='clients'),
+    path('clients/', ClientListView.ClientView.as_view(), name='clients'),
     path('onboard/', clientOnboardingView.onboard_client_view, name='onboard_client'),
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
@@ -33,4 +43,12 @@ urlpatterns = [
     # reset password
     path('password/change/', CustomPasswordChangeView.as_view(), name='password_change'),
     path('password/change/done/', CustomPasswordChangeDoneView.as_view(), name='password_change_done'),
+    path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
+    path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
+    path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
+    path('', dashboard, name='dashboard'),
+    #NOTIFICATIONS
+    path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
+    path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
+    path("notifications/", all_notifications, name="all_notifications"),
 ]

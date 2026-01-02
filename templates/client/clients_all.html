@@ -38,12 +38,13 @@
                             </a>
                         </div>
 
-                        <table class="table table-borderless datatable table-hover" id="clientsTable">
+                        <table class="table table-borderless datatable1 table-hover" id="clientsTable">
                             <thead>
                             <tr>
                                 <th scope="col">#</th>
                                 <th scope="col">Client Name</th>
                                 <th scope="col">Primary Contact</th>
+                                <th scope="col">Handling branch</th>
                                 <th scope="col">PAN / ID</th>
                                 <th scope="col">Structure</th>
                                 <th scope="col">Status</th>
@@ -68,6 +69,14 @@
                                     <td>
                                         {{ client.primary_contact_name }}<br>
                                         <span class="text-muted small">{{ client.phone_number }}</span>
+                                    </td>
+
+                                    <td>
+                                        {% if client.office_location %}
+                                            {{ client.office_location}}
+                                        {% else %}
+                                            <span class="text-muted fst-italic small">Not Assigned</span>
+                                        {% endif %}
                                     </td>
 
                                     <td>{{ client.pan_no }}</td>
@@ -129,13 +138,6 @@
     </section>
 
 </main>
-
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 
 <style>

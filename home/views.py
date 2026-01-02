@@ -4,7 +4,7 @@ from django.views import View
 from django.views.generic import ListView
 from django.contrib.auth.models import User
 
-from .models import (Client, )
+from .models import (Client,ClientUserEntitle )
 
 
 # RequestedDocument, DocumentMaster, ClientDocumentUpload, DocumentRequest)
@@ -35,6 +35,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # 1. GLOBAL STATISTICS & FINANCIALS
         # =========================================================
         all_tasks = Task.objects.all()
+        if not user.is_superuser:
+            all_tasks = all_tasks.filter(client__assigned_ca=user)
 
         # Single query aggregation for performance
         stats = all_tasks.aggregate(
@@ -52,10 +54,6 @@ class HomeView(LoginRequiredMixin, TemplateView):
             paid=Sum('agreed_fee', filter=Q(fee_status='Paid')),
             unbilled=Sum('agreed_fee', filter=Q(fee_status='Unbilled'))
         )
-
-        # Client Counts
-        total_clients = Client.objects.count()
-        new_clients = Client.objects.filter(created_at__month=today.month).count()
 
         # =========================================================
         # 2. REPORT: SERVICE DISTRIBUTION (Donut Chart)
@@ -110,14 +108,19 @@ class HomeView(LoginRequiredMixin, TemplateView):
         recent_tasks = all_tasks.select_related('client').prefetch_related('assignees').order_by('-created_at')[:6]
 
         # =========================================================
+        # 7. CLIENT Distribution REPORT (PIE CHART)
+        # =========================================================
+        client_data = get_client_dashboard_data(user, today)
+
+        # =========================================================
         # CONTEXT PACKAGING
         # =========================================================
         context.update({
             'today': today,
 
             # Summary Stats
-            'total_clients': total_clients,
-            'new_clients': new_clients,
+            'total_clients': client_data['total_clients'],
+            'new_clients': client_data['new_clients'],
             'total_tasks': stats['total'],
             'completed_tasks': stats['completed'],
             'pending_tasks': stats['pending'],
@@ -138,14 +141,68 @@ class HomeView(LoginRequiredMixin, TemplateView):
             'my_actionable_items': my_actionable_items[:6],  # Show top 6
             'my_actions_count': my_actions_count,
             'recent_tasks': recent_tasks,
+
+            #clients
+            'client_distribution_chart_data': client_data['client_distribution_chart_data'],
         })
 
         return context
 
+def get_client_dashboard_data(user, today):
+    """
+    Handles:
+    1. Client entitlement
+    2. Client counts
+    3. Client distribution chart data
+    """
 
-class ClientView(LoginRequiredMixin, ListView):
-    """View for displaying client list page"""
-    model = Client
-    template_name = 'client/clients_all.html'
-    context_object_name = 'clients'
-    paginate_by = 10
+    # ---------------------------------------------------------
+    # 1. CLIENT VISIBILITY (ENTITLEMENT)
+    # ---------------------------------------------------------
+    if user.is_superuser:
+        clients_qs = Client.objects.all()
+    else:
+        clients_qs = Client.objects.filter(
+            user_mappings__user=user
+        ).distinct()
+
+    # ---------------------------------------------------------
+    # 2. CLIENT COUNTS
+    # ---------------------------------------------------------
+    total_clients = clients_qs.count()
+    new_clients = clients_qs.filter(
+        created_at__month=today.month,
+        created_at__year=today.year
+    ).count()
+
+    # ---------------------------------------------------------
+    # 3. CLIENT DISTRIBUTION (PIE CHART)
+    # ---------------------------------------------------------
+    distribution_qs = (
+        clients_qs
+        .values('client_type', 'business_structure')
+        .annotate(count=Count('id'))
+    )
+
+    client_distribution_chart_data = []
+
+    for row in distribution_qs:
+        if row['client_type'] == 'Individual':
+            label = 'Individual'
+        else:
+            label = row['business_structure'] or 'Entity'
+
+        client_distribution_chart_data.append({
+            'name': label,
+            'value': row['count']
+        })
+
+    # ---------------------------------------------------------
+    # 4. RETURN PACKAGED DATA
+    # ---------------------------------------------------------
+    return {
+        'total_clients': total_clients,
+        'new_clients': new_clients,
+        'client_distribution_chart_data': client_distribution_chart_data,
+    }
+
