@@ -1,5 +1,4 @@
 from django.urls import path
-from .customViews.resetPassword import CustomPasswordChangeView, CustomPasswordChangeDoneView
 
 
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView,ClientListView
@@ -14,6 +13,7 @@ from home.customViews.notificationView import (
     view_notification,
     all_notifications,
 )
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
@@ -51,4 +51,8 @@ urlpatterns = [
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
+    #apply-leave
+    path('leave/apply/', leaveView.LeaveCreateView.as_view(), name='leave-apply'),
+    #delete-leave
+    path('leave/<int:leave_id>/',leaveView.LeaveDeleteView.as_view(), name='leave-delete'),
 ]

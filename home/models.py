@@ -427,6 +427,7 @@ class Task(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
 
     # --- Recurrence & Financials ---
+    is_recurring = models.BooleanField(default=False)
     recurrence_period = models.CharField(max_length=20, choices=RECURRENCE_CHOICES, default='None')
 
     agreed_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
@@ -634,7 +635,7 @@ class Attendance(models.Model):
             self.duration = None
 
         super().save(*args, **kwargs)
-    
+
     def formatted_duration(self):
         if not self.duration:
             return "-"
@@ -809,3 +810,73 @@ class EmployeeShift(models.Model):
     def __str__(self):
         return f"{self.user.get_username()} assigned to {self.shift.shift_name}"
 
+
+#Employee and Leave table
+class Employee(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="employee")
+    designation = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # single source of truth for limits
+    LEAVE_LIMITS = {
+        "sick": 7,
+        "casual": 8,
+        "earned": 5,
+    }
+
+    #Leave Summary
+    def get_leave_summary(self):
+        summary = {}
+        approved_leaves = self.leave_records.filter(status="approved")
+        total_taken = 0
+
+        for leave_type, allotted in self.LEAVE_LIMITS.items():
+            leaves = approved_leaves.filter(leave_type=leave_type)
+            taken = sum(leave.duration for leave in leaves)
+            remaining = allotted - taken
+
+            summary[leave_type] = {
+                "allotted": allotted,
+                "taken": taken,
+                "remaining": remaining,
+            }
+            total_taken += taken
+
+        summary["total_remaining"] = sum(self.LEAVE_LIMITS.values()) - total_taken
+        summary["total_taken"] = total_taken
+        return summary
+
+    def __str__(self):
+        return self.user.username
+
+
+#Leave model
+class Leave(models.Model):
+    LEAVE_TYPES = [
+        ("sick", "Sick Leave"),
+        ("casual", "Casual Leave"),
+        ("earned", "Earned Leave"),
+    ]
+
+    STATUS = [
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+
+    employee = models.ForeignKey(
+        Employee, on_delete=models.CASCADE, related_name="leave_records"
+    )
+    leave_type = models.CharField(max_length=20, choices=LEAVE_TYPES)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def duration(self):
+        return (self.end_date - self.start_date).days + 1
+
+    def __str__(self):
+        return f"{self.employee} - {self.leave_type}"
