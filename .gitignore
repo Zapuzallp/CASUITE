@@ -1,0 +1,11 @@
+# Environment variables (never commit secrets)
+.env
+
+# Python virtual environment (local only)
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+# IDE files
+.idea/
