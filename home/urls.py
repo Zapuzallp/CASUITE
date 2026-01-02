@@ -1,8 +1,7 @@
 from django.urls import path
 from .customViews.resetPassword import CustomPasswordChangeView, CustomPasswordChangeDoneView
 
-
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView,ClientListView
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, ClientListView
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
@@ -46,8 +45,8 @@ urlpatterns = [
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
     path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
-    path('', dashboard, name='dashboard'),
-    #NOTIFICATIONS
+    # NOTIFICATIONS
+    path('notifications/dashboard/', dashboard, name='notification_dashboard'),
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),

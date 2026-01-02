@@ -1,4 +1,5 @@
-from home.models import Notification
+from .models import Notification
+
 
 def notifications_context(request):
     if request.user.is_authenticated:
@@ -11,11 +12,13 @@ def notifications_context(request):
             user=request.user,
             is_read=False
         ).count()
-    else:
-        notifications = []
-        unread_count = 0
+
+        return {
+            "notifications": notifications,
+            "unread_count": unread_count
+        }
 
     return {
-        "notifications": notifications,
-        "unread_count": unread_count
+        "notifications": [],
+        "unread_count": 0
     }
