@@ -1,4 +1,6 @@
 from django.urls import path
+from .customViews.resetPassword import CustomPasswordChangeView, CustomPasswordChangeDoneView
+
 
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView,ClientListView
 from home.customViews.attendanceView import (
@@ -37,6 +39,10 @@ urlpatterns = [
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
+
+    # reset password
+    path('password/change/', CustomPasswordChangeView.as_view(), name='password_change'),
+    path('password/change/done/', CustomPasswordChangeDoneView.as_view(), name='password_change_done'),
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
     path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
