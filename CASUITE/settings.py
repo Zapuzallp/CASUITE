@@ -19,8 +19,8 @@ SECRET_KEY = 'django-insecure-i%cb2hzh_ab!ecqqf)g4z)*x^l2qqfnd=d4eo^y3huioo83d1k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["casuite.mondaltax.com"]
-CSRF_TRUSTED_ORIGINS = ["https://casuite.mondaltax.com/"]
+ALLOWED_HOSTS = ["mondaltax.zapuza.in"]
+CSRF_TRUSTED_ORIGINS = ["https://mondaltax.zapuza.in"]
 
 # Application definition
 
