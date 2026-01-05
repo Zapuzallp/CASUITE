@@ -584,45 +584,79 @@
 
 
     <script>
-        function initMap(mapId, latInput, longInput, locationInput) {
+        let clockInMap = null;
+        let clockOutMap = null;
+
+        function loadLocation(mapId, latInput, longInput, locationInput) {
+
+            if (!navigator.geolocation) {
+                alert("Geolocation not supported");
+                return;
+            }
+
             navigator.geolocation.getCurrentPosition(async function (pos) {
+
                 const lat = pos.coords.latitude;
-                const long = pos.coords.longitude;
+                const lng = pos.coords.longitude;
 
+                // Fill hidden fields
                 document.getElementById(latInput).value = lat;
-                document.getElementById(longInput).value = long;
+                document.getElementById(longInput).value = lng;
 
-                // Reverse geocode
-                const res = await fetch(
-                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${long}`
-                );
-                const data = await res.json();
-                document.getElementById(locationInput).value =
-                    data.display_name || "Unknown location";
+                try {
+                    const res = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+                    );
+                    const data = await res.json();
+                    document.getElementById(locationInput).value =
+                        data.display_name || "Unknown Location";
+                } catch {
+                    document.getElementById(locationInput).value = "Unknown Location";
+                }
 
-                // Init map
-                const map = L.map(mapId).setView([lat, long], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
+                // Remove old map if exists
+                if (mapId === "clockInMap" && clockInMap) {
+                    clockInMap.remove();
+                }
+                if (mapId === "clockOutMap" && clockOutMap) {
+                    clockOutMap.remove();
+                }
+
+                // Create new map
+                const map = L.map(mapId).setView([lat, lng], 16);
+
+                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                    attribution: "© OpenStreetMap"
                 }).addTo(map);
 
-                L.marker([lat, long]).addTo(map)
+                L.marker([lat, lng]).addTo(map)
                     .bindPopup("You are here")
                     .openPopup();
+
+                if (mapId === "clockInMap") clockInMap = map;
+                if (mapId === "clockOutMap") clockOutMap = map;
+
             }, function () {
-                alert("Please allow location access.");
+                alert("Location permission denied!");
             });
         }
 
-        // Clock In
+        /* CLOCK IN */
         document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
-            initMap("clockInMap", "clockin-lat", "clockin-long", "clockin-location");
+            setTimeout(() => {
+                loadLocation("clockInMap", "clockin-lat", "clockin-long", "clockin-location");
+            }, 300);
         });
 
-        // Clock Out
+        /* CLOCK OUT */
         document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
-            initMap("clockOutMap", "clockout-lat", "clockout-long", "clockout-location");
+            setTimeout(() => {
+                loadLocation("clockOutMap", "clockout-lat", "clockout-long", "clockout-location");
+            }, 300);
         });
+
+
+        /* LIVE CLOCK */
         function startLiveClock(elId) {
             const el = document.getElementById(elId);
             if (!el) return;
@@ -644,7 +678,6 @@
         let clockInterval = null;
 
         document.addEventListener("DOMContentLoaded", function () {
-
             const clockOutModal = document.getElementById("clockOutModal");
 
             if (clockOutModal) {
@@ -656,6 +689,7 @@
                     if (clockInterval) clearInterval(clockInterval);
                 });
             }
+
             {% if attendance and attendance.clock_in and not attendance.clock_out %}
             const clockInTime = new Date("{{ attendance.clock_in|date:'Y-m-d H:i:s' }}");
 
@@ -663,23 +697,20 @@
                 const now = new Date();
                 let diff = Math.floor((now - clockInTime) / 1000);
 
-                const hours = Math.floor(diff / 3600);
+                const h = Math.floor(diff / 3600);
                 diff %= 3600;
-                const minutes = Math.floor(diff / 60);
-                const seconds = diff % 60;
+                const m = Math.floor(diff / 60);
+                const s = diff % 60;
 
-                let text = "";
-                if (hours) text += hours + "h ";
-                text += minutes + "m " + seconds + "s";
-
-                const el = document.getElementById("runningDuration");
-                if (el) el.innerText = text;
+                document.getElementById("runningDuration").innerText =
+                    `${h ? h + "h " : ""}${m}m ${s}s`;
             }
 
             setInterval(updateRunningDuration, 1000);
             updateRunningDuration();
             {% endif %}
         });
-    </script>
+        </script>
+
 
 {% endblock body %}

@@ -8,6 +8,7 @@ from home.customViews.attendanceView import (
     ClockOutView,
     AttendanceLogsView
 )
+from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
 from home.customViews.notificationView import (
     read_all_notifications,
@@ -43,12 +44,16 @@ urlpatterns = [
     # reset password
     path('password/change/', CustomPasswordChangeView.as_view(), name='password_change'),
     path('password/change/done/', CustomPasswordChangeDoneView.as_view(), name='password_change_done'),
-    path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
-    path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
-    path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
     path('', dashboard, name='dashboard'),
     #NOTIFICATIONS
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
+    
+    # Attendance
+    path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
+    path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
+    path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
+    path("admin-report/attendance/", AdminAttendanceReportView.as_view(), name="admin_attendance_report"),
+    
 ]

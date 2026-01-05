@@ -55,8 +55,8 @@ def get_sidebar_counts(context):
                 total_pending_documents += 1
 
     pending_tasks = Task.objects.filter(
-        client_service__client__in=user_clients,
-        task_status="Pending",
+        client__in=user_clients,
+        status="Pending",
     ).count()
 
     return {

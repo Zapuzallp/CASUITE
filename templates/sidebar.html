@@ -211,6 +211,17 @@
             </a>
         </li>
 
+        {% if request.user.is_superuser %}
+        <li class="nav-heading">Attendance Report</li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin_attendance_report' %}">
+                <i class="bi bi-person-check"></i>
+                <span>Attendance Report</span>
+            </a>
+        </li>
+        {% endif %}
+
+
         <li class="nav-heading">Services</li>
 
         <li class="nav-item">

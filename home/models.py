@@ -589,10 +589,15 @@ class Attendance(models.Model):
 
     status = models.CharField(
         max_length=20,
-        default="Absent"   # Absent / Present / Incomplete
+        choices=[
+            ("pending", "Pending"),
+            ("approved", "Approved"),
+            ("rejected", "Rejected")
+        ],
+        default="approved"
     )
 
-    remark = models.CharField(max_length=255, null=True, blank=True)
+    remark = models.TextField(blank=True, null=True)
 
     location_name = models.CharField(max_length=255, null=True, blank=True)
     clock_in_lat = models.DecimalField(
@@ -608,26 +613,31 @@ class Attendance(models.Model):
         max_digits=9, decimal_places=6, null=True, blank=True
     )
 
-    requires_approval = models.BooleanField(default=False)
-    approved_by_admin = models.BooleanField(default=False)
-
 
     class Meta:
         unique_together = ('user', 'date')
 
     def save(self, *args, **kwargs):
+
+        # Calculate duration
         if self.clock_in and self.clock_out:
-            # Ensure clock_out is always after clock_in
             if self.clock_out < self.clock_in:
-                self.clock_out += timedelta(days=1)  # adjust for cross-day clock-out
+                self.clock_out += timedelta(days=1)
 
             self.duration = self.clock_out - self.clock_in
-            self.status = "Present"
+
+            # Only auto-set status if admin logic didn’t already set it
+            if not self.status or self.status == "approved":
+                self.status = "approved"
+
         elif self.clock_in and not self.clock_out:
-            self.status = "Incomplete"
+            if not self.status:
+                self.status = "pending"
             self.duration = None
+
         else:
-            self.status = "Absent"
+            if not self.status:
+                self.status = "absent"
             self.duration = None
 
         super().save(*args, **kwargs)
