@@ -13,7 +13,7 @@ services:
     ports:
       - "3309:3306"
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - mariadb_data:/var/lib/casuite/mysql
     networks:
       - casuite-network
 
@@ -27,8 +27,8 @@ services:
     env_file:
       - .env
     volumes:
-      - /home/data/timescope/static:/app/static
-      - /home/data/timescope/media:/app/media/
+      - /home/data/casuite/static:/app/static
+      - /home/data/casuite/media:/app/media/
     depends_on:
       - mariadb
     networks:
