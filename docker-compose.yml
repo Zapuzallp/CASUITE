@@ -27,7 +27,7 @@ services:
     env_file:
       - .env
     volumes:
-      - /home/data/casuite/static:/app/static
+      - /home/data/casuite/static:/app/staticfiles
       - /home/data/casuite/media:/app/media/
     depends_on:
       - mariadb
