@@ -119,12 +119,18 @@ USE_TZ = True
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# STATIC_ROOT = os.path.join(BASE_DIR, "static")
-STATIC_URL = 'static/'
+# Comment in prod
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'static'  # Where collectstatic will gather files
+# Only for prod
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Only for development, optional
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR / "staticfiles",
 ]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 RECAPTCHA_SECRET = "6LevwwQqAAAAAOa_vkMgwXjg3G6wIs0fj0s7UrHG"
 SERVICE_HEAD = "admin"
