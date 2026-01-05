@@ -122,7 +122,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = BASE_DIR / "static"
+# STATIC_ROOT = BASE_DIR / "static"
 
 # IMPORTANT: If you have your own custom CSS/JS (not just admin files),
 # put them in a folder named 'assets' (or similar) in your project root
