@@ -35,4 +35,4 @@ gunicorn==23.0.0
 whitenoise==6.6.0
 typing-inspection==0.4.1
 typing_extensions==4.12.2
-mysqlclient==2.2.7
+mysqlclient
