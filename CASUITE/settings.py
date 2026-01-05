@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-i%cb2hzh_ab!ecqqf)g4z)*x^l2qqfnd=d4eo^y3huioo83d1k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 # CSRF_TRUSTED_ORIGINS = ["*"]
@@ -120,14 +120,17 @@ USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Comment in prod
-STATIC_URL = '/static/'
+
+# Comment in prod
+# STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'  # Where collectstatic will gather files
 # Only for prod
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Only for development, optional
-# STATICFILES_DIRS = [
-#     BASE_DIR / "staticfiles",
-# ]
+STATICFILES_DIRS = [
+    BASE_DIR / "staticfiles",
+]
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
