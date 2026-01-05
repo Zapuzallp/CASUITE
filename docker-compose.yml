@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  mariadb:
+    image: mariadb:10.11
+    container_name: mariadb-timescope
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3308:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - timescope-network
+
+  django-web:
+    build: .
+    container_name: django-timescope
+    restart: always
+    command: /entrypoint.sh
+    ports:
+      - "8091:8000"
+    env_file:
+      - .env
+    volumes:
+      - /home/data/timescope/static:/app/static
+      - /home/data/timescope/media:/app/media/
+    depends_on:
+      - mariadb
+    networks:
+      - timescope-network
+
+volumes:
+  mariadb_data:
+
+networks:
+  timescope-network:
+    driver: bridge
