@@ -3,7 +3,7 @@ version: '3.9'
 services:
   mariadb:
     image: mariadb:10.11
-    container_name: mariadb-timescope
+    container_name: mariadb-casuite
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -19,7 +19,7 @@ services:
 
   django-web:
     build: .
-    container_name: django-timescope
+    container_name: django-casuite
     restart: always
     command: /entrypoint.sh
     ports:
