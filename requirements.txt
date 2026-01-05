@@ -31,4 +31,8 @@ typing_extensions==4.12.2
 tzdata==2024.1
 tzlocal==5.3.1
 urllib3==2.2.1
+gunicorn==23.0.0
 whitenoise==6.6.0
+typing-inspection==0.4.1
+typing_extensions==4.12.2
+mysqlclient==2.2.7
