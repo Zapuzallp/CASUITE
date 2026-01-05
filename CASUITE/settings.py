@@ -19,7 +19,7 @@ SECRET_KEY = 'django-insecure-i%cb2hzh_ab!ecqqf)g4z)*x^l2qqfnd=d4eo^y3huioo83d1k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["mondaltax.zapuza.in"]
+ALLOWED_HOSTS = ["mondaltax.zapuza.in",'localhost']
 CSRF_TRUSTED_ORIGINS = ["https://mondaltax.zapuza.in"]
 
 # Application definition
@@ -128,7 +128,7 @@ STATIC_ROOT = BASE_DIR / "static"
 # put them in a folder named 'assets' (or similar) in your project root
 # and uncomment this. Do NOT put source files in 'static' if STATIC_ROOT is also 'static'.
 STATICFILES_DIRS = [
-    BASE_DIR / "assets",
+    BASE_DIR / "static",
 ]
 
 RECAPTCHA_SECRET = "6LevwwQqAAAAAOa_vkMgwXjg3G6wIs0fj0s7UrHG"
