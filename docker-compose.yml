@@ -15,7 +15,7 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
     networks:
-      - timescope-network
+      - casuite-network
 
   django-web:
     build: .
@@ -32,11 +32,11 @@ services:
     depends_on:
       - mariadb
     networks:
-      - timescope-network
+      - casuite-network
 
 volumes:
   mariadb_data:
 
 networks:
-  timescope-network:
+  casuite-network:
     driver: bridge
