@@ -121,13 +121,13 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Comment in prod
 STATIC_URL = '/static/'
-# STATIC_ROOT = BASE_DIR / 'static'  # Where collectstatic will gather files
+STATIC_ROOT = BASE_DIR / 'static'  # Where collectstatic will gather files
 # Only for prod
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Only for development, optional
-STATICFILES_DIRS = [
-    BASE_DIR / "staticfiles",
-]
+# STATICFILES_DIRS = [
+#     BASE_DIR / "staticfiles",
+# ]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
