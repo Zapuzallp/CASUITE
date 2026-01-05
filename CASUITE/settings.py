@@ -17,10 +17,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-i%cb2hzh_ab!ecqqf)g4z)*x^l2qqfnd=d4eo^y3huioo83d1k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = ["https://products-casuite-plaiur-a4a54a-65-21-146-235.traefik.me/"]
+# CSRF_TRUSTED_ORIGINS = ["*"]
 
 # Application definition
 
@@ -69,8 +69,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                # 'home.context_processors.notifications_context',
-                # 'home.customViews.attendance_context.attendance_context',
+                'home.context_processors.notifications_context',
+                'home.customViews.attendance_context.attendance_context',
             ],
         },
     },
@@ -120,18 +120,14 @@ USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-STATIC_URL = "/static/"
+STATIC_URL = '/static/'
 
-# This is where collectstatic puts files
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# Where your custom assets MUST live
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-# WhiteNoise storage (production)
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 RECAPTCHA_SECRET = "6LevwwQqAAAAAOa_vkMgwXjg3G6wIs0fj0s7UrHG"
 SERVICE_HEAD = "admin"
 REAPAIR_HEAD = "admin"
