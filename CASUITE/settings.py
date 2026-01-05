@@ -126,7 +126,7 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+# STATIC_ROOT = BASE_DIR / "staticfiles"
 
 RECAPTCHA_SECRET = "6LevwwQqAAAAAOa_vkMgwXjg3G6wIs0fj0s7UrHG"
 SERVICE_HEAD = "admin"
