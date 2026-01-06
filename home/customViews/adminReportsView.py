@@ -1,9 +1,11 @@
 from django.views import View
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from datetime import datetime, date
 import calendar
+from django.contrib import messages
+from django.http import JsonResponse
 
 from home.models import Attendance, OfficeDetails
 
@@ -32,6 +34,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         month = request.GET.get("month")
         year = request.GET.get("year")
         office_id = request.GET.get("office")
+        status_filter = request.GET.get("status")
 
         records = Attendance.objects.select_related("user").all()
 
@@ -46,6 +49,9 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         if office_id:
             records = records.filter(location_name__icontains=office_id)
+            
+        if status_filter:
+            records = records.filter(status=status_filter)
 
         # Generate daily attendance data
         daily_attendance_data = []
@@ -78,12 +84,18 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             user=emp, 
                             date=date(year_int, month_int, day)
                         )
-                        if attendance.clock_in and attendance.clock_out:
-                            daily_status.append('present')
-                        elif attendance.clock_in:
-                            daily_status.append('half_day')
-                        else:
+                        # Check status first, then clock in/out
+                        if attendance.status == 'rejected':
                             daily_status.append('absent')
+                        elif attendance.status == 'approved':
+                            if attendance.clock_in and attendance.clock_out:
+                                daily_status.append('present')
+                            elif attendance.clock_in:
+                                daily_status.append('half_day')
+                            else:
+                                daily_status.append('absent')
+                        else:  # pending
+                            daily_status.append('pending')
                     except Attendance.DoesNotExist:
                         # Check if Sunday
                         if date(year_int, month_int, day).weekday() == 6:
@@ -95,6 +107,13 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                     'employee': emp.username,
                     'daily_status': daily_status
                 })
+
+        # Status choices for filter
+        status_choices = [
+            ('pending', 'Pending'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected')
+        ]
 
         context = {
             "employees": employees,
@@ -108,6 +127,23 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             "total_holidays": total_holidays,
             "month": month,
             "year": year,
+            "status_choices": status_choices,
         }
 
         return render(request, self.template_name, context)
+    
+    def post(self, request):
+        # Handle bulk status update
+        selected_records = request.POST.getlist('selected_records')
+        new_status = request.POST.get('bulk_status')
+        
+        if selected_records and new_status:
+            updated_count = Attendance.objects.filter(
+                id__in=selected_records
+            ).update(status=new_status)
+            
+            messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
+        else:
+            messages.error(request, 'Please select records and status to update.')
+            
+        return redirect(request.get_full_path())
