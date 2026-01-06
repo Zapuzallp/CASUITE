@@ -71,6 +71,8 @@ class ClientResource(resources.ModelResource):
         widget=ForeignKeyWidget(OfficeDetails, 'office_name')
     )
 
+
+
     class Meta:
         model = Client
         import_id_fields = ('pan_no',)
@@ -351,24 +353,33 @@ class ClientResource(resources.ModelResource):
         raw_employee = (row.get('Engaged Employee') or '').strip()
 
         if raw_employee:
-            username = raw_employee.lower()
-            username = re.sub(r'[^a-z0-9]+', '_', username).strip('_')
+            parts = raw_employee.split()
+            first_name = parts[0]
+            last_name = ' '.join(parts[1:]) if len(parts) > 1 else ''
 
-            user, created = User.objects.get_or_create(
+            username = re.sub(r'[^a-z0-9]+', '_', raw_employee.lower()).strip('_')
+
+            #Create / get User (THIS is assigned_ca)
+            user, _ = User.objects.get_or_create(
                 username=username,
                 defaults={
-                    'first_name': raw_employee.split()[0],
-                    'last_name': ' '.join(raw_employee.split()[1:]),
+                    'first_name': first_name,
+                    'last_name': last_name,
                     'email': f"{username}@autocreated.local",
                     'is_active': True,
                 }
             )
 
+            #Ensure Employee exists (for Employee Admin)
+            Employee.objects.get_or_create(
+                user=user,
+                defaults={'designation': 'CA'}
+            )
+
+            # ASSIGN USER (NOT Employee)
             row['assigned_ca'] = user.id
         else:
             row['assigned_ca'] = None
-
-
 
     def after_import_row(self, row, row_result, **kwargs):
         # 1. Get the Main Client Instance
@@ -385,6 +396,21 @@ class ClientResource(resources.ModelResource):
         if not client.file_number and client.office_location:
             client.file_number = self._generate_file_number(client.office_location)
             client.save(update_fields=['file_number'])
+
+        # -----------------------------
+        # ASSIGNED_CA (MAPPING)
+        # -----------------------------
+        raw_employee = (row.get('Engaged Employee') or '').strip()
+
+        if raw_employee:
+            username = re.sub(r'[^a-z0-9]+', '_', raw_employee.lower()).strip('_')
+
+            try:
+                user = User.objects.get(username=username)
+                client.assigned_ca = user
+                client.save(update_fields=['assigned_ca'])
+            except User.DoesNotExist:
+                pass
 
         # --- HELPER FUNCTION TO CLEAN DATA ---
         def clean_val(value):
