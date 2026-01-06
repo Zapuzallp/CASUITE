@@ -13,7 +13,7 @@ services:
     ports:
       - "3309:3306"
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - mariadb_data_casuite:/var/lib/mysql
     networks:
       - casuite-network
 
@@ -35,7 +35,7 @@ services:
       - casuite-network
 
 volumes:
-  mariadb_data:
+  mariadb_data_casuite:
 
 networks:
   casuite-network:
