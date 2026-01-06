@@ -110,9 +110,22 @@ class ClientResource(resources.ModelResource):
 from django.contrib import admin
 from .models import Notification
 
+# =====================================================
+# INLINE BUSINESS PROFILE
+# =====================================================
+class ClientBusinessProfileInline(admin.StackedInline):
+    model = ClientBusinessProfile
+    fk_name = "client"   # IMPORTANT: required in your case
+    extra = 0
+    max_num = 1
+    can_delete = False
+    autocomplete_fields = ("karta", "key_persons")
+
+
 @admin.register(Client)
 class ClientAdmin(ImportExportModelAdmin):
     resource_class = ClientResource
+    inlines = [ClientBusinessProfileInline]
 
     list_display = (
         "client_name",
@@ -158,38 +171,6 @@ class ClientAdmin(ImportExportModelAdmin):
             return qs
         return qs.filter(assigned_ca=request.user)
 
-
-@admin.register(ClientBusinessProfile)
-class ClientBusinessProfileAdmin(admin.ModelAdmin):
-    list_display = (
-        "client",
-        "registration_number",
-        "date_of_incorporation",
-        "authorised_capital",
-        "paid_up_capital",
-        "number_of_directors",
-        "number_of_shareholders",
-        "number_of_members",
-        "is_section8_license_obtained",
-    )
-    list_filter = (
-        "client__business_structure",
-        "date_of_incorporation",
-        "is_section8_license_obtained",
-    )
-    search_fields = (
-        "client__client_name",
-        "registration_number",
-        "udyam_registration",
-        "opc_nominee_name",
-    )
-    autocomplete_fields = ("client", "karta", "key_persons")
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(client__assigned_ca=request.user)
 
 
 @admin.register(ClientUserEntitle)
