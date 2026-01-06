@@ -1,6 +1,29 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block head %}
+    <!-- Include Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+    <!-- Custom Styles for Select2 to match Bootstrap 5 -->
+    <style>
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 0.375rem !important;
+            padding: 5px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+
+        /* Ensure Select2 dropdown appears on top of modal */
+        .select2-container--open {
+            z-index: 9999;
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
 <main id="main" class="main">
     <div class="pagetitle">
@@ -14,101 +37,203 @@
     </div>
 
     <section class="section">
-        <div class="card shadow-sm border-0">
-            <div class="card-body">
+        <div class="row">
+            <div class="col-lg-12">
 
-                <div class="d-flex justify-content-between align-items-center my-3">
-                    <h5 class="card-title m-0">Task Management</h5>
+                <!-- ACCORDION FILTER SECTION -->
+                <div class="accordion mb-4" id="taskFilterAccordion">
+                    <div class="accordion-item border-0 shadow-sm">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button {% if not request.GET %}collapsed{% endif %} bg-white text-primary fw-bold"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#collapseFilter"
+                                    aria-expanded="{% if request.GET %}true{% else %}false{% endif %}"
+                                    aria-controls="collapseFilter">
+                                <i class="bi bi-funnel-fill me-2"></i> Filter Tasks
+                            </button>
+                        </h2>
+                        <div id="collapseFilter"
+                             class="accordion-collapse collapse {% if request.GET %}show{% endif %}"
+                             aria-labelledby="headingOne"
+                             data-bs-parent="#taskFilterAccordion">
+                            <div class="accordion-body bg-light">
+                                <form method="get" action=".">
+                                    <div class="row g-3">
+                                        <!-- Search Text -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Search</label>
+                                            <input type="text" name="q" class="form-control"
+                                                   placeholder="Task Title, Description..." value="{{ request.GET.q }}">
+                                        </div>
 
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#selectClientModal">
-                        <i class="bi bi-plus-lg me-1"></i> Add New Task
-                    </button>
+                                        <!-- Client Filter -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Client</label>
+                                            <select name="client" class="form-select">
+                                                <option value="">All Clients</option>
+                                                {% for client in filter_clients %}
+                                                    <option value="{{ client.id }}"
+                                                            {% if request.GET.client == client.id|stringformat:"i" %}selected{% endif %}>
+                                                        {{ client.client_name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <!-- Service Type -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Service Type</label>
+                                            <select name="service_type" class="form-select">
+                                                <option value="">All Services</option>
+                                                {% for code, name in service_type_choices %}
+                                                    <option value="{{ code }}"
+                                                            {% if request.GET.service_type == code %}selected{% endif %}>
+                                                        {{ name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <!-- Status -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Status</label>
+                                            <select name="status" class="form-select">
+                                                <option value="">All Statuses</option>
+                                                {% for code, name in status_choices %}
+                                                    <option value="{{ code }}"
+                                                            {% if request.GET.status == code %}selected{% endif %}>
+                                                        {{ name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <!-- Filter Actions -->
+                                        <div class="col-md-12 d-flex justify-content-end">
+                                            <button type="submit" class="btn btn-primary me-2">
+                                                <i class="bi bi-search"></i> Apply Filters
+                                            </button>
+                                            <a href="{% url 'task_list' %}" class="btn btn-secondary">
+                                                <i class="bi bi-x-circle"></i> Clear
+                                            </a>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <table class="table table-hover datatable align-middle">
-                    <thead class="table-light">
-                    <tr>
-                        <th>Title</th>
-                        <th>Client</th>
-                        <th>Service</th>
-                        <th>Due Date</th>
-                        <th>Team</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for task in tasks %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'task_detail' task.id %}"
-                                   class="fw-bold text-primary text-decoration-none">
-                                    {{ task.task_title }}
-                                </a>
-                                {% if task.priority == 'High' %}
-                                    <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">HIGH</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'client_details' task.client.id %}"
-                                   class="text-dark text-decoration-none">
-                                    {{ task.client.client_name }}
-                                </a>
-                            </td>
-                            <td><span class="badge bg-light text-dark border">{{ task.service_type }}</span></td>
-                            <td>
-                                <span class="{% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
-                                    {{ task.due_date|date:"M d, Y" }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    {% for user in task.assignees.all|slice:":3" %}
-                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
-                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};"
-                                             title="{{ user.first_name }}">
-                                            {{ user.first_name|slice:":1"|upper }}
+                <!-- TABLE SECTION -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center my-3">
+                            <div>
+                                <h5 class="card-title m-0">Task Management</h5>
+                                <small class="text-muted">Showing {{ tasks|length }} task(s)</small>
+                            </div>
+
+                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                    data-bs-target="#selectClientModal">
+                                <i class="bi bi-plus-lg me-1"></i> Add New Task
+                            </button>
+                        </div>
+
+                        <table class="table table-hover datatable align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Title</th>
+                                <th>Client</th>
+                                <th>Service</th>
+                                <th>Due Date</th>
+                                <th>Team</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for task in tasks %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'task_detail' task.id %}"
+                                           class="fw-bold text-primary text-decoration-none">
+                                            {{ task.task_title }}
+                                        </a>
+                                        {% if task.priority == 'High' %}
+                                            <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">HIGH</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'client_details' task.client.id %}"
+                                           class="text-dark text-decoration-none">
+                                            {{ task.client.client_name }}
+                                        </a>
+                                        <div class="small text-muted" style="font-size: 11px;">
+                                            {{ task.client.file_number|default:"" }}
                                         </div>
-                                    {% empty %}
-                                        <span class="text-muted small fst-italic">Unassigned</span>
-                                    {% endfor %}
-                                    {% if task.assignees.count > 3 %}
-                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
-                                             style="width: 28px; height: 28px; font-size: 10px; z-index: 0;">
-                                            +{{ task.assignees.count|add:"-3" }}
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">{{ task.service_type }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="{% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
+                                            {{ task.due_date|date:"M d, Y" }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% for user in task.assignees.all|slice:":3" %}
+                                                <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                     style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};"
+                                                     title="{{ user.get_full_name|default:user.username }}">
+                                                    {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+                                                </div>
+                                            {% empty %}
+                                                <span class="text-muted small fst-italic">Unassigned</span>
+                                            {% endfor %}
+                                            {% if task.assignees.count > 3 %}
+                                                <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                     style="width: 28px; height: 28px; font-size: 10px; z-index: 0;">
+                                                    +{{ task.assignees.count|add:"-3" }}
+                                                </div>
+                                            {% endif %}
                                         </div>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge {% if task.status == 'Completed' %}bg-success{% elif task.status == 'Pending' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
-                                    {{ task.status }}
-                                </span>
-                            </td>
-                            <td>
-                                <a href="{% url 'task_detail' task.id %}" class="btn btn-sm btn-outline-primary"><i
-                                        class="bi bi-eye"></i></a>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
-                                No tasks found. Use the 'Add New Task' button to create one.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if task.status == 'Completed' %}bg-success{% elif task.status == 'Pending' %}bg-warning text-dark{% elif task.status == 'Cancelled' %}bg-danger{% else %}bg-light text-dark border{% endif %}">
+                                            {{ task.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'task_detail' task.id %}"
+                                           class="btn btn-sm btn-outline-primary"><i
+                                                class="bi bi-eye"></i></a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        No tasks found. Use the 'Add New Task' button to create one.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>
 
-    <div class="modal fade" id="selectClientModal" tabindex="-1">
+    <!-- Modal for Selecting Client with Select2 -->
+    <div class="modal fade" id="selectClientModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title fw-bold">
-                        <i class="bi bi-person-plus-fill me-2"></i>Select Client
+                        <i class="bi bi-person-plus-fill me-2"></i>Select Client for New Task
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -117,8 +242,9 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Client Name</label>
-                        <select id="clientSelector" class="form-select form-select-lg">
-                            <option value="" selected disabled>-- Select a Client --</option>
+                        <!-- Select2 dropdown -->
+                        <select id="clientSelector" class="form-select form-select-lg" style="width: 100%;">
+                            <option value="" selected disabled>-- Search Client --</option>
                             {% for client in clients %}
                                 <option value="{{ client.id }}">{{ client.client_name }} ({{ client.status }})</option>
                             {% empty %}
@@ -139,29 +265,47 @@
 
 </main>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const clientSelect = document.getElementById('clientSelector');
-            const proceedBtn = document.getElementById('btnProceedTask');
+    <!-- jQuery (Required for Select2) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-            // Enable button only when client is selected
-            clientSelect.addEventListener('change', function () {
-                if (this.value) {
-                    proceedBtn.disabled = false;
+    <script>
+        $(document).ready(function () {
+            // Initialize Select2 on the client selector
+            // We use dropdownParent so the search input works inside the Bootstrap modal
+            $('#clientSelector').select2({
+                dropdownParent: $('#selectClientModal'),
+                placeholder: "-- Search Client --",
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Listen for change event on Select2
+            $('#clientSelector').on('change', function () {
+                const clientId = $(this).val();
+                if (clientId) {
+                    $('#btnProceedTask').prop('disabled', false);
                 } else {
-                    proceedBtn.disabled = true;
+                    $('#btnProceedTask').prop('disabled', true);
                 }
             });
 
-            // Handle Redirection
-            proceedBtn.addEventListener('click', function () {
-                const clientId = clientSelect.value;
+            // Handle Proceed Button Click
+            $('#btnProceedTask').on('click', function () {
+                const clientId = $('#clientSelector').val();
                 if (clientId) {
                     // Construct URL: /client/ID/create-task/
                     // Note: Ensure this matches your urls.py pattern exactly
                     const url = `/client/${clientId}/create-task/`;
                     window.location.href = url;
                 }
+            });
+
+            // Reset modal when closed
+            $('#selectClientModal').on('hidden.bs.modal', function () {
+                $('#clientSelector').val(null).trigger('change');
+                $('#btnProceedTask').prop('disabled', true);
             });
         });
     </script>

@@ -178,6 +178,7 @@ class Client(models.Model):
     # --- Identifiers ---
     pan_no = models.CharField(max_length=20, unique=True, verbose_name="PAN Number")
     aadhar = models.CharField(max_length=20, blank=True, null=True, verbose_name="Aadhar Number")
+    aadhar_linked_mobile = models.BooleanField(default=False, verbose_name="Aadhar Linked With Mobile ?")
     din_no = models.CharField(max_length=50, blank=True, null=True, verbose_name="DIN",
                               help_text="Director Identification Number (if Individual)")
     tan_no = models.CharField(max_length=20, blank=True, null=True, verbose_name="TAN")
@@ -653,30 +654,6 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
-
-
-#------------------------------------
-# Employee Details
-#------------------------------------
-
-class Employee(models.Model):
-    user = models.OneToOneField(User,on_delete=models.CASCADE,related_name='employee')
-    designation = models.CharField(max_length=255,blank=True,null=True)
-    personal_phone = models.CharField(max_length=20,blank=True,null=True)
-    work_phone = models.CharField(max_length=20,blank=True,null=True)
-    personal_email = models.EmailField(blank=True,null=True)
-    address = models.TextField(blank=True,null=True)
-    profile_pic = models.ImageField(upload_to='profile_pics/',blank=True,null=True  )
-    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE,
-                                        null=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.user.get_full_name() or self.user.username}"
-
-# notification
 class Notification(models.Model):
     TAG_CHOICES = (
         ('info', 'Info'),
@@ -813,12 +790,26 @@ class EmployeeShift(models.Model):
         return f"{self.user.get_username()} assigned to {self.shift.shift_name}"
 
 
+ROLES_CHOICE = [
+    ('BRANCH_MANAGER', 'Branch Manager'),
+    ('ADMIN', 'Administrator'),
+    ('STAFF', 'Staff')
+]
 #Employee and Leave table
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="employee")
     designation = models.CharField(max_length=255, blank=True, null=True)
+    personal_phone = models.CharField(max_length=20, blank=True, null=True)
+    work_phone = models.CharField(max_length=20, blank=True, null=True)
+    personal_email = models.EmailField(blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True)
+    role = models.CharField(max_length=255, choices=ROLES_CHOICE)
+    supervisor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Supervisor_Or_Manager", null=True,
+                                   blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    updated_at = models.DateTimeField(auto_now=True)
     # single source of truth for limits
     LEAVE_LIMITS = {
         "sick": 7,

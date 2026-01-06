@@ -157,8 +157,13 @@ def validate_against_config(form, structure_key):
 class ClientForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Client
-        exclude = ['created_by', 'created_at', 'updated_at', 'status', 'assigned_ca','file_number']
+        exclude = ['created_by', 'created_at', 'updated_at', 'status', 'file_number']
         widgets = {
+            'assigned_ca': forms.Select(
+                attrs={
+                    'class': 'form-control select2'
+                }
+            ),
             'date_of_engagement': forms.DateInput(attrs={'type': 'date'}),
             'address_line1': forms.Textarea(attrs={'rows': 2}),
             'remarks': forms.Textarea(attrs={'rows': 2}),

@@ -5,11 +5,12 @@ from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView
+from django.contrib.auth.models import User
 
 from home.clients.config import STRUCTURE_CONFIG
 from home.forms import ClientForm, ClientBusinessProfileForm
 # Import your models and forms
-from home.models import Client, ClientBusinessProfile, OfficeDetails, Task
+from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee
 
 
 # -------------------------------------------------------------------
@@ -130,7 +131,7 @@ def edit_client_view(request, client_id):
 # View 3: Client List View with Accordion Filters
 # -------------------------------------------------------------------
 class ClientView(LoginRequiredMixin, ListView):
-    """View for displaying client list page with filters"""
+    """View for displaying client list page with filters and role-based access control"""
     model = Client
     template_name = 'client/clients_all.html'
     context_object_name = 'clients'
@@ -139,22 +140,51 @@ class ClientView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         user = self.request.user
 
-        # 1. Base Queryset
-        if user.is_superuser:
-            qs = Client.objects.all().select_related('office_location', 'assigned_ca', 'business_profile')
-        else:
-            qs = Client.objects.filter(assigned_ca=user).select_related('office_location', 'assigned_ca',
-                                                                        'business_profile')
+        # 1. Start with the Base Queryset (Optimized)
+        qs = Client.objects.select_related('office_location', 'assigned_ca', 'business_profile')
 
-        # 2. Extract GET parameters
+        # 2. Apply Role-Based Logic
+        if user.is_superuser:
+            # Superuser sees everything
+            pass
+        else:
+            try:
+                # Access the Employee profile linked to the user
+                employee = user.employee
+
+                if employee.role == 'ADMIN':
+                    # Admin role sees everything (Same as superuser)
+                    pass
+
+                elif employee.role == 'BRANCH_MANAGER':
+                    # Branch Manager sees all clients in their specific office location
+                    if employee.office_location:
+                        qs = qs.filter(office_location=employee.office_location)
+                    else:
+                        # Edge case: Manager assigned but no office linked in profile
+                        # Fallback to showing nothing or only assigned to be safe
+                        qs = qs.none()
+
+                else:
+                    # 'STAFF' or any other role defined in future
+                    # Can only see clients explicitly assigned to them
+                    qs = qs.filter(assigned_ca=user)
+
+            except Employee.DoesNotExist:
+                # If User exists but has no Employee profile (Edge Case)
+                # Fallback to strict 'Staff' behavior (Only assigned)
+                qs = qs.filter(assigned_ca=user)
+
+        # 3. Extract GET parameters for UI Filters
         search_query = self.request.GET.get('q')
         filter_status = self.request.GET.get('status')
         filter_type = self.request.GET.get('client_type')
         filter_structure = self.request.GET.get('business_structure')
         filter_office = self.request.GET.get('office')
-        filter_service = self.request.GET.get('service_type')  # Task Service Type
+        filter_service = self.request.GET.get('service_type')
+        filter_assigned_to = self.request.GET.get('assigned_to')
 
-        # 3. Apply Filters
+        # 4. Apply UI Filters on top of Role-Based Queryset
         if search_query:
             qs = qs.filter(
                 Q(client_name__icontains=search_query) |
@@ -173,12 +203,16 @@ class ClientView(LoginRequiredMixin, ListView):
             qs = qs.filter(business_structure=filter_structure)
 
         if filter_office:
+            # Note: If a Branch Manager tries to filter by an office ID
+            # that is not their own, this will simply return empty, which is secure.
             qs = qs.filter(office_location_id=filter_office)
 
-        # 4. Filter by Task Service Type (Reverse Relationship)
         if filter_service:
             # Filters clients who have *at least one* task of this service type
             qs = qs.filter(tasks__service_type=filter_service).distinct()
+
+        if filter_assigned_to:
+            qs = qs.filter(assigned_ca_id=filter_assigned_to)
 
         return qs.order_by('-created_at')
 
@@ -189,9 +223,36 @@ class ClientView(LoginRequiredMixin, ListView):
         context['client_type_choices'] = Client.CLIENT_TYPE_CHOICES
         context['business_structure_choices'] = Client.BUSINESS_STRUCTURE_CHOICES
         context['status_choices'] = Client.STATUS_CHOICES
+
+        # Office Filter Context:
         context['offices'] = OfficeDetails.objects.all()
 
         # Get Service Choices from Task model
         context['service_type_choices'] = Task.SERVICE_TYPE_CHOICES
+
+        # --- Assigned Employee Filter Context ---
+        user = self.request.user
+        assigned_employee_choices = None
+
+        if user.is_superuser:
+            # Superuser sees all active users
+            assigned_employee_choices = User.objects.filter(is_active=True).order_by('username')
+        else:
+            try:
+                employee = user.employee
+                if employee.role == 'ADMIN':
+                    assigned_employee_choices = User.objects.filter(is_active=True).order_by('username')
+                elif employee.role == 'BRANCH_MANAGER':
+                    if employee.office_location:
+                        # Only employees in the same office
+                        assigned_employee_choices = User.objects.filter(
+                            employee__office_location=employee.office_location,
+                            is_active=True
+                        ).order_by('username')
+                # Staff gets None
+            except Employee.DoesNotExist:
+                pass
+
+        context['assigned_employee_choices'] = assigned_employee_choices
 
         return context
