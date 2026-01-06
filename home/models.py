@@ -137,7 +137,7 @@ class OfficeDetails(models.Model):
         verbose_name = "Office detail"
 
     def __str__(self):
-        return self.get_state_display()
+        return self.office_name
 
 
 # -------------------------
@@ -167,6 +167,9 @@ class Client(models.Model):
         ('Closed', 'Closed'),
         ('On-hold', 'On-hold'),
     ]
+
+    # ----- File Number --------
+    file_number = models.CharField(max_length=10, unique=True, blank=True, null=True)
 
     # --- Basic Identity ---
     client_name = models.CharField(max_length=255, help_text="Name of Individual or Entity")
@@ -424,6 +427,7 @@ class Task(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
 
     # --- Recurrence & Financials ---
+    is_recurring = models.BooleanField(default=False)
     recurrence_period = models.CharField(max_length=20, choices=RECURRENCE_CHOICES, default='None')
 
     agreed_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
@@ -631,7 +635,7 @@ class Attendance(models.Model):
             self.duration = None
 
         super().save(*args, **kwargs)
-    
+
     def formatted_duration(self):
         if not self.duration:
             return "-"
@@ -663,6 +667,8 @@ class Employee(models.Model):
     personal_email = models.EmailField(blank=True,null=True)
     address = models.TextField(blank=True,null=True)
     profile_pic = models.ImageField(upload_to='profile_pics/',blank=True,null=True  )
+    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE,
+                                        null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

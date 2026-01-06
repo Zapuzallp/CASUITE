@@ -1,11 +1,12 @@
 from django.urls import path
 from home.customViews.messageView import  chat_view
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView,ClientListView
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView
+from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
-    AttendanceLogsView
+    AttendanceLogsView,
 )
 from home.customViews.notificationView import dashboard
 from home.customViews.notificationView import (
@@ -33,11 +34,16 @@ urlpatterns = [
          name='create_client_doc_request'),
     path('client/<int:client_id>/create-task/', taskView.create_task_view, name='create_service_task'),
     # Client Management
-    path('clients/', ClientListView.ClientView.as_view(), name='clients'),
+    path('clients/', clientOnboardingView.ClientView.as_view(), name='clients'),
+    path('client/<int:client_id>/edit/', clientOnboardingView.edit_client_view, name='edit_client'),
     path('onboard/', clientOnboardingView.onboard_client_view, name='onboard_client'),
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
+
+    # reset password
+    path('password/change/', resetPassword.CustomPasswordChangeView.as_view(), name='password_change'),
+    path('password/change/done/', resetPassword.CustomPasswordChangeDoneView.as_view(), name='password_change_done'),
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
     path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
