@@ -185,7 +185,7 @@ class Client(models.Model):
 
     # --- Contact Info ---
     email = models.EmailField()
-    phone_number = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=255)
     father_name = models.CharField(max_length=100, blank=True, null=True)
 
     # --- Address ---
