@@ -1,4 +1,5 @@
 from django.urls import path
+from home.customViews.messageView import  chat_view
 
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView,ClientListView
 from home.customViews.attendanceView import (
@@ -45,4 +46,8 @@ urlpatterns = [
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
+
+    path('chat/', chat_view, name='chat_base'),
+    path('chat/<int:user_id>/', chat_view, name='chat_with_user'),
+
 ]

@@ -18,7 +18,8 @@ from .models import (
     TaskDocument,
     GSTDetails,
     Employee,
-    Shift, EmployeeShift, OfficeDetails
+    Shift, EmployeeShift, OfficeDetails,
+    Message
 )
 
 
@@ -512,3 +513,10 @@ class OfficeDetailsAdmin(admin.ModelAdmin):
     list_display = ('office_name', 'contact_person_name',
                     'office_contact_no', 'latitude', 'longitude')
     # search_fields = ('office_name', 'contact_person_name')
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('sender', 'receiver','status','timestamp')
+    list_filter = ('status','timestamp')
+    search_fields = ('content','sender__username','receiver__username')
+    ordering = ('-timestamp',)

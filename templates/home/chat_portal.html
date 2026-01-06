@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote.min.css" rel="stylesheet">
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    /* 1. LOCK THE VIEWPORT: Prevent the whole page from scrolling */
+    html, body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+    }
+
+    #main {
+        font-family: 'Inter', sans-serif !important;
+        background-color: #f8fafc;
+        padding: 20px;
+        height: 100vh; /* Fill full height */
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Header remains fixed at top */
+    .page-header-inline {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-shrink: 0;
+    }
+
+    /* 2. THE MAIN MODULE: Fills remaining space */
+    .message-module {
+        display: flex;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        flex-grow: 1;
+        min-height: 0; /* Allows children to scroll */
+        width: 100%;
+        margin-bottom: 20px;
+        overflow: hidden; /* Important: prevents the module itself from growing */
+    }
+
+    /* 3. SIDEBAR: Independent Scroll */
+    .user-sidebar {
+        width: 280px;
+        border-right: 1px solid #e2e8f0;
+        background-color: #fff;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .user-item { display: flex; padding: 15px; border-bottom: 1px solid #f8fafc; text-decoration: none !important; color: inherit; }
+    .user-item.active { background-color: #f0f7ff; border-left: 4px solid #0ea5e9; }
+    .user-info .name { font-size: 14px; font-weight: 500; color: #475569; display: block; }
+
+    /* 4. CHAT COLUMN: Fixed structure */
+    .chat-main-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .chat-header {
+        padding: 15px 25px;
+        border-bottom: 1px solid #eee;
+        font-weight: bold;
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    /* 5. MESSAGE AREA: The only part that scrolls in the chat column */
+    .message-list-container {
+        padding: 25px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        background-color: #fafafa;
+        flex-grow: 1;
+        overflow-y: auto; /* Enable scrolling for messages */
+    }
+
+    /* Bubble Styling */
+    .msg-group { display: flex; flex-direction: column; max-width: 80%; }
+    .msg-sent { align-self: flex-end; align-items: flex-end; }
+    .msg-received { align-self: flex-start; align-items: flex-start; }
+    .msg-user-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+
+    .bubble {
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.5;
+        word-wrap: break-word;
+    }
+    .msg-sent .bubble { background: #0ea5e9; color: white; border-top-right-radius: 2px; }
+    .msg-received .bubble { background: #ffffff; color: #334155; border: 1px solid #e2e8f0; border-top-left-radius: 2px; }
+
+    /* 6. EDITOR: Pinned to bottom */
+    .full-width-editor {
+        width: 100%;
+        padding: 20px;
+        background-color: #fff;
+        border-top: 1px solid #e2e8f0;
+        flex-shrink: 0; /* Prevents summernote from being squished */
+    }
+
+    .note-editor.note-frame { border: 1px solid #cbd5e1 !important; }
+
+    .search-suggestion-box {
+    position: absolute;
+    background: #fff;
+    width: calc(100% - 30px);
+    border: 1px solid #ddd;
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 999;
+}
+
+.search-suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.search-suggestion-item:hover {
+    background-color: #f1f5f9;
+}
+    #sidebar .sidebar-nav .nav-link span {
+    font-size: 15.2px;
+}
+
+</style>
+
+<main id="main" class="main">
+    <div class="page-header-inline">
+        <h1 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Messages</h1>
+        <nav style="font-size: 13px; color: #64748b;">
+            Home <span style="color: #94a3b8; margin: 0 5px;">/</span>
+            <strong style="color: #475569; font-weight: 500;">Messages</strong>
+        </nav>
+    </div>
+
+    <div class="message-module">
+        <aside class="user-sidebar">
+           <div style="padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; z-index: 10;">
+    <div class="input-group">
+        <input type="text" id="userSearch" class="form-control input-sm" placeholder="Search contact..." autocomplete="off">
+        <span class="input-group-btn">
+            <button class="btn btn-primary btn-sm" type="button" data-toggle="modal" data-target="#userModal">
+                <i class="glyphicon glyphicon-plus"></i>
+            </button>
+        </span>
+    </div>
+    <div id="searchSuggestions" class="search-suggestion-box"></div>
+    </div>
+            <div class="user-list">
+                {% for user in active_users %}
+                <a href="{% url 'chat_with_user' user.id %}" class="user-item {% if target_user.id == user.id %}active{% endif %}">
+                    <div style="width: 35px; height: 35px; background: #cbd5e1; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                    <div class="user-info">
+                        <span class="name">{{ user.username }}</span>
+                        {% if user.is_staff %}
+                           <span class="time" style="font-size: 11px; color: #94a3b8;">Active Now</span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <section class="chat-main-column">
+            <div class="chat-header">
+                {% if target_user %}{{ target_user.username }}{% else %}Select a User{% endif %}
+            </div>
+
+            <div class="message-list-container" id="chat-window">
+                {% for msg in messages %}
+                <div class="msg-group {% if msg.sender == request.user %}msg-sent{% else %}msg-received{% endif %}">
+                    <div class="msg-user-meta" style="flex-direction: {% if msg.sender == request.user %}row-reverse{% else %}row{% endif %};">
+                        <div style="width: 26px; height: 26px; border-radius: 50%; background: #94a3b8; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">
+                            {% if msg.sender.profile.image %}
+                                <img src="{{ msg.sender.profile.image.url }}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                            {% else %}
+                                {{ msg.sender.username|slice:":1"|upper }}
+                            {% endif %}
+                        </div>
+                        <span style="font-size: 12px; font-weight: 600; color: #475569;">
+                            {% if msg.sender == request.user %}You{% else %}{{ msg.sender.username }}{% endif %}
+                        </span>
+                        <span style="font-size: 10px; color: #94a3b8;">{{ msg.timestamp|date:"H:i" }}</span>
+                    </div>
+
+                    <div class="bubble">
+                        {{ msg.content|safe }}
+                    </div>
+                    <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; text-align: {% if msg.sender == request.user %}right{% else %}left{% endif %};">
+                        {{ msg.timestamp|date:"d M Y" }}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center text-muted" style="margin-top: 50px;">No messages yet.</p>
+                {% endfor %}
+            </div>
+
+            <div class="full-width-editor">
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form.content }}
+
+                    <div class="footer-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            {{ form.status }}
+                        </div>
+                        <div>
+                            <button type="submit" name="save_draft" class="btn btn-default btn-sm">Save Draft</button>
+                            <button type="submit" class="btn btn-primary btn-sm" style="background-color: #337ab7; border: none; padding: 8px 25px;">Send Message</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+
+<div class="modal fade" id="userModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">New Conversation</h4>
+            </div>
+            <div class="modal-body" style="max-height: 400px; overflow-y: auto; padding: 0;">
+                {% for user in all_users %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee;">
+                    <span>{{ user.username }}</span>
+                    <a href="{% url 'chat_with_user' user.id %}" class="btn btn-xs btn-primary" style="background-color: #337ab7;">Chat</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote.min.js"></script>
+
+<script>
+    const allUsers = [
+        {% for user in all_users %}
+            {
+                id: "{{ user.id }}",
+                name: "{{ user.username }}",
+                url: "{% url 'chat_with_user' user.id %}"
+            },
+        {% endfor %}
+    ];
+</script>
+<script>
+document.getElementById("userSearch").addEventListener("keyup", function () {
+    const input = this.value.toLowerCase();
+    const box = document.getElementById("searchSuggestions");
+    box.innerHTML = "";
+
+    if (input === "") return;
+
+    const matches = allUsers.filter(user =>
+        user.name.toLowerCase().includes(input)
+    );
+
+    matches.forEach(user => {
+        const div = document.createElement("div");
+        div.className = "search-suggestion-item";
+        div.innerText = user.name;
+
+        div.onclick = function () {
+            window.location.href = user.url;
+        };
+
+        box.appendChild(div);
+    });
+});
+</script>
+
+
+<script>
+    (function($) {
+        $(document).ready(function() {
+            // 1. Initialize Summernote
+            $('textarea').summernote({
+                placeholder: 'Write your message here...',
+                height: 120,
+                toolbar: [
+                    ['style', ['bold', 'italic', 'underline', 'clear']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['link', 'picture']],
+                    ['view', ['codeview']]
+                ]
+            });
+
+            // 2. Auto-scroll to the latest message
+            var chatWindow = document.getElementById('chat-window');
+            if (chatWindow) {
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+        });
+    })(jQuery);
+</script>
+
+{% endblock body %}

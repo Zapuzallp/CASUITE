@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
-    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes
+    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message
 )
 
 
@@ -286,3 +286,16 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['total_turnover'].widget.attrs.update({'placeholder': '0.00'})
         self.fields['tax_payable'].widget.attrs.update({'placeholder': '0.00'})
+
+class MessageForm(forms.ModelForm):
+    class Meta:
+        model = Message
+        fields = ['content', 'status']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'id': 'summernote', # Required for JS initialization
+                'class': 'form-control',
+            }),
+            'status': forms.Select(attrs={'class': 'form-control', 'style': 'width: auto; display: inline-block;'}),
+        }
+
