@@ -1,3 +1,5 @@
+version: '3.9'
+
 services:
   mariadb:
     image: mariadb:10.11
@@ -11,8 +13,7 @@ services:
     ports:
       - "3309:3306"
     volumes:
-      # Ensure this matches the volume name defined at the bottom
-      - mariadb_data_casuite:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
     networks:
       - casuite-network
 
@@ -34,7 +35,7 @@ services:
       - casuite-network
 
 volumes:
-  mariadb_data_casuite:
+  mariadb_data:
 
 networks:
   casuite-network:
