@@ -1,6 +1,13 @@
 from django.utils.html import format_html
 from import_export import resources, fields
 from import_export.admin import ImportExportModelAdmin
+from import_export.widgets import ForeignKeyWidget
+from datetime import datetime
+from decimal import Decimal, InvalidOperation
+from django.contrib.auth.models import User
+import uuid
+import re
+
 
 from .models import (
     Client,
@@ -24,6 +31,20 @@ from .models import (
 
 
 class ClientResource(resources.ModelResource):
+    # -------- CLIENT FIELD MAPPINGS --------
+    client_name = fields.Field(column_name='Client Name', attribute='client_name')
+    primary_contact_name = fields.Field(column_name='Primary Contact Name', attribute='primary_contact_name')
+    email = fields.Field(column_name='Email', attribute='email')
+    phone_number = fields.Field(column_name='Phone No', attribute='phone_number')
+    city = fields.Field(column_name='Area', attribute='city')
+    state = fields.Field(column_name='State', attribute='state')
+    business_structure = fields.Field(column_name='Individual / Company', attribute='business_structure')
+    client_type = fields.Field(column_name='Client Type', attribute='client_type')
+    father_name = fields.Field(column_name='Father Name', attribute='father_name')
+    aadhar = fields.Field(column_name='Aadhar No', attribute='aadhar')
+    #PAN FIELD
+    pan_no = fields.Field(column_name='PAN NO', attribute='pan_no')
+
     # ===============================
     # Business Profile Fields
     # ===============================
@@ -42,6 +63,13 @@ class ClientResource(resources.ModelResource):
     # Add key_persons explicitly if you want to use widgets,
     # otherwise we handle it manually in after_import_row
     key_persons = fields.Field(column_name='key_persons')
+
+
+    office_location = fields.Field(
+        column_name='Handling Branch',
+        attribute='office_location',
+        widget=ForeignKeyWidget(OfficeDetails, 'office_name')
+    )
 
     class Meta:
         model = Client
@@ -89,6 +117,259 @@ class ClientResource(resources.ModelResource):
             'key_persons',  # Ensure this is in fields
         )
 
+    # ======================================
+    # populate the missing Email Id
+    # ===================================
+    def before_import(self, dataset, **kwargs):
+        self._email_counter = self._get_next_mtc_index()
+    def _get_next_mtc_index(self):
+        import re
+        from .models import Client
+
+        pattern = re.compile(r'^mtc(\d+)@gmail\.com$')
+        max_num = 0
+
+        for email in Client.objects.values_list('email', flat=True):
+            if not email:
+                continue
+            match = pattern.match(email.lower())
+            if match:
+                max_num = max(max_num, int(match.group(1)))
+
+        return max_num + 1
+
+    def _clean_date(self, value):
+        if not value:
+            return None
+
+        value = str(value).strip()
+        if value.lower() in ('none', 'nan', ''):
+            return None
+
+        formats = (
+            "%Y-%m-%d",
+            "%d/%m/%Y",
+            "%d-%m-%Y",
+            "%d/%m/%Y %H:%M",
+            "%d/%m/%Y %H:%M:%S",
+            "%m/%d/%Y %H:%M:%S",
+            "%m/%d/%Y %H:%M",
+        )
+
+        for fmt in formats:
+            try:
+                return datetime.strptime(value, fmt).date()
+            except ValueError:
+                continue
+
+        return None
+
+    def _clean_decimal(self, value):
+        if value in (None, '', 'None', 'nan', 'NaN'):
+            return None
+        try:
+            return Decimal(str(value))
+        except (InvalidOperation, ValueError):
+            return None
+
+
+    def _generate_file_number(self, office):
+        """
+        Generates next file_number for a given office location.
+        Format: <STATE_PREFIX><6-digit number>
+        """
+        if not office:
+            return None
+
+        # Get state prefix (first 2 chars)
+        state_prefix = office.state[:2].upper()
+
+        # Find last file number for this office
+        last_file = (
+            Client.objects
+            .filter(office_location=office, file_number__startswith=state_prefix)
+            .order_by('-file_number')
+            .values_list('file_number', flat=True)
+            .first()
+        )
+
+        if last_file:
+            last_number = int(last_file[-6:])
+            next_number = last_number + 1
+        else:
+            next_number = 1
+
+        return f"{state_prefix}{str(next_number).zfill(6)}"
+
+
+
+    def before_import_row(self, row, **kwargs):
+
+        # ---------------------------
+        # DATE OF ENGAGEMENT
+        # ---------------------------
+        date_added = row.get('Date Added')
+
+        engagement_date = self._clean_date(date_added)
+
+        if not engagement_date:
+            raise ValueError(
+                "Date Added is mandatory because date_of_engagement cannot be NULL"
+            )
+
+        row['date_of_engagement'] = engagement_date
+
+        # ---------------------------
+        # PAN HANDLING
+        # ---------------------------
+        pan = row.get('PAN NO')
+
+        if not pan or str(pan).strip() in ('', 'None', 'nan'):
+            # Generate unique placeholder PAN
+            pan = f"TEMP{uuid.uuid4().hex[:8].upper()}"
+
+        row['PAN NO'] = pan.strip()
+        # ---- DATE FIELDS ----
+
+        row['date_of_incorporation'] = self._clean_date(
+            row.get('date_of_incorporation')
+        )
+
+        # ---- DECIMAL FIELDS ----
+        def clean_decimal(value):
+            if value in (None, '', 'None', 'nan', 'NaN'):
+                return None
+            try:
+                return Decimal(str(value))
+            except (InvalidOperation, ValueError):
+                return None
+
+        row['authorised_capital'] = clean_decimal(
+            row.get('authorised_capital')
+        )
+        row['paid_up_capital'] = clean_decimal(
+            row.get('paid_up_capital')
+        )
+
+        # =================================
+        # Handling branch
+        # ============================
+
+        branch = (row.get('Handling Branch') or '').strip()
+
+        if branch:
+            OfficeDetails.objects.get_or_create(
+                office_name=branch,
+                defaults={
+                    'contact_person_name': '',
+                    'office_contact_no': '',
+                }
+            )
+        # ---- INTEGER FIELDS ----
+        for field in (
+                'number_of_directors',
+                'number_of_shareholders',
+                'number_of_members',
+                'number_of_coparceners',
+        ):
+            if row.get(field) in (None, '', 'None'):
+                row[field] = None
+
+        # ---- OPTIONAL CSV DATES ----
+        if 'DOB' in row:
+            row['DOB'] = self._clean_date(row.get('DOB'))
+
+        if 'Date Added' in row:
+            row['Date Added'] = self._clean_date(row.get('Date Added'))
+
+        if 'Date Updated' in row:
+            row['Date Updated'] = self._clean_date(row.get('Date Updated'))
+
+        # ============================
+        # Primary contact name
+        # ============================
+        name = (row.get('Client Name') or '').strip()
+        row['Client Name'] = name
+
+        if not row.get('Primary Contact Name'):
+            row['Primary Contact Name'] = name
+
+        # ============================
+        # Email generation
+        # ============================
+
+        email = (row.get('Email') or '').strip()
+        if not email:
+            email = f"mtc{self._email_counter}@gmail.com"
+            self._email_counter += 1
+
+        row['Email'] = email.lower()
+
+        # ============================
+        # PHONE NUMBER (take the first number)
+        # ============================
+        phone = (row.get('Phone No') or '').strip()
+
+        if phone:
+            # Normalize separators
+            for sep in ['//', '/', ',']:
+                if sep in phone:
+                    phone = phone.split(sep)[0]
+                    break
+
+            phone = phone.strip()
+
+        row['Phone No'] = phone
+
+        # ===============================
+        # CREATED_BY
+        # ===============================
+        raw_creator = (row.get('Created By') or '').strip()
+
+        if raw_creator:
+            # Normalize to valid username
+            username = raw_creator.lower()
+            username = re.sub(r'[^a-z0-9]+', '_', username).strip('_')
+
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    'first_name': raw_creator.split()[0],
+                    'last_name': ' '.join(raw_creator.split()[1:]),
+                    'email': f"{username}@autocreated.local",
+                    'is_active': True,
+                }
+            )
+
+            row['created_by'] = user.id
+        else:
+            row['created_by'] = None
+
+        # ===============================
+        # ASSIGNED_CA (Engaged Employee)
+        # ===============================
+        raw_employee = (row.get('Engaged Employee') or '').strip()
+
+        if raw_employee:
+            username = raw_employee.lower()
+            username = re.sub(r'[^a-z0-9]+', '_', username).strip('_')
+
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={
+                    'first_name': raw_employee.split()[0],
+                    'last_name': ' '.join(raw_employee.split()[1:]),
+                    'email': f"{username}@autocreated.local",
+                    'is_active': True,
+                }
+            )
+
+            row['assigned_ca'] = user.id
+        else:
+            row['assigned_ca'] = None
+
+
+
     def after_import_row(self, row, row_result, **kwargs):
         # 1. Get the Main Client Instance
         try:
@@ -97,6 +378,13 @@ class ClientResource(resources.ModelResource):
             client = Client.objects.get(pan_no=pan)
         except Client.DoesNotExist:
             return
+
+        # -----------------------------
+        # FILE NUMBER GENERATION
+        # -----------------------------
+        if not client.file_number and client.office_location:
+            client.file_number = self._generate_file_number(client.office_location)
+            client.save(update_fields=['file_number'])
 
         # --- HELPER FUNCTION TO CLEAN DATA ---
         def clean_val(value):
