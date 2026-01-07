@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body %}
+
+<main id="main" class="main">
+
+<div class="pagetitle">
+    <h1>Manage Leave Requests</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item active">Approve Leaves</li>
+        </ol>
+    </nav>
+</div>
+
+<section class="section">
+
+<div class="card">
+<div class="card-body">
+
+<div class="table-responsive">
+<table class="table table-hover">
+<thead>
+<tr>
+    <th>ID</th>
+    <th>Employee</th>
+    <th>Type</th>
+    <th>Start</th>
+    <th>End</th>
+    <th>Days</th>
+    <th>Reason</th>
+    <th>Actions</th>
+</tr>
+</thead>
+
+<tbody>
+{% for leave in all_leaves %}
+<tr data-status="{{ leave.status }}">
+
+<td>{{ leave.id }}</td>
+<td>{{ leave.user.first_name|default:leave.user.username }}</td>
+<td>{{ leave.get_leave_type_display }}</td>
+<td>{{ leave.start_date }}</td>
+<td>{{ leave.end_date }}</td>
+<td>{{ leave.total_days }}</td>
+<td>{{ leave.reason|truncatechars:30 }}</td>
+
+<td>
+{% if leave.status == 'pending' %}
+
+<div class="d-flex flex-column gap-1">
+
+<form method="post" class="leave-form w-100">
+{% csrf_token %}
+<input type="hidden" name="leave_id" value="{{ leave.id }}">
+<input type="hidden" name="status">
+
+<button type="button"
+            class="badge bg-success border-0 text-white swal-approve d-block mb-1"
+            style="cursor:pointer; padding:8px 16px; font-size:0.85rem; border-radius:20px; min-width: 90px;">
+        Approve
+    </button>
+
+    <button type="button"
+            class="badge bg-danger border-0 text-white swal-reject d-block"
+            style="cursor:pointer; padding:8px 16px; font-size:0.85rem; border-radius:20px; min-width: 90px;">
+        Reject
+    </button>
+
+</form>
+
+</div>
+
+{% else %}
+<span class="badge {% if leave.status == 'approved' %}bg-success{% else %}bg-danger{% endif %} p-2"
+      style="border-radius:20px; min-width:80px;">
+    {{ leave.status|title }}
+</span>
+{% endif %}
+</td>
+
+</tr>
+{% empty %}
+<tr>
+<td colspan="8" class="text-center text-muted">
+No leave requests found
+</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+</div>
+
+</div>
+</div>
+
+</section>
+</main>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // APPROVE
+    document.querySelectorAll('.swal-approve').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const form = this.closest('form');
+            form.querySelector('input[name="status"]').value = 'approved';
+
+            Swal.fire({
+                title: 'Approve Leave?',
+                text: 'Are you sure you want to approve this leave request?',
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Approve'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+
+    // REJECT
+    document.querySelectorAll('.swal-reject').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const form = this.closest('form');
+            form.querySelector('input[name="status"]').value = 'rejected';
+
+            Swal.fire({
+                title: 'Reject Leave?',
+                text: 'This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Reject'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+
+});
+</script>
+
+{% endblock %}
