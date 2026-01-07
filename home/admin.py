@@ -587,3 +587,41 @@ class LeaveAdmin(admin.ModelAdmin):
 
     def reject_leave(self, request, queryset):
         queryset.update(status="rejected")
+
+
+from .models import Client, Product, Invoice, InvoiceItem, Payment
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('item_name', 'short_code', 'unit', 'hsn_code')
+    search_fields = ('item_name', 'short_code', 'hsn_code')
+    list_filter = ('unit',)
+
+
+class InvoiceItemInline(admin.TabularInline):
+    model = InvoiceItem
+    extra = 1
+    # These fields are auto-calculated, so we make them read-only in UI
+    readonly_fields = ('taxable_value', 'net_total')
+    fields = ('product', 'unit_cost', 'discount', 'taxable_value', 'gst_percentage', 'net_total')
+
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = ('id', 'client', 'subject', 'invoice_date', 'due_date')
+    list_filter = ('invoice_date', 'due_date', 'client')
+    search_fields = ('subject', 'client__name', 'id')
+    inlines = [InvoiceItemInline]
+    filter_horizontal = ('services',)
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('invoice', 'amount', 'payment_method', 'payment_date', 'created_by')
+    list_filter = ('payment_method', 'payment_date')
+    search_fields = ('invoice__id', 'transaction_id')
+    readonly_fields = ('created_at', 'created_by')
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

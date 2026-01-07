@@ -873,3 +873,75 @@ class Leave(models.Model):
 
     def __str__(self):
         return f"{self.employee} - {self.leave_type}"
+
+
+class Product(models.Model):
+    item_name = models.CharField(max_length=300)
+    unit = models.CharField(max_length=30)
+    short_code = models.CharField(max_length=10)
+    hsn_code = models.CharField(max_length=10)
+    item_description = models.CharField(max_length=500)
+
+    def __str__(self):
+        return f"{self.item_name} ({self.short_code})"
+
+
+class Invoice(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invoices')
+    services = models.ManyToManyField(Task, blank=True, related_name='tagged_invoices')
+    due_date = models.DateField()
+    invoice_date = models.DateTimeField(default=timezone.now)
+    subject = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"Invoice #{self.id} - {self.client.client_name}"
+
+
+class InvoiceItem(models.Model):
+    GST_CHOICES = [
+        (0, '0%'),
+        (5, '5%'),
+        (12, '12%'),
+        (18, '18%'),
+        (28, '28%'),
+    ]
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    unit_cost = models.FloatField()
+    discount = models.FloatField(default=0.0)
+    taxable_value = models.FloatField(editable=False)
+    gst_percentage = models.IntegerField(choices=GST_CHOICES, default=0)
+    net_total = models.FloatField(editable=False)
+    def save(self, *args, **kwargs):
+        # Logic: taxable_value = unit_cost - discount
+        self.taxable_value = float(self.unit_cost) - float(self.discount)
+
+        # Logic: net_total = taxable_value + gst %
+        gst_amount = self.taxable_value * (self.gst_percentage / 100.0)
+        self.net_total = self.taxable_value + gst_amount
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product.item_name} - {self.invoice}"
+
+class Payment(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('CASH', 'Cash'),
+        ('CHECK', 'Check'),
+        ('UPI', 'UPI'),
+        ('BANK', 'Bank Transfer'),
+    ]
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
+    transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    amount = models.FloatField()
+    payment_date = models.DateField()
+    # Auto-compute fields
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"Payment {self.id} for Invoice #{self.invoice.id}"
