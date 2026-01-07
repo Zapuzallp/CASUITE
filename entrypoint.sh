@@ -14,4 +14,4 @@ echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
 echo "Starting Django server..."
-exec gunicorn CASUITE.wsgi:application --bind 0.0.0.0:8000 --timeout 60
+exec gunicorn CASUITE.wsgi:application --bind 0.0.0.0:8000 --timeout 120
