@@ -88,7 +88,28 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="card-title mb-0">Attendance Records</h5>
-                            <div class="d-flex gap-2">
+                            <div class="d-flex gap-2 align-items-center">
+                                <!-- Export Buttons -->
+                                 {% if records %}
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-success btn-sm" 
+                                            data-bs-toggle="tooltip" 
+                                            data-bs-placement="top" 
+                                            title="Export to CSV"
+                                            onclick="exportTableToCSV()">
+                                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" 
+                                            data-bs-toggle="tooltip" 
+                                            data-bs-placement="top" 
+                                            title="Export to Excel"
+                                            onclick="exportTableToExcel()">
+                                        <i class="bi bi-file-earmark-excel"></i> Excel
+                                    </button>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Bulk Update Controls -->
                                 <select id="bulkStatus" class="form-select form-select-sm" style="width: auto;">
                                     <option value="">Select Status</option>
                                     {% for value, label in status_choices %}
@@ -106,7 +127,7 @@
                             <input type="hidden" name="bulk_status" id="hiddenBulkStatus">
                             
                             <div class="table-responsive">
-                                <table class="table table-bordered table-striped {% if records %}datatable-export{% endif %}">
+                                <table class="table table-bordered table-striped">
                                     <thead>
                                         <tr>
                                             <th><input type="checkbox" id="selectAll"></th>
@@ -252,6 +273,102 @@
 </div>
 
 <script>
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// Export to CSV function
+function exportTableToCSV() {
+    const table = document.querySelector('.table');
+    const rows = table.querySelectorAll('tr');
+    let csvContent = '';
+    
+    rows.forEach((row, index) => {
+        if (index === 0 || row.cells.length > 1) { // Skip empty rows
+            const cells = row.querySelectorAll('th, td');
+            const rowData = [];
+            
+            cells.forEach((cell, cellIndex) => {
+                if (cellIndex > 0) { // Skip checkbox column
+                    let cellText = cell.textContent.trim();
+                    // Handle badges - extract text content
+                    const badge = cell.querySelector('.badge');
+                    if (badge) {
+                        cellText = badge.textContent.trim();
+                    }
+                    // Escape quotes and wrap in quotes if contains comma
+                    cellText = cellText.replace(/"/g, '""');
+                    if (cellText.includes(',') || cellText.includes('"') || cellText.includes('\n')) {
+                        cellText = `"${cellText}"`;
+                    }
+                    rowData.push(cellText);
+                }
+            });
+            
+            if (rowData.length > 0) {
+                csvContent += rowData.join(',') + '\n';
+            }
+        }
+    });
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'attendance_report.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Export to Excel function
+function exportTableToExcel() {
+    const table = document.querySelector('.table');
+    const rows = table.querySelectorAll('tr');
+    let excelContent = '<table>';
+    
+    rows.forEach((row, index) => {
+        if (index === 0 || row.cells.length > 1) { // Skip empty rows
+            excelContent += '<tr>';
+            const cells = row.querySelectorAll('th, td');
+            
+            cells.forEach((cell, cellIndex) => {
+                if (cellIndex > 0) { // Skip checkbox column
+                    let cellText = cell.textContent.trim();
+                    // Handle badges - extract text content
+                    const badge = cell.querySelector('.badge');
+                    if (badge) {
+                        cellText = badge.textContent.trim();
+                    }
+                    const cellTag = cell.tagName.toLowerCase();
+                    excelContent += `<${cellTag}>${cellText}</${cellTag}>`;
+                }
+            });
+            
+            excelContent += '</tr>';
+        }
+    });
+    
+    excelContent += '</table>';
+    
+    // Create and download file
+    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'attendance_report.xls');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 // Select All functionality
 document.getElementById('selectAll').addEventListener('change', function() {
     const checkboxes = document.querySelectorAll('.record-checkbox');
