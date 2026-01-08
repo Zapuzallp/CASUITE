@@ -21,6 +21,8 @@ from home.views import (
     HomeView
 )
 
+from home.customViews.messageView import  chat_view
+
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
     path('accounts/login/', authView.LoginView.as_view(), name='login'),
@@ -55,4 +57,7 @@ urlpatterns = [
     path('leave/apply/', leaveView.LeaveCreateView.as_view(), name='leave-apply'),
     #delete-leave
     path('leave/<int:leave_id>/',leaveView.LeaveDeleteView.as_view(), name='leave-delete'),
+    #chat message
+    path('chat/', chat_view, name='chat_base'),
+    path('chat/<int:user_id>/', chat_view, name='chat_with_user'),
 ]

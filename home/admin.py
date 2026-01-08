@@ -19,6 +19,7 @@ from .models import (
     GSTDetails,
     Employee,
     Shift, EmployeeShift, OfficeDetails,
+    Message,
     Leave
 )
 
@@ -606,3 +607,10 @@ class PaymentAdmin(admin.ModelAdmin):
         if not obj.created_by:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('sender', 'receiver','status','timestamp')
+    list_filter = ('status','timestamp')
+    search_fields = ('content','sender__username','receiver__username')
+    ordering = ('-timestamp',)
