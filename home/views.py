@@ -163,7 +163,7 @@ def get_client_dashboard_data(user, today):
         clients_qs = Client.objects.all()
     else:
         clients_qs = Client.objects.filter(
-            user_mappings__user=user
+            assigned_ca=user
         ).distinct()
 
     # ---------------------------------------------------------
