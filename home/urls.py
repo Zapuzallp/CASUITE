@@ -8,6 +8,7 @@ from home.customViews.attendanceView import (
     AttendanceLogsView,
 )
 from home.customViews.notificationView import dashboard
+from home.customViews.services import list_services, delete_service
 from home.customViews.notificationView import (
     read_all_notifications,
     view_notification,
@@ -55,4 +56,9 @@ urlpatterns = [
     path('leave/apply/', leaveView.LeaveCreateView.as_view(), name='leave-apply'),
     #delete-leave
     path('leave/<int:leave_id>/',leaveView.LeaveDeleteView.as_view(), name='leave-delete'),
+    #list services
+    path('services/', list_services, name='list_services'),
+    #delete service
+    path('services/delete/<int:service_id>/', delete_service, name='delete_service'),
+
 ]
