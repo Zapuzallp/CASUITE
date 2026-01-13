@@ -148,13 +148,7 @@
 </style>
 
 <aside id="sidebar" class="sidebar">
-    <div class="sidebar-header">
-        <h6><i class="bi bi-grid-3x3-gap me-2"></i>Menu</h6>
-    </div>
-
     <ul class="sidebar-nav" id="sidebar-nav">
-        <li class="nav-heading">Main</li>
-
         <li class="nav-item">
             <a class="nav-link" href="{% url 'dashboard' %}">
                 <i class="bi bi-speedometer2"></i>
@@ -238,7 +232,38 @@
             </a>
         </li>
 
+        <li class="nav-heading">HR</li>
+
+
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'leave-apply' %}">
+                <i class="bi bi-calendar-check"></i>
+                <span>Apply Leave</span>
+            </a>
+        </li>
+
+        {% if user.is_staff or user.is_superuser %}
+<li class="nav-item">
+    <a class="nav-link " href="{% url 'manage-leaves' %}">
+        <i class="bi bi-clipboard-check"></i>
+        <span>Manage Leaves</span>
+        {% if total_pending > 0 %}
+        <span class="badge bg-danger rounded-pill">{{ total_pending }}</span>
+        {% endif %}
+    </a>
+</li>
+{% endif %}
+
+
         <li class="nav-heading">System</li>
+
+         <li class="nav-item">
+            <a class="nav-link" href="{% url 'chat_base' %}">
+                <i class="fa-regular fa-comment-dots"></i>
+                <span>Messages</span>
+            </a>
+        </li>
 
         <li class="nav-item">
             <a class="nav-link" href="#">

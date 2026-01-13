@@ -137,7 +137,7 @@ class OfficeDetails(models.Model):
         verbose_name = "Office detail"
 
     def __str__(self):
-        return self.get_state_display()
+        return self.office_name
 
 
 # -------------------------
@@ -168,6 +168,9 @@ class Client(models.Model):
         ('On-hold', 'On-hold'),
     ]
 
+    # ----- File Number --------
+    file_number = models.CharField(max_length=10, unique=True, blank=True, null=True)
+
     # --- Basic Identity ---
     client_name = models.CharField(max_length=255, help_text="Name of Individual or Entity")
     primary_contact_name = models.CharField(max_length=255, help_text="Name of the person to contact")
@@ -175,13 +178,14 @@ class Client(models.Model):
     # --- Identifiers ---
     pan_no = models.CharField(max_length=20, unique=True, verbose_name="PAN Number")
     aadhar = models.CharField(max_length=20, blank=True, null=True, verbose_name="Aadhar Number")
+    aadhar_linked_mobile = models.BooleanField(default=False, verbose_name="Aadhar Linked With Mobile ?")
     din_no = models.CharField(max_length=50, blank=True, null=True, verbose_name="DIN",
                               help_text="Director Identification Number (if Individual)")
     tan_no = models.CharField(max_length=20, blank=True, null=True, verbose_name="TAN")
 
     # --- Contact Info ---
     email = models.EmailField()
-    phone_number = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=255)
     father_name = models.CharField(max_length=100, blank=True, null=True)
 
     # --- Address ---
@@ -424,6 +428,7 @@ class Task(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
 
     # --- Recurrence & Financials ---
+    is_recurring = models.BooleanField(default=False)
     recurrence_period = models.CharField(max_length=20, choices=RECURRENCE_CHOICES, default='None')
 
     agreed_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
@@ -641,7 +646,7 @@ class Attendance(models.Model):
             self.duration = None
 
         super().save(*args, **kwargs)
-    
+
     def formatted_duration(self):
         if not self.duration:
             return "-"
@@ -659,28 +664,6 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
-
-
-#------------------------------------
-# Employee Details
-#------------------------------------
-
-class Employee(models.Model):
-    user = models.OneToOneField(User,on_delete=models.CASCADE,related_name='employee')
-    designation = models.CharField(max_length=255,blank=True,null=True)
-    personal_phone = models.CharField(max_length=20,blank=True,null=True)
-    work_phone = models.CharField(max_length=20,blank=True,null=True)
-    personal_email = models.EmailField(blank=True,null=True)
-    address = models.TextField(blank=True,null=True)
-    profile_pic = models.ImageField(upload_to='profile_pics/',blank=True,null=True  )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.user.get_full_name() or self.user.username}"
-
-# notification
 class Notification(models.Model):
     TAG_CHOICES = (
         ('info', 'Info'),
@@ -715,104 +698,182 @@ class Notification(models.Model):
     def __str__(self):
         return f"{self.title} → {self.user.username}"
 
-#Code with Mohit Pandey
 
-STATE_CHOICES = (
-    ('01', 'Jammu and Kashmir'),
-    ('02', 'Himachal Pradesh'),
-    ('03', 'Punjab'),
-    ('04', 'Chandigarh'),
-    ('05', 'Uttarakhand'),
-    ('06', 'Haryana'),
-    ('07', 'Delhi'),
-    ('08', 'Rajasthan'),
-    ('09', 'Uttar Pradesh'),
-    ('10', 'Bihar'),
-    ('11', 'Sikkim'),
-    ('12', 'Arunachal Pradesh'),
-    ('13', 'Nagaland'),
-    ('14', 'Manipur'),
-    ('15', 'Mizoram'),
-    ('16', 'Tripura'),
-    ('17', 'Meghalaya'),
-    ('18', 'Assam'),
-    ('19', 'West Bengal'),
-    ('20', 'Jharkhand'),
-    ('21', 'Odisha'),
-    ('22', 'Chhattisgarh'),
-    ('23', 'Madhya Pradesh'),
-    ('24', 'Gujarat'),
-    # Note: 26 is the merged code for Daman, Diu, Dadra & Nagar Haveli
-    ('26', 'Dadra and Nagar Haveli and Daman and Diu'),
-    ('27', 'Maharashtra'),
-    ('29', 'Karnataka'),
-    ('30', 'Goa'),
-    ('31', 'Lakshadweep'),
-    ('32', 'Kerala'),
-    ('33', 'Tamil Nadu'),
-    ('34', 'Puducherry'),
-    ('35', 'Andaman and Nicobar Islands'),
-    ('36', 'Telangana'),
-    ('37', 'Andhra Pradesh'),
-    ('38', 'Ladakh'),
-    ('97', 'Other Territory'),
-)
+ROLES_CHOICE = [
+    ('BRANCH_MANAGER', 'Branch Manager'),
+    ('ADMIN', 'Administrator'),
+    ('STAFF', 'Staff')
+]
+#Employee and Leave table
+class Employee(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="employee")
+    designation = models.CharField(max_length=255, blank=True, null=True)
+    personal_phone = models.CharField(max_length=20, blank=True, null=True)
+    work_phone = models.CharField(max_length=20, blank=True, null=True)
+    personal_email = models.EmailField(blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True)
+    role = models.CharField(max_length=255, choices=ROLES_CHOICE)
+    supervisor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Supervisor_Or_Manager", null=True,
+                                   blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    # single source of truth for limits
+    LEAVE_LIMITS = {
+        "sick": 7,
+        "casual": 8,
+        "earned": 5,
+    }
 
+    #Leave Summary
+    def get_leave_summary(self):
+        summary = {}
+        approved_leaves = self.leave_records.filter(status="approved")
+        total_taken = 0
 
+        for leave_type, allotted in self.LEAVE_LIMITS.items():
+            leaves = approved_leaves.filter(leave_type=leave_type)
+            taken = sum(leave.duration for leave in leaves)
+            remaining = allotted - taken
 
+            summary[leave_type] = {
+                "allotted": allotted,
+                "taken": taken,
+                "remaining": remaining,
+            }
+            total_taken += taken
 
-# Create your models here.
-
-# -----------------------------------------
-# 1. Shift Table
-# -----------------------------------------
-
-
-class Shift(models.Model):
-    DAY_CHOICES = (
-        ('Mon', 'Monday'),
-        ('Tue', 'Tuesday'),
-        ('Wed', 'Wednesday'),
-        ('Thu', 'Thursday'),
-        ('Fri', 'Friday'),
-        ('Sat', 'Saturday'),
-        ('Sun', 'Sunday'),
-    )
-
-    shift_name = models.CharField(max_length=100)
-    shift_start_time = models.TimeField()
-    shift_end_time = models.TimeField()
-    # Maximum allowed duration in hours (e.g., 8.5 for 8 hours 30 mins)
-    maximum_allowed_duration = models.DecimalField(
-        max_digits=4,
-        decimal_places=2,
-        help_text="Maximum permitted duration in hours (example: 8.5)"
-    )
-    # Day off stored as a comma-separated string (e.g., 'Sat,Sun')
-    days_off = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        choices=DAY_CHOICES
-    )
+        summary["total_remaining"] = sum(self.LEAVE_LIMITS.values()) - total_taken
+        summary["total_taken"] = total_taken
+        return summary
 
     def __str__(self):
-        return self.shift_name
-
-# -----------------------------------------
-# 2. Employee Shift Table
-# -----------------------------------------
+        return self.user.username
 
 
-class EmployeeShift(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='employee_shifts')
-    shift = models.ForeignKey(
-        Shift, on_delete=models.CASCADE, related_name='assigned_employees')
-    # Optional: Track this assignment validity
-    valid_from = models.DateField(auto_now_add=True)
-    valid_to = models.DateField(null=True, blank=True)
+#Leave model
+class Leave(models.Model):
+    LEAVE_TYPES = [
+        ("sick", "Sick Leave"),
+        ("casual", "Casual Leave"),
+        ("earned", "Earned Leave"),
+    ]
+
+    STATUS = [
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+
+    employee = models.ForeignKey(
+        Employee, on_delete=models.CASCADE, related_name="leave_records"
+    )
+    leave_type = models.CharField(max_length=20, choices=LEAVE_TYPES)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    # my change
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def duration(self):
+        return (self.end_date - self.start_date).days + 1
+
+    def total_days(self):
+        return self.duration  # Alias for our template
 
     def __str__(self):
-        return f"{self.user.get_username()} assigned to {self.shift.shift_name}"
+        return f"{self.employee} - {self.leave_type}"
 
+    def __str__(self):
+        return f"{self.employee} - {self.leave_type}"
+
+
+class Product(models.Model):
+    item_name = models.CharField(max_length=300)
+    unit = models.CharField(max_length=30)
+    short_code = models.CharField(max_length=10)
+    hsn_code = models.CharField(max_length=10)
+    item_description = models.CharField(max_length=500)
+
+    def __str__(self):
+        return f"{self.item_name} ({self.short_code})"
+
+
+class Invoice(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invoices')
+    services = models.ManyToManyField(Task, blank=True, related_name='tagged_invoices')
+    due_date = models.DateField()
+    invoice_date = models.DateTimeField(default=timezone.now)
+    subject = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"Invoice #{self.id} - {self.client.client_name}"
+
+
+class InvoiceItem(models.Model):
+    GST_CHOICES = [
+        (0, '0%'),
+        (5, '5%'),
+        (12, '12%'),
+        (18, '18%'),
+        (28, '28%'),
+    ]
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    unit_cost = models.FloatField()
+    discount = models.FloatField(default=0.0)
+    taxable_value = models.FloatField(editable=False)
+    gst_percentage = models.IntegerField(choices=GST_CHOICES, default=0)
+    net_total = models.FloatField(editable=False)
+    def save(self, *args, **kwargs):
+        # Logic: taxable_value = unit_cost - discount
+        self.taxable_value = float(self.unit_cost) - float(self.discount)
+
+        # Logic: net_total = taxable_value + gst %
+        gst_amount = self.taxable_value * (self.gst_percentage / 100.0)
+        self.net_total = self.taxable_value + gst_amount
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product.item_name} - {self.invoice}"
+
+class Payment(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('CASH', 'Cash'),
+        ('CHECK', 'Check'),
+        ('UPI', 'UPI'),
+        ('BANK', 'Bank Transfer'),
+    ]
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
+    transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    amount = models.FloatField()
+    payment_date = models.DateField()
+    # Auto-compute fields
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"Payment {self.id} for Invoice #{self.invoice.id}"
+
+class Message(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('received', 'Received'),
+    ]
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver= models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+
+    def __str__(self):
+        return f"From{self.sender} to {self.receiver} - {self.status}"
