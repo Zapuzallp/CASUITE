@@ -14,6 +14,29 @@ class ProductForm(forms.ModelForm):
             'hsn_code',
             'item_description'
         ]
+        widgets = {
+            'item_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Service name'
+            }),
+            'unit': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Unit'
+            }),
+            'short_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Short code'
+            }),
+            'hsn_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'HSN Code'
+            }),
+            'item_description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Service description'
+            }),
+        }
 
 def list_services(request):
     services = Product.objects.all().order_by('item_name')
