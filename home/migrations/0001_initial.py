@@ -269,6 +269,20 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='employee_shifts', to=settings.AUTH_USER_MODEL)),
             ],
         ),
+        migrations.CreateModel(
+            name='Employee',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('designation', models.CharField(blank=True, max_length=255, null=True)),
+                ('personal_phone', models.CharField(blank=True, max_length=20, null=True)),
+                ('work_phone', models.CharField(blank=True, max_length=20, null=True)),
+                ('personal_email', models.EmailField(blank=True, max_length=254, null=True)),
+                ('address', models.TextField(blank=True, null=True)),
+                ('profile_pic', models.ImageField(blank=True, null=True, upload_to='profile_pics/')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='employee', to=settings.AUTH_USER_MODEL)),
+            ],
         migrations.AddField(
             model_name='employee',
             name='office_location',
