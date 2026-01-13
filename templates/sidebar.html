@@ -215,12 +215,26 @@
 
         <li class="nav-heading">HR</li>
 
+
+
         <li class="nav-item">
             <a class="nav-link" href="{% url 'leave-apply' %}">
-                <i class="bi"></i>
+                <i class="bi bi-calendar-check"></i>
                 <span>Apply Leave</span>
             </a>
         </li>
+
+        {% if user.is_staff or user.is_superuser %}
+<li class="nav-item">
+    <a class="nav-link " href="{% url 'manage-leaves' %}">
+        <i class="bi bi-clipboard-check"></i>
+        <span>Manage Leaves</span>
+        {% if total_pending > 0 %}
+        <span class="badge bg-danger rounded-pill">{{ total_pending }}</span>
+        {% endif %}
+    </a>
+</li>
+{% endif %}
 
 
         <li class="nav-heading">System</li>
