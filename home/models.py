@@ -866,10 +866,18 @@ class Leave(models.Model):
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
+    # my change
+    updated_at = models.DateTimeField(auto_now=True)
 
     @property
     def duration(self):
         return (self.end_date - self.start_date).days + 1
+
+    def total_days(self):
+        return self.duration  # Alias for our template
+
+    def __str__(self):
+        return f"{self.employee} - {self.leave_type}"
 
     def __str__(self):
         return f"{self.employee} - {self.leave_type}"
