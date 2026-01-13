@@ -1,6 +1,6 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -57,4 +57,7 @@ urlpatterns = [
     path('leave/<int:leave_id>/',leaveView.LeaveDeleteView.as_view(), name='leave-delete'),
     #manage_leaves
     path('manage-leaves/', leave_views.manage_leaves, name='manage-leaves'),
+    # chat message
+    path('chat/', messageView.chat_view, name='chat_base'),
+    path('chat/<int:user_id>/', messageView.chat_view, name='chat_with_user'),
 ]
