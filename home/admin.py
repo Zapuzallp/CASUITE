@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from import_export import resources, fields
 from import_export.admin import ImportExportModelAdmin
+from .models import Invoice, Payment, Client
 
 from .models import (
     Client,
@@ -487,3 +488,5 @@ class OfficeDetailsAdmin(admin.ModelAdmin):
                     'office_contact_no', 'latitude', 'longitude')
     search_fields = ('office_name', 'contact_person_name')
 
+admin.site.register(Invoice)
+admin.site.register(Payment)

@@ -1,11 +1,17 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect, render, get_object_or_404
 from django.views import View
 from django.views.generic import ListView
 from django.contrib.auth.models import User
-
+from django.contrib.auth.decorators import login_required
 from .models import (Client,ClientUserEntitle )
-
+from .models import Invoice, Payment
+from django.utils import timezone
+from django.contrib import messages
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField
+from .models import Invoice, Payment
+from decimal import Decimal
+from django.http import JsonResponse
 
 # RequestedDocument, DocumentMaster, ClientDocumentUpload, DocumentRequest)
 # from .forms import ClientForm, CompanyDetailsForm, LLPDetailsForm, OPCDetailsForm, Section8CompanyDetailsForm, \
@@ -210,3 +216,209 @@ class ClientView(LoginRequiredMixin, ListView):
     template_name = 'client/clients_all.html'
     context_object_name = 'clients'
     paginate_by = 10
+
+
+@login_required
+# def payment_list(request, invoice_id=None):
+#
+#     payments = Payment.objects.select_related(
+#         'invoice', 'invoice__client', 'created_by'
+#     ).order_by('-payment_date')
+#
+#     if invoice_id:
+#         payments = payments.filter(invoice_id=invoice_id)
+#
+#     # 🔥 attach calculated fields on invoice
+#     invoice_cache = {}
+#
+#     for p in payments:
+#         inv = p.invoice
+#
+#         if inv.id not in invoice_cache:
+#             total_paid = (
+#                 Payment.objects
+#                 .filter(invoice=inv)
+#                 .aggregate(Sum("amount"))["amount__sum"] or 0
+#             )
+#
+#             inv.total_paid = total_paid
+#             inv.remaining_amount = inv.total_amount - total_paid
+#
+#             invoice_cache[inv.id] = inv
+#
+#         else:
+#             cached = invoice_cache[inv.id]
+#             inv.total_paid = cached.total_paid
+#             inv.remaining_amount = cached.remaining_amount
+#
+#     return render(request, "payment_list.html", {
+#         "payments": payments
+#     })
+
+def payment_list(request):
+    payments = Payment.objects.select_related(
+        "invoice", "invoice__client", "created_by"
+    ).order_by("-payment_date")
+
+    return render(request, "payment_list.html", {
+        "payments": payments,
+    })
+
+#
+# @login_required
+#
+# def collect_payment(request, invoice_id):
+#     invoice = get_object_or_404(Invoice, id=invoice_id)
+#
+#     total_paid = (
+#         Payment.objects
+#         .filter(invoice=invoice)
+#         .aggregate(total=Sum("amount"))["total"]
+#         or Decimal("0")
+#     )
+#
+#     remaining = invoice.total_amount - total_paid
+#
+#     # already paid safeguard
+#     if remaining <= 0:
+#         messages.warning(request, "This invoice is already fully paid.")
+#         return redirect("invoice_select")
+#
+#     if request.method == "POST":
+#         amount = Decimal(request.POST.get("amount"))
+#
+#         if amount <= 0:
+#             messages.error(request, "Payment amount must be greater than 0.")
+#             return redirect(request.path)
+#
+#         if amount > remaining:
+#             messages.error(
+#                 request,
+#                 f"Payment cannot exceed remaining amount ₹{remaining}"
+#             )
+#             return redirect(request.path)
+#
+#         Payment.objects.create(
+#             invoice=invoice,
+#             amount=amount,
+#             payment_method=request.POST.get("payment_method"),
+#             payment_date=request.POST.get("payment_date"),
+#             transaction_id=request.POST.get("transaction_id"),
+#             created_by=request.user,
+#         )
+#
+#         total_paid += amount
+#         remaining = invoice.total_amount - total_paid
+#
+#         if remaining == 0:
+#             invoice.status = "Paid"
+#         else:
+#             invoice.status = "Partial"
+#
+#         invoice.save(update_fields=["status", "updated_at"])
+#
+#         messages.success(request, "Payment recorded successfully.")
+#         return redirect("invoice_select")
+#
+#     return render(
+#         request,
+#         "collect_payment.html",
+#         {
+#             "invoice": invoice,
+#             "remaining": remaining,
+#         }
+#     )
+
+@login_required
+def collect_payment(request, invoice_id):
+    if request.method != "POST":
+        return redirect("invoice_select")
+
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+
+    total_paid = (
+        Payment.objects
+        .filter(invoice=invoice)
+        .aggregate(total=Sum("amount"))["total"]
+        or Decimal("0")
+    )
+
+    remaining = invoice.total_amount - total_paid
+    amount = Decimal(request.POST.get("amount"))
+
+    # ❌ validation
+    if amount <= 0 or amount > remaining:
+        return redirect("invoice_select")
+
+    # ✅ save payment
+    Payment.objects.create(
+        invoice=invoice,
+        amount=amount,
+        payment_method=request.POST.get("payment_method"),
+        payment_date=request.POST.get("payment_date"),
+        transaction_id=request.POST.get("transaction_id"),
+        created_by=request.user
+    )
+
+    # ✅ update invoice status (IMPORTANT)
+    total_paid += amount
+    if total_paid >= invoice.total_amount:
+        invoice.status = "Paid"
+    else:
+        invoice.status = "Partial"
+
+    invoice.save(update_fields=["status", "updated_at"])
+
+    return redirect("invoice_select")
+
+
+@login_required
+def invoice_report_view(request):
+    invoices = Invoice.objects.annotate(
+        total_received=Sum("payments__amount", default=0)
+    ).annotate(
+        amount_pending=ExpressionWrapper(
+            F("total_amount") - F("total_received"),
+            output_field=DecimalField()
+        )
+    ).order_by("invoice_number")
+
+    return render(request, "invoice_report.html", {
+        "invoices_list": invoices
+    })
+
+
+
+@login_required
+def invoice_select(request):
+    invoices = Invoice.objects.all().order_by("-created_at")
+    return render(request, "invoice_select.html", {
+        "invoices": invoices
+    })
+
+
+@login_required
+def invoice_select_for_payment(request):
+    invoices = (
+        Invoice.objects
+        .annotate(
+            total_paid=Sum("payments__amount")
+        )
+        .order_by("-created_at")
+    )
+
+    for inv in invoices:
+        paid = inv.total_paid or Decimal("0")
+        inv.remaining = inv.total_amount - paid
+        inv.total_paid = paid
+
+    return render(
+        request,
+        "invoice_select.html",
+        {
+            "invoices": invoices
+        }
+    )
+
+def client_dashboard(request):
+    return render(request, 'client_dashboard.html')

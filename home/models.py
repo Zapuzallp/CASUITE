@@ -8,7 +8,8 @@ from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
 
-
+from django.db import models
+from django.utils import timezone
 # -------------------------
 # 1. Base Client Model
 # -------------------------
@@ -697,4 +698,56 @@ class OfficeDetails(models.Model):
 
     def __str__(self):
         return self.office_name
+
+
+class Invoice(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Paid', 'Paid'),
+        ('Partial', 'Partially Paid'),
+        ('Overdue', 'Overdue'),
+    ]
+
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invoices')
+    invoice_number = models.CharField(max_length=50, unique=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    issue_date = models.DateField(default=timezone.now)
+    due_date = models.DateField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.invoice_number
+
+
+# -------------------------
+# Payment Model (The core task)
+#
+#
+# Code by Mohit Pandey-------------------------
+class Payment(models.Model):
+    PAYMENT_METHODS = [
+        ('CASH', 'Cash'),
+        ('CHECK', 'Check'),
+        ('UPI', 'UPI'),
+        ('BANK', 'BANK'),
+    ]
+
+    # Task requirement: linked to Invoice
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
+
+    # Task requirement: Form fields
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS)
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    payment_date = models.DateField(default=timezone.now)
+
+    # Task requirement: Auto-set fields
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='payments_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Payment {self.id} for Invoice {self.invoice.invoice_number}"
 

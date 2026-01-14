@@ -1,4 +1,5 @@
 from django.urls import path
+from . import views
 
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView
 from home.customViews.attendanceView import (
@@ -46,4 +47,13 @@ urlpatterns = [
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
+    path('payment/<int:invoice_id>/collect/', views.collect_payment, name='collect_payment'),
+    path('payments/', views.payment_list, name='payment_list'), # Ye naya list view
+    path('invoice-report/', views.invoice_report_view, name='invoice_report'),
+    path('payments/invoice/<int:invoice_id>/', views.payment_list, name='invoice_payment_history'),
+    path('invoices/', views.invoice_select, name='invoice_select'),
+    path("payments/invoices/", views.invoice_select_for_payment, name="invoice_select"),
+    path('dashboard/', views.client_dashboard, name='client_dashboard'),
+
+
 ]

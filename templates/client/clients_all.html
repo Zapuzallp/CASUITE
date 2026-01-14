@@ -33,9 +33,18 @@
 
                         <div class="d-flex justify-content-between align-items-center my-3">
                             <h5 class="card-title m-0">All Clients Data</h5>
-                            <a href="{% url 'onboard_client' %}" class="btn btn-primary btn-sm">
-                                <i class="bi bi-plus-circle me-1"></i> Add New Client
-                            </a>
+
+                            <div>
+                                {% if request.user.is_superuser %}
+                                    <a href="{% url 'admin:home_client_changelist' %}" class="btn btn-warning btn-sm me-2" target="_blank">
+                                        <i class="bi bi-gear-fill me-1"></i> Admin Panel
+                                    </a>
+                                {% endif %}
+
+                                <a href="{% url 'onboard_client' %}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i> Add New Client
+                                </a>
+                            </div>
                         </div>
 
                         <table class="table table-borderless datatable1 table-hover" id="clientsTable">
@@ -85,7 +94,7 @@
                                     </td>
 
                                     <td>
-                                        <span class="badge rounded-pill 
+                                        <span class="badge rounded-pill
                                             {% if client.status == 'Incorporated' %}bg-success
                                             {% elif client.status == 'Prospect' %}bg-warning text-dark
                                             {% elif client.status == 'Incorporation in progress' %}bg-info text-dark
@@ -114,6 +123,15 @@
                                             <a href="#" class="btn btn-sm btn-light border" title="Edit">
                                                 <i class="bi bi-pencil text-warning"></i>
                                             </a>
+
+                                            {% if request.user.is_superuser %}
+                                                <a href="{% url 'admin:home_client_change' client.id %}"
+                                                   class="btn btn-sm btn-light border"
+                                                   title="Edit in Admin Panel"
+                                                   target="_blank">
+                                                    <i class="bi bi-shield-lock-fill text-danger"></i>
+                                                </a>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
