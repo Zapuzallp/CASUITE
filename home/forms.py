@@ -9,6 +9,9 @@ from .models import (
     ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message
 )
 from home.models import Leave
+from decimal import Decimal
+from .models import Payment, Invoice
+from django.utils import timezone
 
 
 class DocumentRequestForm(forms.ModelForm):
@@ -330,3 +333,57 @@ class MessageForm(forms.ModelForm):
             }),
             'status': forms.Select(attrs={'class': 'form-control', 'style': 'width: auto; display: inline-block;'}),
         }
+
+# ---------------------------------------------------------
+# Dedicated PaymentForm And PaymentCollectForm
+# ---------------------------------------------------------
+class PaymentForm(forms.ModelForm):
+    class Meta:
+        model = Payment
+        fields = ['payment_method', 'amount', 'payment_date', 'transaction_id']
+        widgets = {
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'payment_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'transaction_id': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+    def clean_amount(self):
+        amt = self.cleaned_data.get('amount')
+        if amt is None:
+            raise forms.ValidationError("Amount is required.")
+        dec_amt = Decimal(str(amt))
+        if dec_amt <= Decimal('0.00'):
+            raise forms.ValidationError("Amount must be greater than zero.")
+        return dec_amt
+
+    def clean_payment_date(self):
+        payment_date = self.cleaned_data.get('payment_date')
+        if not payment_date:
+            return payment_date
+        today = timezone.localdate()
+        if payment_date > today:
+            raise forms.ValidationError("Payment date cannot be in the future.")
+        return payment_date
+
+class PaymentCollectForm(PaymentForm):
+    invoice = forms.ModelChoiceField(
+        queryset=Invoice.objects.select_related('client').order_by('-id'),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    class Meta(PaymentForm.Meta):
+        fields = ['invoice'] + PaymentForm.Meta.fields
+
+    def __init__(self, *args, invoice_instance=None, **kwargs):
+        """
+        invoice_instance: if provided, lock the invoice (hide the field and set initial)
+        """
+        super().__init__(*args, **kwargs)
+        if invoice_instance:
+            # set the initial invoice and hide the field so user can't change it
+            self.fields['invoice'].initial = invoice_instance
+            self.fields['invoice'].widget = forms.HiddenInput()
+            self.invoice_instance = invoice_instance
+        else:
+            self.invoice_instance = None
