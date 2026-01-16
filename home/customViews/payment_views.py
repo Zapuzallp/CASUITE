@@ -13,7 +13,6 @@ from home.models import Invoice, Payment
 def payment_list(request):
     """
     Payments listing — simple search (invoice id or client name) + pagination.
-    Provides 'invoices' for the modal.
     """
     qs = Payment.objects.select_related('invoice__client', 'created_by').order_by('-payment_date', '-id')
 
@@ -32,7 +31,7 @@ def payment_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Provide recent invoices for modal (limit for performance)
+    # Provide recent invoices for modal
     invoices = Invoice.objects.select_related('client').order_by('-id')[:200]
 
     context = {
@@ -52,7 +51,6 @@ def payment_collect(request, invoice_id=None):
     if invoice_id:
         invoice = get_object_or_404(Invoice, pk=invoice_id)
     else:
-        # fallback to ?invoice_id= for legacy links
         qid = request.GET.get('invoice_id')
         if qid:
             invoice = get_object_or_404(Invoice, pk=qid)
@@ -63,7 +61,7 @@ def payment_collect(request, invoice_id=None):
             try:
                 with transaction.atomic():
                     payment = form.save(commit=False)
-                    # attach invoice (defensive)
+                    # attach invoice
                     payment.invoice = invoice or payment.invoice
                     # audit
                     payment.created_by = request.user
@@ -71,9 +69,7 @@ def payment_collect(request, invoice_id=None):
                 messages.success(request, "Payment recorded successfully.")
                 return redirect('payment_list')
             except Exception as exc:
-                # keep message friendly; log exc in real app
                 messages.error(request, "Could not save payment. Try again or contact admin.")
-        # if invalid, fall through to render with errors
         return render(request, 'payments/payment_collect.html', {'form': form, 'invoice': invoice})
 
     # GET: prefill date to today
