@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block body %}
+
+    <main id="main" class="main">
+        <div class="pagetitle d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Invoice</h1>
+                <nav>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#">Home</a></li>
+                        <li class="breadcrumb-item active">invoice</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card recent-sales overflow-auto h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Actions</h5>
+                            <!-- Modal 1-->
+                            <!-- Button trigger modal -->
+
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Create Invoice</button>
+                        </div>
+                    </div>
+                </div>
+    </div>
+
+    <!-- Modal 1-->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Create Invoice</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+            <form method="post" id="invoiceForm">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    {{ form.client.label_tag }}
+                    {{ form.client }}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.services.label_tag }}
+                    {{ form.services }}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.due_date.label_tag }}
+                        {{ form.due_date }}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        {{ form.invoice_date.label_tag }}
+                        {{ form.invoice_date }}
+                    </div>
+                 </div>
+
+                <div class="mb-3">
+                    {{ form.subject.label_tag }}
+                    {{ form.subject }}
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+    <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card recent-sales overflow-auto h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Previous Invoices</h5>
+                            <table class="table table-bordered table-hover">
+                              <thead>
+                                <tr>
+                                  <th scope="col">Invoice ID</th>
+                                  <th scope="col">Client</th>
+                                  <th scope="col">Due Date</th>
+                                    <th scope="col">Subject</th>
+                                    <th scope="col">Invoice Date</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {% for i in invoices %}
+                                <tr>
+                                    <td><a class="btn btn-outline" href="{% url 'invoice_details' i.id %}">{{ i.id }}</a></td>
+                                  <td>{{ i.client }}</td>
+                                    <td>{{ i.due_date }}</td>
+                                    <td>{{ i.subject }}</td>
+                                    <td>{{ i.invoice_date }}</td>
+                                {% endfor %}
+                                </tr>
+                              </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+    </div>
+
+    <script>
+
+        //Debugging JS run
+        console.log("Invoice JS loaded");
+
+        document.getElementById("id_client")?.addEventListener("change", function () {
+            console.log("Client changed:", this.value);
+        });
+
+        // To display the Services dynamically based on client selection
+        document.getElementById("id_client").addEventListener("change", function () {
+            fetch("{% url 'load_tasks' %}?client=" + this.value)
+                .then(res => res.json())
+                .then(tasks => {
+                    const select = document.getElementById("id_services");
+                    select.innerHTML = "";
+
+                    tasks.forEach(task => {
+                        const option = document.createElement("option");
+                        option.value = task.id;
+                        option.textContent = task.task_title;
+                        select.appendChild(option);
+                    });
+                });
+        });
+
+        //To reset the form on no submission.
+        const modal = document.getElementById("exampleModal");
+
+        modal.addEventListener("hidden.bs.modal", function () {
+            const form = document.getElementById("invoiceForm");
+            form.reset();
+
+            const servicesSelect = document.querySelector('[name="services"]');
+            servicesSelect.innerHTML = "";
+        });
+
+    </script>
+    </main>
+{% endblock body %}

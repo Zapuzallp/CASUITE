@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block body %}
+
+    <main id="main" class="main">
+        <div class="pagetitle d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Invoice</h1>
+                <nav>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#">Home</a></li>
+                        <li class="breadcrumb-item active">invoice</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+
+        <div class="container-fluid mt-4">
+            <div class="card">
+                <div class="card-header border-0">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="fw-bold">Invoice Details</h4>
+                    </div>
+                </div>
+
+                    <div class="row g-3">
+
+                        <!-- Left Card -->
+                        <div class="col-md-6 p-3">
+                            <div class="card shadow-sm border-0 h-100 p-2">
+                                <div class="card-body">
+
+                                    <p><strong>Invoice ID:</strong> #{{ invoice.id }}</p>
+                                    <p><strong>Assignee:</strong> {{ invoice.created_by }}</p>
+                                    <p><strong>Customer Name:</strong> {{ invoice.client.client_name }}</p>
+                                    <p><strong>Phone:</strong> {{ invoice.client.phone }}</p>
+                                    <p><strong>Email:</strong> {{ invoice.client.email|default:"N/A" }}</p>
+
+                                    <p>
+                                        <strong>Status:</strong>
+                                        <span class="badge bg-warning text-dark">
+                                            {{ invoice.status }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    <!-- Right Card -->
+                    <div class="col-md-6 p-3">
+                        <div class="card shadow-sm border-0 h-100 p-2">
+                            <div class="card-body">
+                                <p><strong>Due Date:</strong> {{ invoice.due_date }}</p>
+                                <p><strong>Payment Terms:</strong></p>
+                                <p class="text-muted-small">
+                                    {{ invoice.payment_terms|default:"N/A" }}
+                                </p>
+                                <p><strong>GST No:</strong> {{ invoice.client.gst_no|default:"N/A" }}</p>
+                                <p><strong>Address:</strong> {{ invoice.client.address }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+
+        <!--Adding invoice items-->
+        <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card recent-sales overflow-auto h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Actions</h5>
+                            <!-- Modal 1-->
+                            <!-- Button trigger modal -->
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="bi bi-plus-circle"></i> Add items</button>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+        <!-- Modal 1-->
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Add Items</h5>
+                <button type="button" class="btn-close" id="closeModalBtn" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+
+                  <form id="itemForm" class="mb-4">
+                      {% csrf_token %}
+                      <div class="row g-3 align-items-end">
+                          <div class="col-md-4">
+                              <label>Product</label>
+                              {{ item_form.product }}
+                          </div>
+                          <div class="col-md-2">
+                              <label>Unit Cost</label>
+                              {{ item_form.unit_cost }}
+                          </div>
+                          <div class="col-md-2">
+                              <label>Discount</label>
+                              {{ item_form.discount }}
+                          </div>
+                          <div class="col-md-2">
+                              <label>GST %</label>
+                              {{ item_form.gst_percentage }}
+                          </div>
+
+                          <div class="col-md-2">
+                              <button class="btn btn-primary w-100">Add to List</button>
+                          </div>
+                      </div>
+                  </form>
+
+                        <table id="itemsTable" class="table table-bordered align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Unit cost</th>
+                                <th>Discount</th>
+                                <th>GST %</th>
+                                <th>Taxable Value</th>
+                                <th>Net total</th>
+
+                            </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for item in invoice.items.all %}
+                                <tr>
+                                    <td>{{ item.product }}</td>
+                                    <td>{{ item.unit_cost }}</td>
+                                    <td>{{ item.discount }}</td>
+                                    <td>{{ item.gst_percentage }}%</td>
+                                    <td>{{ item.taxable_value }}</td>
+                                    <td>{{ item.net_total }}</td>
+
+                                </tr>
+                                {%  endfor %}
+                            </tbody>
+                        </table>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+    <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card recent-sales overflow-auto h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Invoice Items</h5>
+                            <table id="mainItemsTable" class="table table-bordered table-hover">
+                              <thead>
+                                <tr>
+                                  <th scope="col">Product</th>
+                                  <th scope="col">Unit Cost</th>
+                                    <th scope="col">Discount</th>
+                                    <th scope="col">GST Percentage</th>
+                                    <th scope="col">Taxable value</th>
+                                    <th scope="col">Net Total</th>
+                                    <th scope="col">Delete</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {% for i in invoice.items.all %}
+                                <tr>
+                                  <td>{{ i.product }}</td>
+                                    <td>{{ i.unit_cost }}</td>
+                                    <td>{{ i.discount }}</td>
+                                    <td>{{ i.gst_percentage }}</td>
+                                    <td>{{ i.taxable_value }}</td>
+                                    <td>{{ i.net_total }}</td>
+                                    <td>
+                                        <!-- Button trigger modal -->
+                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                                              <i class="bi bi-trash"></i>
+                                            </button>
+                                    <!-- Modal -->
+                                            <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                                              <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                  <div class="modal-header">
+                                                    <h5 class="modal-title" id="staticBackdropLabel">Delete Request!!</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                  </div>
+                                                  <div class="modal-body">
+                                                    <p class="h6">Do you want to <i class="text-danger">Delete</i> the Invoice Item?</p>
+                                                      <div class="mb-3 text-center">
+                                                      <a href="{% url 'invoice_delete-item' i.pk %}" class="btn btn-outline-danger m-1">Delete</a>
+                                                      <button type="button" class="btn btn-outline-primary m-1" data-bs-dismiss="modal">Cancel</button>
+                                                      </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                </td>
+                                {% endfor %}
+                              </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+    <script>
+        document.getElementById('itemForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+
+            fetch("{% url 'add-invoice-item' invoice.id %}", {
+                method: "POST",
+                body: formData,
+                credentials: 'same-origin',
+            })
+                .then(response => response.json())
+            .then(data => {
+                if(data.error) {
+                    console.error(data.error);
+                    return;
+                }
+
+                const row = `<tr>
+                    <td>${data.product}</td>
+                    <td>${data.unit_cost}</td>
+                    <td>${data.discount}</td>
+                    <td>${data.gst_percentage}%</td>
+                    <td>${{ data.taxable }}</td>
+                    <td>${{ data.total }}</td>
+                </tr>`;
+
+                document.querySelector('#itemsTable tbody').insertAdjacentHTML('beforeend', row);
+
+
+                form.reset();
+            });
+        });
+
+    document.getElementById("closeModalBtn").addEventListener("click", function () {
+    window.location.href = "{% url 'invoice_details' invoice.id %}";
+});
+
+    </script>
+    </main>
+{% endblock body %}

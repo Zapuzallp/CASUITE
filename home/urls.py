@@ -1,6 +1,6 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView, invoiceView, ReApplyLeaveViews
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -8,7 +8,7 @@ from home.customViews.attendanceView import (
     AttendanceLogsView,
 )
 from home.customViews.mobileAttendanceView import (
-    mobile_login_view, mobile_logout_view, mobile_attendance_view, 
+    mobile_login_view, mobile_logout_view, mobile_attendance_view,
     mobile_apply_leave, mobile_clock_in, mobile_clock_out, mobile_logs_view, mobile_leave_logs_view
 )
 from home.customViews.adminReportsView import AdminAttendanceReportView
@@ -89,7 +89,15 @@ urlpatterns = [
     # chat message
     path('chat/', messageView.chat_view, name='chat_base'),
     path('chat/<int:user_id>/', messageView.chat_view, name='chat_with_user'),
-    
+    #Invoice
+    path('invoice/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_all'),
+    path('ajax/load-tasks/', invoiceView.load_tasks, name='load_tasks'),
+    path('invoice/<int:invoice_id>/details', invoiceView.invoice_details, name='invoice_details'),
+    path('invoice/<int:pk>/items/add/', invoiceView.add_invoice_item_ajax, name='add-invoice-item'),
+    path('invoice/<int:item_id>/delete/', invoiceView.invoice_item_delete, name='invoice_delete-item'),
+
+
+
     # Mobile Attendance - Independent System
     path('mobile/', mobile_attendance_view, name='mobile_attendance'),
     path('mobile/logout/', mobile_logout_view, name='mobile_logout'),
