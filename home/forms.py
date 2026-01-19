@@ -328,5 +328,5 @@ class MessageForm(forms.ModelForm):
                 'id': 'summernote', # Required for JS initialization
                 'class': 'form-control',
             }),
-            'status': forms.Select(attrs={'class': 'form-control', 'style': 'width: auto; display: inline-block;'}),
+            'status': forms.Select(attrs={'class': 'form-control', 'style': 'width: auto; display: inline-block;cursor:pointer;'}),
         }

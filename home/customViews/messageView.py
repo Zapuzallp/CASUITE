@@ -10,6 +10,8 @@ from home.forms import MessageForm
 
 @login_required
 def chat_view(request, user_id=None):
+    '''Calculated recent users,target users,
+     form,messages,all users'''
 
     # -------------------------------
     # 1. RECENT CHAT USERS
