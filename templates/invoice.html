@@ -94,11 +94,12 @@
                                 </button>
                             </div>
 
-
+                            <!-- Previous Invoice Table -->
                             <table class="table table-hover datatable align-middle">
                                 <thead class="table-light">
 
                                 <tr>
+                                    <th scope="col">#</th>
                                   <th scope="col">Invoice ID</th>
                                   <th scope="col">Client</th>
                                   <th scope="col">Due Date</th>
@@ -110,11 +111,12 @@
                                     {% for i in invoices %}
                                     <tr>
                                         <td>
-                                            <a href="{% url 'invoice_details' i.id %}"
-                                               class="fw-bold text-primary text-decoration-none">
-                                                #{{ i.id }}
+                                            <a class="text-black" href="{% url 'invoice_details' i.id %}">
+                                                {{ i.id }}
                                             </a>
                                         </td>
+
+                                        <td class="fw-bold text-primary text-decoration-none">CASU00{{ i.id }}</td>
 
                                         <td class="fw-bold">{{ i.client }}</td>
 

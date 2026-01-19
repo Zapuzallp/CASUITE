@@ -38,9 +38,9 @@
                                 <div class="card-body">
 
                                     <p><strong>Invoice ID:</strong> #{{ invoice.id }}</p>
-                                    <p><strong>Assignee:</strong> {{ invoice.created_by }}</p>
+                                    <p><strong>Assignees:</strong> {{ invoice.client.assigned_ca }}</p>
                                     <p><strong>Customer Name:</strong> {{ invoice.client.client_name }}</p>
-                                    <p><strong>Phone:</strong> {{ invoice.client.phone }}</p>
+                                    <p><strong>Phone:</strong> {{ invoice.client.phone_number }}</p>
                                     <p><strong>Email:</strong> {{ invoice.client.email|default:"N/A" }}</p>
 
                                     <p>
@@ -63,12 +63,12 @@
                         <div class="card shadow-sm border-0 h-100 p-2">
                             <div class="card-body">
                                 <p><strong>Due Date:</strong> {{ invoice.due_date }}</p>
-                                <p><strong>Payment Terms:</strong></p>
+                                <p><strong>Business Structure:</strong></p>
                                 <p class="text-muted-small">
-                                    {{ invoice.payment_terms|default:"N/A" }}
+                                    {{ invoice.client.business_structure|default:"N/A" }}
                                 </p>
-                                <p><strong>GST No:</strong> {{ invoice.client.gst_no|default:"N/A" }}</p>
-                                <p><strong>Address:</strong> {{ invoice.client.address }}</p>
+                                <p><strong>File No:</strong> {{ invoice.client.file_number|default:"N/A" }}</p>
+                                <p><strong>Address:</strong> {{ invoice.client.address_line1 }}</p>
                             </div>
                         </div>
                     </div>
@@ -199,7 +199,7 @@
 
                                     {% endfor %}
                                     </tbody>
-                                     <!--delete model-->
+                                     <!--delete modal-->
                                     {% for i in invoice.items.all %}
                                     <div class="modal fade"
                                              id="deleteModal{{ i.pk }}"
@@ -310,8 +310,7 @@
             })
             .catch(err => console.error(err));
         });
-        </script>
-        <script>
+
             function deleteInvoiceItem(itemId) {
                 fetch(`/invoice/${itemId}/delete/`, {
                     method: "POST",
