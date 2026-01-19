@@ -16,6 +16,7 @@ from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
+from home.clients.client_access import get_accessible_clients
 from datetime import timedelta
 
 # Import your models
@@ -158,14 +159,8 @@ def get_client_dashboard_data(user, today):
 
     # ---------------------------------------------------------
     # 1. CLIENT VISIBILITY (ENTITLEMENT)
-    # ---------------------------------------------------------
-    if user.is_superuser:
-        clients_qs = Client.objects.all()
-    else:
-        clients_qs = Client.objects.filter(
-            user_mappings__user=user
-        ).distinct()
-
+    # # ---------------------------------------------------------
+    clients_qs = get_accessible_clients(user)
     # ---------------------------------------------------------
     # 2. CLIENT COUNTS
     # ---------------------------------------------------------

@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 
 from home.forms import DocumentUploadForm, DocumentRequestForm, RequestedDocument
+from home.clients.client_access import get_accessible_clients
 from home.models import Client, Task  # Import your other models as needed
 
 
@@ -50,32 +51,13 @@ def client_details_view(request, client_id):
     Implements Role-Based Access Control similar to ClientView.
     """
     user = request.user
-
     # --- Role-Based Permission Logic ---
-    if user.is_superuser:
-        client = get_object_or_404(Client, id=client_id)
-    else:
-        try:
-            employee = user.employee
-            if employee.role == 'ADMIN':
-                # Admin can access any client
-                client = get_object_or_404(Client, id=client_id)
-
-            elif employee.role == 'BRANCH_MANAGER':
-                # Branch Manager: Access only if client is in the same office
-                if employee.office_location:
-                    client = get_object_or_404(Client, id=client_id, office_location=employee.office_location)
-                else:
-                    # Fallback: If manager has no office set, they can only see explicitly assigned clients
-                    client = get_object_or_404(Client, id=client_id, assigned_ca=user)
-
-            else:
-                # Staff / Default: Can only see clients explicitly assigned to them
-                client = get_object_or_404(Client, id=client_id, assigned_ca=user)
-
-        except Employee.DoesNotExist:
-            # Fallback for users without employee profile: Strict assignment only
-            client = get_object_or_404(Client, id=client_id, assigned_ca=user)
+    # Fetch only those clients the current user is allowed to access
+    # (based on role, assignment, or admin privileges)
+    accessible_clients = get_accessible_clients(user)
+    # Ensure the requested client exists AND is within the user's allowed scope
+    # This prevents unauthorized users from accessing other clients' data
+    client = get_object_or_404(accessible_clients, id=client_id)
 
     # 1. Dynamic Basic Info & Linked Data
     # Note: Ensure get_dynamic_fields is imported or defined
