@@ -60,13 +60,16 @@ def add_invoice_item_ajax(request, pk):
                 'unit_cost':item.unit_cost,
                 'discount':item.discount,
                 'gst_percentage':item.gst_percentage,
-                'taxable':item.taxable_value,
-                'total':item.net_total,
+                'taxable':round(item.taxable_value,5),
+                'total':round(item.net_total,3),
             })
     return JsonResponse({'error': 'Invalid'}, status=400)
 
 @login_required
 def invoice_item_delete(request, item_id):
-    item = InvoiceItem.objects.get(pk=item_id)
-    item.delete()
-    return redirect('invoice_details', item.invoice.id)
+    if request.method == "POST":
+        item = InvoiceItem.objects.get(pk=item_id)
+        item.delete()
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False}, status=400)

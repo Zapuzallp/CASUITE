@@ -22,7 +22,11 @@
             <div class="card">
                 <div class="card-header border-0">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="fw-bold">Invoice Details</h4>
+                         <h5 class="card-title m-0">Invoice Details</h5>
+                        <small class="text-muted">
+                            Invoice created on {{ invoice.invoice_date }}
+                        </small>
+
                     </div>
                 </div>
 
@@ -41,9 +45,13 @@
 
                                     <p>
                                         <strong>Status:</strong>
-                                        <span class="badge bg-warning text-dark">
+                                        <span class="badge
+                                            {% if invoice.status == 'Paid' %}bg-success
+                                            {% elif invoice.status == 'Pending' %}bg-warning text-dark
+                                            {% else %}bg-secondary{% endif %}">
                                             {{ invoice.status }}
                                         </span>
+
                                     </p>
                                 </div>
                             </div>
@@ -70,22 +78,22 @@
 
 
         <!--Adding invoice items-->
-        <div class="row g-4 mb-4">
-                <div class="col-12">
-                    <div class="card recent-sales overflow-auto h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Actions</h5>
-                            <!-- Modal 1-->
-                            <!-- Button trigger modal -->
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="bi bi-plus-circle"></i> Add items</button>
-                        </div>
-                    </div>
-                </div>
-        </div>
+<!--        <div class="row g-4 mb-4">-->
+<!--                <div class="col-12">-->
+<!--                    <div class="card recent-sales overflow-auto h-100">-->
+<!--                        <div class="card-body">-->
+<!--                            <h5 class="card-title">Actions</h5>-->
+<!--                            &lt;!&ndash; Modal 1&ndash;&gt;-->
+<!--                            &lt;!&ndash; Button trigger modal &ndash;&gt;-->
+<!--                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="bi bi-plus-circle"></i> Add items</button>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--        </div>-->
 
         <!-- Modal 1-->
         <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-          <div class="modal-dialog modal-fullscreen">
+          <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Add Items</h5>
@@ -118,34 +126,6 @@
                           </div>
                       </div>
                   </form>
-
-                        <table id="itemsTable" class="table table-bordered align-middle">
-                            <thead class="table-light">
-                            <tr>
-                                <th>Product</th>
-                                <th>Unit cost</th>
-                                <th>Discount</th>
-                                <th>GST %</th>
-                                <th>Taxable Value</th>
-                                <th>Net total</th>
-
-                            </tr>
-                            </thead>
-
-                            <tbody>
-                                {% for item in invoice.items.all %}
-                                <tr>
-                                    <td>{{ item.product }}</td>
-                                    <td>{{ item.unit_cost }}</td>
-                                    <td>{{ item.discount }}</td>
-                                    <td>{{ item.gst_percentage }}%</td>
-                                    <td>{{ item.taxable_value }}</td>
-                                    <td>{{ item.net_total }}</td>
-
-                                </tr>
-                                {%  endfor %}
-                            </tbody>
-                        </table>
               </div>
 
             </div>
@@ -157,9 +137,23 @@
                 <div class="col-12">
                     <div class="card recent-sales overflow-auto h-100">
                         <div class="card-body">
-                            <h5 class="card-title">Invoice Items</h5>
-                            <table id="mainItemsTable" class="table table-bordered table-hover">
-                              <thead>
+                            <div class="d-flex justify-content-between align-items-center my-3">
+                                <div>
+                                    <h5 class="card-title m-0">Invoice Items</h5>
+                                    <small class="text-muted">
+                                        Showing {{ invoice.items.count }} item(s)
+                                    </small>
+                                </div>
+
+                                <button class="btn btn-primary btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#exampleModal">
+                                    <i class="bi bi-plus-lg me-1"></i> Add Item
+                                </button>
+                            </div>
+
+                            <table class="table table-hover datatable align-middle" id="invoiceItemsTable">
+                                <thead class="table-light">
                                 <tr>
                                   <th scope="col">Product</th>
                                   <th scope="col">Unit Cost</th>
@@ -170,41 +164,91 @@
                                     <th scope="col">Delete</th>
                                 </tr>
                               </thead>
-                              <tbody>
-                                {% for i in invoice.items.all %}
-                                <tr>
-                                  <td>{{ i.product }}</td>
-                                    <td>{{ i.unit_cost }}</td>
-                                    <td>{{ i.discount }}</td>
-                                    <td>{{ i.gst_percentage }}</td>
-                                    <td>{{ i.taxable_value }}</td>
-                                    <td>{{ i.net_total }}</td>
-                                    <td>
-                                        <!-- Button trigger modal -->
-                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
-                                              <i class="bi bi-trash"></i>
+                                <tbody>
+                                    {% for i in invoice.items.all %}
+                                    <tr id="row-{{ i.pk }}">
+
+                                        <td>{{ i.product }}</td>
+
+                                        <td>{{ i.unit_cost }}</td>
+
+                                        <td>{{ i.discount }}</td>
+
+                                        <td>
+                                            <span class="badge bg-light text-dark border">
+                                                {{ i.gst_percentage }}%
+                                            </span>
+                                        </td>
+
+                                        <td>{{ i.taxable_value }}</td>
+
+                                        <td class="fw-bold text-success">
+                                            ₹{{ i.net_total }}
+                                        </td>
+
+                                         <td>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#deleteModal{{ i.pk }}">
+                                                <i class="bi bi-trash"></i>
                                             </button>
-                                    <!-- Modal -->
-                                            <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                                              <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                  <div class="modal-header">
-                                                    <h5 class="modal-title" id="staticBackdropLabel">Delete Request!!</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                  </div>
-                                                  <div class="modal-body">
-                                                    <p class="h6">Do you want to <i class="text-danger">Delete</i> the Invoice Item?</p>
-                                                      <div class="mb-3 text-center">
-                                                      <a href="{% url 'invoice_delete-item' i.pk %}" class="btn btn-outline-danger m-1">Delete</a>
-                                                      <button type="button" class="btn btn-outline-primary m-1" data-bs-dismiss="modal">Cancel</button>
-                                                      </div>
-                                                  </div>
+                                        </td>
+                                    </tr>
+
+
+                                    {% endfor %}
+                                    </tbody>
+                                     <!--delete model-->
+                                    {% for i in invoice.items.all %}
+                                    <div class="modal fade"
+                                             id="deleteModal{{ i.pk }}"
+                                             tabindex="-1"
+                                             data-bs-backdrop="static"
+                                             data-bs-keyboard="false"
+                                             aria-hidden="true">
+
+                                            <div class="modal-dialog modal-sm modal-dialog-centered">
+                                                <div class="modal-content border-0 shadow-sm">
+
+                                                    <div class="modal-header bg-light">
+                                                        <h6 class="modal-title fw-semibold text-danger">
+                                                            Confirm Deletion
+                                                        </h6>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+
+                                                    <div class="modal-body text-center py-4">
+                                                        <p class="mb-1 fw-semibold">
+                                                            Delete this invoice item?
+                                                        </p>
+                                                        <p class="text-muted small mb-0">
+                                                            This action cannot be undone.
+                                                        </p>
+                                                    </div>
+
+                                                    <div class="modal-footer justify-content-center border-0 pt-0">
+
+                                                            <button type="button"
+                                                                    class="btn btn-outline-secondary btn-sm px-4"
+                                                                    data-bs-dismiss="modal">
+                                                                Cancel
+                                                            </button>
+
+                                                            <button type="button"
+                                                                    class="btn btn-danger btn-sm px-4"
+                                                                    onclick="deleteInvoiceItem({{ i.pk }})">
+                                                                Delete
+                                                            </button>
+                                                    </div>
+
+
+
                                                 </div>
-                                              </div>
                                             </div>
-                                </td>
-                                {% endfor %}
-                              </tbody>
+                                    </div>
+                                    {% endfor %}
+
                             </table>
                         </div>
                     </div>
@@ -212,44 +256,89 @@
         </div>
 
     <script>
-        document.getElementById('itemForm').addEventListener('submit', (e) => {
+        document.getElementById('itemForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
-            const form = e.target;
+            const form = this;
             const formData = new FormData(form);
 
             fetch("{% url 'add-invoice-item' invoice.id %}", {
                 method: "POST",
                 body: formData,
-                credentials: 'same-origin',
+                credentials: "same-origin"
             })
-                .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
-                if(data.error) {
+                if (data.error) {
                     console.error(data.error);
                     return;
                 }
 
-                const row = `<tr>
+                //  Append new row to table
+                const tableBody = document.querySelector('#invoiceItemsTable tbody');
+
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
                     <td>${data.product}</td>
                     <td>${data.unit_cost}</td>
                     <td>${data.discount}</td>
-                    <td>${data.gst_percentage}%</td>
-                    <td>${{ data.taxable }}</td>
-                    <td>${{ data.total }}</td>
-                </tr>`;
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            ${data.gst_percentage}%
+                        </span>
+                    </td>
+                    <td>${data.taxable}</td>
+                    <td class="fw-bold text-success">
+                        ₹${data.total}
+                    </td>
+                    <td>
+                        <button class="btn btn-outline-danger btn-sm" disabled>
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
 
-                document.querySelector('#itemsTable tbody').insertAdjacentHTML('beforeend', row);
+                tableBody.appendChild(newRow);
 
-
+                //  Reset form
                 form.reset();
-            });
+
+                //  Close modal smoothly
+                const modalEl = document.getElementById('exampleModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                modalInstance.hide();
+            })
+            .catch(err => console.error(err));
         });
+        </script>
+        <script>
+            function deleteInvoiceItem(itemId) {
+                fetch(`/invoice/${itemId}/delete/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) return;
 
-    document.getElementById("closeModalBtn").addEventListener("click", function () {
-    window.location.href = "{% url 'invoice_details' invoice.id %}";
-});
+                    // Close modal FIRST
+                    const modalEl = document.getElementById(`deleteModal${itemId}`);
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    modalInstance.hide();
 
-    </script>
+                    // Remove table row
+                    const row = document.getElementById(`row-${itemId}`);
+                    if (row) row.remove();
+                })
+                .catch(err => console.error(err));
+            }
+            </script>
+
+
+
+
     </main>
 {% endblock body %}
