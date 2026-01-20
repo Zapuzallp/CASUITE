@@ -13,6 +13,7 @@ from django.utils import timezone
 from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
 from home.forms import TaskForm, TaskExtendedForm
 from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
+from home.clients.client_access import get_accessible_clients
 from home.tasks.task_copy import copy_task
 
 
@@ -83,56 +84,23 @@ def task_list_view(request):
     # 1. Initialize Base QuerySets
     # We select related fields to optimize database queries
     tasks_qs = Task.objects.select_related('client', 'created_by').prefetch_related('assignees')
-    clients_qs = Client.objects.only('id', 'client_name', 'status', 'office_location', 'assigned_ca')
+
 
     # 2. Role-Based Visibility Logic
-    if user.is_superuser:
-        # Superuser sees everything
-        pass
-    else:
-        try:
-            employee = user.employee
-            if employee.role == 'ADMIN':
-                # Admin sees everything
-                pass
+    # Fetch clients accessible to the user using universal role-based logic
+    # (Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
+    clients_qs = get_accessible_clients(user)
 
+    # Task visibility:
+    # - Tasks linked to accessible clients
+    # - OR tasks explicitly assigned to the user
+    tasks_qs = tasks_qs.filter(
+        # Allow tasks if they belong to a client the user can access
+        Q(client__in=clients_qs) |
+        # This ensures assignees always see their tasks, even if client visibility is not given to them
+        Q(assignees=user)
+    ).distinct()
 
-            elif employee.role == 'BRANCH_MANAGER':
-                if employee.office_location:
-                    # Show tasks if:
-                    # 1. Client is in the manager's office
-                    # OR 2. Manager is the Client's CA
-                    # OR 3. Manager is directly assigned (Assignee)
-
-                    tasks_qs = tasks_qs.filter(
-                        Q(client__office_location=employee.office_location) |
-                        Q(client__assigned_ca=user) |
-                        Q(assignees=user)
-                    ).distinct()
-
-                    clients_qs = clients_qs.filter(
-                        Q(office_location=employee.office_location) |
-                        Q(assigned_ca=user)
-
-                    ).distinct()
-
-                else:
-                    tasks_qs = tasks_qs.filter(
-                        Q(client__assigned_ca=user) |
-                        Q(assignees=user)
-                    ).distinct()
-
-                    clients_qs = clients_qs.filter(assigned_ca=user)
-
-            else:
-                # Staff sees only tasks for clients assigned to them
-                tasks_qs = tasks_qs.filter(Q(client__assigned_ca=user) | Q(assignees=user))
-                clients_qs = clients_qs.filter(assigned_ca=user)
-
-        except Employee.DoesNotExist:
-            # Fallback for users without an employee profile
-            tasks_qs = tasks_qs.filter(client__assigned_ca=user)
-            clients_qs = clients_qs.filter(assigned_ca=user)
 
     # 3. Apply UI Filters (GET parameters)
     search_query = request.GET.get('q')
@@ -197,44 +165,22 @@ def task_detail_view(request, task_id):
     """
     user = request.user
     is_admin = user.is_superuser
+    # Universal client visibility
+    #(Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
+    accessible_clients = get_accessible_clients(user)
 
-    # --- Role-Based Permission Logic ---
-    if user.is_superuser:
-        task = get_object_or_404(Task, id=task_id)
-    else:
-        try:
-            employee = user.employee
-            if employee.role == 'ADMIN':
-                task = get_object_or_404(Task, id=task_id)
-                is_admin = True
-            elif employee.role == 'BRANCH_MANAGER':
-                if employee.office_location:
-                    # Manager sees task if:
-                    # 1. It matches their Office
-                    # OR 2. They are the Client's CA
-                    # OR 3. They are explicitly assigned
-                    task = get_object_or_404(
-                        Task.objects.distinct(),  # Important: Prevents duplicates from OR logic
-                        Q(client__office_location=employee.office_location) |
-                        Q(client__assigned_ca=user) |
-                        Q(assignees=user),
-                        id=task_id
-                    )
-                else:
-                    # Fallback: Manager has no office, show only directly assigned
-                    task = get_object_or_404(
-                        Task.objects.distinct(),
-                        Q(client__assigned_ca=user) | Q(assignees=user),
-                        id=task_id
-                    )
-            else:
-                task = get_object_or_404(
-                    Task,
-                    Q(client__assigned_ca=user) | Q(assignees=user),
-                    id=task_id
-                )
-        except Employee.DoesNotExist:
-            task = get_object_or_404(Task, id=task_id, client__assigned_ca=user)
+    # Task access:
+    # - Task belongs to an accessible client
+    # - OR user is explicitly assigned
+    task = get_object_or_404(
+        Task.objects.filter(
+            # Allow tasks if they belong to a client the user can access
+            Q(client__in=accessible_clients) |
+            # This ensures assignees always see their tasks, even if client visibility is not given to them
+            Q(assignees=user)
+        ).distinct(),
+        id=task_id
+    )
 
     # 1. Load Config & Steps
     config = TASK_CONFIG.get(task.service_type, {})
