@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
+from django.views.decorators.http import require_POST
 from django.db.models import Q, Max
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
@@ -13,6 +14,8 @@ from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
 from home.forms import TaskForm, TaskExtendedForm
 from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
 from home.clients.client_access import get_accessible_clients
+from home.tasks.task_copy import copy_task
+
 
 @login_required
 def create_task_view(request, client_id):
@@ -50,7 +53,7 @@ def create_task_view(request, client_id):
                     extended.save()
 
                     messages.success(request, "Task created successfully!")
-                    return redirect('client_details', client_id=client.id)
+                    return redirect('task_list')
             except Exception as e:
                 messages.error(request, f"Error: {e}")
         else:
@@ -446,3 +449,28 @@ def edit_task_view(request, task_id):
         'client_data_json': json.dumps(client_data_map, cls=DjangoJSONEncoder)  # <--- 4. PASS JSON DATA
     }
     return render(request, 'client/create_task.html', context)
+
+@login_required
+@require_POST
+def copy_task_view(request, task_id):
+    """
+    Manual task copy handler.
+    Uses shared copy logic.
+    """
+
+    original_task = get_object_or_404(Task, id=task_id)
+
+    # Optional: permission check (keep simple, same as edit/view)
+    if not request.user.has_perm('home.add_task'):
+        messages.error(request, "You do not have permission to copy tasks.")
+        return redirect('task_detail', task_id=task_id)
+
+    # Reusable copy logic
+    new_task = copy_task(
+        original_task=original_task,
+        created_by=request.user
+    )
+
+    # messages.success(request, "Task copied successfully.")
+
+    return redirect('task_list')

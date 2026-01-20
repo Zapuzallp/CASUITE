@@ -420,7 +420,7 @@ class Task(models.Model):
     description = models.TextField(blank=True, null=True)
 
     # --- Dates & Status ---
-    due_date = models.DateField()
+    due_date = models.DateField(blank=True, null=True)
     completed_date = models.DateField(blank=True, null=True)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='Medium')
 
@@ -438,6 +438,8 @@ class Task(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # 🔑 This prevents duplicate auto-creation
+    last_auto_created_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.task_title} ({self.client.client_name})"
@@ -452,6 +454,12 @@ class Task(models.Model):
                 changed_by=changed_by,
                 remarks=remarks
             )
+    # Set `is_recurring` only when the task is first created.
+    # Derived from `recurrence_period` to avoid auto-created
+    # or copied tasks being incorrectly marked as recurring.
+    def save(self, *args, **kwargs):
+        self.is_recurring = self.recurrence_period != 'None'
+        super().save(*args, **kwargs)
 
 
 class TaskAssignmentStatus(models.Model):
