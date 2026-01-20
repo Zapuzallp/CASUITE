@@ -330,6 +330,7 @@ class TaskAdmin(admin.ModelAdmin):
         "fee_status",
         "created_by",
         "created_at",
+        "last_auto_created_at",
     )
     list_filter = (
         "service_type",
