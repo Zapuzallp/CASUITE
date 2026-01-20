@@ -42,6 +42,7 @@ urlpatterns = [
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
+    path('tasks/<int:task_id>/copy/', taskView.copy_task_view, name='task_copy'),
 
     # reset password
     path('password/change/', resetPassword.CustomPasswordChangeView.as_view(), name='password_change'),

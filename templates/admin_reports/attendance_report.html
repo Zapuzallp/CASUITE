@@ -2,6 +2,19 @@
 {% load static %}
 
 {% block body %}
+<style>
+.sticky-daily-table .sticky-employee-col {
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 10;
+    border-right: 2px solid #dee2e6;
+}
+.sticky-daily-table thead .sticky-employee-col {
+    z-index: 11;
+    background: #cff4fc;
+}
+</style>
 <main id="main" class="main">
     <div class="pagetitle">
         <h1>Attendance Report</h1>
@@ -183,10 +196,10 @@
                         
                         {% if month and year %}
                             <div class="table-responsive">
-                                <table class="table table-bordered table-sm">
+                                <table class="table table-bordered table-sm sticky-daily-table">
                                     <thead>
                                         <tr class="table-info">
-                                            <th>Employee</th>
+                                            <th class="sticky-employee-col">Employee</th>
                                             {% for day in calendar_days %}
                                                 <th class="text-center" style="min-width: 35px; font-size: 12px;">{{ day }}</th>
                                             {% endfor %}
@@ -195,7 +208,7 @@
                                     <tbody>
                                         {% for emp_data in daily_attendance_data %}
                                         <tr>
-                                            <td class="fw-bold">{{ emp_data.employee }}</td>
+                                            <td class="fw-bold sticky-employee-col">{{ emp_data.employee }}</td>
                                             {% for status in emp_data.daily_status %}
                                                 <td class="text-center p-1">
                                                     {% if status == 'present' %}

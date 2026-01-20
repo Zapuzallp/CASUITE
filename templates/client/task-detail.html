@@ -71,8 +71,42 @@
                 <li class="breadcrumb-item active">{{ task.task_title }}</li>
             </ol>
         </nav>
-        <div class="btn-group">
-            <a href="{% url 'edit_task' task.id %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i> Edit</a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'edit_task' task.id %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil me-1"></i> Edit</a>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                    data-bs-target="#copyTaskModal">
+                Copy Task
+            </button>
+        </div>
+        <div class="modal fade" id="copyTaskModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Copy</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        Are you sure you want to create a copy of this task?
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+
+                        <form method="post" action="{% url 'task_copy' task.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">
+                                Yes, Copy Task
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
         </div>
     </div>
 
