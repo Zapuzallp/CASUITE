@@ -1,4 +1,3 @@
-from django.contrib import admin
 from django.utils.html import format_html
 from import_export import resources, fields
 from import_export.admin import ImportExportModelAdmin
@@ -20,9 +19,11 @@ from .models import (
     TaskDocument,
     GSTDetails,
     Employee,
+    Shift, EmployeeShift, OfficeDetails,
+    Leave,
+    Message
 )
 
-from .models import Shift, EmployeeShift, OfficeDetails
 
 class ClientResource(resources.ModelResource):
     # ===============================
@@ -39,6 +40,10 @@ class ClientResource(resources.ModelResource):
     number_of_members = fields.Field(column_name='number_of_members')
     object_clause = fields.Field(column_name='object_clause')
     is_section8_license_obtained = fields.Field(column_name='is_section8_license_obtained')
+
+    # Add key_persons explicitly if you want to use widgets,
+    # otherwise we handle it manually in after_import_row
+    key_persons = fields.Field(column_name='key_persons')
 
     class Meta:
         model = Client
@@ -62,6 +67,8 @@ class ClientResource(resources.ModelResource):
             'client_type',
             'business_structure',
             'status',
+            'father_name',
+            'office_location',
             'remarks',
             'created_by',
             'created_at',
@@ -81,38 +88,103 @@ class ClientResource(resources.ModelResource):
             'opc_nominee_name',
             'object_clause',
             'is_section8_license_obtained',
+            'key_persons',  # Ensure this is in fields
         )
 
     def after_import_row(self, row, row_result, **kwargs):
-        client = Client.objects.get(pan_no=row['pan_no'])
+        # 1. Get the Main Client Instance
+        try:
+            # Strip whitespace just in case the PAN has spaces
+            pan = str(row.get('pan_no', '')).strip()
+            client = Client.objects.get(pan_no=pan)
+        except Client.DoesNotExist:
+            return
 
+        # --- HELPER FUNCTION TO CLEAN DATA ---
+        def clean_val(value):
+            """
+            Converts empty strings, 'None', 'nan' (from pandas), or whitespace
+            into a proper Python None object.
+            """
+            if value is None:
+                return None
+            # If it's already a date/number object, return it
+            if not isinstance(value, str):
+                return value
+
+            # Check string values
+            cleaned = value.strip()
+            if not cleaned or cleaned.lower() in ['none', 'null', 'nan']:
+                return None
+            return cleaned
+
+        # 2. Extract Many-to-Many data separately
+        key_persons_raw = row.get('key_persons')
+
+        # 3. Create or Update Profile
+        # We wrap fields in clean_val() to ensure no bad strings get passed to Date/Decimal fields
         ClientBusinessProfile.objects.update_or_create(
             client=client,
             defaults={
-                'registration_number': row.get('registration_number'),
-                'date_of_incorporation': row.get('date_of_incorporation'),
+                'registration_number': clean_val(row.get('registration_number')),
+
+                # DATE FIELDS: Crucial to use clean_val here
+                'date_of_incorporation': clean_val(row.get('date_of_incorporation')),
+
                 'registered_office_address': row.get('registered_office_address'),
                 'udyam_registration': row.get('udyam_registration'),
-                'authorised_capital': row.get('authorised_capital') or None,
-                'paid_up_capital': row.get('paid_up_capital') or None,
-                'key_persons': row.get('key_persons') or None,
-                'number_of_directors': row.get('number_of_directors') or None,
-                'number_of_shareholders': row.get('number_of_shareholders') or None,
-                'number_of_members': row.get('number_of_members') or None,
-                'number_of_coparceners': row.get('number_of_coparceners') or None,
+
+                # DECIMAL/INTEGER FIELDS: prevent "ValueError" on empty strings
+                'authorised_capital': clean_val(row.get('authorised_capital')),
+                'paid_up_capital': clean_val(row.get('paid_up_capital')),
+                'number_of_directors': clean_val(row.get('number_of_directors')),
+                'number_of_shareholders': clean_val(row.get('number_of_shareholders')),
+                'number_of_members': clean_val(row.get('number_of_members')),
+                'number_of_coparceners': clean_val(row.get('number_of_coparceners')),
+
                 'opc_nominee_name': row.get('opc_nominee_name'),
                 'object_clause': row.get('object_clause'),
-                'is_section8_license_obtained': row.get('is_section8_license_obtained') in ['1', 'True', 'true'],
+
+                # BOOLEAN FIELD HANDLING
+                'is_section8_license_obtained': str(row.get('is_section8_license_obtained')).lower() in ['1', 'true',
+                                                                                                         'yes'],
             }
         )
 
+        # 4. Handle Many-to-Many assignment
+        if key_persons_raw:
+            # Fetch the profile again to be safe
+            profile = client.business_profile
+
+            # Logic assuming input is "1, 2, 3" (IDs)
+            try:
+                # Ensure we are splitting a string
+                raw_str = str(key_persons_raw)
+                ids = [int(x.strip()) for x in raw_str.split(',') if x.strip().isdigit()]
+                if ids:
+                    profile.key_persons.set(ids)
+            except Exception:
+                pass
 
 from django.contrib import admin
 from .models import Notification
 
+# =====================================================
+# INLINE BUSINESS PROFILE
+# =====================================================
+class ClientBusinessProfileInline(admin.StackedInline):
+    model = ClientBusinessProfile
+    fk_name = "client"   # IMPORTANT: required in your case
+    extra = 0
+    max_num = 1
+    can_delete = False
+    autocomplete_fields = ("karta", "key_persons")
+
+
 @admin.register(Client)
 class ClientAdmin(ImportExportModelAdmin):
     resource_class = ClientResource
+    inlines = [ClientBusinessProfileInline]
 
     list_display = (
         "client_name",
@@ -151,33 +223,13 @@ class ClientAdmin(ImportExportModelAdmin):
     )
     date_hierarchy = "created_at"
     autocomplete_fields = ("assigned_ca", "created_by")
+    # Restrict client list in admin
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(assigned_ca=request.user)
 
-
-@admin.register(ClientBusinessProfile)
-class ClientBusinessProfileAdmin(admin.ModelAdmin):
-    list_display = (
-        "client",
-        "registration_number",
-        "date_of_incorporation",
-        "authorised_capital",
-        "paid_up_capital",
-        "number_of_directors",
-        "number_of_shareholders",
-        "number_of_members",
-        "is_section8_license_obtained",
-    )
-    list_filter = (
-        "client__business_structure",
-        "date_of_incorporation",
-        "is_section8_license_obtained",
-    )
-    search_fields = (
-        "client__client_name",
-        "registration_number",
-        "udyam_registration",
-        "opc_nominee_name",
-    )
-    autocomplete_fields = ("client", "karta", "key_persons")
 
 
 @admin.register(ClientUserEntitle)
@@ -273,6 +325,7 @@ class TaskAdmin(admin.ModelAdmin):
         "status",
         "priority",
         "due_date",
+        "is_recurring",
         "recurrence_period",
         "agreed_fee",
         "fee_status",
@@ -283,6 +336,7 @@ class TaskAdmin(admin.ModelAdmin):
         "service_type",
         "status",
         "priority",
+        "is_recurring",
         "recurrence_period",
         "fee_status",
         "due_date",
@@ -299,6 +353,14 @@ class TaskAdmin(admin.ModelAdmin):
     date_hierarchy = "due_date"
     autocomplete_fields = ("client", "created_by", "assignees")
     filter_horizontal = ("assignees",)
+    #-----------------------------------------------------------------
+    # Prevent staff users from viewing tasks of unassigned clients.
+    #-----------------------------------------------------------------
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(client__assigned_ca=request.user)
 
 
 @admin.register(TaskAssignmentStatus)
@@ -367,6 +429,13 @@ class TaskExtendedAttributesAdmin(admin.ModelAdmin):
     )
     autocomplete_fields = ("task",)
 
+    # Restrict admin visibility so staff users see only records linked to their assigned clients
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(task__client__assigned_ca=request.user)
+
 
 @admin.register(TaskComment)
 class TaskCommentAdmin(admin.ModelAdmin):
@@ -425,10 +494,11 @@ class AttendanceAdmin(admin.ModelAdmin):
         "clock_out",
         "duration",
         "status",
-        "requires_approval",
         "location_name",
+        "remark",
     )
-    list_filter = ("status", "requires_approval", "date")
+    list_filter = ("status", "date")
+    list_editable = ("status",)
     search_fields = ("user__username", "location_name")
 
 
@@ -437,9 +507,6 @@ class EmployeeAdmin(admin.ModelAdmin):
     list_display = (
         "user",
         "designation",
-        "personal_phone",
-        "work_phone",
-        "personal_email",
         "created_at",
     )
 
@@ -468,8 +535,6 @@ class NotificationAdmin(admin.ModelAdmin):
     list_filter = ('is_read', 'created_at')
     search_fields = ('title', 'message', 'user__username')
 
-#Code by Mohit Pandey
-
 @admin.register(Shift)
 class ShiftAdmin(admin.ModelAdmin):
     list_display = ('shift_name', 'shift_start_time',
@@ -486,7 +551,71 @@ class EmployeeShiftAdmin(admin.ModelAdmin):
 class OfficeDetailsAdmin(admin.ModelAdmin):
     list_display = ('office_name', 'contact_person_name',
                     'office_contact_no', 'latitude', 'longitude')
-    search_fields = ('office_name', 'contact_person_name')
+    # search_fields = ('office_name', 'contact_person_name')
+
+
+@admin.register(Leave)
+class LeaveAdmin(admin.ModelAdmin):
+    list_display = (
+        "employee",
+        "leave_type",
+        "status",
+        "start_date",
+        "end_date",
+    )
+    list_filter = ("status", "leave_type")
+    actions = ["approve_leave", "reject_leave"]
+
+    def approve_leave(self, request, queryset):
+        queryset.exclude(status="approved").update(status="approved")
+
+    def reject_leave(self, request, queryset):
+        queryset.update(status="rejected")
+
+
+from .models import Client, Product, Invoice, InvoiceItem, Payment
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('item_name', 'short_code', 'unit', 'hsn_code')
+    search_fields = ('item_name', 'short_code', 'hsn_code')
+    list_filter = ('unit',)
+
+
+class InvoiceItemInline(admin.TabularInline):
+    model = InvoiceItem
+    extra = 1
+    # These fields are auto-calculated, so we make them read-only in UI
+    readonly_fields = ('taxable_value', 'net_total')
+    fields = ('product', 'unit_cost', 'discount', 'taxable_value', 'gst_percentage', 'net_total')
+
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = ('id', 'client', 'subject', 'invoice_date', 'due_date')
+    list_filter = ('invoice_date', 'due_date', 'client')
+    search_fields = ('subject', 'client__name', 'id')
+    inlines = [InvoiceItemInline]
+    filter_horizontal = ('services',)
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('invoice', 'amount', 'payment_method', 'payment_date', 'created_by')
+    list_filter = ('payment_method', 'payment_date')
+    search_fields = ('invoice__id', 'transaction_id')
+    readonly_fields = ('created_at', 'created_by')
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
 
 admin.site.register(Invoice)
 admin.site.register(Payment)
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('sender', 'receiver','status','timestamp')
+    list_filter = ('status','timestamp')
+    search_fields = ('content','sender__username','receiver__username')
+    ordering = ('-timestamp',)

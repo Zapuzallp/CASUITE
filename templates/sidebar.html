@@ -148,13 +148,7 @@
 </style>
 
 <aside id="sidebar" class="sidebar">
-    <div class="sidebar-header">
-        <h6><i class="bi bi-grid-3x3-gap me-2"></i>Menu</h6>
-    </div>
-
     <ul class="sidebar-nav" id="sidebar-nav">
-        <li class="nav-heading">Main</li>
-
         <li class="nav-item">
             <a class="nav-link" href="{% url 'dashboard' %}">
                 <i class="bi bi-speedometer2"></i>
@@ -211,19 +205,33 @@
             </a>
         </li>
 
-        <li class="nav-heading">Services</li>
-
+        {% if request.user.is_superuser %}
+        <li class="nav-heading">Attendance Report</li>
         <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-calculator"></i>
-                <span>Tax Filing</span>
+            <a class="nav-link" href="{% url 'admin_attendance_report' %}">
+                <i class="bi bi-person-check"></i>
+                <span>Attendance Report</span>
+            </a>
+        </li>
+        {% endif %}
+
+
+        <li class="nav-heading">Services</li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'list_services' %}">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>List Services</span>
             </a>
         </li>
 
+        <li class="nav-heading">HR</li>
+
+
+
         <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-receipt"></i>
-                <span>GST Returns</span>
+            <a class="nav-link" href="{% url 'leave-apply' %}">
+                <i class="bi bi-calendar-check"></i>
+                <span>Apply Leave</span>
             </a>
 
         </li>
@@ -237,8 +245,27 @@
         </a>
 
        </li>
+        {% if user.is_staff or user.is_superuser %}
+<li class="nav-item">
+    <a class="nav-link " href="{% url 'manage-leaves' %}">
+        <i class="bi bi-clipboard-check"></i>
+        <span>Manage Leaves</span>
+        {% if total_pending > 0 %}
+        <span class="badge bg-danger rounded-pill">{{ total_pending }}</span>
+        {% endif %}
+    </a>
+</li>
+{% endif %}
+
 
         <li class="nav-heading">System</li>
+
+         <li class="nav-item">
+            <a class="nav-link" href="{% url 'chat_base' %}">
+                <i class="fa-regular fa-comment-dots"></i>
+                <span>Messages</span>
+            </a>
+        </li>
 
         <li class="nav-item">
             <a class="nav-link" href="#">

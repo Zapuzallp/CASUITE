@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils import timezone
 from datetime import date, datetime, time
 
-from home.models import Attendance
+from home.models import Attendance, OfficeDetails, EmployeeShift
 
 from math import radians, cos, sin, asin, sqrt
 
@@ -22,82 +22,112 @@ class ClockInView(LoginRequiredMixin, View):
     def post(self, request):
         today = date.today()
 
-        attendance, created = Attendance.objects.get_or_create(
+        attendance, _ = Attendance.objects.get_or_create(
             user=request.user,
             date=today
         )
 
-        if not attendance.clock_in:
-            lat = request.POST.get("lat")
-            long = request.POST.get("long")
-            location_name = request.POST.get("location_name")
+        if attendance.clock_in:
+            return redirect("dashboard")
 
-            attendance.clock_in = timezone.now()
-            attendance.clock_in_lat = lat
-            attendance.clock_in_long = long
-            attendance.location_name = location_name
-            attendance.save()
+        lat = request.POST.get("lat")
+        long = request.POST.get("long")
+        location_name = request.POST.get("location_name")
 
+        attendance.clock_in = timezone.now()
+        attendance.clock_in_lat = lat
+        attendance.clock_in_long = long
+        attendance.location_name = location_name
+
+        remarks = []
+
+        emp_shift = EmployeeShift.objects.filter(user=request.user).first()
+        office = OfficeDetails.objects.first()
+
+        # Late login
+        if emp_shift:
+            shift_start = emp_shift.shift.shift_start_time
+            if attendance.clock_in.time() > shift_start:
+                remarks.append("Late login")
+
+        # Distance check
+        if office and lat and long:
+            distance = get_distance(
+                float(lat),
+                float(long),
+                float(office.latitude),
+                float(office.longitude)
+            )
+
+            if distance > 100:
+                remarks.append(f"Clock-in {int(distance)}m away from office")
+
+        # Apply remarks
+        if remarks:
+            attendance.status = "pending"
+            attendance.remark = " || ".join(remarks)
+        else:
+            attendance.status = "approved"
+
+        attendance.save()
         return redirect("dashboard")
-
-
-SHIFT_END = time(22, 0)  # This can later come from settings or DB
 
 class ClockOutView(LoginRequiredMixin, View):
     def post(self, request):
         lat = request.POST.get("lat")
         long = request.POST.get("long")
 
-        # Get last open attendance
         attendance = Attendance.objects.filter(
             user=request.user,
-            clock_in__isnull=False,
             clock_out__isnull=True
-        ).order_by("-date").first()
+        ).last()
 
         if not attendance:
             return redirect("dashboard")
 
         now = timezone.now()
+        emp_shift = EmployeeShift.objects.filter(user=request.user).first()
+        office = OfficeDetails.objects.first()
 
-        # Forgot to clock out (different day)
+        # Handle forgotten logout
         if now.date() > attendance.date:
             attendance.clock_out = timezone.make_aware(
-                datetime.combine(attendance.date, SHIFT_END)
+                datetime.combine(attendance.date, time(22, 0))
             )
-            attendance.remark = "Auto clock-out (forgot to clock out)"
-            attendance.requires_approval = True
+            attendance.status = "pending"
+            attendance.remark = "Auto clock-out (missed logout)"
         else:
             attendance.clock_out = now
 
-        # Save clock-out location
         attendance.clock_out_lat = lat
         attendance.clock_out_long = long
 
-        # 📏 Distance validation (PM requirement)
-        if (
-            attendance.clock_in_lat
-            and attendance.clock_in_long
-            and attendance.clock_out_lat
-            and attendance.clock_out_long
-        ):
+        # Early logout
+        if emp_shift:
+            shift_end = emp_shift.shift.shift_end_time
+            if attendance.clock_out.time() < shift_end:
+                attendance.status = "pending"
+                attendance.remark = "Early logout"
+
+        # Distance check
+        if office and lat and long:
             distance = get_distance(
                 float(attendance.clock_in_lat),
                 float(attendance.clock_in_long),
-                float(attendance.clock_out_lat),
-                float(attendance.clock_out_long),
+                float(lat),
+                float(long),
             )
 
             if distance > 100:
-                attendance.requires_approval = True
-
+                attendance.status = "pending"
                 if attendance.remark:
-                    attendance.remark += f" | Location mismatch ({int(distance)}m)"
+                    attendance.remark += f" || Clock-out {int(distance)}m away from office"
                 else:
-                    attendance.remark = f"Location mismatch ({int(distance)}m)"
+                    attendance.remark = f"Clock-out {int(distance)}m away from office"
 
         attendance.save()
         return redirect("dashboard")
+
 
 class AttendanceLogsView(LoginRequiredMixin, View):
     def get(self, request):

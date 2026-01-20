@@ -6,8 +6,9 @@ from django.contrib.auth.models import User
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
-    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes
+    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message
 )
+from home.models import Leave
 
 
 class DocumentRequestForm(forms.ModelForm):
@@ -156,12 +157,21 @@ def validate_against_config(form, structure_key):
 class ClientForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Client
-        exclude = ['created_by', 'created_at', 'updated_at', 'status', 'assigned_ca']
+        exclude = ['created_by', 'created_at', 'updated_at', 'status', 'file_number']
         widgets = {
+            'assigned_ca': forms.Select(
+                attrs={
+                    'class': 'form-control select2'
+                }
+            ),
             'date_of_engagement': forms.DateInput(attrs={'type': 'date'}),
             'address_line1': forms.Textarea(attrs={'rows': 2}),
             'remarks': forms.Textarea(attrs={'rows': 2}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['office_location'].required = True
 
     def clean(self):
         cleaned_data = super().clean()
@@ -282,3 +292,41 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['total_turnover'].widget.attrs.update({'placeholder': '0.00'})
         self.fields['tax_payable'].widget.attrs.update({'placeholder': '0.00'})
+
+#Leave form
+class LeaveForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Leave
+        fields = ['leave_type', 'reason', 'start_date', 'end_date']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'reason': forms.Textarea(attrs={'rows': 5}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        leave_summary = kwargs.pop("leave_summary", None)
+        super().__init__(*args, **kwargs)
+
+        if leave_summary:
+            updated_choices = []
+            for value, label in self.fields["leave_type"].choices:
+                remaining = leave_summary.get(value, {}).get("remaining", 0)
+                updated_choices.append(
+                    (value, f"{label} ({remaining})")
+                )
+
+            self.fields["leave_type"].choices = updated_choices
+
+#Message form
+class MessageForm(forms.ModelForm):
+    class Meta:
+        model = Message
+        fields = ['content', 'status']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'id': 'summernote', # Required for JS initialization
+                'class': 'form-control',
+            }),
+            'status': forms.Select(attrs={'class': 'form-control', 'style': 'width: auto; display: inline-block;'}),
+        }

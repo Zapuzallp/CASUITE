@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block body %}
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h1>Attendance Report</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                <li class="breadcrumb-item active">Attendance Report</li>
+            </ol>
+        </nav>
+    </div>
+
+    <section class="section">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Filter Options</h5>
+
+                        <!-- FILTERS -->
+                        <form method="get" class="row g-3 mb-4">
+
+                            <div class="col-md-3">
+                                <label class="form-label">Employee</label>
+                                <select name="employee" class="form-select">
+                                    <option value="">All</option>
+                                    {% for emp in employees %}
+                                        <option value="{{ emp.id }}" {% if request.GET.employee == emp.id|stringformat:"s" %}selected{% endif %}>{{ emp.username }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label">Month</label>
+                                <select name="month" class="form-select">
+                                    <option value="">Select</option>
+                                    {% for m, name in months %}
+                                        <option value="{{ m }}" {% if request.GET.month == m|stringformat:"s" %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label">Year</label>
+                                <select name="year" class="form-select">
+                                    <option value="">Select</option>
+                                    {% for y in years %}
+                                        <option value="{{ y }}" {% if request.GET.year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Office Location</label>
+                                <select name="office" class="form-select">
+                                    <option value="">All</option>
+                                    {% for o in offices %}
+                                        <option value="{{ o.office_name }}" {% if request.GET.office == o.office_name %}selected{% endif %}>{{ o.office_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">All</option>
+                                    {% for value, label in status_choices %}
+                                        <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 align-self-end">
+                                <button class="btn btn-primary w-100">
+                                    <i class="bi bi-search"></i> Generate
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
+                <!-- RESULTS TABLE -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">Attendance Records</h5>
+                            <div class="d-flex gap-2 align-items-center">
+                                <!-- Export Buttons -->
+                                 {% if records %}
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-success btn-sm" 
+                                            data-bs-toggle="tooltip" 
+                                            data-bs-placement="top" 
+                                            title="Export to CSV"
+                                            onclick="exportTableToCSV()">
+                                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" 
+                                            data-bs-toggle="tooltip" 
+                                            data-bs-placement="top" 
+                                            title="Export to Excel"
+                                            onclick="exportTableToExcel()">
+                                        <i class="bi bi-file-earmark-excel"></i> Excel
+                                    </button>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Bulk Update Controls -->
+                                <select id="bulkStatus" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="">Select Status</option>
+                                    {% for value, label in status_choices %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-sm btn-warning" onclick="bulkUpdateStatus()">
+                                    <i class="bi bi-arrow-repeat"></i> Update Selected
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <form id="bulkUpdateForm" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="bulk_status" id="hiddenBulkStatus">
+                            
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th><input type="checkbox" id="selectAll"></th>
+                                            <th>User</th>
+                                            <th>Date</th>
+                                            <th>Clock In</th>
+                                            <th>Clock Out</th>
+                                            <th>Duration</th>
+                                            <th>Status</th>
+                                            <th>Remark</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for r in records %}
+                                        <tr>
+                                            <td><input type="checkbox" name="selected_records" value="{{ r.id }}" class="record-checkbox"></td>
+                                            <td>{{ r.user.username }}</td>
+                                            <td>{{ r.date }}</td>
+                                            <td>{{ r.clock_in|default:"-" }}</td>
+                                            <td>{{ r.clock_out|default:"-" }}</td>
+                                            <td>{{ r.formatted_duration }}</td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if r.status == 'approved' %}bg-success
+                                                    {% elif r.status == 'pending' %}bg-warning text-dark
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {{ r.status|title }}
+                                                </span>
+                                            </td>
+                                            <td>{{ r.remark|default:"-" }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted">
+                                                No records found. Try adjusting your filters.
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- DAILY ATTENDANCE DATA -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Daily Attendance Data 
+                            <span class="text-primary">Total Sundays: {{ total_sundays|default:0 }}</span>
+                            <span class="text-warning ms-2">Total Holidays: {{ total_holidays|default:0 }}</span>
+                        </h5>
+                        
+                        {% if month and year %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm">
+                                    <thead>
+                                        <tr class="table-info">
+                                            <th>Employee</th>
+                                            {% for day in calendar_days %}
+                                                <th class="text-center" style="min-width: 35px; font-size: 12px;">{{ day }}</th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for emp_data in daily_attendance_data %}
+                                        <tr>
+                                            <td class="fw-bold">{{ emp_data.employee }}</td>
+                                            {% for status in emp_data.daily_status %}
+                                                <td class="text-center p-1">
+                                                    {% if status == 'present' %}
+                                                        <span class="badge bg-success" style="font-size: 10px;">✓</span>
+                                                    {% elif status == 'absent' %}
+                                                        <span class="badge bg-danger" style="font-size: 10px;">✗</span>
+                                                    {% elif status == 'pending' %}
+                                                        <span class="badge bg-warning text-dark" style="font-size: 10px;">P</span>
+                                                    {% elif status == 'sunday' %}
+                                                        <span class="badge bg-primary" style="font-size: 10px;">S</span>
+                                                    {% elif status == 'holiday' %}
+                                                        <span class="badge bg-warning text-dark" style="font-size: 10px;">H</span>
+                                                    {% elif status == 'leave' %}
+                                                        <span class="badge bg-info" style="font-size: 10px;">L</span>
+                                                    {% elif status == 'half_day' %}
+                                                        <span class="badge bg-secondary" style="font-size: 10px;">HD</span>
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </td>
+                                            {% endfor %}
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="{{ calendar_days|length|add:1 }}" class="text-center text-muted">
+                                                No employees found for the selected criteria.
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                Please select both <strong>Month</strong> and <strong>Year</strong> to view the daily attendance calendar.
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <span class="badge bg-success me-2">✓</span> Present
+                                <span class="badge bg-danger me-2">✗</span> Absent
+                                <span class="badge bg-warning me-2">P</span> Pending
+                                <span class="badge bg-primary me-2">S</span> Sunday
+                                <span class="badge bg-warning me-2">H</span> Holiday
+                                <span class="badge bg-info me-2">L</span> Leave
+                                <span class="badge bg-secondary me-2">HD</span> Half Day
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Status Update</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmUpdate">Yes, Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// Export to CSV function
+function exportTableToCSV() {
+    const table = document.querySelector('.table');
+    const rows = table.querySelectorAll('tr');
+    let csvContent = '';
+    
+    rows.forEach((row, index) => {
+        if (index === 0 || row.cells.length > 1) { // Skip empty rows
+            const cells = row.querySelectorAll('th, td');
+            const rowData = [];
+            
+            cells.forEach((cell, cellIndex) => {
+                if (cellIndex > 0) { // Skip checkbox column
+                    let cellText = cell.textContent.trim();
+                    // Handle badges - extract text content
+                    const badge = cell.querySelector('.badge');
+                    if (badge) {
+                        cellText = badge.textContent.trim();
+                    }
+                    // Escape quotes and wrap in quotes if contains comma
+                    cellText = cellText.replace(/"/g, '""');
+                    if (cellText.includes(',') || cellText.includes('"') || cellText.includes('\n')) {
+                        cellText = `"${cellText}"`;
+                    }
+                    rowData.push(cellText);
+                }
+            });
+            
+            if (rowData.length > 0) {
+                csvContent += rowData.join(',') + '\n';
+            }
+        }
+    });
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'attendance_report.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Export to Excel function
+function exportTableToExcel() {
+    const table = document.querySelector('.table');
+    const rows = table.querySelectorAll('tr');
+    let excelContent = '<table>';
+    
+    rows.forEach((row, index) => {
+        if (index === 0 || row.cells.length > 1) { // Skip empty rows
+            excelContent += '<tr>';
+            const cells = row.querySelectorAll('th, td');
+            
+            cells.forEach((cell, cellIndex) => {
+                if (cellIndex > 0) { // Skip checkbox column
+                    let cellText = cell.textContent.trim();
+                    // Handle badges - extract text content
+                    const badge = cell.querySelector('.badge');
+                    if (badge) {
+                        cellText = badge.textContent.trim();
+                    }
+                    const cellTag = cell.tagName.toLowerCase();
+                    excelContent += `<${cellTag}>${cellText}</${cellTag}>`;
+                }
+            });
+            
+            excelContent += '</tr>';
+        }
+    });
+    
+    excelContent += '</table>';
+    
+    // Create and download file
+    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'attendance_report.xls');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Select All functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.record-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+// Bulk update function
+function bulkUpdateStatus() {
+    const selectedRecords = document.querySelectorAll('.record-checkbox:checked');
+    const bulkStatus = document.getElementById('bulkStatus').value;
+    
+    if (selectedRecords.length === 0) {
+        alert('Please select at least one record.');
+        return;
+    }
+    
+    if (!bulkStatus) {
+        alert('Please select a status.');
+        return;
+    }
+    
+    // Show confirmation modal
+    const statusText = bulkStatus.charAt(0).toUpperCase() + bulkStatus.slice(1);
+    document.getElementById('confirmMessage').textContent = 
+        `Are you sure you want to update ${selectedRecords.length} record(s) to ${statusText}?`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+    
+    // Handle confirmation
+    document.getElementById('confirmUpdate').onclick = function() {
+        document.getElementById('hiddenBulkStatus').value = bulkStatus;
+        document.getElementById('bulkUpdateForm').submit();
+    };
+}
+</script>
+
+{% endblock %}

@@ -45,11 +45,41 @@ def get_dynamic_fields(instance):
 
 @login_required
 def client_details_view(request, client_id):
-    client = get_object_or_404(Client, id=client_id)
+    """
+    View to show detailed information of a specific client.
+    Implements Role-Based Access Control similar to ClientView.
+    """
+    user = request.user
 
-    # 1. Dynamic Basic Info & Linked Data (Keep your existing logic)
+    # --- Role-Based Permission Logic ---
+    if user.is_superuser:
+        client = get_object_or_404(Client, id=client_id)
+    else:
+        try:
+            employee = user.employee
+            if employee.role == 'ADMIN':
+                # Admin can access any client
+                client = get_object_or_404(Client, id=client_id)
+
+            elif employee.role == 'BRANCH_MANAGER':
+                # Branch Manager: Access only if client is in the same office
+                if employee.office_location:
+                    client = get_object_or_404(Client, id=client_id, office_location=employee.office_location)
+                else:
+                    # Fallback: If manager has no office set, they can only see explicitly assigned clients
+                    client = get_object_or_404(Client, id=client_id, assigned_ca=user)
+
+            else:
+                # Staff / Default: Can only see clients explicitly assigned to them
+                client = get_object_or_404(Client, id=client_id, assigned_ca=user)
+
+        except Employee.DoesNotExist:
+            # Fallback for users without employee profile: Strict assignment only
+            client = get_object_or_404(Client, id=client_id, assigned_ca=user)
+
+    # 1. Dynamic Basic Info & Linked Data
+    # Note: Ensure get_dynamic_fields is imported or defined
     client_fields = get_dynamic_fields(client)
-
     entity_profile_fields = []
     if hasattr(client, 'business_profile'):
         entity_profile_fields = get_dynamic_fields(client.business_profile)
@@ -63,16 +93,14 @@ def client_details_view(request, client_id):
         linked_data = client.business_profile.key_persons.all()
 
     # 2. Services
-    services = Task.objects.filter(client = client).order_by('-created_at')
+    services = Task.objects.filter(client=client).order_by('-created_at')
 
+    # 3. Documents
     unified_documents = []
 
     # A. Add Entity Constitution Documents (from Profile)
     if hasattr(client, 'business_profile'):
         prof = client.business_profile
-
-        # FIX 1: Use client.updated_at if profile lacks timestamps
-        # This prevents the AttributeError/KeyError
         doc_date = getattr(prof, 'updated_at', client.updated_at)
 
         if prof.constitution_document_1:
@@ -80,7 +108,7 @@ def client_details_view(request, client_id):
                 'name': 'Constitution Document (MOA/Deed)',
                 'category': 'Registration',
                 'url': prof.constitution_document_1.url,
-                'date': doc_date,  # Key is now guaranteed
+                'date': doc_date,
                 'type': 'system'
             })
 
@@ -89,7 +117,7 @@ def client_details_view(request, client_id):
                 'name': 'Articles / By-Laws (AOA)',
                 'category': 'Registration',
                 'url': prof.constitution_document_2.url,
-                'date': doc_date,  # Key is now guaranteed
+                'date': doc_date,
                 'type': 'system'
             })
 
@@ -97,7 +125,6 @@ def client_details_view(request, client_id):
     uploads = client.document_uploads.select_related('requested_document__document_master').all()
 
     for upload in uploads:
-        # Determine Name and Category safely
         if upload.requested_document and upload.requested_document.document_master:
             doc_name = upload.requested_document.document_master.document_name
             category = upload.requested_document.document_master.category
@@ -109,23 +136,26 @@ def client_details_view(request, client_id):
             'name': doc_name,
             'category': category,
             'url': upload.uploaded_file.url,
-            'date': upload.upload_date,  # This model usually has timestamps
+            'date': upload.upload_date,
             'type': 'uploaded'
         })
 
-    # FIX 2: Safe Sort
-    # We use .get() with a default value to prevent KeyError if data is messy
+    # Safe Sort
     unified_documents.sort(
         key=lambda x: x.get('date') or timezone.now(),
         reverse=True
     )
+
+    # Forms and Pending Requests
     upload_form = DocumentUploadForm(client_id=client.id)
     request_form = DocumentRequestForm()
+
     pending_requests = RequestedDocument.objects.filter(
         document_request__client_id=client_id
     ).exclude(
         uploads__status='Uploaded'
     ).select_related('document_request', 'document_master').order_by('document_request__due_date')
+
     context = {
         'client': client,
         'client_fields': client_fields,
@@ -137,7 +167,7 @@ def client_details_view(request, client_id):
         'upload_form': upload_form,
         'request_form': request_form,
         'pending_requests': pending_requests,
-         'today':timezone.now().date(),
+        'today': timezone.now().date(),
     }
 
     return render(request, 'client/client-details.html', context)

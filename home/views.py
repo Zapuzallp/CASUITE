@@ -41,6 +41,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # 1. GLOBAL STATISTICS & FINANCIALS
         # =========================================================
         all_tasks = Task.objects.all()
+        if not user.is_superuser:
+            all_tasks = all_tasks.filter(client__assigned_ca=user)
 
         # Single query aggregation for performance
         stats = all_tasks.aggregate(
@@ -218,42 +220,7 @@ class ClientView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
 
-@login_required
-# def payment_list(request, invoice_id=None):
-#
-#     payments = Payment.objects.select_related(
-#         'invoice', 'invoice__client', 'created_by'
-#     ).order_by('-payment_date')
-#
-#     if invoice_id:
-#         payments = payments.filter(invoice_id=invoice_id)
-#
-#     # 🔥 attach calculated fields on invoice
-#     invoice_cache = {}
-#
-#     for p in payments:
-#         inv = p.invoice
-#
-#         if inv.id not in invoice_cache:
-#             total_paid = (
-#                 Payment.objects
-#                 .filter(invoice=inv)
-#                 .aggregate(Sum("amount"))["amount__sum"] or 0
-#             )
-#
-#             inv.total_paid = total_paid
-#             inv.remaining_amount = inv.total_amount - total_paid
-#
-#             invoice_cache[inv.id] = inv
-#
-#         else:
-#             cached = invoice_cache[inv.id]
-#             inv.total_paid = cached.total_paid
-#             inv.remaining_amount = cached.remaining_amount
-#
-#     return render(request, "payment_list.html", {
-#         "payments": payments
-#     })
+
 
 def payment_list(request):
     payments = Payment.objects.select_related(
@@ -264,70 +231,7 @@ def payment_list(request):
         "payments": payments,
     })
 
-#
-# @login_required
-#
-# def collect_payment(request, invoice_id):
-#     invoice = get_object_or_404(Invoice, id=invoice_id)
-#
-#     total_paid = (
-#         Payment.objects
-#         .filter(invoice=invoice)
-#         .aggregate(total=Sum("amount"))["total"]
-#         or Decimal("0")
-#     )
-#
-#     remaining = invoice.total_amount - total_paid
-#
-#     # already paid safeguard
-#     if remaining <= 0:
-#         messages.warning(request, "This invoice is already fully paid.")
-#         return redirect("invoice_select")
-#
-#     if request.method == "POST":
-#         amount = Decimal(request.POST.get("amount"))
-#
-#         if amount <= 0:
-#             messages.error(request, "Payment amount must be greater than 0.")
-#             return redirect(request.path)
-#
-#         if amount > remaining:
-#             messages.error(
-#                 request,
-#                 f"Payment cannot exceed remaining amount ₹{remaining}"
-#             )
-#             return redirect(request.path)
-#
-#         Payment.objects.create(
-#             invoice=invoice,
-#             amount=amount,
-#             payment_method=request.POST.get("payment_method"),
-#             payment_date=request.POST.get("payment_date"),
-#             transaction_id=request.POST.get("transaction_id"),
-#             created_by=request.user,
-#         )
-#
-#         total_paid += amount
-#         remaining = invoice.total_amount - total_paid
-#
-#         if remaining == 0:
-#             invoice.status = "Paid"
-#         else:
-#             invoice.status = "Partial"
-#
-#         invoice.save(update_fields=["status", "updated_at"])
-#
-#         messages.success(request, "Payment recorded successfully.")
-#         return redirect("invoice_select")
-#
-#     return render(
-#         request,
-#         "collect_payment.html",
-#         {
-#             "invoice": invoice,
-#             "remaining": remaining,
-#         }
-#     )
+
 
 @login_required
 def collect_payment(request, invoice_id):
@@ -346,11 +250,11 @@ def collect_payment(request, invoice_id):
     remaining = invoice.total_amount - total_paid
     amount = Decimal(request.POST.get("amount"))
 
-    # ❌ validation
+    #  validation
     if amount <= 0 or amount > remaining:
         return redirect("invoice_select")
 
-    # ✅ save payment
+    #  save payment
     Payment.objects.create(
         invoice=invoice,
         amount=amount,
@@ -360,7 +264,7 @@ def collect_payment(request, invoice_id):
         created_by=request.user
     )
 
-    # ✅ update invoice status (IMPORTANT)
+    #  update invoice status (IMPORTANT)
     total_paid += amount
     if total_paid >= invoice.total_amount:
         invoice.status = "Paid"
@@ -420,5 +324,4 @@ def invoice_select_for_payment(request):
         }
     )
 
-def client_dashboard(request):
-    return render(request, 'client_dashboard.html')
+
