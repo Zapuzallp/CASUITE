@@ -2,8 +2,9 @@
 {% load static %}
 
 {% block body %}
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote.min.css" rel="stylesheet">
+<!--Added summernote css-->
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.css" rel="stylesheet">
+
 
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -152,24 +153,19 @@
     <div class="message-module">
         <aside class="user-sidebar">
            <div style="padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; z-index: 10;">
-    <div class="input-group">
-        <input type="text" id="userSearch" class="form-control input-sm" placeholder="Search contact..." autocomplete="off">
-        <span class="input-group-btn">
-            <button class="btn btn-primary btn-sm" type="button" data-toggle="modal" data-target="#userModal">
-                <i class="glyphicon glyphicon-plus"></i>
-            </button>
-        </span>
-    </div>
-    <div id="searchSuggestions" class="search-suggestion-box"></div>
+
+        <input type="text" id="userSearch" class="form-control input-sm " placeholder="Search contact..." autocomplete="off">
+
+        <div id="searchSuggestions" class="search-suggestion-box"></div>
     </div>
             <div class="user-list">
                 {% for user in active_users %}
                 <a href="{% url 'chat_with_user' user.id %}" class="user-item {% if target_user.id == user.id %}active{% endif %}">
                     <div style="width: 35px; height: 35px; background: #cbd5e1; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                        {{ user.username|slice:":1"|upper }}
+                        {{ user.display_name|slice:":1"|upper }}
                     </div>
                     <div class="user-info">
-                        <span class="name">{{ user.username }}</span>
+                        <span class="name">{{ user.display_name }}</span>
                         {% if user.is_staff %}
                            <span class="time" style="font-size: 11px; color: #94a3b8;">Active Now</span>
                         {% endif %}
@@ -181,8 +177,18 @@
 
         <section class="chat-main-column">
             <div class="chat-header">
-                {% if target_user %}{{ target_user.username }}{% else %}Select a User{% endif %}
+                {% if target_user %}
+                    {% if target_user.first_name or target_user.last_name %}
+                        {{ target_user.first_name }} {{ target_user.last_name }}
+                        ({{ target_user.username }})
+                    {% else %}
+                            {{ target_user.username }}
+                    {% endif %}
+                {% else %}
+                       Select a User
+                {% endif %}
             </div>
+
 
             <div class="message-list-container" id="chat-window">
                 {% for msg in messages %}
@@ -213,60 +219,75 @@
                 {% endfor %}
             </div>
 
-            <div class="full-width-editor">
-                <form method="POST">
-                    {% csrf_token %}
-                    {{ form.content }}
 
-                    <div class="footer-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                        <div style="display: flex; gap: 15px; align-items: center;">
-                            {{ form.status }}
-                        </div>
-                        <div>
-                            <button type="submit" name="save_draft" class="btn btn-default btn-sm">Save Draft</button>
-                            <button type="submit" class="btn btn-primary btn-sm" style="background-color: #337ab7; border: none; padding: 8px 25px;">Send Message</button>
-                        </div>
+   <div>
+
+    {% if active_users or selected_user or target_user %}
+        <!-- Summernote editor -->
+        <div class="full-width-editor">
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.content }}
+
+                <div class="footer-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        {{ form.status }}
                     </div>
-                </form>
-            </div>
-        </section>
+                    <div>
+                        <button type="submit" name="save_draft" class="btn btn-default btn-sm">
+                            Save Draft
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm"
+                            style="background-color: #337ab7; border: none; padding: 8px 25px;">
+                            Send Message
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    {% else %}
+        <!-- Placeholder when no chat selected -->
+        <div class="full-width-editor" style="text-align: center;">
+            <img
+            src="{% static 'assets/img/flat-chat.png' %}"
+            alt="No chat selected"
+            style="max-width: 180px; height: auto; opacity: 0.9;"
+            />
+                    <p style="
+                margin-top: 12px;
+                font-style: italic;
+                color: #6b7280;
+                font-size: 15px;
+            ">
+                “ It's nice to chat with someone ”
+                </p>
+        </div>
+
+    {% endif %}
+
+        </div>
+    </section>
     </div>
 </main>
+<!--Added summernote script and jquery-->
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.js"></script>
 
-<div class="modal fade" id="userModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-sm" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title">New Conversation</h4>
-            </div>
-            <div class="modal-body" style="max-height: 400px; overflow-y: auto; padding: 0;">
-                {% for user in all_users %}
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee;">
-                    <span>{{ user.username }}</span>
-                    <a href="{% url 'chat_with_user' user.id %}" class="btn btn-xs btn-primary" style="background-color: #337ab7;">Chat</a>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote.min.js"></script>
 
 <script>
     const allUsers = [
         {% for user in all_users %}
             {
                 id: "{{ user.id }}",
-                name: "{{ user.username }}",
+                name: "{{ user.display_name|escapejs }}",
+                username: "{{ user.username|escapejs }}",
                 url: "{% url 'chat_with_user' user.id %}"
             },
         {% endfor %}
     ];
 </script>
+
 <script>
 document.getElementById("userSearch").addEventListener("keyup", function () {
     const input = this.value.toLowerCase();
@@ -275,8 +296,10 @@ document.getElementById("userSearch").addEventListener("keyup", function () {
 
     if (input === "") return;
 
+
     const matches = allUsers.filter(user =>
-        user.name.toLowerCase().includes(input)
+    user.name.toLowerCase().includes(input) ||
+    user.username.toLowerCase().includes(input)
     );
 
     matches.forEach(user => {
@@ -317,5 +340,6 @@ document.getElementById("userSearch").addEventListener("keyup", function () {
         });
     })(jQuery);
 </script>
+
 
 {% endblock body %}
