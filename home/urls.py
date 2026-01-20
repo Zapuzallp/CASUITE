@@ -22,6 +22,7 @@ from home.customViews.notificationView import (
 from home.views import (
     HomeView
 )
+from home.customViews.payment_views import payment_list, payment_collect
 
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
@@ -74,4 +75,7 @@ urlpatterns = [
     # chat message
     path('chat/', messageView.chat_view, name='chat_base'),
     path('chat/<int:user_id>/', messageView.chat_view, name='chat_with_user'),
+    # Payments
+    path('payments/', payment_list, name='payment_list'),
+    path("payment/<int:invoice_id>/collect/", payment_collect, name="payment_collect"),
 ]
