@@ -3,8 +3,9 @@ from django.shortcuts import redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils import timezone
 from datetime import date, datetime, time
+from django.contrib import messages
 
-from home.models import Attendance, OfficeDetails, EmployeeShift
+from home.models import Attendance, OfficeDetails, EmployeeShift, Employee
 
 from math import radians, cos, sin, asin, sqrt
 
@@ -18,9 +19,61 @@ def get_distance(lat1, lon1, lat2, lon2):
     c = 2 * asin(sqrt(a))
     return R * c
 
+def check_web_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_in_lat=None, clock_in_lng=None, clock_out_lat=None, clock_out_lng=None):
+    """Check attendance compliance for web app"""
+    issues = []
+    
+    try:
+        employee = Employee.objects.get(user=user)
+        office = employee.office_location
+        
+        # Standard work hours: 9:30 AM - 6:30 PM with 20-minute tolerance
+        standard_start = time(9, 10)  # 9:30 - 20 mins = 9:10
+        standard_start_late = time(9, 50)  # 9:30 + 20 mins = 9:50
+        standard_end_early = time(18, 10)  # 6:30 - 20 mins = 6:10
+        standard_end = time(18, 50)  # 6:30 + 20 mins = 6:50
+        
+        # Check clock-in compliance
+        if clock_in_time:
+            clock_in_time_only = clock_in_time.time()
+            
+            # Late arrival beyond tolerance
+            if clock_in_time_only > standard_start_late:
+                late_minutes = (datetime.combine(date.today(), clock_in_time_only) - 
+                              datetime.combine(date.today(), time(9, 30))).seconds // 60
+                issues.append(f"Late arrival by {late_minutes} minutes")
+            
+            # Check location for clock-in
+            if clock_in_lat and clock_in_lng and office and office.latitude and office.longitude:
+                distance = get_distance(float(clock_in_lat), float(clock_in_lng), float(office.latitude), float(office.longitude))
+                if distance > 100:
+                    issues.append(f"Clocked in {distance:.0f}m away from office")
+        
+        # Check clock-out compliance
+        if clock_out_time:
+            clock_out_time_only = clock_out_time.time()
+            
+            # Early departure beyond tolerance
+            if clock_out_time_only < standard_end_early:
+                early_minutes = (datetime.combine(date.today(), time(18, 30)) - 
+                               datetime.combine(date.today(), clock_out_time_only)).seconds // 60
+                issues.append(f"Early departure by {early_minutes} minutes")
+            
+            # Check location for clock-out
+            if clock_out_lat and clock_out_lng and office and office.latitude and office.longitude:
+                distance = get_distance(float(clock_out_lat), float(clock_out_lng), float(office.latitude), float(office.longitude))
+                if distance > 100:
+                    issues.append(f"Clocked out {distance:.0f}m away from office")
+    
+    except Employee.DoesNotExist:
+        issues.append("Employee profile not found")
+    
+    return issues
+
 class ClockInView(LoginRequiredMixin, View):
     def post(self, request):
         today = date.today()
+        current_time = timezone.now()
 
         attendance, _ = Attendance.objects.get_or_create(
             user=request.user,
@@ -28,46 +81,32 @@ class ClockInView(LoginRequiredMixin, View):
         )
 
         if attendance.clock_in:
+            messages.warning(request, 'Already clocked in today!')
             return redirect("dashboard")
 
         lat = request.POST.get("lat")
         long = request.POST.get("long")
         location_name = request.POST.get("location_name")
 
-        attendance.clock_in = timezone.now()
+        attendance.clock_in = current_time
         attendance.clock_in_lat = lat
         attendance.clock_in_long = long
         attendance.location_name = location_name
 
-        remarks = []
-
-        emp_shift = EmployeeShift.objects.filter(user=request.user).first()
-        office = OfficeDetails.objects.first()
-
-        # Late login
-        if emp_shift:
-            shift_start = emp_shift.shift.shift_start_time
-            if attendance.clock_in.time() > shift_start:
-                remarks.append("Late login")
-
-        # Distance check
-        if office and lat and long:
-            distance = get_distance(
-                float(lat),
-                float(long),
-                float(office.latitude),
-                float(office.longitude)
-            )
-
-            if distance > 100:
-                remarks.append(f"Clock-in {int(distance)}m away from office")
-
-        # Apply remarks
-        if remarks:
-            attendance.status = "pending"
-            attendance.remark = " || ".join(remarks)
+        # Check compliance for clock-in only
+        compliance_issues = check_web_attendance_compliance(
+            request.user, current_time, 
+            clock_in_lat=lat, clock_in_lng=long
+        )
+        
+        # Set status and remarks based on compliance
+        if compliance_issues:
+            attendance.status = 'pending'
+            attendance.remark = "; ".join(compliance_issues)
+            messages.warning(request, f"Attendance marked as pending: {'; '.join(compliance_issues)}")
         else:
-            attendance.status = "approved"
+            attendance.status = 'approved'
+            messages.success(request, 'Clocked in successfully!')
 
         attendance.save()
         return redirect("dashboard")
@@ -76,6 +115,7 @@ class ClockOutView(LoginRequiredMixin, View):
     def post(self, request):
         lat = request.POST.get("lat")
         long = request.POST.get("long")
+        current_time = timezone.now()
 
         attendance = Attendance.objects.filter(
             user=request.user,
@@ -83,47 +123,47 @@ class ClockOutView(LoginRequiredMixin, View):
         ).last()
 
         if not attendance:
+            messages.error(request, 'No active clock-in found!')
             return redirect("dashboard")
 
-        now = timezone.now()
-        emp_shift = EmployeeShift.objects.filter(user=request.user).first()
-        office = OfficeDetails.objects.first()
-
         # Handle forgotten logout
-        if now.date() > attendance.date:
+        if current_time.date() > attendance.date:
             attendance.clock_out = timezone.make_aware(
                 datetime.combine(attendance.date, time(22, 0))
             )
             attendance.status = "pending"
             attendance.remark = "Auto clock-out (missed logout)"
         else:
-            attendance.clock_out = now
+            attendance.clock_out = current_time
 
         attendance.clock_out_lat = lat
         attendance.clock_out_long = long
-
-        # Early logout
-        if emp_shift:
-            shift_end = emp_shift.shift.shift_end_time
-            if attendance.clock_out.time() < shift_end:
-                attendance.status = "pending"
-                attendance.remark = "Early logout"
-
-        # Distance check
-        if office and lat and long:
-            distance = get_distance(
-                float(attendance.clock_in_lat),
-                float(attendance.clock_in_long),
-                float(lat),
-                float(long),
-            )
-
-            if distance > 100:
-                attendance.status = "pending"
-                if attendance.remark:
-                    attendance.remark += f" || Clock-out {int(distance)}m away from office"
-                else:
-                    attendance.remark = f"Clock-out {int(distance)}m away from office"
+        
+        # Update location name if not set
+        if not attendance.location_name and lat and long:
+            try:
+                lat_f = float(lat)
+                lng_f = float(long)
+                attendance.location_name = f"Location ({lat_f:.4f}, {lng_f:.4f})"
+            except (ValueError, TypeError):
+                attendance.location_name = f"Location ({lat}, {long})"
+        
+        # Check full compliance (both clock-in and clock-out)
+        compliance_issues = check_web_attendance_compliance(
+            request.user, attendance.clock_in, attendance.clock_out,
+            attendance.clock_in_lat, attendance.clock_in_long,
+            lat, long
+        )
+        
+        # Set final status based on compliance
+        if compliance_issues:
+            attendance.status = 'pending'
+            attendance.remark = "; ".join(compliance_issues)
+            messages.warning(request, f"Attendance marked as pending: {'; '.join(compliance_issues)}")
+        else:
+            attendance.status = 'approved'
+            attendance.remark = "On-time attendance within office premises"
+            messages.success(request, 'Clocked out successfully!')
 
         attendance.save()
         return redirect("dashboard")

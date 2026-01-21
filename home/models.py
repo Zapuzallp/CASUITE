@@ -662,6 +662,20 @@ class Attendance(models.Model):
         return f"{minutes}m {seconds}s"
 
 
+    def get_work_duration(self):
+        """Get formatted work duration for mobile display"""
+        if self.clock_in and not self.clock_out:
+            # Calculate current duration
+            current_time = timezone.now()
+            duration = current_time - self.clock_in
+            total_seconds = int(duration.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            return f"{hours:02d}:{minutes:02d}:00 Hrs"
+        elif self.duration:
+            return self.formatted_duration()
+        return "00:00:00 Hrs"
+
     def __str__(self):
         return f"{self.user.username} - {self.date}"
 class Notification(models.Model):
