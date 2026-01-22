@@ -107,12 +107,48 @@
                         </td>
 
                         <td>
-                          <div class="btn-group" role="group" aria-label="actions">
-                            <a class="btn btn-sm btn-outline-primary" href="{% url 'admin:home_payment_change' payment.id %}" title="View / Edit">
-                              <i class="bi bi-eye"></i>
-                            </a>
+                          <div class="d-flex align-items-center payment-actions" style="gap:8px;">
+                            {# View button #}
+                            {% if request.user.is_superuser %}
+                              <a class="btn btn-sm btn-outline-primary" href="{% url 'admin:home_payment_change' payment.id %}" title="View / Edit">
+                                  <i class="bi bi-eye"></i>
+                              </a>
+                            {% else %}
+                              <a class="btn btn-sm btn-outline-primary" href="{% url 'payment_detail' payment.id %}" title="View">
+                                  <i class="bi bi-eye"></i>
+                              </a>
+                            {% endif %}
+
+                            {# Approve / Reject / Cancel - only when allowed and pending #}
+                            {% if payment.approval_status == "PENDING" and payment.payment_status == "PENDING" %}
+                                {% if payment.can_approve %}
+                                  <form action="{% url 'approve_payment' payment.id %}" method="post" onsubmit="return confirm('Approve payment #{{ payment.id }}?');" style="display:inline;">
+                                      {% csrf_token %}
+                                      <button class="btn btn-sm btn-success" title="Approve" type="submit">
+                                          <i class="bi bi-check-lg"></i>
+                                      </button>
+                                  </form>
+
+                                  <form action="{% url 'reject_payment' payment.id %}" method="post" onsubmit="return confirm('Reject payment #{{ payment.id }}?');" style="display:inline;">
+                                      {% csrf_token %}
+                                      <button class="btn btn-sm btn-danger" title="Reject" type="submit">
+                                          <i class="bi bi-x-lg"></i>
+                                      </button>
+                                  </form>
+                                {% endif %}
+
+                                {% if payment.can_cancel %}
+                                  <form action="{% url 'cancel_payment' payment.id %}" method="post" onsubmit="return confirm('Cancel payment #{{ payment.id }}? This cannot be deleted but can be canceled.');" style="display:inline;">
+                                      {% csrf_token %}
+                                      <button class="btn btn-sm btn-outline-warning" title="Cancel" type="submit">
+                                          <i class="bi bi-trash"></i>
+                                      </button>
+                                  </form>
+                                {% endif %}
+                            {% endif %}
                           </div>
                         </td>
+
                       </tr>
                     {% endfor %}
                   {% else %}
@@ -213,6 +249,9 @@ document.addEventListener('DOMContentLoaded', function () {
 <style>
   .table thead th { font-size:13px; color:#444; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
   .table tbody td { font-size:14px; vertical-align:middle; }
+  /* small extra for action button spacing if Bootstrap gap is not available */
+  .payment-actions > * { margin-left: 6px; }
+  .payment-actions > *:first-child { margin-left: 0; }
 </style>
 
 {% endblock body %}

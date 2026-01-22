@@ -387,5 +387,3 @@ class PaymentCollectForm(PaymentForm):
             self.invoice_instance = invoice_instance
         else:
             self.invoice_instance = None
-            'status': forms.Select(attrs={'class': 'form-control', 'style': 'width: auto; display: inline-block;cursor:pointer;'}),
-        }
