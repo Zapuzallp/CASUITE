@@ -166,6 +166,25 @@
 </script>
 <!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{% block extra_js %}
+<script>
+$(document).ready(function () {
+
+    // destroy if already initialised
+    if ($.fn.select2 && $('#id_key_persons').length) {
+
+        $('#id_key_persons').select2('destroy');
+
+        $('#id_key_persons').select2({
+            placeholder: "Select key persons",
+            width: '100%',
+            closeOnSelect: false
+        });
+    }
+
+});
+</script>
+{% endblock extra_js %}
 </body>
 
 </html>
