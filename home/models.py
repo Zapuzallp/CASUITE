@@ -877,6 +877,17 @@ class Payment(models.Model):
         ('UPI', 'UPI'),
         ('BANK', 'Bank Transfer'),
     ]
+    PAYMENT_STATUS = [
+        ('PENDING', 'Pending'),
+        ('PAID', 'Paid'),
+        ('UNPAID', 'Unpaid'),
+        ('CANCELED', 'Canceled'),
+    ]
+    APPROVAL_STATUS = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
 
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
@@ -886,6 +897,10 @@ class Payment(models.Model):
     # Auto-compute fields
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="payments_created")
     created_at = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='PENDING')
+    approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS, default='PENDING')
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_payments")
+    approved_at = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return f"Payment {self.id} for Invoice #{self.invoice.id}"
 
