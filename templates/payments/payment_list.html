@@ -31,7 +31,9 @@
                 {% endif %}
               </div>
 
-              <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#selectInvoiceModal">
+              <a href="#" class="btn btn-primary btn-sm"
+                 data-bs-toggle="modal"
+                 data-bs-target="#selectInvoiceModal">
                 <i class="bi bi-plus-circle me-1"></i> Collect Payment
               </a>
             </div>
@@ -64,194 +66,217 @@
                     <th>Action</th>
                   </tr>
                 </thead>
+
                 <tbody>
-                  {% if payments %}
-                    {% for payment in payments %}
-                      <tr>
-                        <td>
-                          {% if payments.start_index %}
-                            {{ forloop.counter0|add:payments.start_index }}
-                          {% else %}
-                            {{ forloop.counter }}
-                          {% endif %}
-                        </td>
+                {% if payments %}
+                  {% for payment in payments %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
 
-                        <td>
-                          <a class="text-decoration-none" href="{% url 'admin:home_invoice_change' payment.invoice.id %}">
-                            #{{ payment.invoice.id }}
+                    <td>
+                      <a href="{% url 'admin:home_invoice_change' payment.invoice.id %}">
+                        #{{ payment.invoice.id }}
+                      </a>
+                    </td>
+
+                    <td>{{ payment.invoice.client.client_name }}</td>
+                    <td>₹{{ payment.amount|intcomma }}</td>
+                    <td>{{ payment.get_payment_method_display }}</td>
+                    <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                    <td>{{ payment.created_by }}</td>
+
+                    <td>
+                      <div class="d-flex align-items-center gap-1">
+
+                        <!-- VIEW -->
+                        {% if request.user.is_superuser %}
+                          <a class="btn btn-sm btn-outline-primary"
+                             href="{% url 'payment_detail' payment.id %}">
+                            <i class="bi bi-eye"></i>
                           </a>
-                          <br>
-                          <small class="text-muted">
-                            {% if payment.invoice.due_date %}Due: {{ payment.invoice.due_date|date:"M d, Y" }}{% endif %}
-                          </small>
-                        </td>
-
-                        <td>
-                          <a href="{% url 'client_details' payment.invoice.client.id %}" class="text-decoration-none">
-                            {{ payment.invoice.client.client_name }}
+                        {% else %}
+                          <a class="btn btn-sm btn-outline-primary"
+                             href="{% url 'payment_detail' payment.id %}">
+                            <i class="bi bi-eye"></i>
                           </a>
-                        </td>
+                        {% endif %}
 
-                        <td>₹{{ payment.amount|floatformat:2|intcomma }}</td>
+                        <!-- APPROVE / REJECT / CANCEL -->
+                        {% if payment.approval_status == "PENDING" and payment.payment_status == "PENDING" %}
 
-                        <td>{{ payment.get_payment_method_display }}</td>
+                          {% if payment.can_approve %}
+                            <button type="button"
+                                    class="btn btn-sm btn-success action-btn"
+                                    data-title="Approve Payment"
+                                    data-message="Approve payment #{{ payment.id }}?"
+                                    data-url="{% url 'approve_payment' payment.id %}">
+                              <i class="bi bi-check-lg"></i>
+                            </button>
 
-                        <td>{{ payment.payment_date|date:"M d, Y" }}</td>
-
-                        <td>
-                          {% if payment.created_by %}
-                            {{ payment.created_by.get_full_name|default:payment.created_by.username }}
-                          {% else %}
-                            <span class="text-muted">—</span>
+                            <button type="button"
+                                    class="btn btn-sm btn-danger action-btn"
+                                    data-title="Reject Payment"
+                                    data-message="Reject payment #{{ payment.id }}?"
+                                    data-url="{% url 'reject_payment' payment.id %}">
+                              <i class="bi bi-x-lg"></i>
+                            </button>
                           {% endif %}
-                        </td>
 
-                        <td>
-                          <div class="d-flex align-items-center payment-actions" style="gap:8px;">
-                            {# View button #}
-                            {% if request.user.is_superuser %}
-                              <a class="btn btn-sm btn-outline-primary" href="{% url 'admin:home_payment_change' payment.id %}" title="View / Edit">
-                                  <i class="bi bi-eye"></i>
-                              </a>
-                            {% else %}
-                              <a class="btn btn-sm btn-outline-primary" href="{% url 'payment_detail' payment.id %}" title="View">
-                                  <i class="bi bi-eye"></i>
-                              </a>
-                            {% endif %}
+                          {% if payment.can_cancel %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-warning action-btn"
+                                    data-title="Cancel Payment"
+                                    data-message="Cancel payment #{{ payment.id }}? This cannot be undone."
+                                    data-url="{% url 'cancel_payment' payment.id %}">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          {% endif %}
 
-                            {# Approve / Reject / Cancel - only when allowed and pending #}
-                            {% if payment.approval_status == "PENDING" and payment.payment_status == "PENDING" %}
-                                {% if payment.can_approve %}
-                                  <form action="{% url 'approve_payment' payment.id %}" method="post" onsubmit="return confirm('Approve payment #{{ payment.id }}?');" style="display:inline;">
-                                      {% csrf_token %}
-                                      <button class="btn btn-sm btn-success" title="Approve" type="submit">
-                                          <i class="bi bi-check-lg"></i>
-                                      </button>
-                                  </form>
-
-                                  <form action="{% url 'reject_payment' payment.id %}" method="post" onsubmit="return confirm('Reject payment #{{ payment.id }}?');" style="display:inline;">
-                                      {% csrf_token %}
-                                      <button class="btn btn-sm btn-danger" title="Reject" type="submit">
-                                          <i class="bi bi-x-lg"></i>
-                                      </button>
-                                  </form>
-                                {% endif %}
-
-                                {% if payment.can_cancel %}
-                                  <form action="{% url 'cancel_payment' payment.id %}" method="post" onsubmit="return confirm('Cancel payment #{{ payment.id }}? This cannot be deleted but can be canceled.');" style="display:inline;">
-                                      {% csrf_token %}
-                                      <button class="btn btn-sm btn-outline-warning" title="Cancel" type="submit">
-                                          <i class="bi bi-trash"></i>
-                                      </button>
-                                  </form>
-                                {% endif %}
-                            {% endif %}
-                          </div>
-                        </td>
-
-                      </tr>
-                    {% endfor %}
-                  {% else %}
-                    <tr>
-                      <td colspan="8" class="text-center py-4 text-muted">
-                        No payments found. Use the 'Collect Payment' button to add one.
-                      </td>
-                    </tr>
-                  {% endif %}
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="8" class="text-center text-muted">
+                      No payments found.
+                    </td>
+                  </tr>
+                {% endif %}
                 </tbody>
               </table>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center mt-3">
-              <div>
-                {% if payments %}Showing {{ payments.start_index }} to {{ payments.end_index }} of {{ payments.paginator.count }} entries{% endif %}
-              </div>
-
-              <nav aria-label="Page navigation">
-                <ul class="pagination mb-0">
-                  {% if payments and payments.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page={{ payments.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Prev</a></li>
-                  {% else %}
-                    <li class="page-item disabled"><span class="page-link">Prev</span></li>
-                  {% endif %}
-
-                  {% if payments %}
-                    <li class="page-item active"><span class="page-link">Page {{ payments.number }} of {{ payments.paginator.num_pages }}</span></li>
-                  {% endif %}
-
-                  {% if payments and payments.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ payments.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a></li>
-                  {% else %}
-                    <li class="page-item disabled"><span class="page-link">Next</span></li>
-                  {% endif %}
-                </ul>
-              </nav>
-            </div>
-
           </div>
         </div>
-
       </div>
     </div>
   </section>
 </main>
 
-<!-- Select Invoice Modal -->
-<div class="modal fade" id="selectInvoiceModal" tabindex="-1" aria-labelledby="selectInvoiceModalLabel" aria-hidden="true">
+<!-- ================= SELECT INVOICE MODAL ================= -->
+<div class="modal fade" id="selectInvoiceModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="selectInvoiceModalLabel">Select Invoice to Collect Payment</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title">Select Invoice to Collect Payment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
+
       <div class="modal-body">
-        {% if invoices %}
-          <div class="mb-3">
-            <label class="form-label small fw-bold">Invoice</label>
-            <select id="invoicePicker" class="form-select">
-              <option value="" selected disabled>-- Select Invoice --</option>
-              {% for inv in invoices %}
-                <option value="{{ inv.id }}">#{{ inv.id }} — {{ inv.client.client_name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        {% else %}
-          <div class="text-muted">No invoices available. Navigate to an invoice or client record to collect payment.</div>
-        {% endif %}
+        <label class="form-label fw-bold">Invoice</label>
+        <select id="invoicePicker" class="form-select select2">
+          <option></option>
+          {% for inv in invoices %}
+            <option value="{{ inv.id }}">
+              #{{ inv.id }} — {{ inv.client.client_name }}
+            </option>
+          {% endfor %}
+        </select>
       </div>
+
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button id="btnProceedCollect" type="button" class="btn btn-primary" disabled>Proceed</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="btnProceedCollect" class="btn btn-primary" disabled>
+          Proceed
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CONFIRM ACTION MODAL ================= -->
+<div class="modal fade" id="confirmActionModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmModalTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="confirmModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-danger" id="confirmModalBtn">
+          Yes, Continue
+        </button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const invoicePicker = document.getElementById('invoicePicker');
-  const btnProceed = document.getElementById('btnProceedCollect');
-
-  if (invoicePicker && btnProceed) {
-    invoicePicker.addEventListener('change', function() {
-      btnProceed.disabled = !this.value;
-    });
-
-    btnProceed.addEventListener('click', function() {
-      const invoiceId = invoicePicker.value;
-      if (!invoiceId) return;
-      window.location.href = `/payment/${invoiceId}/collect/`;
-    });
+/* ---------- CSRF helper  ---------- */
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
   }
+  return cookieValue;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+
+  /* ---------- Invoice search ---------- */
+  $('#invoicePicker').select2({
+    theme: 'bootstrap-5',
+    dropdownParent: $('#selectInvoiceModal'),
+    placeholder: 'Search invoice or client',
+    allowClear: true,
+    width: '100%'
+  });
+
+  $('#invoicePicker').on('change', function () {
+    document.getElementById('btnProceedCollect').disabled = !this.value;
+  });
+
+  document.getElementById('btnProceedCollect').onclick = function () {
+    const id = $('#invoicePicker').val();
+    if (id) window.location.href = `/payment/${id}/collect/`;
+  };
+
+  /* ---------- Replace confirm() ---------- */
+  const modal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
+  const title = document.getElementById('confirmModalTitle');
+  const body = document.getElementById('confirmModalBody');
+  const confirmBtn = document.getElementById('confirmModalBtn');
+
+  let actionUrl = null;
+
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      title.textContent = this.dataset.title;
+      body.textContent = this.dataset.message;
+      actionUrl = this.dataset.url;
+      modal.show();
+    });
+  });
+
+  confirmBtn.addEventListener('click', function () {
+    if (!actionUrl) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = actionUrl;
+
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = 'csrfmiddlewaretoken';
+    csrf.value = getCookie('csrftoken');
+
+    form.appendChild(csrf);
+    document.body.appendChild(form);
+    form.submit();
+  });
+
 });
 </script>
-
-<style>
-  .table thead th { font-size:13px; color:#444; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
-  .table tbody td { font-size:14px; vertical-align:middle; }
-  /* small extra for action button spacing if Bootstrap gap is not available */
-  .payment-actions > * { margin-left: 6px; }
-  .payment-actions > *:first-child { margin-left: 0; }
-</style>
 
 {% endblock body %}

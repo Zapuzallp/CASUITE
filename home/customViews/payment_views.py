@@ -55,6 +55,10 @@ def payment_list(request):
 
 @login_required
 def payment_collect(request, invoice_id=None):
+    """
+       GET/POST for /payment/<invoice_id>/collect/
+       Uses PaymentCollectForm(invoice_instance=invoice) so invoice can be locked.
+    """
     invoice = None
     if invoice_id:
         invoice = get_object_or_404(Invoice, pk=invoice_id)
@@ -76,7 +80,7 @@ def payment_collect(request, invoice_id=None):
                     payment.save()
                 messages.success(request, "Payment recorded successfully.")
                 return redirect('payment_list')
-            except Exception:
+            except Exception as exception:
                 messages.error(request, "Could not save payment. Try again or contact admin.")
         return render(request, 'payments/payment_collect.html', {'form': form, 'invoice': invoice})
 
