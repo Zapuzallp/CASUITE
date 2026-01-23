@@ -6,6 +6,7 @@ from django.db import models
 # Client Base Table
 # -------------------------
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django.conf import settings
 
 
@@ -462,6 +463,22 @@ class Task(models.Model):
         self.is_recurring = self.recurrence_period != 'None'
         super().save(*args, **kwargs)
 
+
+class TaskRecurrence(models.Model):
+    task = models.OneToOneField(Task,on_delete=models.CASCADE,related_name="task_recurrence")
+    recurrence_period = models.CharField(max_length=20)
+    is_recurring = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    next_run_at = models.DateTimeField(null=True, blank=True)
+    last_auto_created_at = models.DateTimeField(null=True, blank=True)
+
+    def clean(self):
+        if self.recurrence_period == "None":
+            raise ValidationError(
+                {"recurrence_period": "TaskRecurrence cannot be 'None'"}
+            )
+    def __str__(self):
+        return self.task.task_title
 
 class TaskAssignmentStatus(models.Model):
     """

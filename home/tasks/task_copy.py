@@ -2,9 +2,29 @@ from django.db import transaction
 from django.utils import timezone
 from home.models import Task, TaskExtendedAttributes
 
+# function for title name of the recurrence task
+def build_auto_task_title(original_task, next_due_date):
+    base_title = original_task.task_title.replace(' (Copied)', '')
+    period = original_task.recurrence_period
+
+    month_label = next_due_date.strftime('%b')
+    year = next_due_date.year
+
+    if period == 'Monthly':
+        return f"{base_title} - {month_label} {year}"
+
+    if period == 'Quarterly':
+        quarter = (next_due_date.month - 1) // 3 + 1
+        return f"{base_title} - Q{quarter} {year} ({month_label})"
+
+    if period == 'Yearly':
+        return f"{base_title} - {year} ({month_label})"
+
+    # fallback (non-standard recurrence)
+    return f"{base_title} - {month_label} {year}"
 
 @transaction.atomic
-def copy_task(original_task, created_at= None,created_by=None, is_auto=False):
+def copy_task(original_task, created_at= None,created_by=None, is_auto=False,next_due_date=None):
     """
     Deep copy Task + TaskExtendedAttributes
     Used by:
@@ -16,7 +36,7 @@ def copy_task(original_task, created_at= None,created_by=None, is_auto=False):
     # Generate title based on copy type
     if is_auto:
         # For auto-recurring tasks, use a cleaner title, and also avoid recurring task
-        title = f"{original_task.task_title.replace(' (Copied)', '')} - {timezone.now().strftime('%b %Y')}"
+        title = build_auto_task_title(original_task, next_due_date)
         recurrence_period = 'None'
         is_recurring = False
     else:

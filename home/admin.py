@@ -20,7 +20,8 @@ from .models import (
     Employee,
     Shift, EmployeeShift, OfficeDetails,
     Leave,
-    Message
+    Message,
+    TaskRecurrence
 )
 
 
@@ -395,6 +396,17 @@ class TaskStatusLogAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     autocomplete_fields = ("task", "changed_by")
 
+@admin.register(TaskRecurrence)
+class TaskRecurrenceAdmin(admin.ModelAdmin):
+    list_display = (
+        "task",
+        "recurrence_period",
+        "created_at",
+        "is_recurring",
+        "next_run_at",
+        "last_auto_created_at"
+
+    )
 
 @admin.register(TaskExtendedAttributes)
 class TaskExtendedAttributesAdmin(admin.ModelAdmin):
