@@ -71,6 +71,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'home.context_processors.notifications_context',
                 'home.customViews.attendance_context.attendance_context',
+                'home.context_processors.header_data',
             ],
         },
     },

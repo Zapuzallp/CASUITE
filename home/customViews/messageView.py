@@ -9,7 +9,7 @@ from home.forms import MessageForm
 
 
 @login_required
-def chat_view(request, user_id=None):
+def chat_view(request, user_id=None,):
     '''Calculated recent users,target users,
      form,messages,all users'''
 
@@ -35,9 +35,7 @@ def chat_view(request, user_id=None):
                 Coalesce('first_name', Value('')),
                 Value(' '),
                 Coalesce('last_name', Value('')),
-                Value(' ('),
-                'username',
-                Value(')'),
+               
                 output_field=CharField()
             )
         )
@@ -79,12 +77,21 @@ def chat_view(request, user_id=None):
 
     if user_id is not None:
         target_user = get_object_or_404(User, id=user_id)
-
+        
         messages = Message.objects.filter(
             Q(sender=request.user, receiver=target_user) |
             Q(sender=target_user, receiver=request.user)
         ).order_by('timestamp')
-
+        
+        # Added filtering for notifications
+        Message.objects.filter(
+            sender=target_user,
+            receiver=request.user,
+            is_seen=False
+        ).update(is_seen=True)
+        
+        
+       
         if request.method == 'POST':
             form = MessageForm(request.POST)
             if form.is_valid():
@@ -98,6 +105,15 @@ def chat_view(request, user_id=None):
     # -------------------------------
     # 4. RENDER
     # -------------------------------
+       
+    path = request.path  
+    parts = path.strip("/").split("/")  
+    
+    user_id = None
+    if len(parts) > 1:
+        user_id = parts[1]  
+        user_id = int(user_id)
+
     return render(
         request,
         'home/chat_portal.html',
@@ -107,5 +123,7 @@ def chat_view(request, user_id=None):
             'target_user': target_user,
             'messages': messages,
             'form': form,
+            'user_id':user_id,
+            
         }
     )

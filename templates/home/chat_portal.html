@@ -86,6 +86,8 @@
         background-color: #fafafa;
         flex-grow: 1;
         overflow-y: auto; /* Enable scrolling for messages */
+        overflow-x: hidden;
+        
     }
 
     /* Bubble Styling */
@@ -95,14 +97,38 @@
     .msg-user-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
 
     .bubble {
+    color:white;
+    background-color: rgb(89, 178, 233);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.4;
+
+    /*  wrapping fix */
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+
+    /* size fix */
+    display: inline-block;
+    max-width: 80%;
+    }
+    .bubble p {
+    margin: 0;
+    }
+    
+    .bubble-new {
         padding: 12px 16px;
         border-radius: 12px;
         font-size: 14px;
         line-height: 1.5;
         word-wrap: break-word;
+        color:white;
+        background-color: rgb(89, 178, 233);
+
     }
     .msg-sent .bubble { background: #0ea5e9; color: white; border-top-right-radius: 2px; }
-    .msg-received .bubble { background: #ffffff; color: #334155; border: 1px solid #e2e8f0; border-top-left-radius: 2px; }
+    .msg-received .bubble {   color:white; background-color: rgb(89, 178, 233); border: 1px solid #e2e8f0; border-top-left-radius: 2px; }
 
     /* 6. EDITOR: Pinned to bottom */
     .full-width-editor {
@@ -111,6 +137,7 @@
         background-color: #fff;
         border-top: 1px solid #e2e8f0;
         flex-shrink: 0; /* Prevents summernote from being squished */
+        
     }
 
     .note-editor.note-frame { border: 1px solid #cbd5e1 !important; }
@@ -164,8 +191,8 @@
                     <div style="width: 35px; height: 35px; background: #cbd5e1; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
                         {{ user.display_name|slice:":1"|upper }}
                     </div>
-                    <div class="user-info">
-                        <span class="name">{{ user.display_name }}</span>
+                        <div class="user-info">
+                        <span class="name">{{ user.username }}</span>
                         {% if user.is_staff %}
                            <span class="time" style="font-size: 11px; color: #94a3b8;">Active Now</span>
                         {% endif %}
@@ -206,10 +233,17 @@
                         </span>
                         <span style="font-size: 10px; color: #94a3b8;">{{ msg.timestamp|date:"H:i" }}</span>
                     </div>
-
+                    {% if msg.content|length > 50 %}
                     <div class="bubble">
                         {{ msg.content|safe }}
                     </div>
+                    {% else %}
+                     <div class="bubble-new">
+                        {{ msg.content|safe }}
+                    </div>
+                    {% endif %}
+
+
                     <div style="font-size: 10px; color: #94a3b8; margin-top: 4px; text-align: {% if msg.sender == request.user %}right{% else %}left{% endif %};">
                         {{ msg.timestamp|date:"d M Y" }}
                     </div>
@@ -221,8 +255,7 @@
 
 
    <div>
-
-    {% if active_users or selected_user or target_user %}
+        {% if user_id  %}
         <!-- Summernote editor -->
         <div class="full-width-editor">
             <form method="POST">
@@ -254,7 +287,7 @@
             alt="No chat selected"
             style="max-width: 180px; height: auto; opacity: 0.9;"
             />
-                    <p style="
+            <p style="
                 margin-top: 12px;
                 font-style: italic;
                 color: #6b7280;
@@ -286,6 +319,7 @@
             },
         {% endfor %}
     ];
+    
 </script>
 
 <script>
