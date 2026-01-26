@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
 from django import forms
-from home.models import Product
-from django.shortcuts import get_object_or_404
+from django.shortcuts import render, get_object_or_404
+from home.models import Service
+from home.models import Product, Task, Invoice
 
 
 class ProductForm(forms.ModelForm):
@@ -71,3 +72,23 @@ def delete_service(request, service_id):
     service = get_object_or_404(Product, id=service_id)
     service.delete()
     return redirect('list_services')
+
+
+def service_details(request, service_id):
+    # 1. Get the service (Product)
+    service = get_object_or_404(Product, id=service_id)
+
+    # 2. Get tasks that belong to this service (TEMP LOGIC)
+    tasks = Task.objects.filter(service_type=service.item_name)
+
+    # 3. Get invoices linked to those tasks
+    invoices = Invoice.objects.filter(services__in=tasks).distinct()
+
+    context = {
+        "service": service,
+        "invoices": invoices,
+        "invoice_count": invoices.count(),
+    }
+
+    return render(request, "service_details.html", context)
+
