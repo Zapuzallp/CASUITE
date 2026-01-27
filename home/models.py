@@ -918,6 +918,7 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    is_seen = models.BooleanField(default = False)    
 
     def __str__(self):
         return f"From{self.sender} to {self.receiver} - {self.status}"
