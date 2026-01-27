@@ -725,7 +725,6 @@ class Employee(models.Model):
     casual_leave = models.FloatField(default=8.0)
     earned_leave = models.FloatField(default=5.0)
 
-
     @property
     def LEAVE_LIMITS(self):
         """Property that returns dictionary from FloatFields."""
