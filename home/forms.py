@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
-    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message
+    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message, GSTDetails  # Added GSTDetails to imports
 )
 from home.models import Leave
 from decimal import Decimal
@@ -387,3 +387,17 @@ class PaymentCollectForm(PaymentForm):
             self.invoice_instance = invoice_instance
         else:
             self.invoice_instance = None
+# ---------------------------------------------------------
+# 3. GST Details Form (NEW)
+# ---------------------------------------------------------
+class GSTDetailsForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = GSTDetails
+        fields = ['gst_number', 'registered_address', 'state', 'gst_scheme_type', 'status']
+        widgets = {
+            'registered_address': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['gst_number'].widget.attrs.update({'placeholder': 'e.g., 29ABCDE1234F1Z5'})

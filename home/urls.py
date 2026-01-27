@@ -1,5 +1,6 @@
 from django.urls import path
 
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, ClientListView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
@@ -38,6 +39,11 @@ urlpatterns = [
     path('client/<int:client_id>/create-request/', documentsUploadView.create_document_request_view,
          name='create_client_doc_request'),
     path('client/<int:client_id>/create-task/', taskView.create_task_view, name='create_service_task'),
+
+    # GST Management
+    path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
+    path('gst/<int:gst_id>/edit/', clientView.edit_gst_details_view, name='edit_gst_details'),
+
     # Client Management
     path('clients/', clientOnboardingView.ClientView.as_view(), name='clients'),
     path('client/<int:client_id>/edit/', clientOnboardingView.edit_client_view, name='edit_client'),
@@ -54,17 +60,17 @@ urlpatterns = [
     path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
     path('', dashboard, name='dashboard'),
-    #NOTIFICATIONS
+    # NOTIFICATIONS
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
-    
+
     # Attendance
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
     path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
     path("admin-report/attendance/", AdminAttendanceReportView.as_view(), name="admin_attendance_report"),
-    
+
     #apply-leave
     path('leave/apply/', leaveView.LeaveCreateView.as_view(), name='leave-apply'),
     #delete-leave
