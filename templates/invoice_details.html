@@ -77,19 +77,17 @@
             </div>
 
 
-        <!--Adding invoice items-->
-<!--        <div class="row g-4 mb-4">-->
-<!--                <div class="col-12">-->
-<!--                    <div class="card recent-sales overflow-auto h-100">-->
-<!--                        <div class="card-body">-->
-<!--                            <h5 class="card-title">Actions</h5>-->
-<!--                            &lt;!&ndash; Modal 1&ndash;&gt;-->
-<!--                            &lt;!&ndash; Button trigger modal &ndash;&gt;-->
-<!--                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="bi bi-plus-circle"></i> Add items</button>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--        </div>-->
+       <!--Action-Approve Invoice-->
+        <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card recent-sales overflow-auto h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Actions</h5>
+                                <a type="button" class="btn btn-success" href="{% url 'invoice_approve' invoice.id %}">Approve Invoice</a>
+                            </div>
+                    </div>
+                </div>
+        </div>
 
         <!-- Modal 1-->
         <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -241,9 +239,6 @@
                                                                 Delete
                                                             </button>
                                                     </div>
-
-
-
                                                 </div>
                                             </div>
                                     </div>
@@ -335,9 +330,5 @@
                 .catch(err => console.error(err));
             }
             </script>
-
-
-
-
     </main>
 {% endblock body %}

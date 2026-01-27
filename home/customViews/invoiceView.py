@@ -10,7 +10,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-
+from django.contrib import messages
 
 
 class InvoiceListCreateView(LoginRequiredMixin, FormMixin, ListView):
@@ -20,18 +20,56 @@ class InvoiceListCreateView(LoginRequiredMixin, FormMixin, ListView):
     context_object_name = 'invoices'
     success_url = reverse_lazy('invoice_all')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if 'invoice_form_errors' in self.request.session:
+            form = self.form_class(self.request.session.get('invoice_form_data'))
+            form._errors = self.request.session.pop('invoice_form_errors')
+            self.request.session.pop('invoice_form_data', None)
+            context['form'] = form
+        else:
+            context['form'] = self.get_form()
+
+        return context
+
     def post(self, request, *args, **kwargs):
         form = self.get_form()
+
         if form.is_valid():
-            form.save()
+            invoice = form.save(commit=False)
+            invoice.status = "DRAFT"
+            invoice.save()
+            form.save_m2m()
+            invoice.services.update(invoice_status=invoice.status)
+            messages.success(request, "Invoice created successfully.")
             return redirect(self.success_url)
-        return self.get(request, *args, **kwargs)
+
+        # ❌ INVALID FORM → redirect, DO NOT render
+        messages.error(request, "Invoice creation failed. Please fix the errors.")
+
+        request.session['invoice_form_errors'] = form.errors
+        request.session['invoice_form_data'] = request.POST
+
+        return redirect(self.success_url)
 
 
 @login_required
 def load_tasks(request):
     client_id = request.GET.get('client')
-    tasks = Task.objects.filter(client_id=client_id).values('id', 'task_title')
+
+    # 🔑 Guard: empty / invalid client
+    if not client_id:
+        return JsonResponse([], safe=False)
+
+    tasks = (
+        Task.objects
+        .filter(client_id=client_id)
+        .filter(tagged_invoices__isnull=True)
+        .distinct()
+        .values('id', 'task_title')
+    )
+
     return JsonResponse(list(tasks), safe=False)
 
 @login_required
@@ -73,3 +111,10 @@ def invoice_item_delete(request, item_id):
         return JsonResponse({'success': True})
 
     return JsonResponse({'success': False}, status=400)
+
+@login_required
+def approve_invoice(request, invoice_id):
+    invoice = Invoice.objects.get(pk=invoice_id)
+
+    invoice.services.filter(invoice_status="DRAFT").update(invoice_status="INVOICED")
+    return redirect('invoice_details', invoice.invoice_id)

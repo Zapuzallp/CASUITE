@@ -95,6 +95,7 @@ urlpatterns = [
     path('invoice/<int:invoice_id>/details', invoiceView.invoice_details, name='invoice_details'),
     path('invoice/<int:pk>/items/add/', invoiceView.add_invoice_item_ajax, name='add-invoice-item'),
     path('invoice/<int:item_id>/delete/', invoiceView.invoice_item_delete, name='invoice_delete-item'),
+    path('invoice/<int:pk>/approve/', invoiceView.approve_invoice, name="invoice_approve"),
 
 
 

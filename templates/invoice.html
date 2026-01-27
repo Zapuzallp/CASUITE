@@ -27,9 +27,8 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-            <form method="post" id="invoiceForm">
+            <form method="post" id="invoiceForm" action="{% url 'invoice_all' %}">
                 {% csrf_token %}
-
                 <div class="mb-3">
                     {{ form.client.label_tag }}
                     {{ form.client }}
@@ -44,6 +43,12 @@
                     <div class="col-md-6 mb-3">
                         {{ form.due_date.label_tag }}
                         {{ form.due_date }}
+
+                        {% for error in  form.due_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
                     </div>
 
                     <div class="col-md-6 mb-3">
@@ -64,7 +69,7 @@
             Cancel
         </button>
 
-        <button type="submit" form="invoiceForm" class="btn btn-primary">
+        <button type="submit" form="invoiceForm" class="btn btn-primary" onclick="sessionStorage.setItem('invoiceFormSubmitted','true')">
             Create Invoice
         </button>
     </div>
@@ -137,43 +142,110 @@
                 </div>
     </div>
 
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
     <script>
+console.log("Invoice JS loaded");
 
-        //Debugging JS run
-        console.log("Invoice JS loaded");
+const modal = document.getElementById("exampleModal");
 
-        document.getElementById("id_client")?.addEventListener("change", function () {
-            console.log("Client changed:", this.value);
+/* ---------- WHEN MODAL OPENS ---------- */
+modal.addEventListener("shown.bs.modal", function () {
+    const clientSelect = document.getElementById("id_client");
+    const servicesSelect = document.getElementById("id_services");
+
+    // Init Select2 only once
+    if (!$(clientSelect).data("select2")) {
+        $(clientSelect).select2({
+            theme: "bootstrap-5",
+            placeholder: "-- Search Client --",
+            width: "100%",
+            dropdownParent: $("#exampleModal")
         });
+    }
 
-        // To display the Services dynamically based on client selection
-        document.getElementById("id_client").addEventListener("change", function () {
-            fetch("{% url 'load_tasks' %}?client=" + this.value)
+    // 🔑 IMPORTANT: use Select2 events, not onchange
+    $(clientSelect)
+        .off("select2:select select2:clear")
+        .on("select2:select", function (e) {
+            const clientId = e.params.data.id;
+            servicesSelect.innerHTML = "";
+
+            if (!clientId) return;
+
+            fetch("{% url 'load_tasks' %}?client=" + clientId)
                 .then(res => res.json())
                 .then(tasks => {
-                    const select = document.getElementById("id_services");
-                    select.innerHTML = "";
+                    servicesSelect.innerHTML = "";
+
+                    if (tasks.length === 0) {
+                        const opt = document.createElement("option");
+                        opt.textContent = "No available services";
+                        opt.disabled = true;
+                        servicesSelect.appendChild(opt);
+                        return;
+                    }
 
                     tasks.forEach(task => {
                         const option = document.createElement("option");
                         option.value = task.id;
                         option.textContent = task.task_title;
-                        select.appendChild(option);
+                        servicesSelect.appendChild(option);
                     });
                 });
-        });
-
-        //To reset the form on no submission.
-        const modal = document.getElementById("exampleModal");
-
-        modal.addEventListener("hidden.bs.modal", function () {
-            const form = document.getElementById("invoiceForm");
-            form.reset();
-
-            const servicesSelect = document.querySelector('[name="services"]');
+        })
+        .on("select2:clear", function () {
             servicesSelect.innerHTML = "";
         });
+});
 
-    </script>
+/* ---------- WHEN MODAL CLOSES (Cancel / X / Backdrop) ---------- */
+modal.addEventListener("hidden.bs.modal", function () {
+    const form = document.getElementById("invoiceForm");
+    const clientSelect = document.getElementById("id_client");
+    const servicesSelect = document.getElementById("id_services");
+
+    // Reset native fields
+    form.reset();
+
+    // Explicitly clear browser-restored fields
+    const dueDate = document.getElementById("id_due_date");
+    const subject = document.getElementById("id_subject");
+
+    if (dueDate) dueDate.value = "";
+    if (subject) subject.value = "";
+
+    // Clear services
+    servicesSelect.innerHTML = "";
+
+    // Reset Select2 client
+    if ($(clientSelect).data("select2")) {
+        $(clientSelect).val(null).trigger("change");
+    }
+
+    // Remove Django-rendered errors
+    form.querySelectorAll(".invalid-feedback").forEach(el => el.remove());
+    form.querySelectorAll(".is-invalid").forEach(el => el.classList.remove("is-invalid"));
+});
+
+/* ---------- AUTO-OPEN MODAL AFTER FAILED POST ---------- */
+document.addEventListener("DOMContentLoaded", function () {
+    const hasErrors = document.querySelector("#invoiceForm .invalid-feedback");
+
+    if (hasErrors && sessionStorage.getItem("invoiceFormSubmitted") === "true") {
+        const modalInstance = new bootstrap.Modal(modal);
+        modalInstance.show();
+
+        setTimeout(() => {
+            const dueDateField = document.getElementById("id_due_date");
+            if (dueDateField) dueDateField.focus();
+        }, 300);
+    }
+});
+</script>
+
+
     </main>
 {% endblock body %}

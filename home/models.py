@@ -453,6 +453,12 @@ class Task(models.Model):
         ('Yearly', 'Yearly'),
     ]
 
+    #Invoice Status
+    INVOICE_STATUS = [
+        ("DRAFT", "Draft"),
+        ("INVOICED", "Invoiced"),
+    ]
+
     # --- Core Links ---
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='tasks')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_tasks')
@@ -472,6 +478,14 @@ class Task(models.Model):
 
     # Current Overall Stage (Controlled by Workflow)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
+
+    #Service Invoice Status
+    invoice_status = models.CharField(
+        max_length=20,
+        choices=INVOICE_STATUS,
+        null=True,
+        blank=True,
+    )
 
     # --- Recurrence & Financials ---
     is_recurring = models.BooleanField(default=False)

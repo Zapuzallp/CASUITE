@@ -10,6 +10,7 @@ from .models import (
      # Added GSTDetails to imports
 )
 from home.models import Leave
+from django.core.exceptions import ValidationError
 from decimal import Decimal
 from .models import Payment
 from django.utils import timezone
@@ -369,10 +370,13 @@ class MessageForm(forms.ModelForm):
 class InvoiceForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Invoice
-        fields = ['client', 'services','due_date','invoice_date','subject']
+        fields = ['client', 'services', 'invoice_date', 'due_date','subject']
         widgets = {
+            'invoice_date': forms.DateInput(attrs={'type': 'date'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
-            'invoice_date': forms.DateInput(attrs={'type': 'date'})
+            "client": forms.Select(attrs={
+                "class": "form-control",
+            })
         }
 
     def __init__(self, *args, **kwargs):
@@ -382,15 +386,28 @@ class InvoiceForm(BootstrapFormMixin, forms.ModelForm):
         self.fields['services'].queryset = Task.objects.none()
 
         if 'client' in self.data:
-            try:
-                client_id = int(self.data.get('client'))
-                self.fields['services'].queryset = Task.objects.filter(client=client_id)
+            client_id = self.data.get('client')
+            self.fields['services'].queryset = Task.objects.filter(
+                client_id=client_id,
+                tagged_invoices__isnull=True
+            )
+        else:
+            self.fields['services'].queryset = Task.objects.none()
 
-            except (ValueError, TypeError):
-                pass
-        elif self.instance.pk:
-            #edit invoice case
-            self.fields['services'].queryset = Task.objects.filter(client=self.instance.client)
+    def clean(self):
+        cleaned_data = super().clean()
+        invoice_date = cleaned_data.get('invoice_date')
+        due_date = cleaned_data.get('due_date')
+
+        if invoice_date and due_date:
+            # invoice_date is DateTimeField, due_date is DateField
+            if due_date < invoice_date.date():
+                self.add_error(
+                    'due_date',
+                    'Due date cannot be earlier than invoice date.'
+                )
+
+        return cleaned_data
 
 
 class InvoiceItemForm(forms.ModelForm):
