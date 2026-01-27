@@ -1,6 +1,6 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -64,6 +64,8 @@ urlpatterns = [
     path('leave/apply/', leaveView.LeaveCreateView.as_view(), name='leave-apply'),
     #delete-leave
     path('leave/<int:leave_id>/',leaveView.LeaveDeleteView.as_view(), name='leave-delete'),
+    # Leave re-apply URL
+    path('leave/reapply/<int:pk>/', ReApplyLeaveViews.leave_reapply, name='leave-reapply'),
     #list services
     path('services/', list_services, name='list_services'),
     #delete service
