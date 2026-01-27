@@ -6,8 +6,7 @@ from django.contrib.auth.models import User
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
-    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,
-    GSTDetails  # Added GSTDetails to imports
+    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes
 )
 
 
@@ -287,18 +286,3 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['total_turnover'].widget.attrs.update({'placeholder': '0.00'})
         self.fields['tax_payable'].widget.attrs.update({'placeholder': '0.00'})
-
-# ---------------------------------------------------------
-# 3. GST Details Form (NEW)
-# ---------------------------------------------------------
-class GSTDetailsForm(BootstrapFormMixin, forms.ModelForm):
-    class Meta:
-        model = GSTDetails
-        fields = ['gst_number', 'registered_address', 'state', 'gst_scheme_type', 'status']
-        widgets = {
-            'registered_address': forms.Textarea(attrs={'rows': 2}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['gst_number'].widget.attrs.update({'placeholder': 'e.g., 29ABCDE1234F1Z5'})

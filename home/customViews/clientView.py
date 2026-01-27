@@ -1,10 +1,9 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 
-# Updated Imports to include GST components
-from home.forms import DocumentUploadForm, DocumentRequestForm, RequestedDocument, GSTDetailsForm
-from home.models import Client, Task, GSTDetails
+from home.forms import DocumentUploadForm, DocumentRequestForm, RequestedDocument
+from home.models import Client, Task  # Import your other models as needed
 
 
 def get_dynamic_fields(instance):
@@ -31,11 +30,13 @@ def get_dynamic_fields(instance):
                     else:
                         display_val = val
 
-                    # Handle ManyToMany or ForeignKeys if needed
+                    # Handle ManyToMany or ForeignKeys if needed (simplistic approach here)
+                    # For FK, it usually prints the __str__ representation automatically
+
                     data.append({
                         'label': field.verbose_name.title(),
                         'value': display_val,
-                        'name': field.name
+                        'name': field.name  # internal name if needed for css classes
                     })
             except AttributeError:
                 continue
@@ -49,8 +50,8 @@ def client_details_view(request, client_id):
         client = get_object_or_404(Client, id=client_id)
     else:
         client = get_object_or_404(Client, id=client_id, assigned_ca=user)
-
-    # 1. Dynamic Basic Info & Linked Data
+    
+    # 1. Dynamic Basic Info & Linked Data (Keep your existing logic)
     client_fields = get_dynamic_fields(client)
     entity_profile_fields = []
     if hasattr(client, 'business_profile'):
@@ -64,12 +65,14 @@ def client_details_view(request, client_id):
         linked_data = client.business_profile.key_persons.all()
 
     # 2. Services
-    services = Task.objects.filter(client=client).order_by('-created_at')
+    services = Task.objects.filter(client = client).order_by('-created_at')
     unified_documents = []
-
-    # A. Add Entity Constitution Documents
+    # A. Add Entity Constitution Documents (from Profile)
     if hasattr(client, 'business_profile'):
         prof = client.business_profile
+
+        # FIX 1: Use client.updated_at if profile lacks timestamps
+        # This prevents the AttributeError/KeyError
         doc_date = getattr(prof, 'updated_at', client.updated_at)
 
         if prof.constitution_document_1:
@@ -77,7 +80,7 @@ def client_details_view(request, client_id):
                 'name': 'Constitution Document (MOA/Deed)',
                 'category': 'Registration',
                 'url': prof.constitution_document_1.url,
-                'date': doc_date,
+                'date': doc_date,  # Key is now guaranteed
                 'type': 'system'
             })
 
@@ -86,7 +89,7 @@ def client_details_view(request, client_id):
                 'name': 'Articles / By-Laws (AOA)',
                 'category': 'Registration',
                 'url': prof.constitution_document_2.url,
-                'date': doc_date,
+                'date': doc_date,  # Key is now guaranteed
                 'type': 'system'
             })
 
@@ -94,6 +97,7 @@ def client_details_view(request, client_id):
     uploads = client.document_uploads.select_related('requested_document__document_master').all()
 
     for upload in uploads:
+        # Determine Name and Category safely
         if upload.requested_document and upload.requested_document.document_master:
             doc_name = upload.requested_document.document_master.document_name
             category = upload.requested_document.document_master.category
@@ -105,15 +109,16 @@ def client_details_view(request, client_id):
             'name': doc_name,
             'category': category,
             'url': upload.uploaded_file.url,
-            'date': upload.upload_date,
+            'date': upload.upload_date,  # This model usually has timestamps
             'type': 'uploaded'
         })
 
+    # FIX 2: Safe Sort
+    # We use .get() with a default value to prevent KeyError if data is messy
     unified_documents.sort(
         key=lambda x: x.get('date') or timezone.now(),
         reverse=True
     )
-
     upload_form = DocumentUploadForm(client_id=client.id)
     request_form = DocumentRequestForm()
     pending_requests = RequestedDocument.objects.filter(
@@ -121,12 +126,6 @@ def client_details_view(request, client_id):
     ).exclude(
         uploads__status='Uploaded'
     ).select_related('document_request', 'document_master').order_by('document_request__due_date')
-
-    # === GST LOGIC ===
-    gst_details_list = GSTDetails.objects.filter(client=client).order_by('-id')
-    gst_form = GSTDetailsForm()
-    # =================
-
     context = {
         'client': client,
         'client_fields': client_fields,
@@ -138,53 +137,7 @@ def client_details_view(request, client_id):
         'upload_form': upload_form,
         'request_form': request_form,
         'pending_requests': pending_requests,
-        'today': timezone.now().date(),
-        'gst_details_list': gst_details_list,  # Include List
-        'gst_form': gst_form,  # Include Form
+         'today':timezone.now().date(),
     }
 
     return render(request, 'client/client-details.html', context)
-
-
-# ---------------------------------------------------------
-# NEW: GST Management Views
-# ---------------------------------------------------------
-
-@login_required
-def add_gst_details_view(request, client_id):
-    client = get_object_or_404(Client, id=client_id)
-
-    if request.method == 'POST':
-        form = GSTDetailsForm(request.POST)
-        if form.is_valid():
-            gst_instance = form.save(commit=False)
-            gst_instance.client = client
-
-            # --- AUTO-FILL LOGGED-IN USER ---
-            gst_instance.created_by = request.user
-            # --------------------------------
-
-            gst_instance.save()
-            return redirect('client_details', client_id=client.id)
-
-    return redirect('client_details', client_id=client.id)
-
-
-@login_required
-def edit_gst_details_view(request, gst_id):
-    gst_instance = get_object_or_404(GSTDetails, id=gst_id)
-    client_id = gst_instance.client.id
-
-    # Permission Check
-    if not (request.user.is_superuser or request.user == gst_instance.client.assigned_ca):
-        pass  # Handle permission error if needed
-
-    if request.method == 'POST':
-        form = GSTDetailsForm(request.POST, instance=gst_instance)
-        if form.is_valid():
-            form.save()
-            return redirect('client_details', client_id=client_id)
-    else:
-        form = GSTDetailsForm(instance=gst_instance)
-
-    return render(request, 'client/edit_gst_form.html', {'form': form, 'client': gst_instance.client})
