@@ -460,6 +460,9 @@ class Task(models.Model):
     # Derived from `recurrence_period` to avoid auto-created
     # or copied tasks being incorrectly marked as recurring.
     def save(self, *args, **kwargs):
+        if self.pk and not self.description:
+            old = Task.objects.get(pk=self.pk)
+            self.description = old.description
         self.is_recurring = self.recurrence_period != 'None'
         super().save(*args, **kwargs)
 
