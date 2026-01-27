@@ -1,6 +1,6 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView,ClientListView
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, ClientListView
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
@@ -31,6 +31,11 @@ urlpatterns = [
     path('client/<int:client_id>/create-request/', documentsUploadView.create_document_request_view,
          name='create_client_doc_request'),
     path('client/<int:client_id>/create-task/', taskView.create_task_view, name='create_service_task'),
+
+    # GST Management
+    path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
+    path('gst/<int:gst_id>/edit/', clientView.edit_gst_details_view, name='edit_gst_details'),
+
     # Client Management
     path('clients/', ClientListView.ClientView.as_view(), name='clients'),
     path('onboard/', clientOnboardingView.onboard_client_view, name='onboard_client'),
@@ -41,7 +46,7 @@ urlpatterns = [
     path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
     path('', dashboard, name='dashboard'),
-    #NOTIFICATIONS
+    # NOTIFICATIONS
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),

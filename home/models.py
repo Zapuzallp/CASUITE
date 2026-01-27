@@ -219,15 +219,58 @@ class Client(models.Model):
     def __str__(self):
         return self.client_name
 
+GST_SCHEME_CHOICES = [
+    ('Regular', 'Regular Scheme'),
+    ('Composition', 'Composition Scheme'),
+    ('QRMP', 'QRMP Scheme'),
+]
+
+GST_STATUS_CHOICES = [
+    ('Active', 'Active'),
+    ('Closed', 'Closed'),
+]
+
 
 class GSTDetails(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='gst_details')
+
     gst_number = models.CharField(max_length=15)
+
     registered_address = models.TextField(blank=True, null=True)
-    state = models.CharField(max_length=50, blank=True)
+
+    #  State dropdown
+    state = models.CharField(
+        max_length=2,
+        choices=STATE_CHOICES,
+        blank=True,
+        null=True
+    )
+
+    #  NEW FIELD 1: GST Scheme Type
+    gst_scheme_type = models.CharField(
+        max_length=20,
+        choices=GST_SCHEME_CHOICES
+    )
+
+    #  NEW FIELD 2: Created By (logged-in user)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gst_created'
+    )
+
+    #  NEW FIELD 3: Status
+    status = models.CharField(
+        max_length=10,
+        choices=GST_STATUS_CHOICES,
+        default='Active'
+    )
 
     def __str__(self):
-        return f"{self.gst_number} - {self.state}"
+        return f"{self.gst_number} - {self.get_state_display()}"
+
 # -------------------------
 # 2. Universal Business Profile
 # -------------------------
