@@ -6,6 +6,7 @@ from django.db import models
 # Client Base Table
 # -------------------------
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from django.conf import settings
 
 
@@ -459,9 +460,28 @@ class Task(models.Model):
     # Derived from `recurrence_period` to avoid auto-created
     # or copied tasks being incorrectly marked as recurring.
     def save(self, *args, **kwargs):
+        if self.pk and not self.description:
+            old = Task.objects.get(pk=self.pk)
+            self.description = old.description
         self.is_recurring = self.recurrence_period != 'None'
         super().save(*args, **kwargs)
 
+
+class TaskRecurrence(models.Model):
+    task = models.OneToOneField(Task,on_delete=models.CASCADE,related_name="task_recurrence")
+    recurrence_period = models.CharField(max_length=20)
+    is_recurring = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    next_run_at = models.DateTimeField(null=True, blank=True)
+    last_auto_created_at = models.DateTimeField(null=True, blank=True)
+
+    def clean(self):
+        if self.recurrence_period == "None":
+            raise ValidationError(
+                {"recurrence_period": "TaskRecurrence cannot be 'None'"}
+            )
+    def __str__(self):
+        return self.task.task_title
 
 class TaskAssignmentStatus(models.Model):
     """
@@ -860,6 +880,17 @@ class Payment(models.Model):
         ('UPI', 'UPI'),
         ('BANK', 'Bank Transfer'),
     ]
+    PAYMENT_STATUS = [
+        ('PENDING', 'Pending'),
+        ('PAID', 'Paid'),
+        ('UNPAID', 'Unpaid'),
+        ('CANCELED', 'Canceled'),
+    ]
+    APPROVAL_STATUS = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
 
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
@@ -869,6 +900,10 @@ class Payment(models.Model):
     # Auto-compute fields
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="payments_created")
     created_at = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='PENDING')
+    approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS, default='PENDING')
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_payments")
+    approved_at = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return f"Payment {self.id} for Invoice #{self.invoice.id}"
 
