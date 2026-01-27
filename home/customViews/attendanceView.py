@@ -2,7 +2,7 @@ from django.views import View
 from django.shortcuts import redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils import timezone
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from django.contrib import messages
 
 from home.models import Attendance, OfficeDetails, EmployeeShift, Employee
@@ -27,24 +27,55 @@ def check_web_attendance_compliance(user, clock_in_time, clock_out_time=None, cl
         employee = Employee.objects.get(user=user)
         office = employee.office_location
         
-        # Standard work hours: 9:30 AM - 6:30 PM with 20-minute tolerance
-        standard_start = time(9, 10)  # 9:30 - 20 mins = 9:10
-        standard_start_late = time(9, 50)  # 9:30 + 20 mins = 9:50
-        standard_end_early = time(18, 10)  # 6:30 - 20 mins = 6:10
-        standard_end = time(18, 50)  # 6:30 + 20 mins = 6:50
+        # Get employee's shift timing
+        employee_shift = EmployeeShift.objects.filter(user=user, valid_to__isnull=True).first()
+        if employee_shift:
+            shift_start = employee_shift.shift.shift_start_time
+            shift_end = employee_shift.shift.shift_end_time
+            # 20-minute tolerance
+            tolerance_minutes = 20
+            shift_start_late = (datetime.combine(date.today(), shift_start) + timedelta(minutes=tolerance_minutes)).time()
+            shift_end_early = (datetime.combine(date.today(), shift_end) - timedelta(minutes=tolerance_minutes)).time()
+        else:
+            # Default timing if no shift assigned
+            shift_start = time(9, 30)
+            shift_end = time(18, 30)
+            shift_start_late = time(9, 50)
+            shift_end_early = time(18, 10)
         
+        # If no office assigned, only check for late login/logout, auto-approve otherwise
+        if not office:
+            # Check clock-in compliance (only late arrival)
+            if clock_in_time:
+                clock_in_time_only = clock_in_time.time()
+                if clock_in_time_only > shift_start_late:
+                    late_minutes = (datetime.combine(date.today(), clock_in_time_only) - 
+                                  datetime.combine(date.today(), shift_start)).seconds // 60
+                    issues.append(f"Late arrival by {late_minutes} minutes")
+            
+            # Check clock-out compliance (only early departure)
+            if clock_out_time:
+                clock_out_time_only = clock_out_time.time()
+                if clock_out_time_only < shift_end_early:
+                    early_minutes = (datetime.combine(date.today(), shift_end) - 
+                                   datetime.combine(date.today(), clock_out_time_only)).seconds // 60
+                    issues.append(f"Early departure by {early_minutes} minutes")
+            
+            return issues
+        
+        # Office assigned - full compliance check
         # Check clock-in compliance
         if clock_in_time:
             clock_in_time_only = clock_in_time.time()
             
             # Late arrival beyond tolerance
-            if clock_in_time_only > standard_start_late:
+            if clock_in_time_only > shift_start_late:
                 late_minutes = (datetime.combine(date.today(), clock_in_time_only) - 
-                              datetime.combine(date.today(), time(9, 30))).seconds // 60
+                              datetime.combine(date.today(), shift_start)).seconds // 60
                 issues.append(f"Late arrival by {late_minutes} minutes")
             
             # Check location for clock-in
-            if clock_in_lat and clock_in_lng and office and office.latitude and office.longitude:
+            if clock_in_lat and clock_in_lng and office.latitude and office.longitude:
                 distance = get_distance(float(clock_in_lat), float(clock_in_lng), float(office.latitude), float(office.longitude))
                 if distance > 100:
                     issues.append(f"Clocked in {distance:.0f}m away from office")
@@ -54,13 +85,13 @@ def check_web_attendance_compliance(user, clock_in_time, clock_out_time=None, cl
             clock_out_time_only = clock_out_time.time()
             
             # Early departure beyond tolerance
-            if clock_out_time_only < standard_end_early:
-                early_minutes = (datetime.combine(date.today(), time(18, 30)) - 
+            if clock_out_time_only < shift_end_early:
+                early_minutes = (datetime.combine(date.today(), shift_end) - 
                                datetime.combine(date.today(), clock_out_time_only)).seconds // 60
                 issues.append(f"Early departure by {early_minutes} minutes")
             
             # Check location for clock-out
-            if clock_out_lat and clock_out_lng and office and office.latitude and office.longitude:
+            if clock_out_lat and clock_out_lng and office.latitude and office.longitude:
                 distance = get_distance(float(clock_out_lat), float(clock_out_lng), float(office.latitude), float(office.longitude))
                 if distance > 100:
                     issues.append(f"Clocked out {distance:.0f}m away from office")

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Attendance Logs</title>
+    <title>Leave Logs</title>
     <style>
         * {
             margin: 0;
@@ -67,78 +67,98 @@
             padding-bottom: max(20px, env(safe-area-inset-bottom));
         }
         
-        .log-item {
+        .leave-item {
             background: white;
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid #f0f0f0;
-        }
-        
-        .log-header {
+            padding: 12px;
+            margin-bottom: 8px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
-        .log-date {
-            font-weight: 600;
-            color: #333;
-            font-size: 15px;
+        .leave-item-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin-right: 12px;
+            flex-shrink: 0;
         }
         
-        .status {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-        
-        .status.approved {
+        .leave-item-icon.approved {
             background: #d5f4e6;
             color: #27ae60;
         }
         
-        .status.pending {
+        .leave-item-icon.pending {
             background: #fff3cd;
             color: #f39c12;
         }
         
-        .status.rejected {
+        .leave-item-icon.rejected {
             background: #f8d7da;
             color: #e74c3c;
         }
         
-        .log-times {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 15px;
+        .leave-item-content {
+            flex: 1;
+            min-width: 0;
         }
         
-        .time-item {
-            text-align: center;
+        .leave-item-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
         }
         
-        .time-label {
+        .leave-item-date {
             font-size: 11px;
             color: #666;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            font-weight: 600;
         }
         
-        .time-value {
-            font-size: 14px;
+        .leave-status {
+            font-size: 11px;
             font-weight: 600;
-            color: #333;
+            padding: 4px 8px;
+            border-radius: 12px;
+            white-space: nowrap;
         }
         
-        .time-value.in { color: #27ae60; }
-        .time-value.out { color: #e74c3c; }
-        .time-value.duration { color: #3498db; }
+        .status-approved {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #f39c12;
+        }
+        
+        .status-rejected {
+            background: #f8d7da;
+            color: #e74c3c;
+        }
+        
+        .leave-duration {
+            font-size: 10px;
+            color: #3498db;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        
+        .leave-reason {
+            font-size: 10px;
+            color: #666;
+            font-style: italic;
+            margin-top: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         
         .empty-state {
             text-align: center;
@@ -156,35 +176,31 @@
     <div class="container">
         <div class="header">
             <button class="back-btn" onclick="goBack()">← Back</button>
-            <h1>Attendance Logs</h1>
+            <h1>Leave Logs</h1>
         </div>
         
         <div class="logs">
-            {% for log in logs %}
-            <div class="log-item">
-                <div class="log-header">
-                    <div class="log-date">{{ log.date|date:"M d, Y" }}</div>
-                    <div class="status {{ log.status }}">{{ log.status|title }}</div>
+            {% for leave in leaves %}
+            <div class="leave-item">
+                <div class="leave-item-icon {{ leave.status }}">
+                    {% if leave.leave_type == 'casual' %}☕
+                    {% elif leave.leave_type == 'sick' %}🏥
+                    {% else %}📅{% endif %}
                 </div>
-                <div class="log-times">
-                    <div class="time-item">
-                        <div class="time-label">Check In</div>
-                        <div class="time-value in">{{ log.clock_in|date:"H:i"|default:"-" }}</div>
-                    </div>
-                    <div class="time-item">
-                        <div class="time-label">Check Out</div>
-                        <div class="time-value out">{{ log.clock_out|date:"H:i"|default:"-" }}</div>
-                    </div>
-                    <div class="time-item">
-                        <div class="time-label">Duration</div>
-                        <div class="time-value duration">{{ log.formatted_duration|default:"-" }}</div>
-                    </div>
+                <div class="leave-item-content">
+                    <div class="leave-item-title">{{ leave.leave_type|title }} Leave</div>
+                    <div class="leave-item-date">{{ leave.start_date|date:"M d" }} - {{ leave.end_date|date:"M d, Y" }}</div>
+                    <div class="leave-duration">{{ leave.total_days }} day{{ leave.total_days|pluralize }}</div>
+                    {% if leave.reason %}
+                    <div class="leave-reason">{{ leave.reason }}</div>
+                    {% endif %}
                 </div>
+                <div class="leave-status status-{{ leave.status }}">{{ leave.status|title }}</div>
             </div>
             {% empty %}
             <div class="empty-state">
-                <div class="empty-icon">📊</div>
-                <div>No attendance records found</div>
+                <div class="empty-icon">📅</div>
+                <div>No leave records found</div>
             </div>
             {% endfor %}
         </div>

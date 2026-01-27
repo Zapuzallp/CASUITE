@@ -9,7 +9,7 @@ from home.customViews.attendanceView import (
 )
 from home.customViews.mobileAttendanceView import (
     mobile_login_view, mobile_logout_view, mobile_attendance_view, 
-    mobile_apply_leave, mobile_clock_in, mobile_clock_out, mobile_logs_view
+    mobile_apply_leave, mobile_clock_in, mobile_clock_out, mobile_logs_view, mobile_leave_logs_view
 )
 from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
@@ -83,6 +83,7 @@ urlpatterns = [
     path('mobile/logout/', mobile_logout_view, name='mobile_logout'),
     path('mobile/attendance/', mobile_attendance_view, name='mobile_attendance'),
     path('mobile/logs/', mobile_logs_view, name='mobile_logs'),
+    path('mobile/leave-logs/', mobile_leave_logs_view, name='mobile_leave_logs'),
     path('mobile/apply-leave/', mobile_apply_leave, name='mobile_apply_leave'),
     path('mobile/clock-in/', mobile_clock_in, name='mobile_clock_in'),
     path('mobile/clock-out/', mobile_clock_out, name='mobile_clock_out'),
