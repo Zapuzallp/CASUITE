@@ -70,6 +70,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'home.context_processors.notifications_context',
+                'home.context_processors.header_data',
                 'home.customViews.attendance_context.attendance_context',
             ],
         },
