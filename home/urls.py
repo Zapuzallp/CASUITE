@@ -1,7 +1,6 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, ClientListView
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, ClientListView, leaveView, leave_views,messageView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,

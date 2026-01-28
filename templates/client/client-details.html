@@ -127,7 +127,7 @@
                         {% if client.phone_number %}
                             <small><i class="bi bi-phone me-1"></i> {{ client.phone_number }}</small>
                         {% endif %}
-                </div>
+                    </div>
                 </div>
             </div>
 
@@ -138,8 +138,12 @@
                         <i class="bi bi-pencil"></i> Edit Client
                     </a>
                 {% endif %}
+
                 <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createRequestModal">
                     <i class="bi bi-plus-square me-1"></i> Request Docs
+                </button>
+                <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#addGSTModal">
+                    <i class="bi bi-plus-circle-fill"></i> Add New GST
                 </button>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
                     <i class="bi bi-cloud-upload me-1"></i> Upload
@@ -163,11 +167,11 @@
                         </li>
 
                         {% if gst_details_list %}
-                        <li class="nav-item">
-                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-gst">
-                                <i class="bi bi-receipt me-2"></i>GST Details
-                            </button>
-                        </li>
+                            <li class="nav-item">
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-gst">
+                                    <i class="bi bi-receipt me-2"></i>GST Details
+                                </button>
+                            </li>
                         {% endif %}
                         <li class="nav-item">
                             <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-documents">
@@ -214,7 +218,8 @@
                         <div class="tab-pane fade" id="profile-gst">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="card-title text-primary"><i class="bi bi-receipt me-2"></i>All GST Data</h5>
-                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addGSTModal">
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#addGSTModal">
                                     <i class="bi bi-plus-lg"></i> Add New GST
                                 </button>
                             </div>
@@ -222,23 +227,25 @@
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle border">
                                     <thead class="table-light">
-                                        <tr>
-                                            <th>GST Number</th>
-                                            <th>State</th>
-                                            <th>Scheme</th>
-                                            <th>Status</th>
-                                            <th>Created By</th>
-                                            {% if request.user.is_superuser or request.user == client.assigned_ca %}
+                                    <tr>
+                                        <th>GST Number</th>
+                                        <th>State</th>
+                                        <th>Scheme</th>
+                                        <th>Status</th>
+                                        <th>Created By</th>
+                                        {% if request.user.is_superuser or request.user == client.assigned_ca %}
                                             <th class="text-end">Action</th>
-                                            {% endif %}
-                                        </tr>
+                                        {% endif %}
+                                    </tr>
                                     </thead>
                                     <tbody>
-                                        {% for gst in gst_details_list %}
+                                    {% for gst in gst_details_list %}
                                         <tr>
                                             <td class="fw-bold">{{ gst.gst_number }}</td>
                                             <td>{{ gst.get_state_display }}</td>
-                                            <td><span class="badge bg-light text-dark border">{{ gst.gst_scheme_type }}</span></td>
+                                            <td><span
+                                                    class="badge bg-light text-dark border">{{ gst.gst_scheme_type }}</span>
+                                            </td>
                                             <td>
                                                 {% if gst.status == 'Active' %}
                                                     <span class="badge bg-success">Active</span>
@@ -247,24 +254,25 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                 <small class="text-muted">{{ gst.created_by.first_name|default:gst.created_by.username }}</small>
+                                                <small class="text-muted">{{ gst.created_by.first_name|default:gst.created_by.username }}</small>
                                             </td>
 
                                             {% if request.user.is_superuser or request.user == client.assigned_ca %}
-                                            <td class="text-end">
-                                                <a href="{% url 'edit_gst_details' gst.id %}" class="btn btn-sm btn-outline-secondary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                            </td>
+                                                <td class="text-end">
+                                                    <a href="{% url 'edit_gst_details' gst.id %}"
+                                                       class="btn btn-sm btn-outline-secondary">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                </td>
                                             {% endif %}
                                         </tr>
-                                        {% empty %}
+                                    {% empty %}
                                         <tr>
                                             <td colspan="6" class="text-center text-muted py-4">
                                                 No GST details found. Click "GST" in the top menu to add one.
                                             </td>
                                         </tr>
-                                        {% endfor %}
+                                    {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
@@ -294,13 +302,13 @@
                                             {% endfor %}
                                         </div>
                                     </div>
-                            </div>
+                                </div>
                             {% endif %}
 
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="card-title m-0 text-primary"><i class="bi bi-folder2-open me-2"></i>Uploaded
                                     Repository</h5>
-                        </div>
+                            </div>
 
                             <div class="row g-3">
                                 {% for doc in documents %}
@@ -335,7 +343,7 @@
                             </h5>
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle border">
-                                <thead class="table-light">
+                                    <thead class="table-light">
                                     <tr>
                                         <th>Title</th>
                                         <th>Service</th>
@@ -347,46 +355,52 @@
                                     </thead>
                                     <tbody>
                                     {% for service in services %}
-                                            <tr>
+                                        <tr>
 
-                                            <td class="fw-bold text-primary" >
+                                            <td class="fw-bold text-primary">
                                                 <a href="{% url "task_detail" service.id %}">{{ service.task_title }}</a>
-                                                 {% if service.priority == 'High' %}
-                                                <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">HIGH</span>
+                                                {% if service.priority == 'High' %}
+                                                    <span class="badge bg-danger ms-1"
+                                                          style="font-size: 0.6rem;">HIGH</span>
                                                 {% endif %}
                                             </td>
-                                            <td ><span class="badge bg-light text-dark border">{{ service.service_type }}</span></td>
-                                            <td> <span class="{% if service.due_date < today and service.status != 'Completed' %}text-danger fw-bold{% endif %}">{{ service.due_date|date:"M d, Y" }}
+                                            <td><span
+                                                    class="badge bg-light text-dark border">{{ service.service_type }}</span>
+                                            </td>
+                                            <td> <span
+                                                    class="{% if service.due_date < today and service.status != 'Completed' %}text-danger fw-bold{% endif %}">{{ service.due_date|date:"M d, Y" }}
                                             </span>
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                {% for user in service.assignees.all|slice:":3" %}
-                                                    <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
-                                                    style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};"
-                                                     title="{{ user.first_name }}">
-                                                    {{ user.first_name|slice:":1"|upper }}
-                                                    </div>
-                                                {% empty %}
-                                                <span class="text-muted small fst-italic">Unassigned</span>
-                                                {% endfor %}
-                                                {% if service.assignees.count > 3 %}
-                                                <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
-                                                style="width: 28px; height: 28px; font-size: 10px; z-index: 0;">
-                                                +{{ service.assignees.count|add:"-3" }}
-                                                </div>
-                                              {% endif %}
+                                                    {% for user in service.assignees.all|slice:":3" %}
+                                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};"
+                                                             title="{{ user.first_name }}">
+                                                            {{ user.first_name|slice:":1"|upper }}
+                                                        </div>
+                                                    {% empty %}
+                                                        <span class="text-muted small fst-italic">Unassigned</span>
+                                                    {% endfor %}
+                                                    {% if service.assignees.count > 3 %}
+                                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                             style="width: 28px; height: 28px; font-size: 10px; z-index: 0;">
+                                                            +{{ service.assignees.count|add:"-3" }}
+                                                        </div>
+                                                    {% endif %}
                                                 </div>
                                             </td>
-                                            <td> <span class="badge {% if service.status == 'Completed' %}bg-success{% elif service.status == 'Pending' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
+                                            <td> <span
+                                                    class="badge {% if service.status == 'Completed' %}bg-success{% elif service.status == 'Pending' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
                                              {{ service.status }}</span>
                                             </td>
-                                            <td > <a href="{% url "task_detail" service.id %}" class="btn btn-sm btn-outline-primary"><i
-                                            class="bi bi-eye"></i></a>
+                                            <td><a href="{% url "task_detail" service.id %}"
+                                                   class="btn btn-sm btn-outline-primary"><i
+                                                    class="bi bi-eye"></i></a>
                                             </td>
 
-                                            </tr>
-                                        {% empty %}
+                                        </tr>
+                                    {% empty %}
                                         <tr>
                                             <td colspan="4" class="text-center text-muted py-4">No active services
                                                 found.
@@ -420,7 +434,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                    </div>
+                                        </div>
                                     {% empty %}
                                         <div class="col-12 text-center text-muted py-4">No linked businesses.</div>
                                     {% endfor %}
@@ -525,35 +539,37 @@
                     </div>
                     <form action="{% url 'create_client_doc_request' client.id %}" method="post">
                         {% csrf_token %}
-                    <div class="modal-body p-4">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold" for="{{ request_form.title.id_for_label }}">Title <span
-                                    class="text-danger">*</span></label>
-                            {{ request_form.title }}
-                            {% if request_form.title.errors %}
-                                <div class="text-danger small">{{ request_form.title.errors.0 }}</div>{% endif %}
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" for="{{ request_form.title.id_for_label }}">Title
+                                    <span
+                                            class="text-danger">*</span></label>
+                                {{ request_form.title }}
+                                {% if request_form.title.errors %}
+                                    <div class="text-danger small">{{ request_form.title.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" for="{{ request_form.due_date.id_for_label }}">Due
+                                    Date
+                                    <span class="text-danger">*</span></label>
+                                {{ request_form.due_date }}
+                                {% if request_form.due_date.errors %}
+                                    <div class="text-danger small">{{ request_form.due_date.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" for="{{ request_form.documents.id_for_label }}">Required
+                                    Documents <span class="text-danger">*</span></label>
+                                {{ request_form.documents }}
+                                {% if request_form.documents.errors %}
+                                    <div class="text-danger small">{{ request_form.documents.errors.0 }}</div>{% endif %}
+                                <div class="form-text small">Hold <strong>Ctrl/Cmd</strong> to select multiple.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold"
+                                       for="{{ request_form.description.id_for_label }}">Notes</label>
+                                {{ request_form.description }}
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold" for="{{ request_form.due_date.id_for_label }}">Due Date
-                                <span class="text-danger">*</span></label>
-                            {{ request_form.due_date }}
-                            {% if request_form.due_date.errors %}
-                                <div class="text-danger small">{{ request_form.due_date.errors.0 }}</div>{% endif %}
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold" for="{{ request_form.documents.id_for_label }}">Required
-                                Documents <span class="text-danger">*</span></label>
-                            {{ request_form.documents }}
-                            {% if request_form.documents.errors %}
-                                <div class="text-danger small">{{ request_form.documents.errors.0 }}</div>{% endif %}
-                            <div class="form-text small">Hold <strong>Ctrl/Cmd</strong> to select multiple.</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold"
-                                   for="{{ request_form.description.id_for_label }}">Notes</label>
-                            {{ request_form.description }}
-                        </div>
-                    </div>
                         <div class="modal-footer bg-light">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-success px-4">Create Request</button>
@@ -611,7 +627,7 @@
                 </div>
             </div>
         </div>
-        </main>
+    </main>
 
     <script>
         function openUploadModal(requestedDocId) {

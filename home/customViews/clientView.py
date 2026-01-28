@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 
-from home.forms import DocumentUploadForm, DocumentRequestForm, RequestedDocument
+from home.forms import DocumentUploadForm, DocumentRequestForm, RequestedDocument, GSTDetails, GSTDetailsForm
 from home.clients.client_access import get_accessible_clients
 from home.models import Client, Task  # Import your other models as needed
 
