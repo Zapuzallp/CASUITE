@@ -1,5 +1,4 @@
-from django.contrib.auth.models import User
-from django.contrib.auth.models import User
+
 from django.contrib.auth.models import User
 from django.db import models
 # -------------------------
@@ -64,9 +63,8 @@ class EmployeeShift(models.Model):
     def __str__(self):
         return f"{self.user.get_username()} assigned to {self.shift.shift_name}"
 
-
 STATE_CHOICES = (
-    ('01', 'Jammu and Kashmir'),
+    ('01', 'West Bengal'),
     ('02', 'Himachal Pradesh'),
     ('03', 'Punjab'),
     ('04', 'Chandigarh'),
@@ -84,7 +82,7 @@ STATE_CHOICES = (
     ('16', 'Tripura'),
     ('17', 'Meghalaya'),
     ('18', 'Assam'),
-    ('19', 'West Bengal'),
+    ('19', 'Jammu and Kashmir'),
     ('20', 'Jharkhand'),
     ('21', 'Odisha'),
     ('22', 'Chhattisgarh'),
@@ -144,6 +142,7 @@ class OfficeDetails(models.Model):
 # -------------------------
 # 1. Base Client Model
 # -------------------------
+
 class Client(models.Model):
     CLIENT_TYPE_CHOICES = [
         ('Individual', 'Individual'),
@@ -192,7 +191,11 @@ class Client(models.Model):
     # --- Address ---
     address_line1 = models.TextField()
     city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
+    state = models.CharField(
+        max_length=2,
+        choices=STATE_CHOICES
+    )
+
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=100, default='India')
 
@@ -726,6 +729,8 @@ class Employee(models.Model):
     role = models.CharField(max_length=255, choices=ROLES_CHOICE)
     supervisor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Supervisor_Or_Manager", null=True,
                                    blank=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    role = models.CharField(max_length=50, default="employee")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     # single source of truth for limits
