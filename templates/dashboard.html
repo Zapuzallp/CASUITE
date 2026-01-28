@@ -461,6 +461,7 @@
         });
     </script>
 
+    <script src="{% static 'js/location-module.js' %}"></script>
     <div class="modal fade" id="clockInModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -587,71 +588,43 @@
         let clockInMap = null;
         let clockOutMap = null;
 
-        function loadLocation(mapId, latInput, longInput, locationInput) {
-
-            if (!navigator.geolocation) {
-                alert("Geolocation not supported");
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(async function (pos) {
-
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-
-                // Fill hidden fields
-                document.getElementById(latInput).value = lat;
-                document.getElementById(longInput).value = lng;
-
-                try {
-                    const res = await fetch(
-                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-                    );
-                    const data = await res.json();
-                    document.getElementById(locationInput).value =
-                        data.display_name || "Unknown Location";
-                } catch {
-                    document.getElementById(locationInput).value = "Unknown Location";
-                }
-
-                // Remove old map if exists
-                if (mapId === "clockInMap" && clockInMap) {
-                    clockInMap.remove();
-                }
-                if (mapId === "clockOutMap" && clockOutMap) {
-                    clockOutMap.remove();
-                }
-
-                // Create new map
-                const map = L.map(mapId).setView([lat, lng], 16);
-
-                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                    attribution: "© OpenStreetMap"
-                }).addTo(map);
-
-                L.marker([lat, lng]).addTo(map)
-                    .bindPopup("You are here")
-                    .openPopup();
-
-                if (mapId === "clockInMap") clockInMap = map;
-                if (mapId === "clockOutMap") clockOutMap = map;
-
-            }, function () {
-                alert("Location permission denied!");
-            });
-        }
-
         /* CLOCK IN */
         document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
             setTimeout(() => {
-                loadLocation("clockInMap", "clockin-lat", "clockin-long", "clockin-location");
+                LocationModule.loadLocation("clockin-lat", "clockin-long", "clockin-location", function(success) {
+                    if (success) {
+                        // Create map after location is loaded
+                        const lat = parseFloat(document.getElementById("clockin-lat").value);
+                        const lng = parseFloat(document.getElementById("clockin-long").value);
+                        
+                        if (clockInMap) clockInMap.remove();
+                        clockInMap = L.map("clockInMap").setView([lat, lng], 16);
+                        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                            attribution: "© OpenStreetMap"
+                        }).addTo(clockInMap);
+                        L.marker([lat, lng]).addTo(clockInMap).bindPopup("You are here").openPopup();
+                    }
+                });
             }, 300);
         });
 
         /* CLOCK OUT */
         document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
             setTimeout(() => {
-                loadLocation("clockOutMap", "clockout-lat", "clockout-long", "clockout-location");
+                LocationModule.loadLocation("clockout-lat", "clockout-long", "clockout-location", function(success) {
+                    if (success) {
+                        // Create map after location is loaded
+                        const lat = parseFloat(document.getElementById("clockout-lat").value);
+                        const lng = parseFloat(document.getElementById("clockout-long").value);
+                        
+                        if (clockOutMap) clockOutMap.remove();
+                        clockOutMap = L.map("clockOutMap").setView([lat, lng], 16);
+                        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                            attribution: "© OpenStreetMap"
+                        }).addTo(clockOutMap);
+                        L.marker([lat, lng]).addTo(clockOutMap).bindPopup("You are here").openPopup();
+                    }
+                });
             }, 300);
         });
 

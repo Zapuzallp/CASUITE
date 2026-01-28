@@ -31,6 +31,13 @@ class HomeView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         today = timezone.now().date()
 
+        # Add attendance data for dashboard display
+        from home.models import Attendance
+        attendance = Attendance.objects.filter(
+            user=user,
+            date=today
+        ).first()
+
         # =========================================================
         # 1. GLOBAL STATISTICS & FINANCIALS
         # =========================================================

@@ -120,9 +120,28 @@ class ClockInView(LoginRequiredMixin, View):
         location_name = request.POST.get("location_name")
 
         attendance.clock_in = current_time
-        attendance.clock_in_lat = lat
-        attendance.clock_in_long = long
-        attendance.location_name = location_name
+        
+        # Only set location fields if they have valid values
+        if lat and lat.strip():
+            try:
+                attendance.clock_in_lat = float(lat)
+            except (ValueError, TypeError):
+                attendance.clock_in_lat = None
+        else:
+            attendance.clock_in_lat = None
+            
+        if long and long.strip():
+            try:
+                attendance.clock_in_long = float(long)
+            except (ValueError, TypeError):
+                attendance.clock_in_long = None
+        else:
+            attendance.clock_in_long = None
+            
+        if location_name and location_name.strip():
+            attendance.location_name = location_name
+        else:
+            attendance.location_name = None
 
         # Check compliance for clock-in only
         compliance_issues = check_web_attendance_compliance(
@@ -167,23 +186,42 @@ class ClockOutView(LoginRequiredMixin, View):
         else:
             attendance.clock_out = current_time
 
-        attendance.clock_out_lat = lat
-        attendance.clock_out_long = long
-        
-        # Update location name if not set
-        if not attendance.location_name and lat and long:
+        # Only set location fields if they have valid values
+        if lat and lat.strip():
             try:
-                lat_f = float(lat)
-                lng_f = float(long)
-                attendance.location_name = f"Location ({lat_f:.4f}, {lng_f:.4f})"
+                attendance.clock_out_lat = float(lat)
             except (ValueError, TypeError):
-                attendance.location_name = f"Location ({lat}, {long})"
+                attendance.clock_out_lat = None
+        else:
+            attendance.clock_out_lat = None
+            
+        if long and long.strip():
+            try:
+                attendance.clock_out_long = float(long)
+            except (ValueError, TypeError):
+                attendance.clock_out_long = None
+        else:
+            attendance.clock_out_long = None
+        
+        # Only set location_name if it's completely empty (not set during clock-in)
+        # Don't overwrite existing location names with coordinates
+        if not attendance.location_name:
+            location_name = request.POST.get("location_name")
+            if location_name:
+                attendance.location_name = location_name
+            elif lat and long:
+                try:
+                    lat_f = float(lat)
+                    lng_f = float(long)
+                    attendance.location_name = f"Location ({lat_f:.4f}, {lng_f:.4f})"
+                except (ValueError, TypeError):
+                    attendance.location_name = f"Location ({lat}, {long})"
         
         # Check full compliance (both clock-in and clock-out)
         compliance_issues = check_web_attendance_compliance(
             request.user, attendance.clock_in, attendance.clock_out,
             attendance.clock_in_lat, attendance.clock_in_long,
-            lat, long
+            attendance.clock_out_lat, attendance.clock_out_long
         )
         
         # Set final status based on compliance
