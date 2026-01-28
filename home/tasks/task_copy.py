@@ -1,6 +1,6 @@
 from django.db import transaction
 from django.utils import timezone
-from home.models import Task, TaskExtendedAttributes
+from home.models import Task, TaskExtendedAttributes,TaskAssignmentStatus
 
 # function for title name of the recurrence task
 def build_auto_task_title(original_task, next_due_date):
@@ -77,5 +77,17 @@ def copy_task(original_task, created_at= None,created_by=None, is_auto=False,nex
             if field.name not in ('id', 'task')
         }
         TaskExtendedAttributes.objects.create(task=new_task, **data)
+
+    # Copy workflow sequence (TaskAssignmentStatus)
+    sequence_qs = TaskAssignmentStatus.objects.filter(task=original_task).order_by('order')
+
+    for seq in sequence_qs:
+        TaskAssignmentStatus.objects.create(
+            task=new_task,
+            user=seq.user,
+            status_context=seq.status_context,
+            order=seq.order,
+            is_completed=False # IMPORTANT: reset for new task
+        )
 
     return new_task
