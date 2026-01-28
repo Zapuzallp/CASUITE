@@ -193,7 +193,7 @@ REQUIRED_FIELDS_MAP = {
 #    e.g., ['Pending', 'Draft', 'Review', 'Completed']
 #
 # 2. 'fields':
-#    - 'include': List of field names from TaskExtendedAttributes to show in the form.
+#    - 'include': Liszt of field names from TaskExtendedAttributes to show in the form.
 #    - 'readonly': List of field names that should be visible but not editable.
 #
 # 3. 'labels': Dictionary to rename fields on the UI.

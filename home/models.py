@@ -6,6 +6,8 @@ from django.db import models
 # Client Base Table
 # -------------------------
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.conf import settings
 
 
 # Create your models here.
@@ -223,15 +225,58 @@ class Client(models.Model):
     def __str__(self):
         return self.client_name
 
+GST_SCHEME_CHOICES = [
+    ('Regular', 'Regular Scheme'),
+    ('Composition', 'Composition Scheme'),
+    ('QRMP', 'QRMP Scheme'),
+]
+
+GST_STATUS_CHOICES = [
+    ('Active', 'Active'),
+    ('Closed', 'Closed'),
+]
+
 
 class GSTDetails(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='gst_details')
+
     gst_number = models.CharField(max_length=15)
+
     registered_address = models.TextField(blank=True, null=True)
-    state = models.CharField(max_length=50, blank=True)
+
+    #  State dropdown
+    state = models.CharField(
+        max_length=2,
+        choices=STATE_CHOICES,
+        blank=True,
+        null=True
+    )
+
+    #  NEW FIELD 1: GST Scheme Type
+    gst_scheme_type = models.CharField(
+        max_length=20,
+        choices=GST_SCHEME_CHOICES
+    )
+
+    #  NEW FIELD 2: Created By (logged-in user)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gst_created'
+    )
+
+    #  NEW FIELD 3: Status
+    status = models.CharField(
+        max_length=10,
+        choices=GST_STATUS_CHOICES,
+        default='Active'
+    )
 
     def __str__(self):
-        return f"{self.gst_number} - {self.state}"
+        return f"{self.gst_number} - {self.get_state_display()}"
+
 # -------------------------
 # 2. Universal Business Profile
 # -------------------------
@@ -420,7 +465,7 @@ class Task(models.Model):
     description = models.TextField(blank=True, null=True)
 
     # --- Dates & Status ---
-    due_date = models.DateField()
+    due_date = models.DateField(blank=True, null=True)
     completed_date = models.DateField(blank=True, null=True)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='Medium')
 
@@ -438,6 +483,8 @@ class Task(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # 🔑 This prevents duplicate auto-creation
+    last_auto_created_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.task_title} ({self.client.client_name})"
@@ -452,7 +499,32 @@ class Task(models.Model):
                 changed_by=changed_by,
                 remarks=remarks
             )
+    # Set `is_recurring` only when the task is first created.
+    # Derived from `recurrence_period` to avoid auto-created
+    # or copied tasks being incorrectly marked as recurring.
+    def save(self, *args, **kwargs):
+        if self.pk and not self.description:
+            old = Task.objects.get(pk=self.pk)
+            self.description = old.description
+        self.is_recurring = self.recurrence_period != 'None'
+        super().save(*args, **kwargs)
 
+
+class TaskRecurrence(models.Model):
+    task = models.OneToOneField(Task,on_delete=models.CASCADE,related_name="task_recurrence")
+    recurrence_period = models.CharField(max_length=20)
+    is_recurring = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    next_run_at = models.DateTimeField(null=True, blank=True)
+    last_auto_created_at = models.DateTimeField(null=True, blank=True)
+
+    def clean(self):
+        if self.recurrence_period == "None":
+            raise ValidationError(
+                {"recurrence_period": "TaskRecurrence cannot be 'None'"}
+            )
+    def __str__(self):
+        return self.task.task_title
 
 class TaskAssignmentStatus(models.Model):
     """
@@ -733,12 +805,21 @@ class Employee(models.Model):
                                    blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    # single source of truth for limits
-    LEAVE_LIMITS = {
-        "sick": 7,
-        "casual": 8,
-        "earned": 5,
-    }
+
+    # leave types
+    sick_leave = models.FloatField(default=7.0)
+    casual_leave = models.FloatField(default=8.0)
+    earned_leave = models.FloatField(default=5.0)
+
+    @property
+    def LEAVE_LIMITS(self):
+        """Property that returns dictionary from FloatFields."""
+        return {
+            "sick": self.sick_leave,
+            "casual": self.casual_leave,
+            "earned": self.earned_leave,
+        }
+
 
     #Leave Summary
     def get_leave_summary(self):
@@ -797,7 +878,7 @@ class Leave(models.Model):
         return (self.end_date - self.start_date).days + 1
 
     def total_days(self):
-        return self.duration  # Alias for our template
+        return self.duration
 
     def __str__(self):
         return f"{self.employee} - {self.leave_type}"
@@ -865,15 +946,30 @@ class Payment(models.Model):
         ('UPI', 'UPI'),
         ('BANK', 'Bank Transfer'),
     ]
+    PAYMENT_STATUS = [
+        ('PENDING', 'Pending'),
+        ('PAID', 'Paid'),
+        ('UNPAID', 'Unpaid'),
+        ('CANCELED', 'Canceled'),
+    ]
+    APPROVAL_STATUS = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
 
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
     transaction_id = models.CharField(max_length=255, blank=True, null=True)
-    amount = models.FloatField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_date = models.DateField()
     # Auto-compute fields
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="payments_created")
     created_at = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='PENDING')
+    approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS, default='PENDING')
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_payments")
+    approved_at = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return f"Payment {self.id} for Invoice #{self.invoice.id}"
 
@@ -888,6 +984,7 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    is_seen = models.BooleanField(default = False)    
 
     def __str__(self):
         return f"From{self.sender} to {self.receiver} - {self.status}"

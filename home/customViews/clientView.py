@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 
-from home.forms import DocumentUploadForm, DocumentRequestForm, RequestedDocument
+from home.forms import DocumentUploadForm, DocumentRequestForm, RequestedDocument, GSTDetails, GSTDetailsForm
+from home.clients.client_access import get_accessible_clients
 from home.models import Client, Task  # Import your other models as needed
 
 
@@ -30,13 +31,11 @@ def get_dynamic_fields(instance):
                     else:
                         display_val = val
 
-                    # Handle ManyToMany or ForeignKeys if needed (simplistic approach here)
-                    # For FK, it usually prints the __str__ representation automatically
-
+                    # Handle ManyToMany or ForeignKeys if needed
                     data.append({
                         'label': field.verbose_name.title(),
                         'value': display_val,
-                        'name': field.name  # internal name if needed for css classes
+                        'name': field.name
                     })
             except AttributeError:
                 continue
@@ -50,32 +49,13 @@ def client_details_view(request, client_id):
     Implements Role-Based Access Control similar to ClientView.
     """
     user = request.user
-
     # --- Role-Based Permission Logic ---
-    if user.is_superuser:
-        client = get_object_or_404(Client, id=client_id)
-    else:
-        try:
-            employee = user.employee
-            if employee.role == 'ADMIN':
-                # Admin can access any client
-                client = get_object_or_404(Client, id=client_id)
-
-            elif employee.role == 'BRANCH_MANAGER':
-                # Branch Manager: Access only if client is in the same office
-                if employee.office_location:
-                    client = get_object_or_404(Client, id=client_id, office_location=employee.office_location)
-                else:
-                    # Fallback: If manager has no office set, they can only see explicitly assigned clients
-                    client = get_object_or_404(Client, id=client_id, assigned_ca=user)
-
-            else:
-                # Staff / Default: Can only see clients explicitly assigned to them
-                client = get_object_or_404(Client, id=client_id, assigned_ca=user)
-
-        except Employee.DoesNotExist:
-            # Fallback for users without employee profile: Strict assignment only
-            client = get_object_or_404(Client, id=client_id, assigned_ca=user)
+    # Fetch only those clients the current user is allowed to access
+    # (based on role, assignment, or admin privileges)
+    accessible_clients = get_accessible_clients(user)
+    # Ensure the requested client exists AND is within the user's allowed scope
+    # This prevents unauthorized users from accessing other clients' data
+    client = get_object_or_404(accessible_clients, id=client_id)
 
     # 1. Dynamic Basic Info & Linked Data
     # Note: Ensure get_dynamic_fields is imported or defined
@@ -83,7 +63,6 @@ def client_details_view(request, client_id):
     entity_profile_fields = []
     if hasattr(client, 'business_profile'):
         entity_profile_fields = get_dynamic_fields(client.business_profile)
-
     linked_data = []
     link_type = 'businesses' if client.client_type == 'Individual' else 'associates'
 
@@ -149,12 +128,16 @@ def client_details_view(request, client_id):
     # Forms and Pending Requests
     upload_form = DocumentUploadForm(client_id=client.id)
     request_form = DocumentRequestForm()
-
     pending_requests = RequestedDocument.objects.filter(
         document_request__client_id=client_id
     ).exclude(
         uploads__status='Uploaded'
     ).select_related('document_request', 'document_master').order_by('document_request__due_date')
+
+    # === GST LOGIC ===
+    gst_details_list = GSTDetails.objects.filter(client=client).order_by('-id')
+    gst_form = GSTDetailsForm()
+    # =================
 
     context = {
         'client': client,
@@ -168,6 +151,52 @@ def client_details_view(request, client_id):
         'request_form': request_form,
         'pending_requests': pending_requests,
         'today': timezone.now().date(),
+        'gst_details_list': gst_details_list,  # Include List
+        'gst_form': gst_form,  # Include Form
     }
 
     return render(request, 'client/client-details.html', context)
+
+
+# ---------------------------------------------------------
+# NEW: GST Management Views
+# ---------------------------------------------------------
+
+@login_required
+def add_gst_details_view(request, client_id):
+    client = get_object_or_404(Client, id=client_id)
+
+    if request.method == 'POST':
+        form = GSTDetailsForm(request.POST)
+        if form.is_valid():
+            gst_instance = form.save(commit=False)
+            gst_instance.client = client
+
+            # --- AUTO-FILL LOGGED-IN USER ---
+            gst_instance.created_by = request.user
+            # --------------------------------
+
+            gst_instance.save()
+            return redirect('client_details', client_id=client.id)
+
+    return redirect('client_details', client_id=client.id)
+
+
+@login_required
+def edit_gst_details_view(request, gst_id):
+    gst_instance = get_object_or_404(GSTDetails, id=gst_id)
+    client_id = gst_instance.client.id
+
+    # Permission Check
+    if not (request.user.is_superuser or request.user == gst_instance.client.assigned_ca):
+        pass  # Handle permission error if needed
+
+    if request.method == 'POST':
+        form = GSTDetailsForm(request.POST, instance=gst_instance)
+        if form.is_valid():
+            form.save()
+            return redirect('client_details', client_id=client_id)
+    else:
+        form = GSTDetailsForm(instance=gst_instance)
+
+    return render(request, 'client/edit_gst_form.html', {'form': form, 'client': gst_instance.client})

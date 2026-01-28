@@ -1,6 +1,6 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -26,6 +26,10 @@ from home.customViews.notificationView import (
 from home.views import (
     HomeView
 )
+from home.customViews.payment_views import (
+    payment_list, payment_collect, approve_payment,
+    reject_payment, payment_detail, cancel_payment
+)
 
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
@@ -38,6 +42,11 @@ urlpatterns = [
     path('client/<int:client_id>/create-request/', documentsUploadView.create_document_request_view,
          name='create_client_doc_request'),
     path('client/<int:client_id>/create-task/', taskView.create_task_view, name='create_service_task'),
+
+    # GST Management
+    path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
+    path('gst/<int:gst_id>/edit/', clientView.edit_gst_details_view, name='edit_gst_details'),
+
     # Client Management
     path('clients/', clientOnboardingView.ClientView.as_view(), name='clients'),
     path('client/<int:client_id>/edit/', clientOnboardingView.edit_client_view, name='edit_client'),
@@ -45,6 +54,7 @@ urlpatterns = [
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
+    path('tasks/<int:task_id>/copy/', taskView.copy_task_view, name='task_copy'),
 
     # reset password
     path('password/change/', resetPassword.CustomPasswordChangeView.as_view(), name='password_change'),
@@ -53,21 +63,23 @@ urlpatterns = [
     path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
     path('', dashboard, name='dashboard'),
-    #NOTIFICATIONS
+    # NOTIFICATIONS
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
-    
+
     # Attendance
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
     path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
     path("admin-report/attendance/", AdminAttendanceReportView.as_view(), name="admin_attendance_report"),
-    
+
     #apply-leave
     path('leave/apply/', leaveView.LeaveCreateView.as_view(), name='leave-apply'),
     #delete-leave
     path('leave/<int:leave_id>/',leaveView.LeaveDeleteView.as_view(), name='leave-delete'),
+    # Leave re-apply URL
+    path('leave/reapply/<int:pk>/', ReApplyLeaveViews.leave_reapply, name='leave-reapply'),
     #list services
     path('services/', list_services, name='list_services'),
     #delete service
@@ -87,4 +99,11 @@ urlpatterns = [
     path('mobile/apply-leave/', mobile_apply_leave, name='mobile_apply_leave'),
     path('mobile/clock-in/', mobile_clock_in, name='mobile_clock_in'),
     path('mobile/clock-out/', mobile_clock_out, name='mobile_clock_out'),
+    # Payments
+    path('payments/', payment_list, name='payment_list'),
+    path('payment/<int:invoice_id>/collect/', payment_collect, name='payment_collect'),
+    path('payments/<int:payment_id>/approve/', approve_payment, name='approve_payment'),
+    path('payments/<int:payment_id>/reject/', reject_payment, name='reject_payment'),
+    path('payments/<int:payment_id>/cancel/', cancel_payment, name='cancel_payment'),
+    path('payments/<int:payment_id>/', payment_detail, name='payment_detail'),
 ]
