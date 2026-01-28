@@ -20,7 +20,8 @@ from .models import (
     Employee,
     Shift, EmployeeShift, OfficeDetails,
     Leave,
-    Message
+    Message,
+    TaskRecurrence
 )
 
 
@@ -395,6 +396,17 @@ class TaskStatusLogAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     autocomplete_fields = ("task", "changed_by")
 
+@admin.register(TaskRecurrence)
+class TaskRecurrenceAdmin(admin.ModelAdmin):
+    list_display = (
+        "task",
+        "recurrence_period",
+        "created_at",
+        "is_recurring",
+        "next_run_at",
+        "last_auto_created_at"
+
+    )
 
 @admin.register(TaskExtendedAttributes)
 class TaskExtendedAttributesAdmin(admin.ModelAdmin):
@@ -594,17 +606,32 @@ class InvoiceItemInline(admin.TabularInline):
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = ('id', 'client', 'subject', 'invoice_date', 'due_date')
     list_filter = ('invoice_date', 'due_date', 'client')
-    search_fields = ('subject', 'client__name', 'id')
+    search_fields = ('subject', 'client__client_name', 'id')
     inlines = [InvoiceItemInline]
     filter_horizontal = ('services',)
 
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('invoice', 'amount', 'payment_method', 'payment_date', 'created_by')
-    list_filter = ('payment_method', 'payment_date')
+    list_display = ('invoice', 'amount', 'payment_method', 'payment_date', 'created_by', 'payment_status', 'approval_status')
+    list_filter = ('payment_method', 'payment_date', 'payment_status', 'approval_status')
     search_fields = ('invoice__id', 'transaction_id')
     readonly_fields = ('created_at', 'created_by')
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # Superusers see everything
+        if request.user.is_superuser:
+            return qs
+        # If the user has an Employee profile, limit to their branch.
+        try:
+            office = request.user.employee.office_location
+        except Exception:
+            return qs.none()
+
+        # Return payments created by users in the same office
+        return qs.filter(created_by__employee__office_location=office)
+
     def save_model(self, request, obj, form, change):
         if not obj.created_by:
             obj.created_by = request.user
