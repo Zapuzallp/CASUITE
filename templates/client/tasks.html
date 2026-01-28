@@ -144,6 +144,7 @@
                         <table class="table table-hover datatable align-middle">
                             <thead class="table-light">
                             <tr>
+                                <th scope="col">#</th>
                                 <th>Title</th>
                                 <th>Client</th>
                                 <th>Service</th>
@@ -156,6 +157,13 @@
                             <tbody>
                             {% for task in tasks %}
                                 <tr>
+                                    <td>
+                                        {% if is_paginated %}
+                                            {{ page_obj.start_index|add:forloop.counter0 }}
+                                        {% else %}
+                                            {{ forloop.counter }}
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         <a href="{% url 'task_detail' task.id %}"
                                            class="fw-bold text-primary text-decoration-none">
