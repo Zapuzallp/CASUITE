@@ -45,12 +45,6 @@ class InvoiceListCreateView(LoginRequiredMixin, FormMixin, ListView):
             messages.success(request, "Invoice created successfully.")
             return redirect(self.success_url)
 
-        # ❌ INVALID FORM → redirect, DO NOT render
-        messages.error(request, "Invoice creation failed. Please fix the errors.")
-
-        request.session['invoice_form_errors'] = form.errors
-        request.session['invoice_form_data'] = request.POST
-
         return redirect(self.success_url)
 
 
