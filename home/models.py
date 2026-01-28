@@ -791,12 +791,21 @@ class Employee(models.Model):
                                    blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    # single source of truth for limits
-    LEAVE_LIMITS = {
-        "sick": 7,
-        "casual": 8,
-        "earned": 5,
-    }
+
+    # leave types
+    sick_leave = models.FloatField(default=7.0)
+    casual_leave = models.FloatField(default=8.0)
+    earned_leave = models.FloatField(default=5.0)
+
+    @property
+    def LEAVE_LIMITS(self):
+        """Property that returns dictionary from FloatFields."""
+        return {
+            "sick": self.sick_leave,
+            "casual": self.casual_leave,
+            "earned": self.earned_leave,
+        }
+
 
     #Leave Summary
     def get_leave_summary(self):
@@ -855,7 +864,7 @@ class Leave(models.Model):
         return (self.end_date - self.start_date).days + 1
 
     def total_days(self):
-        return self.duration  # Alias for our template
+        return self.duration
 
     def __str__(self):
         return f"{self.employee} - {self.leave_type}"

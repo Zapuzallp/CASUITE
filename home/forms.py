@@ -314,12 +314,42 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
         if leave_summary:
             updated_choices = []
             for value, label in self.fields["leave_type"].choices:
-                remaining = leave_summary.get(value, {}).get("remaining", 0)
-                updated_choices.append(
-                    (value, f"{label} ({remaining})")
-                )
+                if value == "" or value is None:
+
+                    updated_choices.append(
+                        (value, label) )
+                else:
+                    remaining = leave_summary.get(value, {}).get("remaining", 0)
+                    if remaining == 0:
+                        display_text = f"{label} (-)"
+                    else:
+                            display_text = f"{label} ({remaining})"
+                            updated_choices.append((value, display_text))
 
             self.fields["leave_type"].choices = updated_choices
+
+
+    def clean(self):
+        """Validate dates"""
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        if start_date and end_date:
+            # Check if end date is before start date
+            if end_date < start_date:
+                raise forms.ValidationError(
+                    "End date cannot be before start date."
+                )
+
+            # Check if dates are in the past
+            from datetime import date
+            if start_date < date.today():
+                raise forms.ValidationError(
+                    "Cannot apply for leaves in the past."
+                )
+
+        return cleaned_data
 
 #Message form
 class MessageForm(forms.ModelForm):
