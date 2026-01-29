@@ -82,8 +82,7 @@ def service_details(request, service_id):
     tasks = Task.objects.filter(service_type=service.item_name)
 
     # 3. Get invoices linked to those tasks
-    invoices = Invoice.objects.filter(services__in=tasks).distinct()
-
+    invoices = Invoice.objects.filter(items__product=service).distinct()
     context = {
         "service": service,
         "invoices": invoices,
