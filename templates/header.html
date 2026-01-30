@@ -151,8 +151,12 @@
                     <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start" >
 
                         <!-- IMAGE WRAPPER -->
-                        <div class="position-relative" >
+                            <div class="position-relative" >
+                            {% if m.sender.employee.profile_pic %}
+                            <img src="{{m.sender.employee.profile_pic.url}}"class="rounded-circle" width = "35" height= "35">
+                            {% else %}
                             <img src="#"class="rounded-circle" width = "35" height= "35">
+                            {% endif %}
 
                             <!-- BLUE DOT -->
                             <span class="position-absolute top-0 start-56 translate-middle bg-primary border border-light rounded-circle "

@@ -192,9 +192,10 @@
                         {{ user.display_name|slice:":1"|upper }}
                     </div>
                         <div class="user-info">
-                        <span class="name">{{ user.username }}</span>
+                        <span class="name">{{ user.first_name}} {{user.last_name}}</span>
+                        
                         {% if user.is_staff %}
-                           <span class="time" style="font-size: 11px; color: #94a3b8;">Active Now</span>
+                           <span class="time" style="font-size: 11px; color: #94a3b8;">({{user.username}})</span>
                         {% endif %}
                     </div>
                 </a>
