@@ -256,7 +256,9 @@ class GSTDetails(models.Model):
     #  NEW FIELD 1: GST Scheme Type
     gst_scheme_type = models.CharField(
         max_length=20,
-        choices=GST_SCHEME_CHOICES
+        choices=GST_SCHEME_CHOICES,
+        null=True,
+        blank=True
     )
 
     #  NEW FIELD 2: Created By (logged-in user)
