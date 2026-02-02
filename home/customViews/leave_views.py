@@ -23,7 +23,7 @@ def manage_leaves(request):
             return redirect('manage-leaves')
            
     # Get ALL leaves with employee data
-    if request.user.is_superuser or request.user.employee.role == 'BRANCH_MANAGER' or request.user.employee.role == 'ADMIN':
+    if request.user.employee.role == 'BRANCH_MANAGER' or request.user.employee.role == 'ADMIN':
         all_leaves = (
         Leave.objects.all()
         .exclude(employee=request.user.employee)
@@ -32,9 +32,11 @@ def manage_leaves(request):
         )
         all_leaves = all_leaves.filter(employee__office_location = request.user.employee.office_location)
 
+    elif request.user.is_superuser:
+        all_leaves = (Leave.objects.all().exclude(employee = request.user.employee).select_related('employee__user').order_by('-created_at'))
     else:
         all_leaves = Leave.objects.none()
-
+   
     # Prepare data for template
     leaves_with_data = []
 
