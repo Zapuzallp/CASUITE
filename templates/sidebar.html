@@ -240,17 +240,17 @@
             </a>
         </li>
 
-        {% if user.is_staff or user.is_superuser %}
-<li class="nav-item">
-    <a class="nav-link " href="{% url 'manage-leaves' %}">
-        <i class="bi bi-clipboard-check"></i>
-        <span>Manage Leaves</span>
+        {% if request.user.employee.role == "BRANCH_MANAGER" or request.user.employee.role == "ADMIN" or request.user.is_superuser %}
+        <li class="nav-item">
+        <a class="nav-link " href="{% url 'manage-leaves' %}">
+            <i class="bi bi-clipboard-check"></i>
+            <span>Manage Leaves</span>
         {% if total_pending > 0 %}
         <span class="badge bg-danger rounded-pill">{{ total_pending }}</span>
         {% endif %}
-    </a>
-</li>
-{% endif %}
+        </a>
+        </li>
+        {% endif %}
 
 
         <li class="nav-heading">System</li>
