@@ -22,13 +22,14 @@ services:
     container_name: django-casuite
     restart: always
     command: /entrypoint.sh
-    ports:
-      - "8092:8000"
+    ports:      - "8092:8000"
     env_file:
       - .env
     volumes:
       - /home/data/casuite/static:/app/staticfiles
       - /home/data/casuite/media:/app/media/
+      # PERSISTENT MIGRATIONS VOLUME
+      - django_migrations_casuite:/app/home/migrations
     depends_on:
       - mariadb
     networks:
@@ -36,6 +37,7 @@ services:
 
 volumes:
   mariadb_data:
+  django_migrations_casuite: # Declare the named volume here
 
 networks:
   casuite-network:
