@@ -1,22 +1,6 @@
 version: '3.9'
 
 services:
-  mariadb:
-    image: mariadb:10.11
-    container_name: mariadb-casuite
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "3309:3306"
-    volumes:
-      - mariadb_data:/var/lib/mysql
-    networks:
-      - casuite-network
-
   django-web:
     build: .
     container_name: django-casuite
@@ -31,14 +15,12 @@ services:
       - /home/data/casuite/media:/app/media/
       # PERSISTENT MIGRATIONS VOLUME
       - django_migrations_casuite:/app/home/migrations
-    depends_on:
-      - mariadb
+    # Database is now external, so we remove depends_on
     networks:
       - casuite-network
 
 volumes:
-  mariadb_data:
-  django_migrations_casuite: # Declare the named volume here
+  django_migrations_casuite:
 
 networks:
   casuite-network:
