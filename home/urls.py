@@ -7,6 +7,10 @@ from home.customViews.attendanceView import (
     ClockOutView,
     AttendanceLogsView,
 )
+from home.customViews.mobileAttendanceView import (
+    mobile_login_view, mobile_logout_view, mobile_attendance_view, 
+    mobile_apply_leave, mobile_clock_in, mobile_clock_out, mobile_logs_view, mobile_leave_logs_view
+)
 from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
 from home.customViews.services import list_services, delete_service
@@ -85,6 +89,16 @@ urlpatterns = [
     # chat message
     path('chat/', messageView.chat_view, name='chat_base'),
     path('chat/<int:user_id>/', messageView.chat_view, name='chat_with_user'),
+    
+    # Mobile Attendance - Independent System
+    path('mobile/', mobile_login_view, name='mobile_login'),
+    path('mobile/logout/', mobile_logout_view, name='mobile_logout'),
+    path('mobile/attendance/', mobile_attendance_view, name='mobile_attendance'),
+    path('mobile/logs/', mobile_logs_view, name='mobile_logs'),
+    path('mobile/leave-logs/', mobile_leave_logs_view, name='mobile_leave_logs'),
+    path('mobile/apply-leave/', mobile_apply_leave, name='mobile_apply_leave'),
+    path('mobile/clock-in/', mobile_clock_in, name='mobile_clock_in'),
+    path('mobile/clock-out/', mobile_clock_out, name='mobile_clock_out'),
     # Payments
     path('payments/', payment_list, name='payment_list'),
     path('payment/<int:invoice_id>/collect/', payment_collect, name='payment_collect'),
