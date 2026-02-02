@@ -46,6 +46,11 @@ def mobile_login_view(request):
     if request.user.is_authenticated:
         return redirect('mobile_attendance')
     
+    # Clear any existing messages when accessing login page
+    from django.contrib import messages
+    storage = messages.get_messages(request)
+    storage.used = True
+    
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')

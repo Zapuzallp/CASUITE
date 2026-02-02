@@ -748,6 +748,20 @@ class Attendance(models.Model):
         elif self.duration:
             return self.formatted_duration()
         return "00:00:00 Hrs"
+    
+    def should_show_pending_warning(self):
+        """Check if pending warning should still be shown"""
+        if self.status != 'pending':
+            return False
+        
+        # If not clocked out yet, always show warning
+        if not self.clock_out:
+            return True
+        
+        # If clocked out, show warning until clock_out + 4 hours
+        from django.utils import timezone
+        warning_cutoff = self.clock_out + timedelta(hours=4)
+        return timezone.now() < warning_cutoff
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
@@ -800,7 +814,7 @@ class Employee(models.Model):
     personal_email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True)
+    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True, blank=True)
     role = models.CharField(max_length=255, choices=ROLES_CHOICE)
     supervisor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Supervisor_Or_Manager", null=True,
                                    blank=True)
