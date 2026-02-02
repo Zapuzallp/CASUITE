@@ -23,7 +23,7 @@ def manage_leaves(request):
             return redirect('manage-leaves')
            
     # Get ALL leaves with employee data
-    if request.user.employee.role == 'BRANCH_MANAGER' or request.user.employee.role == 'ADMIN':
+    if request.user.employee.role == 'BRANCH_MANAGER':
         all_leaves = (
         Leave.objects.all()
         .exclude(employee=request.user.employee)
