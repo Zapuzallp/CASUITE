@@ -29,6 +29,7 @@ services:
     volumes:
       - /home/data/casuite/static:/app/staticfiles
       - /home/data/casuite/media:/app/media/
+      - /home/data/casuite/home/migrations:/app/home/migrations
     depends_on:
       - mariadb
     networks:
