@@ -6,6 +6,8 @@ from django.db import models
 # Client Base Table
 # -------------------------
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.conf import settings
 
 
 # Create your models here.
@@ -65,7 +67,7 @@ class EmployeeShift(models.Model):
 
 
 STATE_CHOICES = (
-    ('01', 'Jammu and Kashmir'),
+    ('01', 'West Bengal'),
     ('02', 'Himachal Pradesh'),
     ('03', 'Punjab'),
     ('04', 'Chandigarh'),
@@ -83,7 +85,7 @@ STATE_CHOICES = (
     ('16', 'Tripura'),
     ('17', 'Meghalaya'),
     ('18', 'Assam'),
-    ('19', 'West Bengal'),
+    ('19', 'Jammu and Kashmir'),
     ('20', 'Jharkhand'),
     ('21', 'Odisha'),
     ('22', 'Chhattisgarh'),
@@ -191,7 +193,8 @@ class Client(models.Model):
     # --- Address ---
     address_line1 = models.TextField()
     city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
+    state = models.CharField(max_length=100,choices=STATE_CHOICES)
+
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=100, default='India')
 
@@ -223,15 +226,58 @@ class Client(models.Model):
     def __str__(self):
         return self.client_name
 
+GST_SCHEME_CHOICES = [
+    ('Regular', 'Regular Scheme'),
+    ('Composition', 'Composition Scheme'),
+    ('QRMP', 'QRMP Scheme'),
+]
+
+GST_STATUS_CHOICES = [
+    ('Active', 'Active'),
+    ('Closed', 'Closed'),
+]
+
 
 class GSTDetails(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='gst_details')
+
     gst_number = models.CharField(max_length=15)
+
     registered_address = models.TextField(blank=True, null=True)
-    state = models.CharField(max_length=50, blank=True)
+
+    #  State dropdown
+    state = models.CharField(
+        max_length=2,
+        choices=STATE_CHOICES,
+        blank=True,
+        null=True
+    )
+
+    #  NEW FIELD 1: GST Scheme Type
+    gst_scheme_type = models.CharField(
+        max_length=20,
+        choices=GST_SCHEME_CHOICES
+    )
+
+    #  NEW FIELD 2: Created By (logged-in user)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gst_created'
+    )
+
+    #  NEW FIELD 3: Status
+    status = models.CharField(
+        max_length=10,
+        choices=GST_STATUS_CHOICES,
+        default='Active'
+    )
 
     def __str__(self):
-        return f"{self.gst_number} - {self.state}"
+        return f"{self.gst_number} - {self.get_state_display()}"
+
 # -------------------------
 # 2. Universal Business Profile
 # -------------------------
@@ -420,7 +466,7 @@ class Task(models.Model):
     description = models.TextField(blank=True, null=True)
 
     # --- Dates & Status ---
-    due_date = models.DateField()
+    due_date = models.DateField(blank=True, null=True)
     completed_date = models.DateField(blank=True, null=True)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='Medium')
 
@@ -438,6 +484,8 @@ class Task(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # 🔑 This prevents duplicate auto-creation
+    last_auto_created_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.task_title} ({self.client.client_name})"
@@ -452,7 +500,32 @@ class Task(models.Model):
                 changed_by=changed_by,
                 remarks=remarks
             )
+    # Set `is_recurring` only when the task is first created.
+    # Derived from `recurrence_period` to avoid auto-created
+    # or copied tasks being incorrectly marked as recurring.
+    def save(self, *args, **kwargs):
+        if self.pk and not self.description:
+            old = Task.objects.get(pk=self.pk)
+            self.description = old.description
+        self.is_recurring = self.recurrence_period != 'None'
+        super().save(*args, **kwargs)
 
+
+class TaskRecurrence(models.Model):
+    task = models.OneToOneField(Task,on_delete=models.CASCADE,related_name="task_recurrence")
+    recurrence_period = models.CharField(max_length=20)
+    is_recurring = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    next_run_at = models.DateTimeField(null=True, blank=True)
+    last_auto_created_at = models.DateTimeField(null=True, blank=True)
+
+    def clean(self):
+        if self.recurrence_period == "None":
+            raise ValidationError(
+                {"recurrence_period": "TaskRecurrence cannot be 'None'"}
+            )
+    def __str__(self):
+        return self.task.task_title
 
 class TaskAssignmentStatus(models.Model):
     """
@@ -594,10 +667,15 @@ class Attendance(models.Model):
 
     status = models.CharField(
         max_length=20,
-        default="Absent"   # Absent / Present / Incomplete
+        choices=[
+            ("pending", "Pending"),
+            ("approved", "Approved"),
+            ("rejected", "Rejected")
+        ],
+        default="approved"
     )
 
-    remark = models.CharField(max_length=255, null=True, blank=True)
+    remark = models.TextField(blank=True, null=True)
 
     location_name = models.CharField(max_length=255, null=True, blank=True)
     clock_in_lat = models.DecimalField(
@@ -613,26 +691,31 @@ class Attendance(models.Model):
         max_digits=9, decimal_places=6, null=True, blank=True
     )
 
-    requires_approval = models.BooleanField(default=False)
-    approved_by_admin = models.BooleanField(default=False)
-
 
     class Meta:
         unique_together = ('user', 'date')
 
     def save(self, *args, **kwargs):
+
+        # Calculate duration
         if self.clock_in and self.clock_out:
-            # Ensure clock_out is always after clock_in
             if self.clock_out < self.clock_in:
-                self.clock_out += timedelta(days=1)  # adjust for cross-day clock-out
+                self.clock_out += timedelta(days=1)
 
             self.duration = self.clock_out - self.clock_in
-            self.status = "Present"
+
+            # Only auto-set status if admin logic didn’t already set it
+            if not self.status or self.status == "approved":
+                self.status = "approved"
+
         elif self.clock_in and not self.clock_out:
-            self.status = "Incomplete"
+            if not self.status:
+                self.status = "pending"
             self.duration = None
+
         else:
-            self.status = "Absent"
+            if not self.status:
+                self.status = "absent"
             self.duration = None
 
         super().save(*args, **kwargs)
@@ -651,6 +734,20 @@ class Attendance(models.Model):
             return f"{hours}h {minutes}m"
         return f"{minutes}m {seconds}s"
 
+
+    def get_work_duration(self):
+        """Get formatted work duration for mobile display"""
+        if self.clock_in and not self.clock_out:
+            # Calculate current duration
+            current_time = timezone.now()
+            duration = current_time - self.clock_in
+            total_seconds = int(duration.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            return f"{hours:02d}:{minutes:02d}:00 Hrs"
+        elif self.duration:
+            return self.formatted_duration()
+        return "00:00:00 Hrs"
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
@@ -688,107 +785,6 @@ class Notification(models.Model):
     def __str__(self):
         return f"{self.title} → {self.user.username}"
 
-#Code with Mohit Pandey
-
-STATE_CHOICES = (
-    ('01', 'Jammu and Kashmir'),
-    ('02', 'Himachal Pradesh'),
-    ('03', 'Punjab'),
-    ('04', 'Chandigarh'),
-    ('05', 'Uttarakhand'),
-    ('06', 'Haryana'),
-    ('07', 'Delhi'),
-    ('08', 'Rajasthan'),
-    ('09', 'Uttar Pradesh'),
-    ('10', 'Bihar'),
-    ('11', 'Sikkim'),
-    ('12', 'Arunachal Pradesh'),
-    ('13', 'Nagaland'),
-    ('14', 'Manipur'),
-    ('15', 'Mizoram'),
-    ('16', 'Tripura'),
-    ('17', 'Meghalaya'),
-    ('18', 'Assam'),
-    ('19', 'West Bengal'),
-    ('20', 'Jharkhand'),
-    ('21', 'Odisha'),
-    ('22', 'Chhattisgarh'),
-    ('23', 'Madhya Pradesh'),
-    ('24', 'Gujarat'),
-    # Note: 26 is the merged code for Daman, Diu, Dadra & Nagar Haveli
-    ('26', 'Dadra and Nagar Haveli and Daman and Diu'),
-    ('27', 'Maharashtra'),
-    ('29', 'Karnataka'),
-    ('30', 'Goa'),
-    ('31', 'Lakshadweep'),
-    ('32', 'Kerala'),
-    ('33', 'Tamil Nadu'),
-    ('34', 'Puducherry'),
-    ('35', 'Andaman and Nicobar Islands'),
-    ('36', 'Telangana'),
-    ('37', 'Andhra Pradesh'),
-    ('38', 'Ladakh'),
-    ('97', 'Other Territory'),
-)
-
-
-
-
-# Create your models here.
-
-# -----------------------------------------
-# 1. Shift Table
-# -----------------------------------------
-
-
-class Shift(models.Model):
-    DAY_CHOICES = (
-        ('Mon', 'Monday'),
-        ('Tue', 'Tuesday'),
-        ('Wed', 'Wednesday'),
-        ('Thu', 'Thursday'),
-        ('Fri', 'Friday'),
-        ('Sat', 'Saturday'),
-        ('Sun', 'Sunday'),
-    )
-
-    shift_name = models.CharField(max_length=100)
-    shift_start_time = models.TimeField()
-    shift_end_time = models.TimeField()
-    # Maximum allowed duration in hours (e.g., 8.5 for 8 hours 30 mins)
-    maximum_allowed_duration = models.DecimalField(
-        max_digits=4,
-        decimal_places=2,
-        help_text="Maximum permitted duration in hours (example: 8.5)"
-    )
-    # Day off stored as a comma-separated string (e.g., 'Sat,Sun')
-    days_off = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        choices=DAY_CHOICES
-    )
-
-    def __str__(self):
-        return self.shift_name
-
-# -----------------------------------------
-# 2. Employee Shift Table
-# -----------------------------------------
-
-
-class EmployeeShift(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='employee_shifts')
-    shift = models.ForeignKey(
-        Shift, on_delete=models.CASCADE, related_name='assigned_employees')
-    # Optional: Track this assignment validity
-    valid_from = models.DateField(auto_now_add=True)
-    valid_to = models.DateField(null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.user.get_username()} assigned to {self.shift.shift_name}"
-
 
 ROLES_CHOICE = [
     ('BRANCH_MANAGER', 'Branch Manager'),
@@ -810,12 +806,21 @@ class Employee(models.Model):
                                    blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    # single source of truth for limits
-    LEAVE_LIMITS = {
-        "sick": 7,
-        "casual": 8,
-        "earned": 5,
-    }
+
+    # leave types
+    sick_leave = models.FloatField(default=7.0)
+    casual_leave = models.FloatField(default=8.0)
+    earned_leave = models.FloatField(default=5.0)
+
+    @property
+    def LEAVE_LIMITS(self):
+        """Property that returns dictionary from FloatFields."""
+        return {
+            "sick": self.sick_leave,
+            "casual": self.casual_leave,
+            "earned": self.earned_leave,
+        }
+
 
     #Leave Summary
     def get_leave_summary(self):
@@ -866,10 +871,121 @@ class Leave(models.Model):
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
+    # my change
+    updated_at = models.DateTimeField(auto_now=True)
 
     @property
     def duration(self):
         return (self.end_date - self.start_date).days + 1
 
+    def total_days(self):
+        return self.duration
+
     def __str__(self):
         return f"{self.employee} - {self.leave_type}"
+
+    def __str__(self):
+        return f"{self.employee} - {self.leave_type}"
+
+
+class Product(models.Model):
+    item_name = models.CharField(max_length=300)
+    unit = models.CharField(max_length=30)
+    short_code = models.CharField(max_length=10)
+    hsn_code = models.CharField(max_length=10)
+    item_description = models.CharField(max_length=500)
+
+    def __str__(self):
+        return f"{self.item_name} ({self.short_code})"
+
+
+class Invoice(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invoices')
+    services = models.ManyToManyField(Task, blank=True, related_name='tagged_invoices')
+    due_date = models.DateField()
+    invoice_date = models.DateTimeField(default=timezone.now)
+    subject = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"Invoice #{self.id} - {self.client.client_name}"
+
+
+class InvoiceItem(models.Model):
+    GST_CHOICES = [
+        (0, '0%'),
+        (5, '5%'),
+        (12, '12%'),
+        (18, '18%'),
+        (28, '28%'),
+    ]
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    unit_cost = models.FloatField()
+    discount = models.FloatField(default=0.0)
+    taxable_value = models.FloatField(editable=False)
+    gst_percentage = models.IntegerField(choices=GST_CHOICES, default=0)
+    net_total = models.FloatField(editable=False)
+    def save(self, *args, **kwargs):
+        # Logic: taxable_value = unit_cost - discount
+        self.taxable_value = float(self.unit_cost) - float(self.discount)
+
+        # Logic: net_total = taxable_value + gst %
+        gst_amount = self.taxable_value * (self.gst_percentage / 100.0)
+        self.net_total = self.taxable_value + gst_amount
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product.item_name} - {self.invoice}"
+
+class Payment(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('CASH', 'Cash'),
+        ('CHECK', 'Check'),
+        ('UPI', 'UPI'),
+        ('BANK', 'Bank Transfer'),
+    ]
+    PAYMENT_STATUS = [
+        ('PENDING', 'Pending'),
+        ('PAID', 'Paid'),
+        ('UNPAID', 'Unpaid'),
+        ('CANCELED', 'Canceled'),
+    ]
+    APPROVAL_STATUS = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
+    transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_date = models.DateField()
+    # Auto-compute fields
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="payments_created")
+    created_at = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='PENDING')
+    approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS, default='PENDING')
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_payments")
+    approved_at = models.DateTimeField(null=True, blank=True)
+    def __str__(self):
+        return f"Payment {self.id} for Invoice #{self.invoice.id}"
+
+class Message(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('received', 'Received'),
+    ]
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver= models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    is_seen = models.BooleanField(default = False)    
+
+    def __str__(self):
+        return f"From{self.sender} to {self.receiver} - {self.status}"

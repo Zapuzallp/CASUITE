@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block body %}
+<main id="main" class="main">
+
+  <div class="pagetitle">
+    <h1>Payment Details</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'payment_list' %}">Payments</a></li>
+        <li class="breadcrumb-item active">Payment #{{ payment.id }}</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-8">
+
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+
+            <h5 class="card-title">Payment #{{ payment.id }}</h5>
+
+            <table class="table table-sm table-borderless">
+              <tr>
+                <th>Invoice</th>
+                <td>#{{ payment.invoice.id }}</td>
+              </tr>
+
+              <tr>
+                <th>Client</th>
+                <td>{{ payment.invoice.client.client_name }}</td>
+              </tr>
+
+              <tr>
+                <th>Amount</th>
+                <td>₹{{ payment.amount|floatformat:2|intcomma }}</td>
+              </tr>
+
+              <tr>
+                <th>Payment Method</th>
+                <td>{{ payment.get_payment_method_display }}</td>
+              </tr>
+
+              <tr>
+                <th>Payment Date</th>
+                <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+              </tr>
+
+              <tr>
+                <th>Transaction ID</th>
+                <td>{{ payment.transaction_id|default:"-" }}</td>
+              </tr>
+
+              <tr>
+                <th>Status</th>
+                <td>
+                  <span class="badge
+                    {% if payment.payment_status == 'PAID' %}bg-success
+                    {% elif payment.payment_status == 'PENDING' %}bg-warning
+                    {% elif payment.payment_status == 'CANCELED' %}bg-secondary
+                    {% else %}bg-danger{% endif %}">
+                    {{ payment.payment_status }}
+                  </span>
+                </td>
+              </tr>
+
+              <tr>
+                <th>Approval Status</th>
+                <td>{{ payment.approval_status }}</td>
+              </tr>
+
+              <tr>
+                <th>Created By</th>
+                <td>{{ payment.created_by.get_full_name|default:payment.created_by.username }}</td>
+              </tr>
+
+              <tr>
+                <th>Created At</th>
+                <td>{{ payment.created_at|date:"M d, Y H:i" }}</td>
+              </tr>
+
+              {% if payment.approved_by %}
+              <tr>
+                <th>Approved By</th>
+                <td>{{ payment.approved_by.get_full_name|default:payment.approved_by.username }}</td>
+              </tr>
+              <tr>
+                <th>Approved At</th>
+                <td>{{ payment.approved_at|date:"M d, Y H:i" }}</td>
+              </tr>
+              {% endif %}
+            </table>
+
+            <a href="{% url 'payment_list' %}" class="btn btn-outline-secondary btn-sm">
+              ← Back to Payments
+            </a>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+{% endblock body %}

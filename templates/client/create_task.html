@@ -76,7 +76,7 @@
                         </div>
                         <div class="mb-4">
                             <label class="form-label">Description</label>
-                            <input type="hidden" name="description" id="hiddenDescription">
+                            <input type="hidden" name="description" id="hiddenDescription" value= "{{ task_form.instance.description|default:'' }}" >
                             <div id="editor-container"></div>
                         </div>
 
@@ -113,6 +113,11 @@
                 theme: 'snow',
                 modules: {toolbar: [['bold', 'italic'], ['clean']]}
             });
+            // LOAD EXISTING DESCRIPTION
+            var hiddenInput = document.getElementById('hiddenDescription');
+            if (hiddenInput.value) {
+                    quill.root.innerHTML = hiddenInput.value;
+                }
             document.getElementById('taskForm').addEventListener('submit', function () {
                 document.getElementById('hiddenDescription').value = quill.root.innerHTML;
             });

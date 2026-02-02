@@ -19,7 +19,9 @@ from .models import (
     GSTDetails,
     Employee,
     Shift, EmployeeShift, OfficeDetails,
-    Leave
+    Leave,
+    Message,
+    TaskRecurrence
 )
 
 
@@ -167,9 +169,22 @@ class ClientResource(resources.ModelResource):
 from django.contrib import admin
 from .models import Notification
 
+# =====================================================
+# INLINE BUSINESS PROFILE
+# =====================================================
+class ClientBusinessProfileInline(admin.StackedInline):
+    model = ClientBusinessProfile
+    fk_name = "client"   # IMPORTANT: required in your case
+    extra = 0
+    max_num = 1
+    can_delete = False
+    autocomplete_fields = ("karta", "key_persons")
+
+
 @admin.register(Client)
 class ClientAdmin(ImportExportModelAdmin):
     resource_class = ClientResource
+    inlines = [ClientBusinessProfileInline]
 
     list_display = (
         "client_name",
@@ -215,38 +230,6 @@ class ClientAdmin(ImportExportModelAdmin):
             return qs
         return qs.filter(assigned_ca=request.user)
 
-
-@admin.register(ClientBusinessProfile)
-class ClientBusinessProfileAdmin(admin.ModelAdmin):
-    list_display = (
-        "client",
-        "registration_number",
-        "date_of_incorporation",
-        "authorised_capital",
-        "paid_up_capital",
-        "number_of_directors",
-        "number_of_shareholders",
-        "number_of_members",
-        "is_section8_license_obtained",
-    )
-    list_filter = (
-        "client__business_structure",
-        "date_of_incorporation",
-        "is_section8_license_obtained",
-    )
-    search_fields = (
-        "client__client_name",
-        "registration_number",
-        "udyam_registration",
-        "opc_nominee_name",
-    )
-    autocomplete_fields = ("client", "karta", "key_persons")
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(client__assigned_ca=request.user)
 
 
 @admin.register(ClientUserEntitle)
@@ -348,6 +331,7 @@ class TaskAdmin(admin.ModelAdmin):
         "fee_status",
         "created_by",
         "created_at",
+        "last_auto_created_at",
     )
     list_filter = (
         "service_type",
@@ -412,6 +396,17 @@ class TaskStatusLogAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     autocomplete_fields = ("task", "changed_by")
 
+@admin.register(TaskRecurrence)
+class TaskRecurrenceAdmin(admin.ModelAdmin):
+    list_display = (
+        "task",
+        "recurrence_period",
+        "created_at",
+        "is_recurring",
+        "next_run_at",
+        "last_auto_created_at"
+
+    )
 
 @admin.register(TaskExtendedAttributes)
 class TaskExtendedAttributesAdmin(admin.ModelAdmin):
@@ -511,10 +506,11 @@ class AttendanceAdmin(admin.ModelAdmin):
         "clock_out",
         "duration",
         "status",
-        "requires_approval",
         "location_name",
+        "remark",
     )
-    list_filter = ("status", "requires_approval", "date")
+    list_filter = ("status", "date")
+    list_editable = ("status",)
     search_fields = ("user__username", "location_name")
 
 
@@ -587,3 +583,64 @@ class LeaveAdmin(admin.ModelAdmin):
 
     def reject_leave(self, request, queryset):
         queryset.update(status="rejected")
+
+
+from .models import Client, Product, Invoice, InvoiceItem, Payment
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('item_name', 'short_code', 'unit', 'hsn_code')
+    search_fields = ('item_name', 'short_code', 'hsn_code')
+    list_filter = ('unit',)
+
+
+class InvoiceItemInline(admin.TabularInline):
+    model = InvoiceItem
+    extra = 1
+    # These fields are auto-calculated, so we make them read-only in UI
+    readonly_fields = ('taxable_value', 'net_total')
+    fields = ('product', 'unit_cost', 'discount', 'taxable_value', 'gst_percentage', 'net_total')
+
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = ('id', 'client', 'subject', 'invoice_date', 'due_date')
+    list_filter = ('invoice_date', 'due_date', 'client')
+    search_fields = ('subject', 'client__client_name', 'id')
+    inlines = [InvoiceItemInline]
+    filter_horizontal = ('services',)
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('invoice', 'amount', 'payment_method', 'payment_date', 'created_by', 'payment_status', 'approval_status')
+    list_filter = ('payment_method', 'payment_date', 'payment_status', 'approval_status')
+    search_fields = ('invoice__id', 'transaction_id')
+    readonly_fields = ('created_at', 'created_by')
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # Superusers see everything
+        if request.user.is_superuser:
+            return qs
+        # If the user has an Employee profile, limit to their branch.
+        try:
+            office = request.user.employee.office_location
+        except Exception:
+            return qs.none()
+
+        # Return payments created by users in the same office
+        return qs.filter(created_by__employee__office_location=office)
+
+    def save_model(self, request, obj, form, change):
+        if not obj.created_by:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('sender', 'receiver','status','timestamp')
+    list_filter = ('status','timestamp')
+    search_fields = ('content','sender__username','receiver__username')
+    ordering = ('-timestamp',)

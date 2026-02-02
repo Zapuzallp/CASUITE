@@ -6,9 +6,12 @@ from django.contrib.auth.models import User
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
-    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes
+    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message, GSTDetails  # Added GSTDetails to imports
 )
 from home.models import Leave
+from decimal import Decimal
+from .models import Payment, Invoice
+from django.utils import timezone
 
 
 class DocumentRequestForm(forms.ModelForm):
@@ -311,9 +314,120 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
         if leave_summary:
             updated_choices = []
             for value, label in self.fields["leave_type"].choices:
-                remaining = leave_summary.get(value, {}).get("remaining", 0)
-                updated_choices.append(
-                    (value, f"{label} ({remaining})")
-                )
+                if value == "" or value is None:
+
+                    updated_choices.append(
+                        (value, label) )
+                else:
+                    remaining = leave_summary.get(value, {}).get("remaining", 0)
+                    if remaining == 0:
+                        display_text = f"{label} (-)"
+                    else:
+                            display_text = f"{label} ({remaining})"
+                            updated_choices.append((value, display_text))
 
             self.fields["leave_type"].choices = updated_choices
+
+
+    def clean(self):
+        """Validate dates"""
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        if start_date and end_date:
+            # Check if end date is before start date
+            if end_date < start_date:
+                raise forms.ValidationError(
+                    "End date cannot be before start date."
+                )
+
+            # Check if dates are in the past
+            from datetime import date
+            if start_date < date.today():
+                raise forms.ValidationError(
+                    "Cannot apply for leaves in the past."
+                )
+
+        return cleaned_data
+
+#Message form
+class MessageForm(forms.ModelForm):
+    class Meta:
+        model = Message
+        fields = ['content', 'status']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'id': 'summernote', # Required for JS initialization
+                'class': 'form-control',
+            }),
+            'status': forms.Select(attrs={'class': 'form-control', 'style': 'width: auto; display: inline-block;'}),
+        }
+
+# ---------------------------------------------------------
+# Dedicated PaymentForm And PaymentCollectForm
+# ---------------------------------------------------------
+class PaymentForm(forms.ModelForm):
+    class Meta:
+        model = Payment
+        fields = ['payment_method', 'amount', 'payment_date', 'transaction_id']
+        widgets = {
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'payment_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'transaction_id': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+    def clean_amount(self):
+        amt = self.cleaned_data.get('amount')
+        if amt is None:
+            raise forms.ValidationError("Amount is required.")
+        dec_amt = Decimal(str(amt))
+        if dec_amt <= Decimal('0.00'):
+            raise forms.ValidationError("Amount must be greater than zero.")
+        return dec_amt
+
+    def clean_payment_date(self):
+        payment_date = self.cleaned_data.get('payment_date')
+        if not payment_date:
+            return payment_date
+        today = timezone.localdate()
+        if payment_date > today:
+            raise forms.ValidationError("Payment date cannot be in the future.")
+        return payment_date
+
+class PaymentCollectForm(PaymentForm):
+    invoice = forms.ModelChoiceField(
+        queryset=Invoice.objects.select_related('client').order_by('-id'),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    class Meta(PaymentForm.Meta):
+        fields = ['invoice'] + PaymentForm.Meta.fields
+
+    def __init__(self, *args, invoice_instance=None, **kwargs):
+        """
+        invoice_instance: if provided, lock the invoice (hide the field and set initial)
+        """
+        super().__init__(*args, **kwargs)
+        if invoice_instance:
+            # set the initial invoice and hide the field so user can't change it
+            self.fields['invoice'].initial = invoice_instance
+            self.fields['invoice'].widget = forms.HiddenInput()
+            self.invoice_instance = invoice_instance
+        else:
+            self.invoice_instance = None
+# ---------------------------------------------------------
+# 3. GST Details Form (NEW)
+# ---------------------------------------------------------
+class GSTDetailsForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = GSTDetails
+        fields = ['gst_number', 'registered_address', 'state', 'gst_scheme_type', 'status']
+        widgets = {
+            'registered_address': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['gst_number'].widget.attrs.update({'placeholder': 'e.g., 29ABCDE1234F1Z5'})

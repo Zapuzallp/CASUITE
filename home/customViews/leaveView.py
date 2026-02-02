@@ -7,7 +7,7 @@ from home.forms import LeaveForm
 from django.views import View
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404, redirect
-
+from datetime import date
 
 #Creating leave request
 class LeaveCreateView(LoginRequiredMixin, CreateView):
@@ -31,6 +31,7 @@ class LeaveCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         employee_profile = Employee.objects.get(user=user)
+        context['today'] = date.today()
 
         # Get the dictionary from the model method
         leave_data = employee_profile.get_leave_summary()

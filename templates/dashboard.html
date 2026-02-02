@@ -461,6 +461,7 @@
         });
     </script>
 
+    <script src="{% static 'js/location-module.js' %}"></script>
     <div class="modal fade" id="clockInModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -584,45 +585,51 @@
 
 
     <script>
-        function initMap(mapId, latInput, longInput, locationInput) {
-            navigator.geolocation.getCurrentPosition(async function (pos) {
-                const lat = pos.coords.latitude;
-                const long = pos.coords.longitude;
+        let clockInMap = null;
+        let clockOutMap = null;
 
-                document.getElementById(latInput).value = lat;
-                document.getElementById(longInput).value = long;
-
-                // Reverse geocode
-                const res = await fetch(
-                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${long}`
-                );
-                const data = await res.json();
-                document.getElementById(locationInput).value =
-                    data.display_name || "Unknown location";
-
-                // Init map
-                const map = L.map(mapId).setView([lat, long], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(map);
-
-                L.marker([lat, long]).addTo(map)
-                    .bindPopup("You are here")
-                    .openPopup();
-            }, function () {
-                alert("Please allow location access.");
-            });
-        }
-
-        // Clock In
+        /* CLOCK IN */
         document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
-            initMap("clockInMap", "clockin-lat", "clockin-long", "clockin-location");
+            setTimeout(() => {
+                LocationModule.loadLocation("clockin-lat", "clockin-long", "clockin-location", function(success) {
+                    if (success) {
+                        // Create map after location is loaded
+                        const lat = parseFloat(document.getElementById("clockin-lat").value);
+                        const lng = parseFloat(document.getElementById("clockin-long").value);
+                        
+                        if (clockInMap) clockInMap.remove();
+                        clockInMap = L.map("clockInMap").setView([lat, lng], 16);
+                        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                            attribution: "© OpenStreetMap"
+                        }).addTo(clockInMap);
+                        L.marker([lat, lng]).addTo(clockInMap).bindPopup("You are here").openPopup();
+                    }
+                });
+            }, 300);
         });
 
-        // Clock Out
+        /* CLOCK OUT */
         document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
-            initMap("clockOutMap", "clockout-lat", "clockout-long", "clockout-location");
+            setTimeout(() => {
+                LocationModule.loadLocation("clockout-lat", "clockout-long", "clockout-location", function(success) {
+                    if (success) {
+                        // Create map after location is loaded
+                        const lat = parseFloat(document.getElementById("clockout-lat").value);
+                        const lng = parseFloat(document.getElementById("clockout-long").value);
+                        
+                        if (clockOutMap) clockOutMap.remove();
+                        clockOutMap = L.map("clockOutMap").setView([lat, lng], 16);
+                        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                            attribution: "© OpenStreetMap"
+                        }).addTo(clockOutMap);
+                        L.marker([lat, lng]).addTo(clockOutMap).bindPopup("You are here").openPopup();
+                    }
+                });
+            }, 300);
         });
+
+
+        /* LIVE CLOCK */
         function startLiveClock(elId) {
             const el = document.getElementById(elId);
             if (!el) return;
@@ -644,7 +651,6 @@
         let clockInterval = null;
 
         document.addEventListener("DOMContentLoaded", function () {
-
             const clockOutModal = document.getElementById("clockOutModal");
 
             if (clockOutModal) {
@@ -656,6 +662,7 @@
                     if (clockInterval) clearInterval(clockInterval);
                 });
             }
+
             {% if attendance and attendance.clock_in and not attendance.clock_out %}
             const clockInTime = new Date("{{ attendance.clock_in|date:'Y-m-d H:i:s' }}");
 
@@ -663,23 +670,20 @@
                 const now = new Date();
                 let diff = Math.floor((now - clockInTime) / 1000);
 
-                const hours = Math.floor(diff / 3600);
+                const h = Math.floor(diff / 3600);
                 diff %= 3600;
-                const minutes = Math.floor(diff / 60);
-                const seconds = diff % 60;
+                const m = Math.floor(diff / 60);
+                const s = diff % 60;
 
-                let text = "";
-                if (hours) text += hours + "h ";
-                text += minutes + "m " + seconds + "s";
-
-                const el = document.getElementById("runningDuration");
-                if (el) el.innerText = text;
+                document.getElementById("runningDuration").innerText =
+                    `${h ? h + "h " : ""}${m}m ${s}s`;
             }
 
             setInterval(updateRunningDuration, 1000);
             updateRunningDuration();
             {% endif %}
         });
-    </script>
+        </script>
+
 
 {% endblock body %}
