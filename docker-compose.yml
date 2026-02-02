@@ -22,7 +22,8 @@ services:
     container_name: django-casuite
     restart: always
     command: /entrypoint.sh
-    ports:      - "8092:8000"
+    ports:
+      - "8092:8000"
     env_file:
       - .env
     volumes:
