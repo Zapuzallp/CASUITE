@@ -67,7 +67,7 @@ class EmployeeShift(models.Model):
 
 
 STATE_CHOICES = (
-    ('01', 'Jammu and Kashmir'),
+    ('01', 'West Bengal'),
     ('02', 'Himachal Pradesh'),
     ('03', 'Punjab'),
     ('04', 'Chandigarh'),
@@ -85,7 +85,7 @@ STATE_CHOICES = (
     ('16', 'Tripura'),
     ('17', 'Meghalaya'),
     ('18', 'Assam'),
-    ('19', 'West Bengal'),
+    ('19', 'Jammu and Kashmir'),
     ('20', 'Jharkhand'),
     ('21', 'Odisha'),
     ('22', 'Chhattisgarh'),
@@ -193,7 +193,8 @@ class Client(models.Model):
     # --- Address ---
     address_line1 = models.TextField()
     city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
+    state = models.CharField(max_length=100,choices=STATE_CHOICES)
+
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=100, default='India')
 
