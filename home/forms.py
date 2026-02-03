@@ -291,6 +291,7 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
             'audit_report_file': forms.FileInput(),
         }
 
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['total_turnover'].widget.attrs.update({'placeholder': '0.00'})
