@@ -37,11 +37,8 @@ def check_web_attendance_compliance(user, clock_in_time, clock_out_time=None, cl
             shift_start_late = (datetime.combine(date.today(), shift_start) + timedelta(minutes=tolerance_minutes)).time()
             shift_end_early = (datetime.combine(date.today(), shift_end) - timedelta(minutes=tolerance_minutes)).time()
         else:
-            # Default timing if no shift assigned
-            shift_start = time(9, 30)
-            shift_end = time(18, 30)
-            shift_start_late = time(9, 50)
-            shift_end_early = time(18, 10)
+            # No shift assigned - skip time-based compliance checks
+            return issues
         
         # If no office assigned, only check for late login/logout, auto-approve otherwise
         if not office:

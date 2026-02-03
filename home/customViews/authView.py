@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth import logout
 from django.shortcuts import render, redirect
 from django.views import View
-
+import re
 
 class LoginView(View):
     def get(self, request):
@@ -17,11 +17,18 @@ class LoginView(View):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                # Redirect based on user type
+
+                user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+                # is_mobile = bool(re.search(r"iphone|ipad|android", user_agent))
+                is_mobile = True
+
+                if is_mobile:
+                    return redirect('mobile_attendance')
                 if user.is_staff:
-                    return redirect('dashboard')  # Admin/Staff Dashboard
+                    return redirect('dashboard')
                 else:
-                    return redirect('client_dashboard')  # Client Dashboard
+                    return redirect('client_dashboard')
+
             else:
                 messages.error(request, 'Invalid Credentials')
                 return redirect("login")

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
@@ -11,7 +13,7 @@ from home.models import Attendance, Leave, Employee, OfficeDetails, EmployeeShif
 from home.customViews.attendanceView import ClockInView, ClockOutView
 
 
-def calculate_distance(lat1, lon1, lat2, lon2):
+def calculate_distance(lat1: object, lon1: object, lat2: object, lon2: object) -> Optional[float]:
     """Calculate distance between two points in meters using Haversine formula"""
     if not all([lat1, lon1, lat2, lon2]):
         return None
@@ -46,6 +48,11 @@ def mobile_login_view(request):
     if request.user.is_authenticated:
         return redirect('mobile_attendance')
     
+    # Clear any existing messages when accessing login page
+    from django.contrib import messages
+    storage = messages.get_messages(request)
+    storage.used = True
+    
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -62,9 +69,7 @@ def mobile_login_view(request):
 
 @login_required
 def mobile_logout_view(request):
-    """Mobile logout using Django's built-in logout"""
-    logout(request)
-    return redirect('mobile_login')
+    return redirect('logout')
 
 
 @login_required
