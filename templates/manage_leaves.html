@@ -230,11 +230,17 @@ function filterTable() {
 
     const rows = document.querySelectorAll('tbody tr');
     
+    if (!from || !to) {
+        rows.forEach(row => {
+            row.style.display = 'table-row';
+        });
+        return;
+    }
     rows.forEach(row => {
         const start = row.querySelector('.start')?.innerText.trim();
         const end = row.querySelector('.end')?.innerText.trim();
 
-        if (!start || !end) return;
+        
 
         let show;
 
