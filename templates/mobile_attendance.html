@@ -3,490 +3,230 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mobile Attendance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Attendance Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        .main-container {
-            background: white;
-            min-height: 100vh;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding-top: max(15px, env(safe-area-inset-top));
-        }
-        
-        .clock-button {
-            width: min(180px, 45vw);
-            height: min(180px, 45vw);
-            border-radius: 50%;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
-            min-height: 44px;
-        }
-        
-        .clock-button:active {
-            transform: scale(0.95);
-        }
-        
-        .clock-button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-        
-        .loading-spinner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: min(200px, 50vw);
-            height: min(200px, 50vw);
-            border: 4px solid rgba(255,255,255,0.2);
-            border-top: 4px solid #ffc107;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: none;
-            z-index: 10;
-        }
-        
-        .notification-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #ffc107;
-            color: #000;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            animation: pulse 2s infinite;
-            cursor: pointer;
-            z-index: 20;
-        }
-        
-        .notification-tooltip {
-            position: absolute;
-            top: 30px;
-            right: -50px;
-            background: #fff;
-            color: #856404;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            white-space: nowrap;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            border: 1px solid #ffc107;
-            display: none;
-            z-index: 30;
-        }
-        
-        .notification-tooltip::before {
-            content: '';
-            position: absolute;
-            top: -6px;
-            right: 60px;
-            width: 0;
-            height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            border-bottom: 6px solid #ffc107;
-        }
-        
-        .button-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-        }
-        
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        
-        .clock-in {
-            background: linear-gradient(135deg, #198754 0%, #157347 100%);
-        }
-        
-        .clock-out {
-            background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
-        }
-        
-        .fingerprint-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-        }
-        
-        .timer {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        
-        .office-text {
-            font-size: 11px;
-            opacity: 0.8;
-            margin-top: 5px;
-        }
-        
-        .leave-card {
-            background: white;
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .leave-icon {
-            font-size: 20px;
-            margin-bottom: 6px;
-        }
-        
-        .leave-type {
-            font-size: 11px;
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 4px;
-        }
-        
-        .leave-count {
-            font-size: 12px;
-            font-weight: 700;
-            color: #333;
-        }
-        
-        .casual { border-left: 4px solid #ffc107; }
-        .sick { border-left: 4px solid #dc3545; }
-        .privilege { border-left: 4px solid #6f42c1; }
-        
-        .leave-item-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-        
-        .leave-item-icon.approved {
-            background: #d5f4e6;
-            color: #198754;
-        }
-        
-        .leave-item-icon.pending {
-            background: #fff3cd;
-            color: #ffc107;
-        }
-        
-        @media (max-width: 375px) {
-            .clock-button { width: 160px; height: 160px; }
-            .timer { font-size: 16px; }
-            .fingerprint-icon { font-size: 28px; }
-        }
-        
-        @media (max-height: 667px) {
-            .clock-button { width: 150px; height: 150px; }
-        }
+        :root { --primary: #4361ee; --success: #2ec4b6; --danger: #e71d36; --dark: #1e1e2d; }
+        body { background-color: #f4f7fe; font-family: -apple-system, system-ui, sans-serif; color: var(--dark); margin: 0; padding-bottom: 30px; }
+        .app-header { background: #fff; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.03); position: sticky; top: 0; z-index: 1000; }
+        .user-profile-section { background: white; margin: 15px; padding: 20px; border-radius: 25px; display: flex; align-items: center; box-shadow: 0 8px 25px rgba(0,0,0,0.04); }
+        .profile-img-container { width: 65px; height: 65px; border-radius: 50%; overflow: hidden; border: 3px solid #f0f3ff; flex-shrink: 0; }
+        .profile-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .main-card { background: #fff; border-radius: 30px; margin: 0 15px 20px 15px; padding: 30px 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .timer-display { font-size: 2.8rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+        .punch-btn { width: 160px; height: 160px; border-radius: 50%; border: 10px solid #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; color: #fff; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 15px 35px rgba(0,0,0,0.1); cursor: pointer; text-decoration: none; }
+        .punch-btn:active { transform: scale(0.9); }
+        .btn-in { background: linear-gradient(135deg, #2ec4b6 0%, #0cbaba 100%); }
+        .btn-out { background: linear-gradient(135deg, #e71d36 0%, #ff5d5d 100%); }
+        #map-confirm { height: 220px; width: 100%; border-radius: 18px; margin-bottom: 15px; border: 1px solid #ddd; }
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 15px; }
+        .stat-box { background: #fff; padding: 15px 10px; border-radius: 20px; text-align: center; border: 1px solid rgba(0,0,0,0.02); box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .stat-box i { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+        .btn-custom-dark { background: var(--dark); color: #fff; border-radius: 15px; padding: 15px; font-weight: 600; width: 100%; border: none; }
+        .form-control, .form-select { border-radius: 12px; padding: 12px; border: 1px solid #e0e0e0; }
+        .info-tag { background: #f0f3ff; color: var(--primary); padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 15px; }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <div class="header position-relative text-center p-3">
-            <img src="{% static 'images/Logo-1.png' %}" alt="Company Logo" class="position-absolute start-0 top-50 translate-middle-y ms-3" style="height: 32px; width: auto;">
-            <a href="{% url 'mobile_logout' %}" class="btn btn-danger position-absolute end-0 top-50 translate-middle-y me-3 d-flex align-items-center gap-2" style="min-height: 44px;">
-                <i class="bi bi-box-arrow-right"></i> Logout
-            </a>
-            <div class="h5 mb-1">Hi, {{ user.first_name|default:user.username }} <i class="bi bi-hand-thumbs-up"></i></div>
-            <div style="font-size: 14px; opacity: 0.9;">{{ current_date }}</div>
-        </div>
-        
-        <div class="text-center p-3">
-            {% if can_clock_out %}
-                <div class="button-container">
-                    <div class="position-relative d-inline-block">
-                        {% if current_attendance and current_attendance.should_show_pending_warning %}
-                            <div class="notification-badge" onclick="toggleTooltip(event)">
-                                <i class="bi bi-exclamation"></i>
-                            </div>
-                            <div class="notification-tooltip" id="notificationTooltip">
-                                <i class="bi bi-hourglass-split"></i> Today's attendance is pending admin approval
-                            </div>
-                        {% endif %}
-                        <form method="post" action="{% url 'mobile_clock_out' %}" id="clockOutForm">
-                            {% csrf_token %}
-                            <input type="hidden" name="lat" id="clockout-lat">
-                            <input type="hidden" name="long" id="clockout-long">
-                            <input type="hidden" name="location_name" id="clockout-location">
-                            <button type="submit" class="clock-button clock-out" id="clockOutBtn">
-                                <div class="timer" id="liveTimer">{{ current_attendance.get_work_duration }}</div>
-                                <div>Tap to Check Out</div>
-                                <div class="office-text">Office HQ</div>
-                            </button>
-                        </form>
-                        <div class="loading-spinner" id="loadingSpinner"></div>
-                    </div>
-                </div>
-            {% elif can_clock_in %}
-                <div class="button-container">
-                    <div class="position-relative d-inline-block">
-                        {% if current_attendance and current_attendance.should_show_pending_warning %}
-                            <div class="notification-badge" onclick="toggleTooltip(event)">
-                                <i class="bi bi-exclamation"></i>
-                            </div>
-                            <div class="notification-tooltip" id="notificationTooltip">
-                                <i class="bi bi-hourglass-split"></i> Today's attendance is pending admin approval
-                            </div>
-                        {% endif %}
-                        <form method="post" action="{% url 'mobile_clock_in' %}" id="clockInForm">
-                            {% csrf_token %}
-                            <input type="hidden" name="lat" id="clockin-lat">
-                            <input type="hidden" name="long" id="clockin-long">
-                            <input type="hidden" name="location_name" id="clockin-location">
-                            <button type="submit" class="clock-button clock-in" id="clockInBtn">
-                                <div class="fingerprint-icon"><i class="bi bi-fingerprint"></i></div>
-                                <div>Check In</div>
-                                <div class="office-text">Office HQ</div>
-                            </button>
-                        </form>
-                        <div class="loading-spinner" id="loadingSpinner"></div>
-                    </div>
-                </div>
+
+    <nav class="app-header">
+        <img src="{% static 'images/Logo-1.png' %}" alt="Logo" style="height: 32px;">
+        <a href="{% url 'mobile_logout' %}" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold">Logout</a>
+    </nav>
+
+    <div class="user-profile-section">
+        <div class="profile-img-container me-3">
+            {% if user.employee.profile_pic %}
+                <img src="{{ user.employee.profile_pic.url }}" alt="Profile">
             {% else %}
-                <div class="button-container">
-                    <button class="clock-button" style="background: #6c757d; color: #adb5bd; cursor: not-allowed;" disabled>
-                        <div class="fingerprint-icon"><i class="bi bi-check-circle"></i></div>
-                        <div>Day Completed</div>
-                        <div class="office-text">{{ current_attendance.get_work_duration }}</div>
-                    </button>
-                </div>
+                <img src="{% static 'assets/img/profile-pic.jpg' %}" alt="Profile">
             {% endif %}
         </div>
-        
-        <button class="btn btn-dark w-100 mx-3 mb-3" style="width: calc(100% - 1.5rem) !important; min-height: 44px;" onclick="openLeaveModal()">Apply New Leave</button>
-        
-        <div class="d-flex gap-2 px-3 mb-3" style="overflow-x: auto;">
-            <div class="leave-card casual flex-fill" style="min-width: 100px;">
-                <div class="leave-icon"><i class="bi bi-cup-hot"></i></div>
-                <div class="leave-type">Casual</div>
-                <div class="leave-count">{{ leave_summary.casual.remaining }} Available</div>
-            </div>
-            <div class="leave-card sick flex-fill" style="min-width: 100px;">
-                <div class="leave-icon"><i class="bi bi-hospital"></i></div>
-                <div class="leave-type">Sick</div>
-                <div class="leave-count">{{ leave_summary.sick.remaining }} Available</div>
-            </div>
-            <div class="leave-card privilege flex-fill" style="min-width: 100px;">
-                <div class="leave-icon"><i class="bi bi-calendar-check"></i></div>
-                <div class="leave-type">Privilege</div>
-                <div class="leave-count">{{ leave_summary.earned.remaining }} Available</div>
-            </div>
-        </div>
-        
-        <div class="px-3 mb-3">
-            <h6 class="fw-semibold mb-3">Recent Leaves</h6>
-            {% for leave in recent_leaves %}
-                <div class="card mb-2 shadow-sm">
-                    <div class="card-body p-3 d-flex align-items-center">
-                        <div class="leave-item-icon {% if leave.status == 'approved' %}approved{% else %}pending{% endif %} me-3">
-                            {% if leave.status == 'approved' %}<i class="bi bi-check-circle"></i>{% else %}<i class="bi bi-hourglass-split"></i>{% endif %}
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="fw-semibold small">{{ leave.leave_type|title }} Leave</div>
-                            <div class="text-muted" style="font-size: 0.75rem;">{{ leave.start_date|date:"M d" }}</div>
-                        </div>
-                        <span class="badge {% if leave.status == 'approved' %}bg-success{% else %}bg-warning{% endif %} rounded-pill" style="font-size: 0.65rem;">
-                            {{ leave.status|title }}
-                        </span>
-                    </div>
-                </div>
-            {% empty %}
-                <div class="card">
-                    <div class="card-body text-center text-muted">
-                        No recent leaves
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-        
-        <div class="d-flex gap-2 mx-3 mb-3" style="padding-bottom: max(20px, env(safe-area-inset-bottom));">
-            <a href="{% url 'mobile_logs' %}" class="btn btn-primary flex-fill d-flex align-items-center justify-content-center" style="min-height: 44px;">
-                <i class="bi bi-bar-chart me-2"></i> Attendance Logs
-            </a>
-            <a href="{% url 'mobile_leave_logs' %}" class="btn btn-success flex-fill d-flex align-items-center justify-content-center" style="min-height: 44px;">
-                <i class="bi bi-clipboard-data me-2"></i> Leave Logs
-            </a>
+        <div>
+            <h5 class="fw-bold mb-0 text-dark">{{ user.get_full_name|default:user.username }}</h5>
+            <div class="text-muted small">@{{ user.username }}</div>
+            {% if user.employee.designation %}
+                <div class="text-primary small fw-semibold">{{ user.employee.designation }}</div>
+            {% endif %}
         </div>
     </div>
-    
-    <!-- Leave Application Modal -->
-    <div class="modal fade" id="leaveModal" tabindex="-1" aria-labelledby="leaveModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="leaveModalLabel">Apply Leave</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+    <div class="main-card">
+        {% if current_attendance and current_attendance.clock_in and not current_attendance.clock_out %}
+            <div class="info-tag"><i class="bi bi-clock-fill me-1"></i> Punched In: {{ current_attendance.clock_in|date:"h:i A" }}</div>
+            <div class="timer-display" id="liveTimer">00:00:00</div>
+        {% elif current_attendance and current_attendance.clock_out %}
+            <div class="info-tag bg-light text-secondary">Shift Completed</div>
+            <div class="timer-display text-secondary">{{ current_attendance.get_work_duration }}</div>
+        {% else %}
+            <div class="info-tag">Shift Not Started</div>
+            <div class="timer-display text-muted">00:00:00</div>
+        {% endif %}
+
+        {% if can_clock_in %}
+            <div class="punch-btn btn-in" onclick="openPunchModal('in')">
+                <i class="bi bi-fingerprint fs-1"></i>
+                <span class="fw-bold">PUNCH IN</span>
+            </div>
+        {% elif can_clock_out %}
+            <div class="punch-btn btn-out" onclick="openPunchModal('out')">
+                <i class="bi bi-box-arrow-right fs-1"></i>
+                <span class="fw-bold">PUNCH OUT</span>
+            </div>
+        {% else %}
+            <div class="punch-btn bg-secondary shadow-none opacity-75">
+                <i class="bi bi-check2-circle fs-1"></i>
+                <span class="fw-bold">COMPLETED</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="px-3 mb-4">
+        <button class="btn btn-custom-dark shadow" onclick="openLeaveModal()">
+            <i class="bi bi-calendar-plus me-2"></i> Apply New Leave
+        </button>
+    </div>
+
+    <div class="stats-row mb-4">
+        <div class="stat-box"><i class="bi bi-cup-hot text-warning"></i><div class="fw-bold">{{ leave_summary.casual.remaining }}</div><small class="text-muted">Casual</small></div>
+        <div class="stat-box"><i class="bi bi-heart-pulse text-danger"></i><div class="fw-bold">{{ leave_summary.sick.remaining }}</div><small class="text-muted">Sick</small></div>
+        <div class="stat-box"><i class="bi bi-star text-primary"></i><div class="fw-bold">{{ leave_summary.earned.remaining }}</div><small class="text-muted">Earned</small></div>
+    </div>
+
+    <div class="row g-2 px-3 pb-5">
+        <div class="col-6"><a href="{% url 'mobile_logs' %}" class="btn btn-white w-100 py-3 rounded-4 border bg-white shadow-sm text-decoration-none text-dark"><i class="bi bi-clock-history me-2"></i>History</a></div>
+        <div class="col-6"><a href="{% url 'mobile_leave_logs' %}" class="btn btn-white w-100 py-3 rounded-4 border bg-white shadow-sm text-decoration-none text-dark"><i class="bi bi-file-text me-2"></i>Leaves</a></div>
+    </div>
+
+    <div class="modal fade" id="punchModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mx-3">
+            <div class="modal-content border-0 rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold m-0" id="punchTitle">Location Proof</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="post" action="{% url 'mobile_apply_leave' %}">
-                    <div class="modal-body">
+                <div class="modal-body">
+                    <div id="map-confirm"></div>
+                    <div id="loc-status" class="alert alert-info py-2 small d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm me-2"></div> Fetching GPS...
+                    </div>
+                    <form id="punchForm" method="post">
                         {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Leave Type</label>
-                            <select name="leave_type" class="form-select" required style="min-height: 44px;">
-                                <option value="">Select Leave Type</option>
-                                <option value="casual">Casual Leave</option>
-                                <option value="sick">Sick Leave</option>
-                                <option value="earned">Privilege Leave</option>
-                            </select>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">From</label>
-                                    <input type="date" name="start_date" class="form-control" required style="min-height: 44px;">
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">To</label>
-                                    <input type="date" name="end_date" class="form-control" required style="min-height: 44px;">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Reason</label>
-                            <textarea name="reason" class="form-control" rows="3" placeholder="Apply the reason" required></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="min-height: 44px;">Cancel</button>
-                        <button type="submit" class="btn btn-dark" style="min-height: 44px;">Submit Request</button>
-                    </div>
-                </form>
+                        <input type="hidden" name="lat" id="lat-input">
+                        <input type="hidden" name="long" id="long-input">
+                        <button type="submit" id="finalPunchBtn" class="btn btn-dark w-100 py-3 rounded-3 fw-bold" disabled>CONFIRM PUNCH</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-    
+
+    <div class="modal fade" id="leaveModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mx-3">
+            <form id="leaveForm" method="post" action="{% url 'mobile_apply_leave' %}" class="modal-content border-0 rounded-4">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold m-0">Apply Leave</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="small fw-bold mb-1">Leave Type</label>
+                        <select name="leave_type" class="form-select" required>
+                            <option value="">Select Type</option>
+                            <option value="casual">Casual Leave</option>
+                            <option value="sick">Sick Leave</option>
+                            <option value="earned">Privilege Leave</option>
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><label class="small fw-bold mb-1">From</label><input type="date" name="start_date" class="form-control" required></div>
+                        <div class="col-6"><label class="small fw-bold mb-1">To</label><input type="date" name="end_date" class="form-control" required></div>
+                    </div>
+                    <div><label class="small fw-bold mb-1">Reason</label><textarea name="reason" class="form-control" rows="3" required></textarea></div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="submit" id="leaveSubmitBtn" class="btn btn-dark w-100 py-3 rounded-3 fw-bold">SUBMIT REQUEST</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{% static 'js/location-module.js' %}"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
-        function openLeaveModal() {
-            const modal = new bootstrap.Modal(document.getElementById('leaveModal'));
-            modal.show();
+        let map = null;
+        let marker = null;
+        const pModal = new bootstrap.Modal(document.getElementById('punchModal'));
+        const lModal = new bootstrap.Modal(document.getElementById('leaveModal'));
+
+        function openPunchModal(type) {
+            document.getElementById('punchTitle').innerText = type === 'in' ? 'Confirm Punch In' : 'Confirm Punch Out';
+            document.getElementById('punchForm').action = type === 'in' ? "{% url 'mobile_clock_in' %}" : "{% url 'mobile_clock_out' %}";
+            document.getElementById('finalPunchBtn').disabled = true;
+            pModal.show();
+            setTimeout(() => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(sLoc, eLoc, { enableHighAccuracy: true });
+                }
+            }, 500);
         }
-        
-        function toggleTooltip(event) {
-            event.stopPropagation();
-            const tooltip = document.getElementById('notificationTooltip');
-            tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
-        }
-        
-        // Close tooltip when clicking elsewhere
-        document.addEventListener('click', function() {
-            const tooltip = document.getElementById('notificationTooltip');
-            if (tooltip) {
-                tooltip.style.display = 'none';
+
+        function openLeaveModal() { lModal.show(); }
+
+        function sLoc(pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            document.getElementById('lat-input').value = lat;
+            document.getElementById('long-input').value = lng;
+            document.getElementById('finalPunchBtn').disabled = false;
+            document.getElementById('loc-status').className = "alert alert-success py-2 small";
+            document.getElementById('loc-status').innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Position Locked';
+            if (!map) {
+                map = L.map('map-confirm').setView([lat, lng], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                marker = L.marker([lat, lng]).addTo(map);
+            } else {
+                map.setView([lat, lng], 16);
+                marker.setLatLng([lat, lng]);
             }
+            setTimeout(() => { map.invalidateSize(); }, 200);
+        }
+
+        function eLoc(err) {
+            document.getElementById('loc-status').className = "alert alert-danger py-2 small";
+            document.getElementById('loc-status').innerText = "GPS Error: " + err.message;
+        }
+
+        document.getElementById('punchModal').addEventListener('hidden.bs.modal', function () {
+            if (map) { map.remove(); map = null; marker = null; }
         });
-        
-        // Setup location capture exactly like web app
-        document.addEventListener('DOMContentLoaded', function() {
-            const clockInForm = document.getElementById('clockInForm');
-            const clockOutForm = document.getElementById('clockOutForm');
-            
-            // Clock In - trigger location when button is clicked (like web modal)
-            if (clockInForm) {
-                const clockInBtn = document.getElementById('clockInBtn');
-                if (clockInBtn) {
-                    clockInBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        showLoading();
-                        LocationModule.loadLocation('clockin-lat', 'clockin-long', 'clockin-location', function(success) {
-                            clockInForm.submit();
-                        });
-                    });
-                }
-            }
-            
-            // Clock Out - trigger location when button is clicked (like web modal)
-            if (clockOutForm) {
-                const clockOutBtn = document.getElementById('clockOutBtn');
-                if (clockOutBtn) {
-                    clockOutBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        showLoading();
-                        LocationModule.loadLocation('clockout-lat', 'clockout-long', 'clockout-location', function(success) {
-                            clockOutForm.submit();
-                        });
-                    });
-                }
-            }
-            
-            // Start live timer if user is clocked in
-            startLiveTimer();
-        });
-        
-        function showLoading() {
-            const spinner = document.getElementById('loadingSpinner');
-            const clockInBtn = document.getElementById('clockInBtn');
-            const clockOutBtn = document.getElementById('clockOutBtn');
-            
-            spinner.style.display = 'block';
-            
-            if (clockInBtn) clockInBtn.disabled = true;
-            if (clockOutBtn) clockOutBtn.disabled = true;
-        }
-        
-        function startLiveTimer() {
-            const timerElement = document.getElementById('liveTimer');
-            if (!timerElement) return;
-            
-            // Only start timer if user is actually clocked in
-            {% if current_attendance and current_attendance.clock_in %}
-                const startTime = new Date('{{ current_attendance.clock_in|date:"c" }}');
-                
-                function updateTimer() {
-                    const now = new Date();
-                    const elapsed = Math.floor((now - startTime) / 1000);
-                    
-                    const hours = Math.floor(elapsed / 3600);
-                    const minutes = Math.floor((elapsed % 3600) / 60);
-                    const seconds = elapsed % 60;
-                    
-                    const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                    timerElement.textContent = timeString;
-                }
-                
-                // Update immediately and then every second
-                updateTimer();
-                setInterval(updateTimer, 1000);
-            {% endif %}
-        }
+
+        document.getElementById('leaveForm').onsubmit = function() {
+            document.getElementById('leaveSubmitBtn').disabled = true;
+            document.getElementById('leaveSubmitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+        };
+
+        document.getElementById('punchForm').onsubmit = function() {
+            document.getElementById('finalPunchBtn').disabled = true;
+            document.getElementById('finalPunchBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        };
+
+        {% if current_attendance and current_attendance.clock_in and not current_attendance.clock_out %}
+            const sTime = new Date('{{ current_attendance.clock_in|date:"c" }}');
+            setInterval(() => {
+                const diff = Math.floor((new Date() - sTime) / 1000);
+                const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+                const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+                const s = (diff % 60).toString().padStart(2, '0');
+                const el = document.getElementById('liveTimer');
+                if(el) el.innerText = `${h}:${m}:${s}`;
+            }, 1000);
+        {% endif %}
     </script>
 </body>
 </html>
