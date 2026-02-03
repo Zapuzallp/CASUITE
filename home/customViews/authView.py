@@ -19,8 +19,7 @@ class LoginView(View):
                 login(request, user)
 
                 user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
-                # is_mobile = bool(re.search(r"iphone|ipad|android", user_agent))
-                is_mobile = True
+                is_mobile = bool(re.search(r"iphone|ipad|android", user_agent))
 
                 if is_mobile:
                     return redirect('mobile_attendance')
