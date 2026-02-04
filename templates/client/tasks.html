@@ -60,13 +60,16 @@
                             <div class="accordion-body bg-light">
                                 <form method="get" action=".">
                                     <div class="row g-3">
-                                        <!-- Search Text -->
-                                        <div class="col-md-3">
-                                            <label class="form-label small fw-bold text-secondary">Search</label>
+                                    <!-- Search Section -->
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold text-secondary">Search </label>
                                             <input type="text" name="q" class="form-control"
-                                                   placeholder="Task Title, Description..." value="{{ request.GET.q }}">
-                                        </div>
+                                                   placeholder="Task Title, Description..."
+                                                   value="{{ request.GET.q }}">
+                                    </div>
 
+                                    <!-- Task Filters -->
+                                    <div class="row g-3">
                                         <!-- Client Filter -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Client</label>
@@ -95,6 +98,20 @@
                                             </select>
                                         </div>
 
+                                        <!-- Task Type -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Task Type</label>
+                                            <select name="task_type" class="form-select">
+                                                <option value="">All Task Types</option>
+                                                {% for task_type in task_types %}
+                                                    <option value="{{ task_type.id }}"
+                                                            {% if request.GET.task_type|add:"" == task_type.id|add:"" %}selected{% endif %}>
+                                                        {{ task_type.task_type_name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
                                         <!-- Status -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Status</label>
@@ -117,6 +134,7 @@
                                             <a href="{% url 'task_list' %}" class="btn btn-secondary">
                                                 <i class="bi bi-x-circle"></i> Clear
                                             </a>
+                                        </div>
                                         </div>
                                     </div>
                                 </form>

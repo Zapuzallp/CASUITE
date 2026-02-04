@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
-    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes
+    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes, TaskType
 )
 from home.models import Leave
 
@@ -245,11 +245,20 @@ class TaskForm(BootstrapFormMixin, forms.ModelForm):
         label="Assign Team Members",
         help_text="Hold Ctrl (Windows) or Cmd (Mac) to select multiple users."
     )
+    
+    # Task Type field - Dynamic from database
+    task_type = forms.ModelChoiceField(
+        queryset=TaskType.objects.filter(),
+        required=False,
+        label="Task Type",
+        empty_label="-- Select Task Type --",
+        help_text="Optional: Select the type of task"
+    )
 
     class Meta:
         model = Task
         # CHANGED: 'assigned_to' -> 'assignees'
-        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description','recurrence_period']
+        fields = ['service_type', 'task_title', 'task_type', 'due_date', 'priority', 'assignees', 'description','recurrence_period']
         widgets = {
             'task_title': forms.TextInput(attrs={'placeholder': 'Auto-generated if left blank'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),

@@ -11,7 +11,8 @@ from django.utils import timezone
 
 from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
 from home.forms import TaskForm, TaskExtendedForm
-from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
+from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus, TaskType
+from home.utils import is_gst_number
 
 
 @login_required
@@ -75,12 +76,13 @@ def create_task_view(request, client_id):
 def task_list_view(request):
     """
     Displays a list of tasks with role-based visibility and filtering.
+    Supports GST number search pattern detection and custom client filters.
     """
     user = request.user
 
     # 1. Initialize Base QuerySets
     # We select related fields to optimize database queries
-    tasks_qs = Task.objects.select_related('client', 'created_by').prefetch_related('assignees')
+    tasks_qs = Task.objects.select_related('client', 'created_by', 'task_type').prefetch_related('assignees')
     clients_qs = Client.objects.only('id', 'client_name', 'status', 'office_location', 'assigned_ca')
 
     # 2. Role-Based Visibility Logic
@@ -137,14 +139,28 @@ def task_list_view(request):
     filter_client = request.GET.get('client')
     filter_service = request.GET.get('service_type')
     filter_status = request.GET.get('status')
-
+    filter_task_type = request.GET.get('task_type')
+    
     if search_query:
-        tasks_qs = tasks_qs.filter(
-            Q(task_title__icontains=search_query) |
-            Q(description__icontains=search_query) |
-            Q(client__client_name__icontains=search_query) |
-            Q(client__file_number__icontains=search_query)
-        )
+        # Check if search query is a GST number pattern
+        if is_gst_number(search_query):
+            # Search in GSTDetails for this GST number
+            gst_clients = Client.objects.filter(gst_details__gst_number__icontains=search_query)
+            tasks_qs = tasks_qs.filter(
+                Q(task_title__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(client__in=gst_clients) |
+                Q(client__client_name__icontains=search_query) |
+                Q(client__file_number__icontains=search_query)
+            )
+        else:
+            # Standard text search
+            tasks_qs = tasks_qs.filter(
+                Q(task_title__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(client__client_name__icontains=search_query) |
+                Q(client__file_number__icontains=search_query)
+            )
 
     if filter_client:
         tasks_qs = tasks_qs.filter(client_id=filter_client)
@@ -154,7 +170,10 @@ def task_list_view(request):
 
     if filter_status:
         tasks_qs = tasks_qs.filter(status=filter_status)
-
+    
+    if filter_task_type:
+        tasks_qs = tasks_qs.filter(task_type_id=filter_task_type)
+    
     context = {
         'tasks': tasks_qs.order_by('-created_at'),
         'clients': clients_qs.order_by('client_name'),  # For the "Add Task" modal
@@ -162,6 +181,7 @@ def task_list_view(request):
         'today': timezone.now().date(),
         'service_type_choices': Task.SERVICE_TYPE_CHOICES,
         'status_choices': Task.STATUS_CHOICES,
+        'task_types': TaskType.objects.all().order_by('task_type_name'),  # For the Task Type dropdown
     }
     return render(request, 'client/tasks.html', context)
 

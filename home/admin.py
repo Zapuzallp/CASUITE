@@ -11,6 +11,7 @@ from .models import (
     RequestedDocument,
     ClientDocumentUpload,
     Task,
+    TaskType,
     TaskAssignmentStatus,
     TaskStatusLog,
     TaskExtendedAttributes,
@@ -359,6 +360,23 @@ class TaskAdmin(admin.ModelAdmin):
         if request.user.is_superuser:
             return qs
         return qs.filter(client__assigned_ca=request.user)
+
+
+@admin.register(TaskType)
+class TaskTypeAdmin(admin.ModelAdmin):
+    """
+    Admin interface for managing Task Types.
+    Allows creation and management of dynamic task type categories.
+    """
+    list_display = ("task_type_name", "task_type_value",)
+    list_filter = ("task_type_name","task_type_value")
+    search_fields = ("task_type_name", "task_type_value")
+    fieldsets = (
+        ("Task Type Information", {
+            "fields": ("task_type_name", "task_type_value",)
+        }),
+
+    )
 
 
 @admin.register(TaskAssignmentStatus)

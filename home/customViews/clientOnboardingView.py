@@ -9,8 +9,9 @@ from django.contrib.auth.models import User
 
 from home.clients.config import STRUCTURE_CONFIG
 from home.forms import ClientForm, ClientBusinessProfileForm
+from home.utils import is_gst_number
 # Import your models and forms
-from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee
+from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee, TaskType
 
 
 # -------------------------------------------------------------------
@@ -184,14 +185,25 @@ class ClientView(LoginRequiredMixin, ListView):
         filter_service = self.request.GET.get('service_type')
         filter_assigned_to = self.request.GET.get('assigned_to')
 
+        # New filter parameters
+        filter_aadhaar_mobile_linked = self.request.GET.get('aadhaar_mobile_linked')
+        filter_gst_enabled = self.request.GET.get('gst_enabled')
+        filter_din_no = self.request.GET.get('din_no')
+
         # 4. Apply UI Filters on top of Role-Based Queryset
         if search_query:
-            qs = qs.filter(
-                Q(client_name__icontains=search_query) |
-                Q(pan_no__icontains=search_query) |
-                Q(file_number__icontains=search_query) |
-                Q(primary_contact_name__icontains=search_query)
-            )
+            # Check if search query is a GST number pattern
+            if is_gst_number(search_query):
+                # Search in GSTDetails for this GST number
+                qs = qs.filter(gst_details__gst_number__icontains=search_query).distinct()
+            else:
+                # Regular text search
+                qs = qs.filter(
+                    Q(client_name__icontains=search_query) |
+                    Q(pan_no__icontains=search_query) |
+                    Q(file_number__icontains=search_query) | 
+                    Q(primary_contact_name__icontains=search_query)
+                )
 
         if filter_status:
             qs = qs.filter(status=filter_status)
@@ -213,6 +225,14 @@ class ClientView(LoginRequiredMixin, ListView):
 
         if filter_assigned_to:
             qs = qs.filter(assigned_ca_id=filter_assigned_to)
+
+        # Apply new custom filter criteria
+        if filter_aadhaar_mobile_linked:
+            qs = qs.filter(aadhar_linked_mobile=True)
+
+        if filter_din_no:
+            # Filter clients who have valid DIN numbers (not null and not empty)
+            qs = qs.filter(din_no=filter_din_no)
 
         return qs.order_by('-created_at')
 
@@ -255,4 +275,17 @@ class ClientView(LoginRequiredMixin, ListView):
 
         context['assigned_employee_choices'] = assigned_employee_choices
 
+        #_---------aadhar_linked_mobile-----
+        context['aadhar_linked_mobile_choices'] = [
+            ('true', 'Yes'),
+            ('false', 'No'),
+        ]
+        # DIN number filter choices
+        context['din_no_choices'] = [
+            ('has_din', 'Has DIN Number'),
+            ('no_din', 'No DIN Number'),
+        ]
+
+        # _---------DIN_number-----
+        context['din_no_choices'] =Client.objects.values_list('din_no',flat=True).distinct().order_by('din_no')
         return context

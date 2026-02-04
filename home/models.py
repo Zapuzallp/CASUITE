@@ -5,6 +5,7 @@ from django.db import models
 # -------------------------
 # Client Base Table
 # -------------------------
+# -------------------------
 from django.utils import timezone
 
 
@@ -223,7 +224,6 @@ class Client(models.Model):
     def __str__(self):
         return self.client_name
 
-
 class GSTDetails(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='gst_details')
     gst_number = models.CharField(max_length=15)
@@ -378,6 +378,24 @@ class ClientDocumentUpload(models.Model):
         return f"Upload by {self.client.client_name} for {self.requested_document}"
 
 
+# -----------------------------------------
+# Task Type Model (Master Data)
+# -----------------------------------------
+class TaskType(models.Model):
+    """
+    Dynamic Task Types loaded from database.
+    Allows flexible task categorization beyond service types.
+    """
+    task_type_name = models.CharField(max_length=100, unique=True)
+    task_type_value = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        ordering = ['task_type_name']
+
+    def __str__(self):
+        return self.task_type_name
+
+
 class Task(models.Model):
     # Static Service Choices matching Config Keys
     SERVICE_TYPE_CHOICES = [
@@ -413,6 +431,9 @@ class Task(models.Model):
 
     # CHANGED: Multi-User Assignment
     assignees = models.ManyToManyField(User, related_name='assigned_tasks', blank=True)
+    
+    # --- Task Type (Dynamic from database) ---
+    task_type = models.ForeignKey(TaskType, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
 
     # --- Task Details ---
     service_type = models.CharField(max_length=50, choices=SERVICE_TYPE_CHOICES)

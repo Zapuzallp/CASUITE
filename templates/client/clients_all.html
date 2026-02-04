@@ -54,8 +54,8 @@
                                         <!-- Search Text -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Search</label>
-                                            <input type="text" name="q" class="form-control"
-                                                   placeholder="Name, PAN, File No..." value="{{ request.GET.q }}">
+                                            <input type="text" name="q" class="form-control" id="searchInput"
+                                                   placeholder="Name, PAN, File No, GST No..." value="{{ request.GET.q }}">
                                         </div>
 
                                         <!-- Office Location -->
@@ -94,12 +94,12 @@
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Task / Service
                                                 Type</label>
-                                            <select name="service_type" class="form-select border-primary bg-white">
-                                                <option value="">All Services</option>
-                                                {% for code, name in service_type_choices %}
-                                                    <option value="{{ code }}"
-                                                            {% if request.GET.service_type == code %}selected{% endif %}>
-                                                        {{ name }}
+                                            <select name="task_type" class="form-select border-primary bg-white">
+                                                <option value="">All Task Types</option>
+                                                {% for task_type in task_types %}
+                                                    <option value="{{ task_type.task_type_value }}"
+                                                            {% if request.GET.task_type == task_type.task_type_value %}selected{% endif %}>
+                                                        {{ task_type.task_type_name }}
                                                     </option>
                                                 {% endfor %}
                                             </select>
@@ -144,6 +144,32 @@
                                                             {% if request.GET.business_structure == code %}selected{% endif %}>
                                                         {{ name }}
                                                     </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                       <!-- aadhar_linked_mobile -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Aadhar Linked to mobile </label>
+                                            <select name="aadhar_linked_mobile" class="form-select">
+                                                <option value="">All type</option>
+                                                {% for value, label in aadhar_linked_mobile_choices %}
+                                            <option value="{{ value }}" {% if request.GET.aadhar_linked_mobile == value %}selected{% endif %} >
+                                                {{ label }}
+                                            </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <!-- DIN_number -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">DIN number </label>
+                                            <select name="din_no" class="form-select">
+                                                <option value="">All type</option>
+                                                {% for value in din_no_choices %}
+                                                <option value="{{ value }}" {% if request.GET.DIN_number == value %}selected{% endif %} >
+                                                {{ value }}
+                                            </option>
                                                 {% endfor %}
                                             </select>
                                         </div>
@@ -446,6 +472,77 @@
             // 5. Open in New Tab
             window.open(url, '_blank');
         }
+
+        // GST Number Detection and Validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const searchHint = document.getElementById('searchHint');
+            
+            // GST number pattern: 15 characters - 2 digits, 5 letters, 4 digits, 1 letter, 1 alphanumeric, Z, 1 alphanumeric
+            const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+            
+            function validateGSTNumber(gstNumber) {
+                // Remove spaces and convert to uppercase
+                const cleanGST = gstNumber.replace(/\s/g, '').toUpperCase();
+                return gstPattern.test(cleanGST);
+            }
+            
+            function updateSearchHint(inputValue) {
+                const cleanInput = inputValue.replace(/\s/g, '').toUpperCase();
+                
+                if (cleanInput.length === 0) {
+                    searchHint.innerHTML = '💡 Tip: Enter GST number (15-digit format) for GST search';
+                    searchHint.className = 'form-text x-small';
+                    searchInput.className = 'form-control';
+                } else if (cleanInput.length === 15) {
+                    if (validateGSTNumber(cleanInput)) {
+                        searchHint.innerHTML = '✅ Valid GST number detected - will search GST records';
+                        searchHint.className = 'form-text x-small text-success';
+                        searchInput.className = 'form-control border-success';
+                    } else {
+                        searchHint.innerHTML = '❌ Invalid GST number format';
+                        searchHint.className = 'form-text x-small text-danger';
+                        searchInput.className = 'form-control border-danger';
+                    }
+                } else if (cleanInput.length > 10 && cleanInput.length < 15) {
+                    // Partial GST number
+                    searchHint.innerHTML = `🔍 GST format: ${cleanInput.length}/15 characters entered`;
+                    searchHint.className = 'form-text x-small text-info';
+                    searchInput.className = 'form-control border-info';
+                } else {
+                    // Regular search
+                    searchHint.innerHTML = '🔍 Searching by name, PAN, or file number';
+                    searchHint.className = 'form-text x-small text-muted';
+                    searchInput.className = 'form-control';
+                }
+            }
+            
+            // Real-time validation as user types
+            searchInput.addEventListener('input', function() {
+                updateSearchHint(this.value);
+            });
+            
+            // Initialize hint on page load if there's a value
+            if (searchInput.value) {
+                updateSearchHint(searchInput.value);
+            }
+            
+            // Format GST number input (add spaces for readability)
+            searchInput.addEventListener('blur', function() {
+                const value = this.value.replace(/\s/g, '').toUpperCase();
+                if (value.length === 15 && validateGSTNumber(value)) {
+                    // Format as: 12ABCDE1234F1Z5
+                    // Display as: 12 ABCDE 1234 F1Z5 (for readability)
+                    const formatted = value.replace(/^(.{2})(.{5})(.{4})(.{4})$/, '$1 $2 $3 $4');
+                    this.value = formatted;
+                }
+            });
+            
+            // Remove formatting on focus for easier editing
+            searchInput.addEventListener('focus', function() {
+                this.value = this.value.replace(/\s/g, '');
+            });
+        });
     </script>
 
 {% endblock body %}
