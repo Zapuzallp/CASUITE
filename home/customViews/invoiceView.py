@@ -80,9 +80,9 @@ def add_invoice_item_ajax(request, pk):
                 'unit_cost': item.unit_cost,
                 'discount': item.discount,
                 'gst_percentage': item.gst_percentage,
-                'taxable_value': round(item.taxable_value, 2),
-                'unit_cost_after_gst_addition': round(item.unit_cost_after_gst_addition, 2),
-                'total_value': round(item.net_total, 2),
+                'taxable': round(item.taxable_value, 2),
+                'unit_cost_after_gst': round(item.unit_cost_after_gst(), 2),
+                'total': round(item.net_total, 2),
             })
 
 

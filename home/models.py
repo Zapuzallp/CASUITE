@@ -964,7 +964,7 @@ class InvoiceItem(models.Model):
 
         super().save(*args, **kwargs)
 
-    def unit_cost_after_gst_addition(self):
+    def unit_cost_after_gst(self):
         gst_value = self.taxable_value * (self.gst_percentage / 100)
         return self.taxable_value - gst_value
     def __str__(self):
