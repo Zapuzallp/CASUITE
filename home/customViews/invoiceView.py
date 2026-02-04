@@ -65,6 +65,44 @@ def load_tasks(request):
     )
 
     return JsonResponse(list(tasks), safe=False)
+@login_required
+def add_invoice_item_ajax(request, pk):
+    invoice = Invoice.objects.get(pk=pk)
+
+    if request.method == 'POST':
+        form = InvoiceItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.invoice = invoice
+            item.save()
+            return JsonResponse({
+                'product': str(item.product),
+                'unit_cost': item.unit_cost,
+                'discount': item.discount,
+                'gst_percentage': item.gst_percentage,
+                'taxable': round(item.taxable_value, 2),
+                'unit_cost_after_gst_addition': round(item.unit_cost_after_gst_addition, 2),
+                'total': round(item.net_total, 2),
+            })
+
+
+    return JsonResponse({'error': 'Invalid'}, status=400)
+
+@login_required
+def invoice_item_delete(request, item_id):
+    if request.method == "POST":
+        item = InvoiceItem.objects.get(pk=item_id)
+        item.delete()
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False}, status=400)
+
+@login_required
+def approve_invoice(request, invoice_id):
+    invoice = Invoice.objects.get(pk=invoice_id)
+
+    invoice.services.filter(invoice_status="DRAFT").update(invoice_status="INVOICED")
+    return redirect('invoice_details', invoice.invoice_id)
 
 @login_required
 def invoice_details(request, invoice_id):
@@ -94,42 +132,3 @@ def invoice_details(request, invoice_id):
         'total_task_fees': total_task_fees,
         'invoice_item_total': invoice_item_total,
     })
-
-
-@login_required
-def add_invoice_item_ajax(request, pk):
-    invoice = Invoice.objects.get(pk=pk)
-
-    if request.method == 'POST':
-        form = InvoiceItemForm(request.POST)
-        if form.is_valid():
-            item = form.save(commit=False)
-            item.invoice = invoice
-            item.save()
-
-            return JsonResponse({
-                'product': str(item.product),
-                'unit_cost':item.unit_cost,
-                'discount':item.discount,
-                'gst_percentage':item.gst_percentage,
-                'taxable':round(item.taxable_value,2),
-                'unit_cost_after_gst': round(item.unit_cost_after_gst, 2),
-                'total':round(item.net_total,2),
-            })
-    return JsonResponse({'error': 'Invalid'}, status=400)
-
-@login_required
-def invoice_item_delete(request, item_id):
-    if request.method == "POST":
-        item = InvoiceItem.objects.get(pk=item_id)
-        item.delete()
-        return JsonResponse({'success': True})
-
-    return JsonResponse({'success': False}, status=400)
-
-@login_required
-def approve_invoice(request, invoice_id):
-    invoice = Invoice.objects.get(pk=invoice_id)
-
-    invoice.services.filter(invoice_status="DRAFT").update(invoice_status="INVOICED")
-    return redirect('invoice_details', invoice.invoice_id)
