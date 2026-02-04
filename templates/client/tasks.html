@@ -282,11 +282,23 @@
         $(document).ready(function () {
             // Initialize Select2 on the client selector
             // We use dropdownParent so the search input works inside the Bootstrap modal
+            $('#clientSelector').empty();
             $('#clientSelector').select2({
                 dropdownParent: $('#selectClientModal'),
-                placeholder: "-- Search Client --",
-                allowClear: true,
-                width: '100%'
+                placeholder: 'Client Name || PAN Number || Prospect',
+                width: '100%',
+                minimumInputLength: 0,
+            ajax: {
+            url: '/clients/search/',
+            dataType: 'json',
+            delay: 300,
+            data: function (params) {
+                return { q: params.term };
+            },
+            processResults: function (data) {
+                return { results: data };
+            }
+        }
             });
 
             // Listen for change event on Select2

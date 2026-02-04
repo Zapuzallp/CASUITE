@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views import View
 from django.views.generic import ListView
@@ -208,3 +209,18 @@ def get_client_dashboard_data(user, today):
         'client_distribution_chart_data': client_distribution_chart_data,
     }
 
+def client_search(request):
+    q = request.GET.get('q', '').strip()
+
+    clients = Client.objects.filter(
+        Q(client_name__icontains=q) |
+        Q(pan_no__icontains=q)
+    )[:20]
+
+    data = []
+    for c in clients:
+        data.append({
+            "id": c.id,
+            "text": f"{c.client_name} || {c.pan_no} || {c.status}"
+        })
+    return JsonResponse(data, safe=False)

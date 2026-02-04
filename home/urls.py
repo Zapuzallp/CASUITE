@@ -30,7 +30,7 @@ from home.customViews.payment_views import (
     payment_list, payment_collect, approve_payment,
     reject_payment, payment_detail, cancel_payment
 )
-
+from home.views import client_search
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
     path('accounts/login/', authView.LoginView.as_view(), name='login'),
@@ -55,6 +55,7 @@ urlpatterns = [
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
     path('tasks/<int:task_id>/copy/', taskView.copy_task_view, name='task_copy'),
+    path('clients/search/', client_search, name='client_search'),
 
     # reset password
     path('password/change/', resetPassword.CustomPasswordChangeView.as_view(), name='password_change'),
