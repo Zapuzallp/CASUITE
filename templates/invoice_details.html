@@ -17,64 +17,113 @@
             </div>
         </div>
 
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
 
-        <div class="container-fluid mt-4">
-            <div class="card">
-                <div class="card-header border-0">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                         <h5 class="card-title m-0">Invoice Details</h5>
-                        <small class="text-muted">
-                            Invoice created on {{ invoice.invoice_date }}
-                        </small>
+                    <!-- HEADER ROW -->
+                    <div class="d-flex justify-content-between align-items-start mt-3 mb-4">
 
+                        <div>
+                            <h4 class="fw-bold mb-1">
+                                Invoice Details of ID #{{ invoice.id }}
+                            </h4>
+                            <div class="text-muted small">
+                                Created on {{ invoice.invoice_date }}
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <strong>Status:</strong>
+                            <span class="badge px-4 py-2 fs-6
+                                {% if invoice.status == 'Paid' %}bg-success
+                                {% elif invoice.status == 'Pending' %}bg-warning text-dark
+                                {% else %}bg-secondary{% endif %}">
+                                {{ invoice.status }}
+                            </span>
+                        </div>
                     </div>
-                </div>
 
-                    <div class="row g-3">
+                    <div class="row g-4">
 
-                        <!-- Left Card -->
-                        <div class="col-md-6 p-3">
-                            <div class="card shadow-sm border-0 h-100 p-2">
-                                <div class="card-body">
+                        <!-- CLIENT INFO -->
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="text-uppercase text-muted fw-bold small mb-3">
+                                    Client Details
+                                </h6>
 
-                                    <p><strong>Invoice ID:</strong> #{{ invoice.id }}</p>
-                                    <p><strong>Assignees:</strong> {{ invoice.client.assigned_ca }}</p>
-                                    <p><strong>Customer Name:</strong> {{ invoice.client.client_name }}</p>
-                                    <p><strong>Phone:</strong> {{ invoice.client.phone_number }}</p>
-                                    <p><strong>Email:</strong> {{ invoice.client.email|default:"N/A" }}</p>
+                                <p class="mb-1 fw-bold">{{ invoice.client.client_name }}</p>
+                                <p class="mb-1 text-muted small">
+                                    <i class="bi bi-person-badge me-1"></i>
+                                    {{ invoice.client.assigned_ca }}
+                                </p>
+                                <p class="mb-1 small">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    {{ invoice.client.phone_number }}
+                                </p>
+                                <p class="mb-0 small">
+                                    <i class="bi bi-envelope me-1"></i>
+                                    {{ invoice.client.email|default:"N/A" }}
+                                </p>
+                            </div>
+                        </div>
 
-                                    <p>
-                                        <strong>Status:</strong>
-                                        <span class="badge
-                                            {% if invoice.status == 'Paid' %}bg-success
-                                            {% elif invoice.status == 'Pending' %}bg-warning text-dark
-                                            {% else %}bg-secondary{% endif %}">
-                                            {{ invoice.status }}
-                                        </span>
+                        <!-- BUSINESS INFO -->
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="text-uppercase text-muted fw-bold small mb-3">
+                                    Business Info
+                                </h6>
 
-                                    </p>
+                                <p class="mb-1">
+                                    <strong>File No:</strong>
+                                    {{ invoice.client.file_number|default:"N/A" }}
+                                </p>
+                                <p class="mb-1">
+                                    <strong>Structure:</strong>
+                                    {{ invoice.client.business_structure|default:"N/A" }}
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Due Date:</strong>
+                                    {{ invoice.due_date }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- FINANCIAL INFORMATION -->
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <h6 class="text-uppercase text-muted fw-bold small mb-3">
+                                    Financial Information
+                                </h6>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small">Invoice Items</span>
+                                    <strong>₹{{ invoice_item_total|floatformat:2 }}</strong>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small">Client Agreed Fees</span>
+                                    <strong>₹{{ total_task_fees|floatformat:2 }}</strong>
+                                </div>
+
+                                <hr class="my-2">
+
+                                <div class="d-flex justify-content-between fs-6 fw-bold text-success">
+                                    <span>Total Exposure</span>
+                                    <span>
+                                        ₹{{ invoice_item_total|add:total_task_fees|floatformat:2 }}
+                                    </span>
                                 </div>
                             </div>
                         </div>
-
-
-                    <!-- Right Card -->
-                    <div class="col-md-6 p-3">
-                        <div class="card shadow-sm border-0 h-100 p-2">
-                            <div class="card-body">
-                                <p><strong>Due Date:</strong> {{ invoice.due_date }}</p>
-                                <p><strong>Business Structure:</strong></p>
-                                <p class="text-muted-small">
-                                    {{ invoice.client.business_structure|default:"N/A" }}
-                                </p>
-                                <p><strong>File No:</strong> {{ invoice.client.file_number|default:"N/A" }}</p>
-                                <p><strong>Address:</strong> {{ invoice.client.address_line1 }}</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
-                </div>
             </div>
+        </div>
+
 
 
        <!--Action-Approve Invoice-->
@@ -150,16 +199,17 @@
                                 </button>
                             </div>
 
-                            <table class="table table-hover datatable align-middle" id="invoiceItemsTable">
+                            <table class="table table-hover  align-middle" id="invoiceItemsTable">
                                 <thead class="table-light">
                                 <tr>
-                                  <th scope="col">Product</th>
-                                  <th scope="col">Unit Cost</th>
-                                    <th scope="col">Discount</th>
-                                    <th scope="col">GST Percentage</th>
-                                    <th scope="col">Taxable value</th>
-                                    <th scope="col">Net Total</th>
-                                    <th scope="col">Delete</th>
+                                  <th>Product</th>
+                                  <th>Unit Cost</th>
+                                    <th>Discount</th>
+                                    <th>Taxable value</th>
+                                    <th>GST Percentage</th>
+                                    <th>Unit Cost After GST</th>
+                                    <th>Net Total</th>
+                                    <th>Actions</th>
                                 </tr>
                               </thead>
                                 <tbody>
@@ -172,16 +222,21 @@
 
                                         <td>{{ i.discount }}</td>
 
+                                        <td>₹{{ i.taxable_value|floatformat:2 }}</td>
+
                                         <td>
                                             <span class="badge bg-light text-dark border">
                                                 {{ i.gst_percentage }}%
                                             </span>
                                         </td>
 
-                                        <td>{{ i.taxable_value }}</td>
+
+                                        <td>
+                                            ₹{{ i.unit_cost_after_gst|floatformat:2 }}
+                                        </td>
 
                                         <td class="fw-bold text-success">
-                                            ₹{{ i.net_total }}
+                                            ₹{{ i.net_total|floatformat:2 }}
                                         </td>
 
                                          <td>
@@ -197,6 +252,18 @@
 
                                     {% endfor %}
                                     </tbody>
+                                    <tfoot class="table-light">
+                                    <tr>
+                                        <th colspan="6" class="text-end">
+                                            Total Invoice Items
+                                        </th>
+                                        <th class="text-success fw-bold">
+                                            ₹{{ invoice_item_total|floatformat:2 }}
+                                        </th>
+                                        <th></th>
+                                    </tr>
+                                    </tfoot>
+
                                      <!--delete modal-->
                                     {% for i in invoice.items.all %}
                                     <div class="modal fade"
@@ -250,6 +317,81 @@
                 </div>
         </div>
 
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="card-title m-0">Client Tasks Overview</h5>
+                                <small class="text-muted">
+                                    {{ client_tasks|length }} task(s)
+                                </small>
+                            </div>
+                        </div>
+
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Task ID</th>
+                                    <th>Task Name</th>
+                                    <th>Created By</th>
+                                    <th>Status</th>
+                                    <th>Deadline</th>
+                                    <th class="text-end">Agreed Fee</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in client_tasks %}
+                                <tr>
+                                    <td>#{{ task.id }}</td>
+                                    <td>
+                                        <a href="{% url 'task_detail' task.id %}" class="fw-bold text-decoration-none">
+                                            {{ task.task_title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ task.created_by.first_name }}</td>
+                                    <td>
+                                        <span class="badge
+                                            {% if task.status == 'Completed' %}bg-success
+                                            {% elif task.status == 'Pending' %}bg-warning text-dark
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ task.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ task.due_date|date:"M d, Y" }}</td>
+                                    <td class="text-end fw-bold">
+                                        ₹{{ task.agreed_fee|default:0|floatformat:2 }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        No tasks found for this client.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+
+                            <!-- TOTAL ROW -->
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="5" class="text-end">Total Task Fees</th>
+                                    <th class="text-end text-success fw-bold">
+                                        ₹{{ total_task_fees|floatformat:2 }}
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
     <script>
         document.getElementById('itemForm').addEventListener('submit', function (e) {
             e.preventDefault();
@@ -269,29 +411,34 @@
                     return;
                 }
 
-                //  Append new row to table
                 const tableBody = document.querySelector('#invoiceItemsTable tbody');
 
+
+                const emptyRow = tableBody.querySelector('td.dataTables_empty');
+                if (emptyRow) {
+                    emptyRow.closest('tr').remove();
+                }
                 const newRow = document.createElement('tr');
                 newRow.innerHTML = `
-                    <td>${data.product}</td>
-                    <td>${data.unit_cost}</td>
-                    <td>${data.discount}</td>
-                    <td>
-                        <span class="badge bg-light text-dark border">
-                            ${data.gst_percentage}%
-                        </span>
-                    </td>
-                    <td>${data.taxable}</td>
-                    <td class="fw-bold text-success">
-                        ₹${data.total}
-                    </td>
-                    <td>
-                        <button class="btn btn-outline-danger btn-sm" disabled>
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                `;
+                <td>${data.product}</td>
+                <td>₹${data.unit_cost}</td>
+                <td>₹${data.discount}</td>
+                <td>₹${data.taxable}</td>
+                <td>
+                    <span class="badge bg-light text-dark border">
+                        ${data.gst_percentage}%
+                    </span>
+                </td>
+                <td>₹${data.unit_cost_after_gst}</td>
+                <td class="fw-bold text-success">
+                    ₹${data.total}
+                </td>
+                <td>
+                    <button class="btn btn-outline-danger btn-sm" disabled>
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
 
                 tableBody.appendChild(newRow);
 
@@ -300,8 +447,7 @@
 
                 //  Close modal smoothly
                 const modalEl = document.getElementById('exampleModal');
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                modalInstance.hide();
+                bootstrap.Modal.getInstance(modalEl).hide();
             })
             .catch(err => console.error(err));
         });

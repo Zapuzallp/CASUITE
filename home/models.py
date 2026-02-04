@@ -899,7 +899,6 @@ class Leave(models.Model):
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
-    # my change
     updated_at = models.DateTimeField(auto_now=True)
 
     @property
@@ -960,10 +959,16 @@ class InvoiceItem(models.Model):
         self.taxable_value = float(self.unit_cost) - float(self.discount)
 
         # Logic: net_total = taxable_value + gst %
-        gst_amount = self.taxable_value * (self.gst_percentage / 100.0)
-        self.net_total = self.taxable_value + gst_amount
+        gst_amount = self.taxable_value * (self.gst_percentage / 100)
+
+        self.net_total = self.taxable_value - gst_amount
 
         super().save(*args, **kwargs)
+
+    def unit_cost_after_gst(self):
+        gst_amount = self.taxable_value * (self.gst_percentage / 100)
+        return self.taxable_value - gst_amount
+
 
     def __str__(self):
         return f"{self.product.item_name} - {self.invoice}"

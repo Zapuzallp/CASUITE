@@ -186,11 +186,6 @@
             </a>
         </li>
 
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'invoice_all' %}">
-                <i class="bi bi-view-list"></i> <span>All Invoices</span>
-            </a>
-        </li>
 
         <li class="nav-heading">Documents</li>
 
@@ -222,7 +217,14 @@
         {% endif %}
 
 
-        <li class="nav-heading">Services</li>
+        <li class="nav-heading">Accounts</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'invoice_all' %}">
+                <i class="bi bi-view-list"></i> <span>All Invoices</span>
+            </a>
+        </li>
+
         <li class="nav-item">
             <a class="nav-link" href="{% url 'list_services' %}">
                 <i class="bi bi-file-earmark-text"></i>

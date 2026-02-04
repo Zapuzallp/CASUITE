@@ -70,12 +70,32 @@ def load_tasks(request):
 def invoice_details(request, invoice_id):
     invoice = Invoice.objects.get(pk=invoice_id)
     #invoice_items = InvoiceItem.objects.all()
+
+    # Get all tasks of this invoice's client
+    client_tasks = Task.objects.filter(client=invoice.client)
+
+    # Calculate total agreed fees from tasks
+    total_task_fees = sum(
+        task.agreed_fee or 0 for task in client_tasks
+    )
+
+    # Calculate invoice item totals
+    invoice_item_total = sum(
+        item.net_total for item in invoice.items.all()
+    )
+
     item_form = InvoiceItemForm()
+
     return render(request, 'invoice_details.html', {
         'invoice': invoice,
     #'invoice_items': invoice_items
-        'item_form': item_form
+        'item_form': item_form,
+        'client_tasks': client_tasks,
+        'total_task_fees': total_task_fees,
+        'invoice_item_total': invoice_item_total,
     })
+
+
 @login_required
 def add_invoice_item_ajax(request, pk):
     invoice = Invoice.objects.get(pk=pk)
@@ -92,8 +112,9 @@ def add_invoice_item_ajax(request, pk):
                 'unit_cost':item.unit_cost,
                 'discount':item.discount,
                 'gst_percentage':item.gst_percentage,
-                'taxable':round(item.taxable_value,5),
-                'total':round(item.net_total,3),
+                'taxable':round(item.taxable_value,2),
+                'unit_cost_after_gst': round(item.unit_cost_after_gst, 2),
+                'total':round(item.net_total,2),
             })
     return JsonResponse({'error': 'Invalid'}, status=400)
 
