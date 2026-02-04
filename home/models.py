@@ -959,8 +959,8 @@ class InvoiceItem(models.Model):
         self.taxable_value = float(self.unit_cost) - float(self.discount)
 
         # Logic: net_total = taxable_value + gst %
-        Gst_amount = self.taxable_value * (self.gst_percentage / 100)
-        self.net_total = self.taxable_value - Gst_amount
+        gst_amount = self.taxable_value * (self.gst_percentage / 100)
+        self.net_total = self.taxable_value - gst_amount
 
         super().save(*args, **kwargs)
 
