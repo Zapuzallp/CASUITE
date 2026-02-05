@@ -2,7 +2,8 @@
 {% load humanize %}
 
 
-<header id="header" class="header fixed-top d-flex align-items-center">
+
+<header id = "header" class="header fixed-top d-flex align-items-center" >
 
     <div class="d-flex align-items-center justify-content-between">
         <a href="{% url 'dashboard' %}" class="logo d-flex align-items-center">
@@ -127,67 +128,72 @@
 
                 <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
                     <i class="bi bi-chat-left-text"></i>
-                    <span class="badge bg-success badge-number">3</span>
-                </a><!-- End Messages Icon -->
-
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow messages">
+                    {% if header_messages%}
+                    <span class="badge bg-success badge-number">{{header_messages|length}}</span>
+                    {% endif %}
+                </a><!--End Messages Icon-->
+            
+                <ul class="dropdown-menu  dropdown-menu-end dropdown-menu-arrow  messages max-vw-50  " style="max-height: 300px; overflow-y: auto; overflow-x:auto; ">
                     <li class="dropdown-header">
-                        You have 3 new messages
-                        <a href="#"><span class="badge rounded-pill bg-primary p-2 ms-2">View all</span></a>
+                        You have {{header_messages|length}} new messages
+                        <a href="{% url 'chat_base' %}"><span class="badge rounded-pill bg-primary p-2 ms-2 ">View all</span></a>
                     </li>
+                    
+                    {% for m in header_messages %}
+                    {% if not m.is_seen %}
+
                     <li>
-                        <hr class="dropdown-divider">
+                        <hr class="dropdown-divider ">
                     </li>
 
-                    <li class="message-item">
-                        <a href="#">
-                            <img src="{% static 'assets/img/messages-1.jpg' %}">
-                            <div>
-                                <h4>Maria Hudson</h4>
-                                <p>Velit asperiores et ducimus soluta repudiandae labore officia est ut...</p>
-                                <p>4 hrs. ago</p>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
+                    <li class="message-item"  style = "max-width: 250px; margin-left:15px; background-size: cover;">
 
-                    <li class="message-item">
-                        <a href="#">
-                            <img src="{% static 'assets/img/messages-2.jpg' %}">
-                            <div>
-                                <h4>Anna Nelson</h4>
-                                <p>Velit asperiores et ducimus soluta repudiandae labore officia est ut...</p>
-                                <p>6 hrs. ago</p>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
+                    <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start" >
 
-                    <li class="message-item">
-                        <a href="#">
-                            <img src="{% static 'assets/img/messages-3.jpg' %}">
-                            <div>
-                                <h4>David Muldon</h4>
-                                <p>Velit asperiores et ducimus soluta repudiandae labore officia est ut...</p>
-                                <p>8 hrs. ago</p>
-                            </div>
-                        </a>
+                        <!-- IMAGE WRAPPER -->
+                            <div class="position-relative" >
+                            {% if m.sender.employee.profile_pic %}
+                            <img src="{{m.sender.employee.profile_pic.url}}"class="rounded-circle" width = "35" height= "35">
+                            {% else %}
+                            <img src="#"class="rounded-circle" width = "35" height= "35">
+                            {% endif %}
+
+                            <!-- BLUE DOT -->
+                            <span class="position-absolute top-0 start-56 translate-middle bg-primary border border-light rounded-circle "
+                                style="width: 10px; height: 10px;">
+                            </span>
+                        </div>
+                        
+                        <!-- MESSAGE CONTENT -->
+                        <div>
+                            <h4>{{m.sender.first_name}} {{m.sender.last_name}}</h4>
+                            {% if '<img' in m.content %}
+                            <p class = "text-truncate  fw-bold text-dark"> Sent an image..</p>
+                            
+                            {% else %}
+                            {% autoescape off %}
+                            <p class = "message-text fw-bold text-dark">{{m.content|striptags|truncatechars:70}}</p>
+                            {% endautoescape %}
+
+                            {% endif %}
+                            <p class="small">{{m.timestamp|timesince}} ago</p>
+                        </div>
+
+
+                    </a>
                     </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
+                  
+                    {% endif %}
+                    {% endfor %}
 
                     <li class="dropdown-footer">
                         <a href="#">Show all messages</a>
                     </li>
 
-                </ul><!-- End Messages Dropdown Items -->
+                 </ul><!--End Messages Dropdown Items --> 
 
-            </li><!-- End Messages Nav -->
+            </li>
+            
 
             <li class="nav-item dropdown pe-3">
 
@@ -201,7 +207,7 @@
                     <span class="d-none d-md-block dropdown-toggle ps-2">{{ user.get_full_name|default:user.username }}</span>
                 </a><!-- End Profile Iamge Icon -->
 
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile overflow-y:auto">
                     <li class="dropdown-header">
                         {% if user.is_staff %}
                         <h6>{{ user.get_full_name|default:user.username }}</h6>

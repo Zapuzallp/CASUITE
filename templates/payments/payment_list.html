@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block body %}
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Payments</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+        <li class="breadcrumb-item active">Payments</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+
+            <div class="d-flex justify-content-between align-items-center my-3">
+              <div>
+                <h5 class="card-title m-0">Payments</h5>
+                {% if payments %}
+                  <small class="text-muted">Showing {{ payments.start_index }} - {{ payments.end_index }} of {{ payments.paginator.count }} entries</small>
+                {% else %}
+                  <small class="text-muted">Showing 0 entries</small>
+                {% endif %}
+              </div>
+
+              <a href="#" class="btn btn-primary btn-sm"
+                 data-bs-toggle="modal"
+                 data-bs-target="#selectInvoiceModal">
+                <i class="bi bi-plus-circle me-1"></i> Collect Payment
+              </a>
+            </div>
+
+            <form method="get" class="mb-3 d-flex justify-content-end" style="gap:.5rem;">
+              <input type="search" name="q" value="{{ request.GET.q|default:q }}" placeholder="Search invoice or client..." class="form-control w-50">
+              <button class="btn btn-outline-secondary">Search</button>
+            </form>
+
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                  <i class="bi bi-info-circle me-1"></i> {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            {% endif %}
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>SN</th>
+                    <th>Invoice</th>
+                    <th>Client</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Payment Date</th>
+                    <th>Created By</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                {% if payments %}
+                  {% for payment in payments %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+
+                    <td>
+                      <a href="{% url 'admin:home_invoice_change' payment.invoice.id %}">
+                        #{{ payment.invoice.id }}
+                      </a>
+                    </td>
+
+                    <td>{{ payment.invoice.client.client_name }}</td>
+                    <td>₹{{ payment.amount|intcomma }}</td>
+                    <td>{{ payment.get_payment_method_display }}</td>
+                    <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                    <td>{{ payment.created_by }}</td>
+
+                    <td>
+                      <div class="d-flex align-items-center gap-1">
+
+                        <!-- VIEW -->
+                        {% if request.user.is_superuser %}
+                          <a class="btn btn-sm btn-outline-primary"
+                             href="{% url 'payment_detail' payment.id %}">
+                            <i class="bi bi-eye"></i>
+                          </a>
+                        {% else %}
+                          <a class="btn btn-sm btn-outline-primary"
+                             href="{% url 'payment_detail' payment.id %}">
+                            <i class="bi bi-eye"></i>
+                          </a>
+                        {% endif %}
+
+                        <!-- APPROVE / REJECT / CANCEL -->
+                        {% if payment.approval_status == "PENDING" and payment.payment_status == "PENDING" %}
+
+                          {% if payment.can_approve %}
+                            <button type="button"
+                                    class="btn btn-sm btn-success action-btn"
+                                    data-title="Approve Payment"
+                                    data-message="Approve payment #{{ payment.id }}?"
+                                    data-url="{% url 'approve_payment' payment.id %}">
+                              <i class="bi bi-check-lg"></i>
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-danger action-btn"
+                                    data-title="Reject Payment"
+                                    data-message="Reject payment #{{ payment.id }}?"
+                                    data-url="{% url 'reject_payment' payment.id %}">
+                              <i class="bi bi-x-lg"></i>
+                            </button>
+                          {% endif %}
+
+                          {% if payment.can_cancel %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-warning action-btn"
+                                    data-title="Cancel Payment"
+                                    data-message="Cancel payment #{{ payment.id }}? This cannot be undone."
+                                    data-url="{% url 'cancel_payment' payment.id %}">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          {% endif %}
+
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="8" class="text-center text-muted">
+                      No payments found.
+                    </td>
+                  </tr>
+                {% endif %}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= SELECT INVOICE MODAL ================= -->
+<div class="modal fade" id="selectInvoiceModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Select Invoice to Collect Payment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <label class="form-label fw-bold">Invoice</label>
+        <select id="invoicePicker" class="form-select select2">
+          <option></option>
+          {% for inv in invoices %}
+            <option value="{{ inv.id }}">
+              #{{ inv.id }} — {{ inv.client.client_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="btnProceedCollect" class="btn btn-primary" disabled>
+          Proceed
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CONFIRM ACTION MODAL ================= -->
+<div class="modal fade" id="confirmActionModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmModalTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="confirmModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-danger" id="confirmModalBtn">
+          Yes, Continue
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- CSRF helper  ---------- */
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+
+  /* ---------- Invoice search ---------- */
+  $('#invoicePicker').select2({
+    theme: 'bootstrap-5',
+    dropdownParent: $('#selectInvoiceModal'),
+    placeholder: 'Search invoice or client',
+    allowClear: true,
+    width: '100%'
+  });
+
+  $('#invoicePicker').on('change', function () {
+    document.getElementById('btnProceedCollect').disabled = !this.value;
+  });
+
+  document.getElementById('btnProceedCollect').onclick = function () {
+    const id = $('#invoicePicker').val();
+    if (id) window.location.href = `/payment/${id}/collect/`;
+  };
+
+  /* ---------- Replace confirm() ---------- */
+  const modal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
+  const title = document.getElementById('confirmModalTitle');
+  const body = document.getElementById('confirmModalBody');
+  const confirmBtn = document.getElementById('confirmModalBtn');
+
+  let actionUrl = null;
+
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      title.textContent = this.dataset.title;
+      body.textContent = this.dataset.message;
+      actionUrl = this.dataset.url;
+      modal.show();
+    });
+  });
+
+  confirmBtn.addEventListener('click', function () {
+    if (!actionUrl) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = actionUrl;
+
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = 'csrfmiddlewaretoken';
+    csrf.value = getCookie('csrftoken');
+
+    form.appendChild(csrf);
+    document.body.appendChild(form);
+    form.submit();
+  });
+
+});
+</script>
+
+{% endblock body %}

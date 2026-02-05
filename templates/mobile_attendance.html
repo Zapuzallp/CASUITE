@@ -1,0 +1,238 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Attendance Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --primary: #4361ee; --success: #2ec4b6; --danger: #e71d36; --dark: #1e1e2d; }
+        body { background-color: #f4f7fe; font-family: -apple-system, system-ui, sans-serif; color: var(--dark); margin: 0; padding-bottom: 30px; }
+
+        #global-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .app-header { background: #fff; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.03); position: sticky; top: 0; z-index: 1000; }
+        .reload-btn { background: #f0f3ff; border: none; border-radius: 50%; width: 35px; height: 35px; color: var(--primary); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .reload-btn:active { transform: rotate(90deg); }
+
+        .user-profile-section { background: white; margin: 15px; padding: 20px; border-radius: 25px; display: flex; align-items: center; box-shadow: 0 8px 25px rgba(0,0,0,0.04); }
+        .profile-img-container { width: 65px; height: 65px; border-radius: 50%; overflow: hidden; border: 3px solid #f0f3ff; flex-shrink: 0; }
+        .profile-img-container img { width: 100%; height: 100%; object-fit: cover; }
+
+        .main-card { background: #fff; border-radius: 30px; margin: 0 15px 20px 15px; padding: 30px 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .timer-display { font-size: 2.8rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+
+        .punch-btn { width: 160px; height: 160px; border-radius: 50%; border: 10px solid #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; color: #fff; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 15px 35px rgba(0,0,0,0.1); cursor: pointer; text-decoration: none; }
+        .punch-btn:active { transform: scale(0.9); }
+        .btn-in { background: linear-gradient(135deg, #2ec4b6 0%, #0cbaba 100%); }
+        .btn-out { background: linear-gradient(135deg, #e71d36 0%, #ff5d5d 100%); }
+
+        #map-confirm { height: 220px; width: 100%; border-radius: 18px; margin-bottom: 15px; border: 1px solid #ddd; }
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 15px; }
+        .stat-box { background: #fff; padding: 15px 10px; border-radius: 20px; text-align: center; border: 1px solid rgba(0,0,0,0.02); box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .stat-box i { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+
+        .btn-custom-dark { background: var(--dark); color: #fff; border-radius: 15px; padding: 15px; font-weight: 600; width: 100%; border: none; }
+        .form-control, .form-select { border-radius: 12px; padding: 12px; border: 1px solid #e0e0e0; }
+        .info-tag { background: #f0f3ff; color: var(--primary); padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="global-loader"><div class="spinner"></div><p class="mt-3 fw-bold">Loading...</p></div>
+
+    <nav class="app-header">
+        <button class="reload-btn" onclick="location.reload()"><i class="bi bi-arrow-clockwise"></i></button>
+        <img src="{% static 'images/Logo-1.png' %}" alt="Logo" style="height: 30px;">
+        <a href="{% url 'mobile_logout' %}" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold loader-trigger">Logout</a>
+    </nav>
+
+    <div class="user-profile-section">
+        <div class="profile-img-container me-3">
+            {% if user.employee.profile_pic %}
+                <img src="{{ user.employee.profile_pic.url }}" alt="Profile">
+            {% else %}
+                <img src="{% static 'images/default-avatar.png' %}" alt="Profile">
+            {% endif %}
+        </div>
+        <div>
+            <h5 class="fw-bold mb-0 text-dark">{{ user.get_full_name|default:user.username }}</h5>
+            <div class="text-muted small">@{{ user.username }}</div>
+            {% if user.employee.designation %}
+                <div class="text-primary small fw-semibold">{{ user.employee.designation }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="main-card">
+        {% if current_attendance and current_attendance.clock_in and not current_attendance.clock_out %}
+            <div class="info-tag"><i class="bi bi-clock-fill me-1"></i> Punched In: {{ current_attendance.clock_in|date:"h:i A" }}</div>
+            <div class="timer-display" id="liveTimer">00:00:00</div>
+        {% elif current_attendance and current_attendance.clock_out %}
+            <div class="info-tag bg-light text-secondary">Shift Completed</div>
+            <div class="timer-display text-secondary">{{ current_attendance.get_work_duration }}</div>
+        {% else %}
+            <div class="info-tag">Shift Not Started</div>
+            <div class="timer-display text-muted">00:00:00</div>
+        {% endif %}
+
+        {% if can_clock_in %}
+            <div class="punch-btn btn-in" onclick="openPunchModal('in')">
+                <i class="bi bi-fingerprint fs-1"></i>
+                <span class="fw-bold">PUNCH IN</span>
+            </div>
+        {% elif can_clock_out %}
+            <div class="punch-btn btn-out" onclick="openPunchModal('out')">
+                <i class="bi bi-box-arrow-right fs-1"></i>
+                <span class="fw-bold">PUNCH OUT</span>
+            </div>
+        {% else %}
+            <div class="punch-btn bg-secondary shadow-none opacity-75">
+                <i class="bi bi-check2-circle fs-1"></i>
+                <span class="fw-bold">COMPLETED</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="px-3 mb-4">
+        <button class="btn btn-custom-dark shadow" onclick="openLeaveModal()"><i class="bi bi-calendar-plus me-2"></i> Apply New Leave</button>
+    </div>
+
+    <div class="stats-row mb-4">
+        <div class="stat-box"><i class="bi bi-cup-hot text-warning"></i><div class="fw-bold">{{ leave_summary.casual.remaining }}</div><small class="text-muted">Casual</small></div>
+        <div class="stat-box"><i class="bi bi-heart-pulse text-danger"></i><div class="fw-bold">{{ leave_summary.sick.remaining }}</div><small class="text-muted">Sick</small></div>
+        <div class="stat-box"><i class="bi bi-star text-primary"></i><div class="fw-bold">{{ leave_summary.earned.remaining }}</div><small class="text-muted">Earned</small></div>
+    </div>
+
+    <div class="row g-2 px-3 pb-5">
+        <div class="col-6"><a href="{% url 'mobile_logs' %}" class="btn btn-white w-100 py-3 rounded-4 border bg-white shadow-sm text-decoration-none text-dark loader-trigger"><i class="bi bi-clock-history me-2"></i>History</a></div>
+        <div class="col-6"><a href="{% url 'mobile_leave_logs' %}" class="btn btn-white w-100 py-3 rounded-4 border bg-white shadow-sm text-decoration-none text-dark loader-trigger"><i class="bi bi-file-text me-2"></i>Leaves</a></div>
+    </div>
+
+    <div class="modal fade" id="punchModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mx-3">
+            <div class="modal-content border-0 rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold m-0" id="punchTitle">Location Proof</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="map-confirm"></div>
+                    <div id="loc-status" class="alert alert-info py-2 small d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2"></div> Capturing GPS...</div>
+                    <form id="punchForm" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="lat" id="lat-input">
+                        <input type="hidden" name="long" id="long-input">
+                        <button type="submit" id="finalPunchBtn" class="btn btn-dark w-100 py-3 rounded-3 fw-bold" disabled>CONFIRM PUNCH</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="leaveModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mx-3">
+            <form id="leaveForm" method="post" action="{% url 'mobile_apply_leave' %}" class="modal-content border-0 rounded-4">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0"><h5 class="fw-bold m-0">Apply Leave</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="small fw-bold mb-1">Leave Type</label>
+                        <select name="leave_type" class="form-select" required>
+                            <option value="">Select Type</option>
+                            <option value="casual">Casual Leave</option>
+                            <option value="sick">Sick Leave</option>
+                            <option value="earned">Privilege Leave</option>
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><label class="small fw-bold mb-1">From</label><input type="date" name="start_date" class="form-control" required></div>
+                        <div class="col-6"><label class="small fw-bold mb-1">To</label><input type="date" name="end_date" class="form-control" required></div>
+                    </div>
+                    <div><label class="small fw-bold mb-1">Reason</label><textarea name="reason" class="form-control" rows="3" required></textarea></div>
+                </div>
+                <div class="modal-footer border-0"><button type="submit" id="leaveSubmitBtn" class="btn btn-dark w-100 py-3 rounded-3 fw-bold">SUBMIT REQUEST</button></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        const loader = document.getElementById('global-loader');
+        let map = null, marker = null;
+        const pModal = new bootstrap.Modal(document.getElementById('punchModal'));
+        const lModal = new bootstrap.Modal(document.getElementById('leaveModal'));
+
+        document.querySelectorAll('.loader-trigger').forEach(el => {
+            el.addEventListener('click', () => { loader.style.display = 'flex'; });
+        });
+
+        function openPunchModal(type) {
+            document.getElementById('punchTitle').innerText = type === 'in' ? 'Confirm Punch In' : 'Confirm Punch Out';
+            document.getElementById('punchForm').action = type === 'in' ? "{% url 'mobile_clock_in' %}" : "{% url 'mobile_clock_out' %}";
+            document.getElementById('finalPunchBtn').disabled = true;
+            pModal.show();
+            setTimeout(() => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(sLoc, eLoc, { enableHighAccuracy: true });
+                }
+            }, 500);
+        }
+
+        function openLeaveModal() { lModal.show(); }
+
+        function sLoc(pos) {
+            const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            document.getElementById('lat-input').value = lat;
+            document.getElementById('long-input').value = lng;
+            document.getElementById('finalPunchBtn').disabled = false;
+            document.getElementById('loc-status').className = "alert alert-success py-2 small";
+            document.getElementById('loc-status').innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Position Locked';
+            if (!map) {
+                map = L.map('map-confirm').setView([lat, lng], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                marker = L.marker([lat, lng]).addTo(map);
+            } else { map.setView([lat, lng], 16); marker.setLatLng([lat, lng]); }
+            setTimeout(() => { map.invalidateSize(); }, 200);
+        }
+
+        function eLoc(err) {
+            document.getElementById('loc-status').className = "alert alert-danger py-2 small";
+            document.getElementById('loc-status').innerText = "GPS Error: " + err.message;
+        }
+
+        document.getElementById('punchModal').addEventListener('hidden.bs.modal', () => { if (map) { map.remove(); map = null; marker = null; } });
+
+        document.getElementById('leaveForm').onsubmit = () => {
+            loader.style.display = 'flex';
+            document.getElementById('leaveSubmitBtn').disabled = true;
+        };
+
+        document.getElementById('punchForm').onsubmit = () => {
+            loader.style.display = 'flex';
+            document.getElementById('finalPunchBtn').disabled = true;
+        };
+
+        {% if current_attendance and current_attendance.clock_in and not current_attendance.clock_out %}
+            const sTime = new Date('{{ current_attendance.clock_in|date:"c" }}');
+            setInterval(() => {
+                const diff = Math.floor((new Date() - sTime) / 1000);
+                const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+                const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+                const s = (diff % 60).toString().padStart(2, '0');
+                const el = document.getElementById('liveTimer');
+                if(el) el.innerText = `${h}:${m}:${s}`;
+            }, 1000);
+        {% endif %}
+
+        window.addEventListener('pageshow', () => { loader.style.display = 'none'; });
+    </script>
+</body>
+</html>
