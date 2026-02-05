@@ -19,16 +19,18 @@ def get_accessible_clients(user):
         elif employee.role == 'BRANCH_MANAGER':
             if employee.office_location:
                 return qs.filter(
-                    Q(office_location=employee.office_location) | Q(assigned_ca=user)
+                    Q(office_location=employee.office_location) |
+                    Q(assigned_ca=user) |
+                    Q(created_by=user)
                 )
             else:
                 # Fallback if no office linked
-                return qs.none()
+                return qs.filter(Q(assigned_ca=user) | Q(created_by=user))
 
         else:
             # STAFF or future roles
-            return qs.filter(assigned_ca=user)
+            return qs.filter(Q(assigned_ca=user) | Q(created_by=user))
 
     except Employee.DoesNotExist:
         # User exists but has no Employee profile (edge case)
-        return qs.filter(assigned_ca=user)
+        return qs.filter(Q(assigned_ca=user) | Q(created_by=user))
