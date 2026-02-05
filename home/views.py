@@ -209,6 +209,7 @@ def get_client_dashboard_data(user, today):
         'client_distribution_chart_data': client_distribution_chart_data,
     }
 
+@login_required(login_url='/login/')
 def client_search(request):
     q = request.GET.get('q', '').strip()
 
