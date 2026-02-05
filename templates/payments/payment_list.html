@@ -18,64 +18,153 @@
     <div class="row">
       <div class="col-lg-12">
 
-        <div class="card shadow-sm border-0">
-          <div class="card-body">
+                <!-- ACCORDION FILTER SECTION -->
+                <div class="accordion mb-4" id="paymentFilterAccordion">
+                    <div class="accordion-item border-0 shadow-sm">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button {% if not request.GET %}collapsed{% endif %} bg-white text-primary fw-bold"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#paymentFilter"
+                            aria-expanded="{% if request.GET %}true{% else %}false{% endif %}">
+                                <i class="bi bi-funnel-fill me-2"></i> Filter Payments
+                            </button>
+                        </h2>
 
-            <div class="d-flex justify-content-between align-items-center my-3">
-              <div>
-                <h5 class="card-title m-0">Payments</h5>
-                {% if payments %}
-                  <small class="text-muted">Showing {{ payments.start_index }} - {{ payments.end_index }} of {{ payments.paginator.count }} entries</small>
-                {% else %}
-                  <small class="text-muted">Showing 0 entries</small>
-                {% endif %}
-              </div>
+                        <div class="accordion-collapse collapse {% if request.GET %}show{% endif %}"
+                             id="paymentFilter">
+                            <div class="accordion-body bg-light border rounded-3 p-3">
 
-              <a href="#" class="btn btn-primary btn-sm"
-                 data-bs-toggle="modal"
-                 data-bs-target="#selectInvoiceModal">
-                <i class="bi bi-plus-circle me-1"></i> Collect Payment
-              </a>
-            </div>
+                                <form method="get">
+                                    <div class="row g-3">
 
-            <form method="get" class="mb-3 d-flex justify-content-end" style="gap:.5rem;">
-              <input type="search" name="q" value="{{ request.GET.q|default:q }}" placeholder="Search invoice or client..." class="form-control w-50">
-              <button class="btn btn-outline-secondary">Search</button>
-            </form>
+                                        <!-- SEARCH -->
+                                        <div class="col-md-4">
+                                            <label class="form-label small text-secondary fw-semibold">Search</label>
+                                            <input class="form-control "
+                                                   name="q"
+                                                   placeholder="Invoice ID or Client name"
+                                                   type="text"
+                                                   value="{{ request.GET.q }}">
+                                        </div>
 
-            {% if messages %}
-              {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                  <i class="bi bi-info-circle me-1"></i> {{ message }}
-                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        <!-- PAYMENT STATUS -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small text-secondary fw-semibold">Payment Status</label>
+                                            <select class="form-select" name="payment_status">
+                                                <option value="">All</option>
+                                                <option value="PAID" {% if request.GET.payment_status == "PAID" %}selected{% endif %}>Paid</option>
+                                                <option value="PENDING" {% if request.GET.payment_status == "PENDING" %}selected{% endif %}>Pending</option>
+                                                <option value="CANCELED" {% if request.GET.payment_status == "CANCELED" %}selected{% endif %}>Canceled</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- APPROVAL STATUS -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small text-secondary fw-semibold">Approval Status</label>
+                                            <select class="form-select" name="approval_status">
+                                                <option value="">All</option>
+                                                <option value="APPROVED" {% if request.GET.approval_status == "APPROVED" %}selected{% endif %}>Approved</option>
+                                                <option value="PENDING" {% if request.GET.approval_status == "PENDING" %}selected{% endif %}>Pending</option>
+                                                <option value="REJECTED" {% if request.GET.approval_status == "REJECTED" %}selected{% endif %}>Rejected</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- CLIENT FILTER -->
+                                        <div class="col-md-4">
+                                            <label class="form-label small text-secondary fw-semibold">Client</label>
+                                            <select class="form-select"  name="client_id" id="clientFilter">
+                                                <option value="">All clients</option>
+                                                {% for client in clients %}
+                                                <option value="{{ client.id }}"
+                                                        {%  if client_id|stringformat:"s" == client.id|stringformat:"s" %}selected{%  endif %}>
+                                                {{ client.client_name }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <!-- PAYMENT DATE RANGE -->
+                                        <div class="col-md-6">
+                                            <label class="form-label small text-secondary fw-semibold">Payment Date</label>
+                                            <div class="input-group">
+                                                <input type="date" class="form-control" name="date_from" value="{{ request.GET.date_from }}">
+                                                <span class="input-group-text">to</span>
+                                                <input type="date" class="form-control" name="date_to" value="{{ request.GET.date_to }}">
+                                            </div>
+                                        </div>
+
+                                        <!-- ACTION BUTTONS -->
+                                        <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                                            <button class="btn btn-primary d-flex align-items-center px-4"
+                                                    type="submit">
+                                                <i class="bi bi-search me-1"></i> Apply Filter
+                                            </button>
+
+                                            <a class="btn btn-outline-secondary d-flex align-items-center px-4"
+                                               href="{% url 'payment_list' %}">
+                                                <i class="bi bi-x-circle me-1"></i> Clear
+                                            </a>
+                                        </div>
+                                    </div>
+                                </form>
+
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              {% endfor %}
-            {% endif %}
 
-            <div class="table-responsive">
-              <table class="table table-hover align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th>SN</th>
-                    <th>Invoice</th>
-                    <th>Client</th>
-                    <th>Amount</th>
-                    <th>Method</th>
-                    <th>Payment Date</th>
-                    <th>Created By</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
 
-                <tbody>
-                {% if payments %}
-                  {% for payment in payments %}
-                  <tr>
-                    <td>{{ forloop.counter }}</td>
+                        <div class="d-flex justify-content-between align-items-center my-3">
+                            <div>
+                                <h5 class="card-title m-0">Payments</h5>
+                                <small class="text-muted">Showing {{ payments|length }} payments
+                                    </small>
+                            </div>
+
+                            <a class="btn btn-primary btn-sm" data-bs-target="#selectInvoiceModal"
+                               data-bs-toggle="modal"
+                               href="#">
+                                <i class="bi bi-plus-circle me-1"></i> Collect Payment
+                            </a>
+                        </div>
+
+
+                        {% if messages %}
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                <i class="bi bi-info-circle me-1"></i> {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <div class="table-responsive">
+                            <table class="table table-hover datatable align-middle">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>SN</th>
+                                    <th>Invoice</th>
+                                    <th>Client</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Payment Date</th>
+                                    <th>Created By</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+
+                                <tbody>
+                                {% if payments %}
+                                {% for payment in payments %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
 
                     <td>
-                      <a href="{% url 'admin:home_invoice_change' payment.invoice.id %}">
-                        #{{ payment.invoice.id }}
+                      <a href="{% url 'payment_detail' payment.id %}">
+                          <strong>#{{ payment.invoice.id }}</strong>
                       </a>
                     </td>
 
@@ -231,6 +320,14 @@ document.addEventListener('DOMContentLoaded', function () {
     placeholder: 'Search invoice or client',
     allowClear: true,
     width: '100%'
+  });
+
+  /* -----------client filter --------*/
+  $('#clientFilter').select2({
+  theme: 'bootstrap-5',
+  placeholder: 'Select client',
+  allowClear: true,
+  width: '100%'
   });
 
   $('#invoicePicker').on('change', function () {

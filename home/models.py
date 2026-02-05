@@ -883,13 +883,21 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.item_name} ({self.short_code})"
 
+from decimal import Decimal
 
 class Invoice(models.Model):
+    INVOICE_STATUS = [
+        ('DRAFT', 'Draft'),
+        ('OPEN', 'Open'),
+        ('PARTIALLY_PAID', 'Partially Paid'),
+        ('PAID', 'Paid'),
+    ]
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invoices')
     services = models.ManyToManyField(Task, blank=True, related_name='tagged_invoices')
     due_date = models.DateField()
     invoice_date = models.DateTimeField(default=timezone.now)
     subject = models.CharField(max_length=255)
+    invoice_status = models.CharField(max_length=20, choices=INVOICE_STATUS, default="DRAFT")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
@@ -907,17 +915,17 @@ class InvoiceItem(models.Model):
 
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
-    unit_cost = models.FloatField()
-    discount = models.FloatField(default=0.0)
-    taxable_value = models.FloatField(editable=False)
+    unit_cost = models.DecimalField(max_digits=12, decimal_places=2)
+    discount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    taxable_value = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
     gst_percentage = models.IntegerField(choices=GST_CHOICES, default=0)
-    net_total = models.FloatField(editable=False)
+    net_total = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
     def save(self, *args, **kwargs):
         # Logic: taxable_value = unit_cost - discount
-        self.taxable_value = float(self.unit_cost) - float(self.discount)
+        self.taxable_value = self.unit_cost - self.discount
 
         # Logic: net_total = taxable_value + gst %
-        gst_amount = self.taxable_value * (self.gst_percentage / 100.0)
+        gst_amount = (self.taxable_value * Decimal(self.gst_percentage) / Decimal('100'))
         self.net_total = self.taxable_value + gst_amount
 
         super().save(*args, **kwargs)

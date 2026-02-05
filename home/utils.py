@@ -34,11 +34,12 @@ def get_visible_payments(user):
     """
     Returns a queryset of payments the given user is allowed to see.
     - superuser: sees all
-    - STAFF: sees only own payments (in same office)
-    - ADMIN: sees payments created by staff under them AND their own payments (same office)
-    - BRANCH_MANAGER: sees all payments in same office
+    - STAFF: sees only own payments
+    - BRANCH_MANAGER: sees payments created by staff under them AND their own payments
+    - ADMIN: sees all payments in same office
     """
     from home.models import Payment, Employee
+    from django.db.models import Q
 
     if user.is_superuser:
         return Payment.objects.all()
@@ -53,14 +54,16 @@ def get_visible_payments(user):
     if role == 'STAFF':
         return Payment.objects.filter(created_by=user, created_by__employee__office_location=employee.office_location)
 
-    if role == 'ADMIN':
-        # payments created by users who report to this admin, plus admin's own payments
-        staff_users = Employee.objects.filter(supervisor=user, office_location=employee.office_location).values_list('user', flat=True)
-        user_list = list(staff_users) + [user]
-        return Payment.objects.filter(created_by__in=user_list)
-
     if role == 'BRANCH_MANAGER':
-        # All payments in same branch
+        # Branch Manager sees own + staff under him
+
+        staff_users = Employee.objects.filter(supervisor=user).values_list('user', flat=True)
+        return Payment.objects.filter(
+            Q(created_by=user) | Q(created_by__in=staff_users)
+        )
+
+    if role == 'ADMIN':
+        # Admin can see all payments in branch
         return Payment.objects.filter(created_by__employee__office_location=employee.office_location)
 
     return Payment.objects.none()
@@ -76,13 +79,16 @@ def can_approve_payment(user, payment):
     if approver.office_location != creator.office_location:
         return False
 
-    # Branch manager can approve anything in branch
-    if approver.role == 'BRANCH_MANAGER':
-        return True
+    # Admin can approve any payment
+    if approver.role == 'ADMIN':
+        return approver.office_location == creator.office_location
 
-    # Admin can approve staff under them
-    if approver.role == 'ADMIN' and creator.supervisor == user:
-        return True
+    # Branch manager can approve only their own payments
+    if approver.role == 'BRANCH_MANAGER':
+        return (
+            payment.created_by == user or
+            creator.supervisor == user
+        )
 
     return False
 
@@ -99,10 +105,32 @@ def can_cancel_payment(user, payment):
     if payment.created_by == user:
         return True
 
-    if actor.role == "ADMIN" and creator.supervisor == user and actor.office_location == creator.office_location:
-        return True
+    if actor.role == "ADMIN":
+        return actor.office_location == creator.office_location
 
-    if actor.role == "BRANCH_MANAGER" and actor.office_location == creator.office_location:
-        return True
+    if actor.role == "BRANCH_MANAGER":
+        return (
+            payment.created_by == user or
+            creator.supervisor == user
+        )
 
     return False
+
+from django.db.models import Sum
+from decimal import Decimal
+
+def get_invoice_totals(invoice):
+    total_amount = invoice.items.aggregate(
+        total=Sum('net_total')
+    )['total'] or Decimal('0.00')
+
+    total_paid = invoice.payments.filter(
+        payment_status='PAID',
+        approval_status='APPROVED'
+    ).aggregate(
+        total=Sum('amount')
+    )['total'] or Decimal('0.00')
+
+    balance = total_amount - total_paid
+
+    return total_amount, total_paid, balance

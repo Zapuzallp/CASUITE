@@ -604,8 +604,8 @@ class InvoiceItemInline(admin.TabularInline):
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'client', 'subject', 'invoice_date', 'due_date')
-    list_filter = ('invoice_date', 'due_date', 'client')
+    list_display = ('id', 'client', 'subject', 'invoice_date', 'due_date', 'invoice_status')
+    list_filter = ('invoice_date', 'due_date', 'client', 'invoice_status')
     search_fields = ('subject', 'client__client_name', 'id')
     inlines = [InvoiceItemInline]
     filter_horizontal = ('services',)
