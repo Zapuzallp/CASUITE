@@ -12,7 +12,7 @@ class ClockInView(LoginRequiredMixin, View):
         long = request.POST.get("long")
         location_name = request.POST.get("location_name")
         
-        result = process_clock_in(request.user, lat, long, location_name)
+        result = process_clock_in(request.user, lat, long, location_name, device_type='web')
         
         if result['success']:
             messages.success(request, result['message'])
@@ -27,7 +27,7 @@ class ClockOutView(LoginRequiredMixin, View):
         long = request.POST.get("long")
         location_name = request.POST.get("location_name")
         
-        result = process_clock_out(request.user, lat, long, location_name)
+        result = process_clock_out(request.user, lat, long, location_name, device_type='web')
         
         if result['success']:
             messages.success(request, result['message'])

@@ -48,7 +48,7 @@ def mobile_clock_in(request):
     long = request.POST.get("long")
     location_name = request.POST.get("location_name")
     
-    result = process_clock_in(request.user, lat, long, location_name)
+    result = process_clock_in(request.user, lat, long, location_name, device_type='mobile')
     
     if result['success']:
         messages.success(request, result['message'])
@@ -66,7 +66,7 @@ def mobile_clock_out(request):
     long = request.POST.get("long")
     location_name = request.POST.get("location_name")
     
-    result = process_clock_out(request.user, lat, long, location_name)
+    result = process_clock_out(request.user, lat, long, location_name, device_type='mobile')
     
     if result['success']:
         messages.success(request, result['message'])

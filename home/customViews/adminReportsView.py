@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 import calendar
 from django.contrib import messages
 
-from home.models import Attendance, OfficeDetails
+from home.models import Attendance, OfficeDetails, Leave
 
 
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -92,56 +92,130 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                     try:
                         employee_profile = emp.employee
                         if not employee_profile.office_location:
-                            continue  # Skip employees with no office
+                            continue
                         
-                        # Try to match by office ID first
                         try:
                             office_id_int = int(office_id)
                             if employee_profile.office_location.id != office_id_int:
                                 continue
                         except (ValueError, TypeError):
-                            # If not a number, match by office name
                             if employee_profile.office_location.office_name != office_id:
                                 continue
                     except Exception:
-                        continue  # Skip if employee has no profile or office
+                        continue
+                
+                # Get employee's shift to check days_off
+                from home.models import EmployeeShift
+                from django.db.models import Q
+                
+                # Get shift valid for the month being viewed
+                month_start = date(year_int, month_int, 1)
+                month_end = date(year_int, month_int, days_in_month)
+                
+                employee_shift = EmployeeShift.objects.filter(
+                    user=emp,
+                    valid_from__lte=month_end
+                ).filter(
+                    Q(valid_to__isnull=True) | Q(valid_to__gte=month_start)
+                ).first()
+                
+                days_off_list = []
+                if employee_shift and employee_shift.shift.days_off:
+                    days_off_str = employee_shift.shift.days_off
+                    # Map day abbreviations to weekday numbers
+                    day_map = {'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6}
+                    for day_abbr in days_off_str.split(','):
+                        day_abbr = day_abbr.strip()
+                        if day_abbr in day_map:
+                            days_off_list.append(day_map[day_abbr])
+                else:
+                    # Default: Saturday and Sunday if no shift assigned
+                    days_off_list = [5, 6]  # Sat=5, Sun=6
                     
                 daily_status = []
+                total_present = 0
+                total_days_till_today = 0
+                total_week_offs = 0
+                total_leaves = 0
+                
+                # Only count days up to today if viewing current month
+                today = date.today()
+                max_day = days_in_month
+                if year_int == today.year and month_int == today.month:
+                    max_day = today.day
+                
                 for day in calendar_days:
+                    current_date = date(year_int, month_int, day)
+                    
+                    # Only process days up to today for current month
+                    if day <= max_day:
+                        total_days_till_today += 1
+                    
+                    # Check if it's a day off according to shift
+                    if current_date.weekday() in days_off_list:
+                        daily_status.append('sunday')
+                        if day <= max_day:
+                            total_week_offs += 1
+                        continue
+                    
+                    # Check for approved leave
+                    try:
+                        leave = Leave.objects.filter(
+                            employee__user=emp,
+                            status='approved',
+                            start_date__lte=current_date,
+                            end_date__gte=current_date
+                        ).first()
+                        
+                        if leave:
+                            daily_status.append('leave')
+                            if day <= max_day:
+                                total_leaves += 1
+                            continue
+                    except Exception:
+                        pass
+                    
+                    # Check attendance
                     try:
                         attendance = Attendance.objects.get(
                             user=emp,
-                            date=date(year_int, month_int, day)
+                            date=current_date
                         )
-                        # Check status first, then clock in/out
+                        
                         if attendance.status == 'rejected':
                             daily_status.append('absent')
-                        elif attendance.status == 'approved':
-                            if attendance.clock_in and attendance.clock_out:
-                                daily_status.append('present')
-                            elif attendance.clock_in:
-                                daily_status.append('half_day')
-                            else:
-                                daily_status.append('absent')
+                        elif attendance.status in ['approved', 'full_day']:
+                            daily_status.append('present')
+                            if day <= max_day:
+                                total_present += 1
+                        elif attendance.status == 'half_day':
+                            daily_status.append('half_day')
+                            if day <= max_day:
+                                total_present += 0.5
                         else:  # pending
                             daily_status.append('pending')
                     except Attendance.DoesNotExist:
-                        # Check if Sunday
-                        if date(year_int, month_int, day).weekday() == 6:
-                            daily_status.append('sunday')
-                        else:
-                            daily_status.append('absent')
+                        daily_status.append('absent')
+                
+                # Calculate absent: Total days till today - (present + week offs + leaves)
+                total_absent = total_days_till_today - (total_present + total_week_offs + total_leaves)
+                total_absent = max(0, total_absent)  # Ensure non-negative
 
                 daily_attendance_data.append({
                     'employee': emp.username,
-                    'daily_status': daily_status
+                    'daily_status': daily_status,
+                    'total_present': int(total_present) if total_present == int(total_present) else total_present,
+                    'total_absent': int(total_absent),
+                    'total_leaves': int(total_leaves)
                 })
 
         # Status choices for filter
         status_choices = [
             ('pending', 'Pending'),
             ('approved', 'Approved'),
-            ('rejected', 'Rejected')
+            ('rejected', 'Rejected'),
+            ('half_day', 'Half Day Present'),
+            ('full_day', 'Full Day Present')
         ]
 
         context = {
