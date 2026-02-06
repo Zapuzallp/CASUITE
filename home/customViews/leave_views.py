@@ -13,7 +13,6 @@ def is_admin(user):
 @user_passes_test(is_admin)
 def manage_leaves(request):
     employees = Employee.objects.all()
-    employees = employees.exclude(user = request.user)
 
     if request.method == 'POST':
         leave_id = request.POST.get('leave_id')
