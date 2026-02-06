@@ -5,42 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.utils import timezone
-from datetime import date, time, datetime, timedelta
-from math import radians, cos, sin, asin, sqrt
+from datetime import date
 
-from home.models import Attendance, Leave, Employee, OfficeDetails, EmployeeShift
-from home.customViews.attendanceView import ClockInView, ClockOutView
-
-
-def calculate_distance(lat1: object, lon1: object, lat2: object, lon2: object) -> Optional[float]:
-    """Calculate distance between two points in meters using Haversine formula"""
-    if not all([lat1, lon1, lat2, lon2]):
-        return None
-    
-    # Convert to radians
-    lat1, lon1, lat2, lon2 = map(radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
-    
-    # Haversine formula
-    dlat = lat2 - lat1
-    dlon = lon2 - lon1
-    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a))
-    r = 6371000  # Earth radius in meters
-    return c * r
-
-
-def get_location_name(latitude, longitude):
-    """Get location name from coordinates (placeholder - integrate with geocoding service)"""
-    if not latitude or not longitude:
-        return None
-    # Convert to float for formatting
-    try:
-        lat = float(latitude)
-        lng = float(longitude)
-        return f"Location ({lat:.4f}, {lng:.4f})"
-    except (ValueError, TypeError):
-        return f"Location ({latitude}, {longitude})"
+from home.models import Attendance, Leave, Employee
+from home.utils import process_clock_in, process_clock_out
 
 
 def mobile_login_view(request):
@@ -75,25 +43,37 @@ def mobile_logout_view(request):
 @login_required
 @require_http_methods(["POST"])
 def mobile_clock_in(request):
-    """Mobile clock in using web app logic"""
-    view = ClockInView.as_view()
-    response = view(request)
-    # Handle redirect for mobile
-    if hasattr(response, 'status_code') and response.status_code == 302:
-        return redirect('mobile_attendance')
-    return response
+    """Mobile clock in using utility functions"""
+    lat = request.POST.get("lat")
+    long = request.POST.get("long")
+    location_name = request.POST.get("location_name")
+    
+    result = process_clock_in(request.user, lat, long, location_name)
+    
+    if result['success']:
+        messages.success(request, result['message'])
+    else:
+        messages.warning(request, result['message'])
+    
+    return redirect('mobile_attendance')
 
 
 @login_required
 @require_http_methods(["POST"])
 def mobile_clock_out(request):
-    """Mobile clock out using web app logic"""
-    view = ClockOutView.as_view()
-    response = view(request)
-    # Handle redirect for mobile
-    if hasattr(response, 'status_code') and response.status_code == 302:
-        return redirect('mobile_attendance')
-    return response
+    """Mobile clock out using utility functions"""
+    lat = request.POST.get("lat")
+    long = request.POST.get("long")
+    location_name = request.POST.get("location_name")
+    
+    result = process_clock_out(request.user, lat, long, location_name)
+    
+    if result['success']:
+        messages.success(request, result['message'])
+    else:
+        messages.error(request, result['message'])
+    
+    return redirect('mobile_attendance')
 
 
 @login_required

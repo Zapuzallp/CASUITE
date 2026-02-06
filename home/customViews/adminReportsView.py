@@ -52,11 +52,16 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                     date__year=int(year)
                 )
 
-            if office_id:
-                records = records.filter(location_name__icontains=office_id)
-
-            if status_filter:
-                records = records.filter(status=status_filter)
+        if office_id:
+            try:
+                office_id = int(office_id)
+                records = records.filter(user__employee__office_location__id=office_id)
+            except (ValueError, TypeError):
+                # If office_id is not a number, try filtering by office name
+                records = records.filter(user__employee__office_location__office_name=office_id)
+            
+        if status_filter:
+            records = records.filter(status=status_filter)
 
         # Generate daily attendance data
         daily_attendance_data = []
@@ -81,7 +86,26 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             for emp in employees:
                 if employee_id and str(emp.id) != employee_id:
                     continue
-
+                
+                # Filter by office if specified
+                if office_id:
+                    try:
+                        employee_profile = emp.employee
+                        if not employee_profile.office_location:
+                            continue  # Skip employees with no office
+                        
+                        # Try to match by office ID first
+                        try:
+                            office_id_int = int(office_id)
+                            if employee_profile.office_location.id != office_id_int:
+                                continue
+                        except (ValueError, TypeError):
+                            # If not a number, match by office name
+                            if employee_profile.office_location.office_name != office_id:
+                                continue
+                    except Exception:
+                        continue  # Skip if employee has no profile or office
+                    
                 daily_status = []
                 for day in calendar_days:
                     try:
