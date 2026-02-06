@@ -2,10 +2,9 @@ from django.views import View
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import calendar
 from django.contrib import messages
-from django.http import JsonResponse
 
 from home.models import Attendance, OfficeDetails
 
@@ -36,52 +35,58 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         office_id = request.GET.get("office")
         status_filter = request.GET.get("status")
 
-        records = Attendance.objects.select_related("user").all()
+        # Default to today's records for initial load
+        today = date.today()
+        records = Attendance.objects.select_related("user").filter(date=today)
 
-        if employee_id:
-            records = records.filter(user__id=employee_id)
+        # Apply filters if provided
+        if employee_id or month or year or office_id or status_filter:
+            records = Attendance.objects.select_related("user").all()
 
-        if month and year:
-            records = records.filter(
-                date__month=int(month),
-                date__year=int(year)
-            )
+            if employee_id:
+                records = records.filter(user__id=employee_id)
 
-        if office_id:
-            records = records.filter(location_name__icontains=office_id)
-            
-        if status_filter:
-            records = records.filter(status=status_filter)
+            if month and year:
+                records = records.filter(
+                    date__month=int(month),
+                    date__year=int(year)
+                )
+
+            if office_id:
+                records = records.filter(location_name__icontains=office_id)
+
+            if status_filter:
+                records = records.filter(status=status_filter)
 
         # Generate daily attendance data
         daily_attendance_data = []
         calendar_days = []
         total_sundays = 0
         total_holidays = 0
-        
+
         if month and year:
             month_int = int(month)
             year_int = int(year)
-            
+
             # Get days in month
             days_in_month = calendar.monthrange(year_int, month_int)[1]
             calendar_days = list(range(1, days_in_month + 1))
-            
+
             # Count Sundays
             for day in calendar_days:
                 if date(year_int, month_int, day).weekday() == 6:  # Sunday
                     total_sundays += 1
-            
+
             # Generate data for each employee
             for emp in employees:
                 if employee_id and str(emp.id) != employee_id:
                     continue
-                    
+
                 daily_status = []
                 for day in calendar_days:
                     try:
                         attendance = Attendance.objects.get(
-                            user=emp, 
+                            user=emp,
                             date=date(year_int, month_int, day)
                         )
                         # Check status first, then clock in/out
@@ -102,7 +107,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             daily_status.append('sunday')
                         else:
                             daily_status.append('absent')
-                
+
                 daily_attendance_data.append({
                     'employee': emp.username,
                     'daily_status': daily_status
@@ -128,22 +133,24 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             "month": month,
             "year": year,
             "status_choices": status_choices,
+            "today": today.isoformat(),
+            "employee_id": employee_id,
         }
 
         return render(request, self.template_name, context)
-    
+
     def post(self, request):
         # Handle bulk status update
         selected_records = request.POST.getlist('selected_records')
         new_status = request.POST.get('bulk_status')
-        
+
         if selected_records and new_status:
             updated_count = Attendance.objects.filter(
                 id__in=selected_records
             ).update(status=new_status)
-            
+
             messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
         else:
             messages.error(request, 'Please select records and status to update.')
-            
+
         return redirect(request.get_full_path())

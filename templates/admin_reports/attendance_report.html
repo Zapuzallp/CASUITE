@@ -14,7 +14,43 @@
     z-index: 11;
     background: #cff4fc;
 }
+#attendanceMap {
+    height: 500px;
+    width: 100%;
+    border-radius: 8px;
+    position: relative;
+}
+.leaflet-popup-content {
+    margin: 10px;
+    min-width: 200px;
+}
+.leaflet-popup-content h6 {
+    margin-bottom: 8px;
+    color: #0d6efd;
+}
+/* Custom tooltip styling */
+.custom-tooltip {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    border: none !important;
+    border-radius: 4px !important;
+    color: white !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+.custom-tooltip::before {
+    border-top-color: rgba(0, 0, 0, 0.8) !important;
+}
 </style>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+
 <main id="main" class="main">
     <div class="pagetitle">
         <h1>Attendance Report</h1>
@@ -34,11 +70,11 @@
                         <h5 class="card-title">Filter Options</h5>
 
                         <!-- FILTERS -->
-                        <form method="get" class="row g-3 mb-4">
+                        <form method="get" class="row g-3 mb-4" id="filterForm">
 
                             <div class="col-md-3">
                                 <label class="form-label">Employee</label>
-                                <select name="employee" class="form-select">
+                                <select name="employee" id="employeeFilter" class="form-select">
                                     <option value="">All</option>
                                     {% for emp in employees %}
                                         <option value="{{ emp.id }}" {% if request.GET.employee == emp.id|stringformat:"s" %}selected{% endif %}>{{ emp.username }}</option>
@@ -48,7 +84,7 @@
 
                             <div class="col-md-2">
                                 <label class="form-label">Month</label>
-                                <select name="month" class="form-select">
+                                <select name="month" id="monthFilter" class="form-select">
                                     <option value="">Select</option>
                                     {% for m, name in months %}
                                         <option value="{{ m }}" {% if request.GET.month == m|stringformat:"s" %}selected{% endif %}>{{ name }}</option>
@@ -58,7 +94,7 @@
 
                             <div class="col-md-2">
                                 <label class="form-label">Year</label>
-                                <select name="year" class="form-select">
+                                <select name="year" id="yearFilter" class="form-select">
                                     <option value="">Select</option>
                                     {% for y in years %}
                                         <option value="{{ y }}" {% if request.GET.year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
@@ -96,32 +132,107 @@
                     </div>
                 </div>
 
+                <!-- MAP ACCORDION -->
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-body">
+                        <h5 class="card-title">Clock-In Locations Map</h5>
+
+                        {% if request.GET.month and request.GET.year and not request.GET.employee %}
+                        <!-- Show message when month/year selected but no employee -->
+                        <div class="alert alert-warning mt-3" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Please select an employee</strong> to view the map.
+                            Displaying all employees for a full month may cause performance issues.
+                        </div>
+                        {% elif not records %}
+                        <!-- Show message when no records available -->
+                        <div class="alert alert-info mt-3" role="alert">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <strong>No location data available</strong> for the selected filters.
+                            Try adjusting your filter criteria.
+                        </div>
+                        {% else %}
+                        <div class="accordion mt-3" id="mapAccordion">
+                            <div class="accordion-item border-0">
+                                <h2 class="accordion-header" id="mapHeading">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#mapCollapse" aria-expanded="false" aria-controls="mapCollapse">
+                                        <i class="bi bi-geo-alt-fill me-2"></i> View Map
+                                    </button>
+                                </h2>
+                                <div id="mapCollapse" class="accordion-collapse collapse"
+                                     aria-labelledby="mapHeading" data-bs-parent="#mapAccordion">
+                                    <div class="accordion-body pt-3">
+                                        <!-- Loading Progress Bar -->
+                                        <div id="mapLoadingProgress" class="mb-3" style="display: none;">
+                                            <div class="d-flex align-items-center">
+                                                <strong>Loading map...</strong>
+                                                <div class="spinner-border spinner-border-sm ms-auto" role="status" aria-hidden="true"></div>
+                                            </div>
+                                            <div class="progress mt-2" style="height: 5px;">
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                                            </div>
+                                        </div>
+
+                                        <div id="attendanceMap"></div>
+                                        <div class="mt-3">
+                                            <div class="d-flex align-items-center gap-3 mb-2">
+                                                <div class="d-flex align-items-center">
+                                                    <span style="display: inline-block; width: 12px; height: 12px; background-color: #198754; border-radius: 50%; margin-right: 5px;"></span>
+                                                    <small class="text-muted">Clock In Location</small>
+                                                </div>
+                                                <div class="d-flex align-items-center">
+                                                    <span style="display: inline-block; width: 12px; height: 12px; background-color: #dc3545; border-radius: 50%; margin-right: 5px;"></span>
+                                                    <small class="text-muted">Clock Out Location</small>
+                                                </div>
+                                                <div class="d-flex align-items-center">
+                                                    <svg width="30" height="12" style="margin-right: 5px;">
+                                                        <line x1="0" y1="6" x2="30" y2="6" stroke="#6c757d" stroke-width="2" stroke-dasharray="5,3"/>
+                                                    </svg>
+                                                    <small class="text-muted">Movement Path</small>
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">
+                                                <i class="bi bi-info-circle"></i>
+                                                Green markers show clock-in locations, red markers show clock-out locations.
+                                                Dashed lines connect clock-in and clock-out for the same employee.
+                                                Click on markers to view details. Clustered markers will expand when clicked.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
                 <!-- RESULTS TABLE -->
-                <div class="card">
+                <div class="card" style="margin-top: 1.5rem;">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="card-title mb-0">Attendance Records</h5>
                             <div class="d-flex gap-2 align-items-center">
                                 <!-- Export Buttons -->
-                                 {% if records %}
+                                {% if records %}
                                 <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-outline-success btn-sm" 
-                                            data-bs-toggle="tooltip" 
-                                            data-bs-placement="top" 
+                                    <button type="button" class="btn btn-outline-success btn-sm"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
                                             title="Export to CSV"
                                             onclick="exportTableToCSV()">
                                         <i class="bi bi-file-earmark-spreadsheet"></i> CSV
                                     </button>
-                                    <button type="button" class="btn btn-outline-primary btn-sm" 
-                                            data-bs-toggle="tooltip" 
-                                            data-bs-placement="top" 
+                                    <button type="button" class="btn btn-outline-primary btn-sm"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
                                             title="Export to Excel"
                                             onclick="exportTableToExcel()">
                                         <i class="bi bi-file-earmark-excel"></i> Excel
                                     </button>
                                 </div>
                                 {% endif %}
-                                
+
                                 <!-- Bulk Update Controls -->
                                 <select id="bulkStatus" class="form-select form-select-sm" style="width: auto;">
                                     <option value="">Select Status</option>
@@ -134,13 +245,13 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <form id="bulkUpdateForm" method="post">
                             {% csrf_token %}
                             <input type="hidden" name="bulk_status" id="hiddenBulkStatus">
-                            
+
                             <div class="table-responsive">
-                                <table class="table table-bordered table-striped">
+                                <table class="table table-bordered table-striped" id="attendanceTable">
                                     <thead>
                                         <tr>
                                             <th><input type="checkbox" id="selectAll"></th>
@@ -159,11 +270,11 @@
                                             <td><input type="checkbox" name="selected_records" value="{{ r.id }}" class="record-checkbox"></td>
                                             <td>{{ r.user.username }}</td>
                                             <td>{{ r.date }}</td>
-                                            <td>{{ r.clock_in|default:"-" }}</td>
-                                            <td>{{ r.clock_out|default:"-" }}</td>
-                                            <td>{{ r.formatted_duration }}</td>
+                                            <td>{{ r.clock_in|date:"Y-m-d H:i:s"|default:"-" }}</td>
+                                            <td>{{ r.clock_out|date:"Y-m-d H:i:s"|default:"-" }}</td>
+                                            <td>{{ r.formatted_duration|default:"-" }}</td>
                                             <td>
-                                                <span class="badge 
+                                                <span class="badge
                                                     {% if r.status == 'approved' %}bg-success
                                                     {% elif r.status == 'pending' %}bg-warning text-dark
                                                     {% else %}bg-danger{% endif %}">
@@ -189,11 +300,11 @@
                 <!-- DAILY ATTENDANCE DATA -->
                 <div class="card mt-4">
                     <div class="card-body">
-                        <h5 class="card-title">Daily Attendance Data 
+                        <h5 class="card-title">Daily Attendance Data
                             <span class="text-primary">Total Sundays: {{ total_sundays|default:0 }}</span>
                             <span class="text-warning ms-2">Total Holidays: {{ total_holidays|default:0 }}</span>
                         </h5>
-                        
+
                         {% if month and year %}
                             <div class="table-responsive">
                                 <table class="table table-bordered table-sm sticky-daily-table">
@@ -247,17 +358,38 @@
                                 Please select both <strong>Month</strong> and <strong>Year</strong> to view the daily attendance calendar.
                             </div>
                         {% endif %}
-                        
+
                         <div class="mt-3">
-                            <small class="text-muted">
-                                <span class="badge bg-success me-2">✓</span> Present
-                                <span class="badge bg-danger me-2">✗</span> Absent
-                                <span class="badge bg-warning me-2">P</span> Pending
-                                <span class="badge bg-primary me-2">S</span> Sunday
-                                <span class="badge bg-warning me-2">H</span> Holiday
-                                <span class="badge bg-info me-2">L</span> Leave
-                                <span class="badge bg-secondary me-2">HD</span> Half Day
-                            </small>
+                            <div class="d-flex flex-wrap justify-content-start align-items-center gap-3">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-success me-1">✓</span>
+                                    <small class="text-muted">Present</small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-danger me-1">✗</span>
+                                    <small class="text-muted">Absent</small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-warning me-1">P</span>
+                                    <small class="text-muted">Pending</small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-primary me-1">S</span>
+                                    <small class="text-muted">Sunday</small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-warning me-1">H</span>
+                                    <small class="text-muted">Holiday</small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-info me-1">L</span>
+                                    <small class="text-muted">Leave</small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-secondary me-1">HD</span>
+                                    <small class="text-muted">Half Day</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -285,101 +417,319 @@
     </div>
 </div>
 
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
 <script>
-// Initialize tooltips
+let map;
+let markerClusterGroup;
+const today = "{{ today }}";
+
+// Prepare location data from server
+const locationData = [
+    {% for record in records %}
+    {% if record.clock_in_lat and record.clock_in_long %}
+    {
+        id: {{ record.id }},
+        user: "{{ record.user.username }}",
+        user_id: {{ record.user.id }},
+        date: "{{ record.date|date:'Y-m-d' }}",
+        clock_in: "{{ record.clock_in|date:'Y-m-d H:i:s' }}",
+        clock_out: {% if record.clock_out %}"{{ record.clock_out|date:'Y-m-d H:i:s' }}"{% else %}null{% endif %},
+        location_name: "{{ record.location_name|default:'Unknown Location' }}",
+        clock_in_lat: {{ record.clock_in_lat }},
+        clock_in_long: {{ record.clock_in_long }},
+        {% if record.clock_out_lat and record.clock_out_long %}
+        clock_out_lat: {{ record.clock_out_lat }},
+        clock_out_long: {{ record.clock_out_long }},
+        {% endif %}
+    },
+    {% endif %}
+    {% endfor %}
+];
+
+// Initialize everything after DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
+    // Initialize DataTable only if table has data
+    const tableBody = document.querySelector('#attendanceTable tbody');
+    const hasData = tableBody && tableBody.querySelectorAll('tr').length > 0 &&
+                    !tableBody.querySelector('tr td[colspan]');
+
+    if (hasData) {
+        $('#attendanceTable').DataTable({
+            order: [[2, 'asc']], // Sort by date column ascending (oldest first)
+            pageLength: 25,
+            language: {
+                search: "Search records:",
+                lengthMenu: "Show _MENU_ records per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ records",
+                infoEmpty: "No records available",
+                infoFiltered: "(filtered from _TOTAL_ total records)"
+            },
+            columnDefs: [
+                { orderable: false, targets: 0 } // Disable sorting on checkbox column
+            ]
+        });
+    } else {
+        // If no data, just show the table without DataTable features
+        console.log('No data in table, skipping DataTable initialization');
+    }
+
+    // Handle accordion show event - initialize map only when accordion is opened
+    const mapAccordion = document.getElementById('mapCollapse');
+    if (mapAccordion) {
+        mapAccordion.addEventListener('shown.bs.collapse', function() {
+            if (!map) {
+                // Initialize map only on first open
+                initializeMap();
+                updateMap(locationData);
+            } else {
+                // Just refresh size if already initialized
+                map.invalidateSize();
+            }
+        });
+    }
 });
 
-// Export to CSV function
-function exportTableToCSV() {
-    const table = document.querySelector('.table');
-    const rows = table.querySelectorAll('tr');
-    let csvContent = '';
-    
-    rows.forEach((row, index) => {
-        if (index === 0 || row.cells.length > 1) { // Skip empty rows
-            const cells = row.querySelectorAll('th, td');
-            const rowData = [];
-            
-            cells.forEach((cell, cellIndex) => {
-                if (cellIndex > 0) { // Skip checkbox column
-                    let cellText = cell.textContent.trim();
-                    // Handle badges - extract text content
-                    const badge = cell.querySelector('.badge');
-                    if (badge) {
-                        cellText = badge.textContent.trim();
-                    }
-                    // Escape quotes and wrap in quotes if contains comma
-                    cellText = cellText.replace(/"/g, '""');
-                    if (cellText.includes(',') || cellText.includes('"') || cellText.includes('\n')) {
-                        cellText = `"${cellText}"`;
-                    }
-                    rowData.push(cellText);
-                }
-            });
-            
-            if (rowData.length > 0) {
-                csvContent += rowData.join(',') + '\n';
-            }
+function initializeMap() {
+    try {
+        // Show loading progress
+        const loadingProgress = document.getElementById('mapLoadingProgress');
+        if (loadingProgress) {
+            loadingProgress.style.display = 'block';
         }
-    });
-    
-    // Create and download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'attendance_report.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+        // Check if map container exists
+        const mapContainer = document.getElementById('attendanceMap');
+        if (!mapContainer) {
+            console.error('Map container not found');
+            if (loadingProgress) loadingProgress.style.display = 'none';
+            return;
+        }
+
+        // Initialize map centered on India
+        map = L.map('attendanceMap').setView([20.5937, 78.9629], 5);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Initialize marker cluster group
+        markerClusterGroup = L.markerClusterGroup({
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: true,
+            zoomToBoundsOnClick: true,
+            maxClusterRadius: 50
+        });
+
+        map.addLayer(markerClusterGroup);
+
+        // Force map to recalculate size
+        setTimeout(function() {
+            map.invalidateSize();
+            // Hide loading progress after map is ready
+            if (loadingProgress) {
+                loadingProgress.style.display = 'none';
+            }
+        }, 100);
+
+        console.log('Map initialized successfully');
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        const loadingProgress = document.getElementById('mapLoadingProgress');
+        if (loadingProgress) loadingProgress.style.display = 'none';
+    }
 }
 
-// Export to Excel function
-function exportTableToExcel() {
-    const table = document.querySelector('.table');
-    const rows = table.querySelectorAll('tr');
-    let excelContent = '<table>';
-    
-    rows.forEach((row, index) => {
-        if (index === 0 || row.cells.length > 1) { // Skip empty rows
-            excelContent += '<tr>';
-            const cells = row.querySelectorAll('th, td');
-            
-            cells.forEach((cell, cellIndex) => {
-                if (cellIndex > 0) { // Skip checkbox column
-                    let cellText = cell.textContent.trim();
-                    // Handle badges - extract text content
-                    const badge = cell.querySelector('.badge');
-                    if (badge) {
-                        cellText = badge.textContent.trim();
-                    }
-                    const cellTag = cell.tagName.toLowerCase();
-                    excelContent += `<${cellTag}>${cellText}</${cellTag}>`;
-                }
+function updateMap(locations) {
+    if (!map || !markerClusterGroup) {
+        console.error('Map not initialized');
+        return;
+    }
+
+    // Show loading progress
+    const loadingProgress = document.getElementById('mapLoadingProgress');
+    if (loadingProgress) {
+        loadingProgress.style.display = 'block';
+    }
+
+    // Clear existing markers
+    markerClusterGroup.clearLayers();
+
+    console.log('Updating map with', locations.length, 'locations');
+
+    // Check if there's no data
+    if (locations.length === 0) {
+        console.log('No locations to display');
+        if (loadingProgress) loadingProgress.style.display = 'none';
+
+        // Show "No Data" message on map
+        const mapContainer = document.getElementById('attendanceMap');
+        if (mapContainer) {
+            const noDataOverlay = document.createElement('div');
+            noDataOverlay.id = 'noDataOverlay';
+            noDataOverlay.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1000;
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+            `;
+            noDataOverlay.innerHTML = `
+                <i class="bi bi-geo-alt" style="font-size: 48px; color: #6c757d;"></i>
+                <h5 class="mt-3 mb-2">No Location Data Available</h5>
+                <p class="text-muted mb-0">No attendance records with location data found for the selected filters.</p>
+            `;
+
+            // Remove existing overlay if any
+            const existingOverlay = document.getElementById('noDataOverlay');
+            if (existingOverlay) {
+                existingOverlay.remove();
+            }
+
+            mapContainer.appendChild(noDataOverlay);
+        }
+        return;
+    }
+
+    // Remove "No Data" overlay if it exists
+    const existingOverlay = document.getElementById('noDataOverlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+
+    // Define custom icons for clock-in and clock-out
+    const clockInIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+        tooltipAnchor: [16, -28]
+    });
+
+    const clockOutIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+        tooltipAnchor: [16, -28]
+    });
+
+    // Add markers for each location
+    locations.forEach(location => {
+        try {
+            // Add Clock-In marker (Green)
+            const clockInMarker = L.marker([location.clock_in_lat, location.clock_in_long], {
+                icon: clockInIcon
             });
-            
-            excelContent += '</tr>';
+
+            // Add tooltip (shows on hover)
+            clockInMarker.bindTooltip(
+                `<strong>${location.user}</strong><br><small>Clock In</small>`,
+                {
+                    permanent: false,
+                    direction: 'top',
+                    className: 'custom-tooltip'
+                }
+            );
+
+            // Create clock-in popup content (shows on click)
+            const clockInPopup = `
+                <div>
+                    <h6 style="color: #198754;"><i class="bi bi-box-arrow-in-right"></i> Clock In</h6>
+                    <p class="mb-1"><strong>Employee:</strong> ${location.user}</p>
+                    <p class="mb-1"><strong>Date:</strong> ${location.date}</p>
+                    <p class="mb-1"><strong>Time:</strong> ${location.clock_in || 'N/A'}</p>
+                    <p class="mb-0"><strong>Location:</strong> ${location.location_name}</p>
+                </div>
+            `;
+
+            clockInMarker.bindPopup(clockInPopup);
+            markerClusterGroup.addLayer(clockInMarker);
+
+            // Add Clock-Out marker (Red) if available
+            if (location.clock_out_lat && location.clock_out_long) {
+                const clockOutMarker = L.marker([location.clock_out_lat, location.clock_out_long], {
+                    icon: clockOutIcon
+                });
+
+                // Add tooltip (shows on hover)
+                clockOutMarker.bindTooltip(
+                    `<strong>${location.user}</strong><br><small>Clock Out</small>`,
+                    {
+                        permanent: false,
+                        direction: 'top',
+                        className: 'custom-tooltip'
+                    }
+                );
+
+                // Create clock-out popup content (shows on click)
+                const clockOutPopup = `
+                    <div>
+                        <h6 style="color: #dc3545;"><i class="bi bi-box-arrow-right"></i> Clock Out</h6>
+                        <p class="mb-1"><strong>Employee:</strong> ${location.user}</p>
+                        <p class="mb-1"><strong>Date:</strong> ${location.date}</p>
+                        <p class="mb-1"><strong>Time:</strong> ${location.clock_out || 'N/A'}</p>
+                        <p class="mb-0"><strong>Location:</strong> ${location.location_name}</p>
+                    </div>
+                `;
+
+                clockOutMarker.bindPopup(clockOutPopup);
+                markerClusterGroup.addLayer(clockOutMarker);
+
+                // Draw a line connecting clock-in and clock-out if they're different
+                if (location.clock_in_lat !== location.clock_out_lat ||
+                    location.clock_in_long !== location.clock_out_long) {
+                    const polyline = L.polyline([
+                        [location.clock_in_lat, location.clock_in_long],
+                        [location.clock_out_lat, location.clock_out_long]
+                    ], {
+                        color: '#6c757d',
+                        weight: 2,
+                        opacity: 0.5,
+                        dashArray: '5, 10'
+                    }).addTo(map);
+
+                    polyline.bindPopup(`
+                        <div>
+                            <p class="mb-0"><strong>${location.user}</strong></p>
+                            <p class="mb-0">Movement path on ${location.date}</p>
+                        </div>
+                    `);
+                }
+            }
+        } catch (error) {
+            console.error('Error adding marker:', error, location);
         }
     });
-    
-    excelContent += '</table>';
-    
-    // Create and download file
-    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'attendance_report.xls');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    // Fit map bounds to show all markers
+    if (markerClusterGroup.getBounds().isValid()) {
+        map.fitBounds(markerClusterGroup.getBounds(), { padding: [50, 50] });
+    }
+
+    // Hide loading progress after markers are added
+    setTimeout(function() {
+        if (loadingProgress) {
+            loadingProgress.style.display = 'none';
+        }
+    }, 500);
 }
 
 // Select All functionality
@@ -394,30 +744,122 @@ document.getElementById('selectAll').addEventListener('change', function() {
 function bulkUpdateStatus() {
     const selectedRecords = document.querySelectorAll('.record-checkbox:checked');
     const bulkStatus = document.getElementById('bulkStatus').value;
-    
+
     if (selectedRecords.length === 0) {
         alert('Please select at least one record.');
         return;
     }
-    
+
     if (!bulkStatus) {
         alert('Please select a status.');
         return;
     }
-    
+
     // Show confirmation modal
     const statusText = bulkStatus.charAt(0).toUpperCase() + bulkStatus.slice(1);
-    document.getElementById('confirmMessage').textContent = 
+    document.getElementById('confirmMessage').textContent =
         `Are you sure you want to update ${selectedRecords.length} record(s) to ${statusText}?`;
-    
+
     const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
     modal.show();
-    
+
     // Handle confirmation
     document.getElementById('confirmUpdate').onclick = function() {
         document.getElementById('hiddenBulkStatus').value = bulkStatus;
         document.getElementById('bulkUpdateForm').submit();
     };
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// Export to CSV function
+function exportTableToCSV() {
+    const table = document.querySelector('#attendanceTable');
+    const rows = table.querySelectorAll('tr');
+    let csvContent = '';
+
+    rows.forEach((row, index) => {
+        const cells = row.querySelectorAll('th, td');
+        const rowData = [];
+
+        cells.forEach((cell, cellIndex) => {
+            if (cellIndex > 0) { // Skip checkbox column
+                let cellText = cell.textContent.trim();
+                // Handle badges - extract text content
+                const badge = cell.querySelector('.badge');
+                if (badge) {
+                    cellText = badge.textContent.trim();
+                }
+                // Escape quotes and wrap in quotes if contains comma
+                cellText = cellText.replace(/"/g, '""');
+                if (cellText.includes(',') || cellText.includes('"') || cellText.includes('\n')) {
+                    cellText = `"${cellText}"`;
+                }
+                rowData.push(cellText);
+            }
+        });
+
+        if (rowData.length > 0) {
+            csvContent += rowData.join(',') + '\n';
+        }
+    });
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'attendance_report.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Export to Excel function
+function exportTableToExcel() {
+    const table = document.querySelector('#attendanceTable');
+    const rows = table.querySelectorAll('tr');
+    let excelContent = '<table>';
+
+    rows.forEach((row, index) => {
+        excelContent += '<tr>';
+        const cells = row.querySelectorAll('th, td');
+
+        cells.forEach((cell, cellIndex) => {
+            if (cellIndex > 0) { // Skip checkbox column
+                let cellText = cell.textContent.trim();
+                // Handle badges - extract text content
+                const badge = cell.querySelector('.badge');
+                if (badge) {
+                    cellText = badge.textContent.trim();
+                }
+                const cellTag = cell.tagName.toLowerCase();
+                excelContent += `<${cellTag}>${cellText}</${cellTag}>`;
+            }
+        });
+
+        excelContent += '</tr>';
+    });
+
+    excelContent += '</table>';
+
+    // Create and download file
+    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'attendance_report.xls');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 </script>
 
