@@ -184,11 +184,7 @@ class ClientView(LoginRequiredMixin, ListView):
         filter_office = self.request.GET.get('office')
         filter_service = self.request.GET.get('service_type')
         filter_assigned_to = self.request.GET.get('assigned_to')
-
-        # New filter parameters
-        filter_aadhaar_mobile_linked = self.request.GET.get('aadhaar_mobile_linked')
-        filter_gst_enabled = self.request.GET.get('gst_enabled')
-        filter_din_no = self.request.GET.get('din_no')
+        filter_custom_view = self.request.GET.get('custom_view')
 
         # 4. Apply UI Filters on top of Role-Based Queryset
         if search_query:
@@ -226,13 +222,24 @@ class ClientView(LoginRequiredMixin, ListView):
         if filter_assigned_to:
             qs = qs.filter(assigned_ca_id=filter_assigned_to)
 
-        # Apply new custom filter criteria
-        if filter_aadhaar_mobile_linked:
-            qs = qs.filter(aadhar_linked_mobile=True)
-
-        if filter_din_no:
-            # Filter clients who have valid DIN numbers (not null and not empty)
-            qs = qs.filter(din_no=filter_din_no)
+        # Apply Custom View Filter
+        if filter_custom_view:
+            if filter_custom_view == 'aadhaar_mobile_linked':
+                # Filter clients with both Aadhaar and phone number present and non-empty
+                qs = qs.filter(
+                    aadhar__isnull=False,
+                    phone_number__isnull=False
+                ).exclude(
+                    aadhar=''
+                ).exclude(
+                    phone_number=''
+                )
+            elif filter_custom_view == 'gst_enabled':
+                # Filter clients who have at least one GST number
+                qs = qs.filter(gst_details__isnull=False).distinct()
+            elif filter_custom_view == 'director_din_valid':
+                # Filter clients with valid DIN numbers (not null and not empty)
+                qs = qs.filter(din_no__isnull=False).exclude(din_no='')
 
         return qs.order_by('-created_at')
 
@@ -275,17 +282,7 @@ class ClientView(LoginRequiredMixin, ListView):
 
         context['assigned_employee_choices'] = assigned_employee_choices
 
-        #_---------aadhar_linked_mobile-----
-        context['aadhar_linked_mobile_choices'] = [
-            ('true', 'Yes'),
-            ('false', 'No'),
-        ]
-        # DIN number filter choices
-        context['din_no_choices'] = [
-            ('has_din', 'Has DIN Number'),
-            ('no_din', 'No DIN Number'),
-        ]
+        # Task Types for filter dropdown
+        context['task_types'] = TaskType.objects.all().order_by('task_type_name')
 
-        # _---------DIN_number-----
-        context['din_no_choices'] =Client.objects.values_list('din_no',flat=True).distinct().order_by('din_no')
         return context

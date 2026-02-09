@@ -13,14 +13,17 @@ import os
 
 from pathlib import Path
 
+from ckeditor_demo.settings import ALLOWED_HOSTS
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-i%cb2hzh_ab!ecqqf)g4z)*x^l2qqfnd=d4eo^y3huioo83d1k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["mondaltax.zapuza.in",'localhost']
-CSRF_TRUSTED_ORIGINS = ["https://mondaltax.zapuza.in"]
+ALLOWED_HOSTS=["*"]
+# ALLOWED_HOSTS = ["mondaltax.zapuza.in",'localhost']
+# CSRF_TRUSTED_ORIGINS = ["https://mondaltax.zapuza.in"]
 
 # Application definition
 
@@ -81,17 +84,22 @@ WSGI_APPLICATION = 'CASUITE.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': os.environ.get('DB_NAME'),
+#         'USER': os.environ.get('DB_USER'),
+#         'PASSWORD': os.environ.get('DB_PASSWORD'),
+#         'HOST': os.environ.get('DB_HOST'),
+#         'PORT': '3306',
+#     }
+# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': '3306',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -146,3 +154,5 @@ from import_export.formats.base_formats import CSV
 
 IMPORT_FORMATS = [CSV]
 EXPORT_FORMATS = [CSV]
+
+

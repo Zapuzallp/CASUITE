@@ -5,6 +5,7 @@ from django.views.generic import ListView
 from django.contrib.auth.models import User
 
 from .models import (Client,ClientUserEntitle )
+from .models import Client, Task
 
 
 # RequestedDocument, DocumentMaster, ClientDocumentUpload, DocumentRequest)
@@ -16,6 +17,7 @@ from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
+from home.utils import is_gst_number
 from datetime import timedelta
 
 # Import your models
@@ -205,4 +207,3 @@ def get_client_dashboard_data(user, today):
         'new_clients': new_clients,
         'client_distribution_chart_data': client_distribution_chart_data,
     }
-

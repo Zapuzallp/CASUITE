@@ -782,7 +782,7 @@ class Shift(models.Model):
         decimal_places=2,
         help_text="Maximum permitted duration in hours (example: 8.5)"
     )
-    # Day off stored as a comma-separated string (e.g., 'Sat,Sun')
+ #   Day off stored as a comma-separated string (e.g., 'Sat,Sun')
     days_off = models.CharField(
         max_length=50,
         blank=True,

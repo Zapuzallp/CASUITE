@@ -171,7 +171,7 @@ class ClientForm(BootstrapFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['office_location'].required = True
+        self.fields['office_location'].required = False
 
     def clean(self):
         cleaned_data = super().clean()

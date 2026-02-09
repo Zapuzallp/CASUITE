@@ -148,29 +148,23 @@
                                             </select>
                                         </div>
 
-                                       <!-- aadhar_linked_mobile -->
+                                        <!-- Custom View -->
                                         <div class="col-md-3">
-                                            <label class="form-label small fw-bold text-secondary">Aadhar Linked to mobile </label>
-                                            <select name="aadhar_linked_mobile" class="form-select">
-                                                <option value="">All type</option>
-                                                {% for value, label in aadhar_linked_mobile_choices %}
-                                            <option value="{{ value }}" {% if request.GET.aadhar_linked_mobile == value %}selected{% endif %} >
-                                                {{ label }}
-                                            </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-
-                                        <!-- DIN_number -->
-                                        <div class="col-md-3">
-                                            <label class="form-label small fw-bold text-secondary">DIN number </label>
-                                            <select name="din_no" class="form-select">
-                                                <option value="">All type</option>
-                                                {% for value in din_no_choices %}
-                                                <option value="{{ value }}" {% if request.GET.DIN_number == value %}selected{% endif %} >
-                                                {{ value }}
-                                            </option>
-                                                {% endfor %}
+                                            <label class="form-label small fw-bold text-secondary">Custom View</label>
+                                            <select name="custom_view" class="form-select">
+                                                <option value="">All Clients</option>
+                                                <option value="aadhaar_mobile_linked" 
+                                                        {% if request.GET.custom_view == 'aadhaar_mobile_linked' %}selected{% endif %}>
+                                                    Aadhaar Linked with Mobile
+                                                </option>
+                                                <option value="gst_enabled" 
+                                                        {% if request.GET.custom_view == 'gst_enabled' %}selected{% endif %}>
+                                                    GST Enabled Clients
+                                                </option>
+                                                <option value="director_din_valid" 
+                                                        {% if request.GET.custom_view == 'director_din_valid' %}selected{% endif %}>
+                                                    Directors with Valid DIN
+                                                </option>
                                             </select>
                                         </div>
 
