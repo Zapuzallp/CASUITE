@@ -24,7 +24,7 @@ from home.views import (
 )
 from home.customViews.payment_views import (
     payment_list, payment_collect, approve_payment,
-    reject_payment, payment_detail, cancel_payment
+    reject_payment, payment_detail, cancel_payment, bulk_payment_action
 )
 
 urlpatterns = [
@@ -92,4 +92,5 @@ urlpatterns = [
     path('payments/<int:payment_id>/reject/', reject_payment, name='reject_payment'),
     path('payments/<int:payment_id>/cancel/', cancel_payment, name='cancel_payment'),
     path('payments/<int:payment_id>/', payment_detail, name='payment_detail'),
+    path('payments/bulk-action', bulk_payment_action, name='bulk_payment_action'),
 ]

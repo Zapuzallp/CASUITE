@@ -5,7 +5,9 @@ from django.db.models import Q
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from django.core.paginator import Paginator
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed
+from django.views.decorators.http import require_POST
 
 from home.forms import PaymentCollectForm
 from home.models import Invoice, Payment, Client
@@ -17,7 +19,7 @@ def payment_list(request):
 
     # Payments listing
     # Get base queryset (visibility handled by utils.get_visible_payments)
-    payments_qs = get_visible_payments(request.user).select_related('invoice__client', 'created_by', 'created_by__employee').order_by('-payment_date', '-id')
+    payments_qs = get_visible_payments(request.user).select_related('invoice__client', 'created_by', 'created_by__employee', 'created_by__employee__supervisor').order_by('-payment_date', '-id')
 
     # Accordion Filter
     q = request.GET.get('q', '').strip()
@@ -47,14 +49,30 @@ def payment_list(request):
     if date_to:
         payments_qs = payments_qs.filter(payment_date__lte=date_to)
 
-    payments = list(payments_qs)
+    has_filters =any([
+        q, client_id, payment_status,
+        approval_status, date_from, date_to,
+    ])
+
+    paginator = Paginator(payments_qs, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Determine if user has permission to Approve/Reject (Admins, Branch Managers, Superusers)
+    show_bulk_actions = False
+    if request.user.is_superuser:
+        show_bulk_actions = True
+    elif hasattr(request.user, 'employee'):
+        # Only ADMIN and BRANCH_MANAGER can perform bulk approvals/rejections
+        if request.user.employee.role in ['ADMIN', 'BRANCH_MANAGER']:
+            show_bulk_actions = True
 
     # Provide recent invoices for modal
     invoices = Invoice.objects.filter(
         invoice_status__in=['OPEN', 'PARTIALLY_PAID']
-    ).select_related('client').order_by('-id')[:200]
+    ).select_related('client').order_by('-id')[:50]
     # Annotate each page object with convenience flags used by template
-    for p in payments:
+    for p in page_obj:
         # safe getattr: created_by might be None
         p.creator_employee = getattr(p.created_by, 'employee', None)
         p.can_approve = can_approve_payment(request.user, p)
@@ -63,11 +81,20 @@ def payment_list(request):
     clients = Client.objects.order_by('client_name')
 
     context = {
-        'payments': payments,
+        'payments': page_obj,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(),
+        'has_filters': has_filters,
         'q': q,
         'clients': clients,
         'client_id': client_id,
         'invoices': invoices,
+        'show_bulk_actions': show_bulk_actions,
+        'payment_status': payment_status,
+        'approval_status': approval_status,
+        'date_from': date_from,
+        'date_to': date_to,
         # template sometimes references emp (current user's employee)
         'emp': getattr(request.user, 'employee', None),
     }
@@ -181,7 +208,8 @@ def cancel_payment(request, payment_id):
         return HttpResponseForbidden("You are not allowed to cancel this payment.")
     with transaction.atomic():
         payment.payment_status = 'CANCELED'
-        payment.save(update_fields=['payment_status'])
+        payment.approval_status = 'CANCELED'
+        payment.save(update_fields=['payment_status', 'approval_status'])
     messages.success(request, "Payment canceled.")
     return redirect('payment_list')
 
@@ -199,12 +227,73 @@ def payment_detail(request, payment_id):
 
     invoice_total, invoice_paid, balance_amount = get_invoice_totals(invoice)
 
+    user_can_approve = can_approve_payment(request.user, payment)
+    user_can_cancel = can_cancel_payment(request.user, payment)
+
     context = {
         'payment': payment,
         'invoice_items': invoice.items.all(),
         'invoice_total': invoice_total,
         'invoice_paid': invoice_paid,
         'balance_amount': balance_amount,
+        'can_approve': user_can_approve,
+        'can_cancel': user_can_cancel,
     }
 
     return render(request, 'payments/payment_detail.html', context)
+
+
+@login_required
+@require_POST
+def bulk_payment_action(request):
+    """
+    Handles bulk approval or rejection of payments.
+    Expects POST data:
+    - payment_ids: list of IDs
+    - action: 'approve' or 'reject'
+    """
+    action = request.POST.get('action')
+    payment_ids = request.POST.getlist('payment_ids')
+
+    if not payment_ids or not action:
+        messages.warning(request, "No payments selected or invalid action.")
+        return redirect('payment_list')
+
+    # Get payments that match IDs AND are visible to this user
+    qs = get_visible_payments(request.user).filter(id__in=payment_ids)
+
+    count = 0
+    errors = 0
+
+    with transaction.atomic():
+        for payment in qs:
+            # Only touch PENDING payments
+            if payment.approval_status != 'PENDING':
+                continue
+
+            # Check Permissions per payment
+            if not can_approve_payment(request.user, payment):
+                errors += 1
+                continue
+
+            if action == 'approve':
+                payment.approval_status = 'APPROVED'
+                payment.payment_status = 'PAID'  # Assuming approval implies Paid
+                payment.approved_by = request.user
+                payment.approved_at = timezone.now()
+                payment.save()
+                count += 1
+
+            elif action == 'reject':
+                payment.approval_status = 'REJECTED'
+                payment.payment_status = 'CANCELED'  # Rejection usually cancels the payment
+                payment.save()
+                count += 1
+
+    if count > 0:
+        messages.success(request, f"Successfully processed {count} payments.")
+
+    if errors > 0:
+        messages.warning(request, f"Skipped {errors} payments due to permission issues.")
+
+    return redirect('payment_list')
