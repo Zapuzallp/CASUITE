@@ -177,12 +177,12 @@
                                         <td>{{ payment.payment_date|date:"M d, Y" }}</td>
 
                                         <td>
-                                            {% if payment.payment_status == 'CANCELED' %}
+                                            {% if payment.approval_status == 'REJECTED' %}
+                                                <span class="badge bg-danger">Rejected</span>
+                                            {% elif payment.payment_status == 'CANCELED' %}
                                                 <span class="badge bg-secondary">Canceled</span>
                                             {% elif payment.approval_status == 'APPROVED' %}
                                                 <span class="badge bg-success">Approved</span>
-                                            {% elif payment.approval_status == 'REJECTED' %}
-                                                <span class="badge bg-danger">Rejected</span>
                                             {% else %}
                                                 <span class="badge bg-warning text-dark">Pending</span>
                                             {% endif %}

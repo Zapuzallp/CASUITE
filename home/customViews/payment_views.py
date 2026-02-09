@@ -286,7 +286,7 @@ def bulk_payment_action(request):
 
             elif action == 'reject':
                 payment.approval_status = 'REJECTED'
-                payment.payment_status = 'CANCELED'  # Rejection usually cancels the payment
+                payment.payment_status = 'UNPAID'
                 payment.save()
                 count += 1
 
