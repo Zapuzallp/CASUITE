@@ -67,7 +67,7 @@ class EmployeeShift(models.Model):
 
 
 STATE_CHOICES = (
-    ('01', 'Jammu and Kashmir'),
+    ('01', 'West Bengal'),
     ('02', 'Himachal Pradesh'),
     ('03', 'Punjab'),
     ('04', 'Chandigarh'),
@@ -85,7 +85,7 @@ STATE_CHOICES = (
     ('16', 'Tripura'),
     ('17', 'Meghalaya'),
     ('18', 'Assam'),
-    ('19', 'West Bengal'),
+    ('19', 'Jammu and Kashmir'),
     ('20', 'Jharkhand'),
     ('21', 'Odisha'),
     ('22', 'Chhattisgarh'),
@@ -193,7 +193,8 @@ class Client(models.Model):
     # --- Address ---
     address_line1 = models.TextField()
     city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
+    state = models.CharField(max_length=100,choices=STATE_CHOICES)
+
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=100, default='India')
 
@@ -669,7 +670,9 @@ class Attendance(models.Model):
         choices=[
             ("pending", "Pending"),
             ("approved", "Approved"),
-            ("rejected", "Rejected")
+            ("rejected", "Rejected"),
+            ("half_day", "Half Day Present"),
+            ("full_day", "Full Day Present")
         ],
         default="approved"
     )
@@ -704,16 +707,16 @@ class Attendance(models.Model):
             self.duration = self.clock_out - self.clock_in
 
             # Only auto-set status if admin logic didn’t already set it
-            if not self.status or self.status == "approved":
+            if not hasattr(self, '_skip_auto_status') and (not self.status or self.status == "approved"):
                 self.status = "approved"
 
         elif self.clock_in and not self.clock_out:
-            if not self.status:
+            if not hasattr(self, '_skip_auto_status') and not self.status:
                 self.status = "pending"
             self.duration = None
 
         else:
-            if not self.status:
+            if not hasattr(self, '_skip_auto_status') and not self.status:
                 self.status = "absent"
             self.duration = None
 
@@ -733,6 +736,34 @@ class Attendance(models.Model):
             return f"{hours}h {minutes}m"
         return f"{minutes}m {seconds}s"
 
+
+    def get_work_duration(self):
+        """Get formatted work duration for mobile display"""
+        if self.clock_in and not self.clock_out:
+            # Calculate current duration
+            current_time = timezone.now()
+            duration = current_time - self.clock_in
+            total_seconds = int(duration.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            return f"{hours:02d}:{minutes:02d}:00 Hrs"
+        elif self.duration:
+            return self.formatted_duration()
+        return "00:00:00 Hrs"
+    
+    def should_show_pending_warning(self):
+        """Check if pending warning should still be shown"""
+        if self.status != 'pending':
+            return False
+        
+        # If not clocked out yet, always show warning
+        if not self.clock_out:
+            return True
+        
+        # If clocked out, show warning until clock_out + 4 hours
+        from django.utils import timezone
+        warning_cutoff = self.clock_out + timedelta(hours=4)
+        return timezone.now() < warning_cutoff
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
@@ -785,7 +816,7 @@ class Employee(models.Model):
     personal_email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True)
+    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True, blank=True)
     role = models.CharField(max_length=255, choices=ROLES_CHOICE)
     supervisor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Supervisor_Or_Manager", null=True,
                                    blank=True)

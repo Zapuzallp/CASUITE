@@ -1,10 +1,45 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block body %}
+<style>
+  .table thead th {
+        font-size: 13px;
+        color: #444;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .table tbody td {
+        font-size: 14px;
+    }
+    .table{
+        text-align: center;
+    }
+    .table-light{
+        background:linear-gradient(#FFFFFF, #F8F9FA, #F8F9FA,#F1F9FD);
+    }
+    .collapsed {
+        color: #0d6efd;
+        font-weight: 700;
+        box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .125);
+    }
+    .accordion-button:not(.collapsed) {
+        color: #0d6efd;
+        font-weight: 700;
+        box-shadow: none;
+        border-color: rgba(0, 0, 0, .125);
+        background-color:white;
+    }
+    .accordion-body{
+        background-color: #F8F9FA;
+    }
+    
+   
+</style>
 
 <main id="main" class="main">
 
-<div class="pagetitle">
+    <div class="pagetitle">
     <h1>Manage Leave Requests</h1>
     <nav>
         <ol class="breadcrumb">
@@ -12,25 +47,85 @@
             <li class="breadcrumb-item active">Manage Leaves</li>
         </ol>
     </nav>
-</div>
+    </div>
 
+<br>
+<!--Filter for leaves-->
+<div class="accordion" id="clientFilterAccordion">
+     <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed"type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+        <i class="bi bi-funnel-fill me-2"></i>Filter Leave
+      </button>
+    </h2>
+    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+      <div class="accordion-body">
+                        
+                        <div style = "display:flex;gap:2px; width:50%;">
+                        <div class="col-md-6 mb-3">
+                        <label class="form-label">Start date</label>
+                        <input type="date" name="start_date" class="form-control" required="" id="startSearch">
+                        
+                        </div>
+                        <div class="col-md-6 mb-3"style = "margin-left:1rem;">
+                        <label class="form-label">End date</label>
+                        <input type="date" name="end_date" class="form-control" required="" id="endSearch">
+                        
+                        </div>
+                           
+                     <div class="col-md-5" style = "margin-left:3px;">
+                                            <label class="form-label small fw-bold text-secondary">
+                                                    All Employees
+                                            </label>
+                                            <select id = "eachuser"  class="form-select">
+                                                <option  id = "all employees">All Employees</option>
+                                                {% for employee in employees %}
+                                                 <option  value = "{{employee.user.first_name}} {{employee.user.last_name}}" > {{employee.user.first_name}} {{employee.user.last_name}}</option>   
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                         
+
+
+                         
+                        </div>
+                        <br>
+                        <div class="col-md-6 d-flex align-items-start">
+                                            <button type="submit"  id = "btn-apply" class="btn btn-primary me-2">
+                                                <i class="bi bi-search"></i> Apply Filters
+                                            </button>
+                                            <a href="/manage-leaves/" class="btn btn-secondary">
+                                                <i class="bi bi-x-circle"></i> Clear
+                          </a>
+                        </div>
+                    </div>
+                </div>
+              
+            </div>
+            
+        </div>
+
+<!--End of filter -->
+
+<br>
+<!--Section-->   
 <section class="section">
 
-<div class="card">
-<div class="card-body">
+<div class="card overflow-auto shadow-sm">
+<div>
 
 <div class="table-responsive">
-<table class="table table-hover">
-<thead>
+<table class="table table-borderless table-hover align-middle">
+<thead class = "table-light">
 <tr>
-    <th>ID</th>
-    <th>Employee</th>
-    <th>Type</th>
-    <th>Start</th>
-    <th>End</th>
-    <th>Days</th>
-    <th>Reason</th>
-    <th>Actions</th>
+    <th scope="col">ID</th>
+    <th scope="col">Employee</th>
+    <th scope="col">Type</th>
+    <th scope="col">Start</th>
+    <th scope="col">End</th>
+    <th scope="col">Days</th>
+    <th scope="col">Reason</th>
+    <th scope="col">Actions</th>
 </tr>
 </thead>
 
@@ -38,11 +133,17 @@
 {% for leave in all_leaves %}
 <tr data-status="{{ leave.status }}">
 
-<td>{{ leave.id }}</td>
-<td>{{ leave.user.first_name|default:leave.user.username }}</td>
-<td>{{ leave.get_leave_type_display }}</td>
-<td>{{ leave.start_date }}</td>
-<td>{{ leave.end_date }}</td>
+<td >{{ leave.id }}</td>
+<td class="fw-bold Name" style = "color:#4154f1;"> {{ leave.user.first_name}} {{leave.user.last_name}}</td>
+<td><h6 class = "badge  border
+     {% if leave.get_leave_type_display == 'Casual Leave' %}bg-info
+     {% elif leave.get_leave_type_display == 'Sick Leave' %}bg-warning text-white
+     {% else %} bg-white text-dark
+     {% endif%}" style = "margin-top:8px;">
+    {{ leave.get_leave_type_display }}</h6>
+</td>
+<td class = "start">{{ leave.start_date }}</td>
+<td class = "end">{{ leave.end_date }}</td>
 <td>{{ leave.total_days }}</td>
 <td>{{ leave.reason|truncatechars:30 }}</td>
 
@@ -57,15 +158,13 @@
 <input type="hidden" name="status">
 
 <button type="button"
-            class="badge bg-success border-0 text-white swal-approve d-block mb-1"
-            style="cursor:pointer; padding:8px 16px; font-size:0.85rem; border-radius:20px; min-width: 90px;">
+            class="btn btn-success swal-approve"style = "position:relative; right:12px;">
         Approve
     </button>
 
     <button type="button"
-            class="badge bg-danger border-0 text-white swal-reject d-block"
-            style="cursor:pointer; padding:8px 16px; font-size:0.85rem; border-radius:20px; min-width: 90px;">
-        Reject
+            class="btn btn-danger swal-reject"style="width:85.2px;">
+                Reject
     </button>
 
 </form>
@@ -79,7 +178,6 @@
 </span>
 {% endif %}
 </td>
-
 </tr>
 {% empty %}
 <tr>
@@ -150,6 +248,52 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 });
+// filtertable function    
+let apply_filter = document.getElementById("btn-apply");
+apply_filter.addEventListener("click", function filterTable(){
+    function normalizeDate(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+    const from = document.getElementById('startSearch').value;
+    const to   = document.getElementById('endSearch').value;
+    const user = document.getElementById('eachuser').value.trim();
+
+    const rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        let show = true; 
+
+    
+        if (user && user !== "All Employees") {
+            const name = row.querySelector('.Name')?.innerText.trim();
+            if (name !== user) {
+                show = false;
+            }
+        }
+
+        if (from && to) {
+            const startText = row.querySelector('.start')?.innerText;
+            const endText   = row.querySelector('.end')?.innerText;
+
+            const startDate = normalizeDate(new Date(startText));
+            const endDate   = normalizeDate(new Date(endText));
+            const fromDate  = normalizeDate(new Date(from));
+            const toDate    = normalizeDate(new Date(to));
+            
+            if (
+                startDate > toDate ||
+                endDate < fromDate ||
+                fromDate > toDate
+            ) {
+                show = false;
+            }
+        }
+
+        row.style.display = show ? 'table-row' : 'none';
+    });
+})
+
+
 </script>
 
 {% endblock %}
