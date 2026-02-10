@@ -6,6 +6,7 @@ from django.contrib import messages
 from home.models import Attendance
 from home.utils import process_clock_in, process_clock_out
 
+
 class ClockInView(LoginRequiredMixin, View):
     def post(self, request):
         lat = request.POST.get("lat")
@@ -20,6 +21,7 @@ class ClockInView(LoginRequiredMixin, View):
             messages.warning(request, result['message'])
         
         return redirect("dashboard")
+
 
 class ClockOutView(LoginRequiredMixin, View):
     def post(self, request):

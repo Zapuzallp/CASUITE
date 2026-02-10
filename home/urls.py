@@ -24,7 +24,7 @@ from home.customViews.notificationView import (
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
 # )
 from home.views import (
-    HomeView
+    HomeView, due_tasks_ajax
 )
 from home.customViews.payment_views import (
     payment_list, payment_collect, approve_payment,
@@ -33,6 +33,7 @@ from home.customViews.payment_views import (
 
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
+    path('api/due-tasks/', due_tasks_ajax, name='due_tasks_ajax'),
     path('accounts/login/', authView.LoginView.as_view(), name='login'),
     path('accounts/logout/', authView.LogoutView.as_view(), name='logout'),
     # Client Details
