@@ -646,8 +646,9 @@
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary">
-                            Clock In
+                        <button type="submit" id="clockInBtn" class="btn btn-primary" disabled>
+                            <span class="spinner-border spinner-border-sm me-2" id="clockInSpinner"></span>
+                            Capturing Location...
                         </button>
                     </div>
                 </form>
@@ -717,8 +718,9 @@
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-danger">
-                            Clock Out
+                        <button type="submit" id="clockOutBtn" class="btn btn-danger" disabled>
+                            <span class="spinner-border spinner-border-sm me-2" id="clockOutSpinner"></span>
+                            Capturing Location...
                         </button>
                     </div>
                 </form>
@@ -734,10 +736,17 @@
 
         /* CLOCK IN */
         document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
+            const btn = document.getElementById("clockInBtn");
+            const spinner = document.getElementById("clockInSpinner");
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Capturing Location...';
+            
             setTimeout(() => {
                 LocationModule.loadLocation("clockin-lat", "clockin-long", "clockin-location", function(success) {
                     if (success) {
-                        // Create map after location is loaded
+                        btn.disabled = false;
+                        btn.innerHTML = 'Clock In';
+                        
                         const lat = parseFloat(document.getElementById("clockin-lat").value);
                         const lng = parseFloat(document.getElementById("clockin-long").value);
                         
@@ -747,6 +756,8 @@
                             attribution: "© OpenStreetMap"
                         }).addTo(clockInMap);
                         L.marker([lat, lng]).addTo(clockInMap).bindPopup("You are here").openPopup();
+                    } else {
+                        btn.innerHTML = 'Location Failed';
                     }
                 });
             }, 300);
@@ -754,10 +765,17 @@
 
         /* CLOCK OUT */
         document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
+            const btn = document.getElementById("clockOutBtn");
+            const spinner = document.getElementById("clockOutSpinner");
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Capturing Location...';
+            
             setTimeout(() => {
                 LocationModule.loadLocation("clockout-lat", "clockout-long", "clockout-location", function(success) {
                     if (success) {
-                        // Create map after location is loaded
+                        btn.disabled = false;
+                        btn.innerHTML = 'Clock Out';
+                        
                         const lat = parseFloat(document.getElementById("clockout-lat").value);
                         const lng = parseFloat(document.getElementById("clockout-long").value);
                         
@@ -767,6 +785,8 @@
                             attribution: "© OpenStreetMap"
                         }).addTo(clockOutMap);
                         L.marker([lat, lng]).addTo(clockOutMap).bindPopup("You are here").openPopup();
+                    } else {
+                        btn.innerHTML = 'Location Failed';
                     }
                 });
             }, 300);
