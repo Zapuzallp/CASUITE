@@ -892,8 +892,20 @@ class ShiftAdmin(admin.ModelAdmin):
 
 @admin.register(EmployeeShift)
 class EmployeeShiftAdmin(admin.ModelAdmin):
-    list_display = ('user', 'shift', 'valid_from', 'valid_to')
+    list_display = ('user_list', 'shift', 'valid_from', 'valid_to')
     list_filter = ('shift', 'valid_from', 'valid_to')
+    filter_horizontal = ("user",)
+    def user_list(self, obj):
+        """Display list of assigned users"""
+        if obj.user.count() <5:
+            return ", ".join(
+                obj.user.values_list("username", flat=True)
+            )
+        else:
+            users = obj.user.all()[:5]
+            return ", ".join(users.values_list("username", flat=True))
+
+    user_list.short_description = "Users"
 
 
 @admin.register(OfficeDetails)
