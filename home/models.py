@@ -48,6 +48,7 @@ class Shift(models.Model):
     def __str__(self):
         return self.shift_name
 
+
 # -----------------------------------------
 # 2. Employee Shift Table
 # -----------------------------------------
@@ -106,7 +107,6 @@ STATE_CHOICES = (
     ('38', 'Ladakh'),
     ('97', 'Other Territory'),
 )
-
 
 
 # -----------------------------------------
@@ -193,7 +193,7 @@ class Client(models.Model):
     # --- Address ---
     address_line1 = models.TextField()
     city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100,choices=STATE_CHOICES)
+    state = models.CharField(max_length=100, choices=STATE_CHOICES)
 
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=100, default='India')
@@ -225,6 +225,7 @@ class Client(models.Model):
 
     def __str__(self):
         return self.client_name
+
 
 GST_SCHEME_CHOICES = [
     ('Regular', 'Regular Scheme'),
@@ -277,6 +278,7 @@ class GSTDetails(models.Model):
 
     def __str__(self):
         return f"{self.gst_number} - {self.get_state_display()}"
+
 
 # -------------------------
 # 2. Universal Business Profile
@@ -336,6 +338,7 @@ class ClientBusinessProfile(models.Model):
 
     def __str__(self):
         return f"Profile: {self.client.client_name}"
+
 
 # -------------------------
 # Client User Mapping
@@ -408,7 +411,8 @@ class ClientDocumentUpload(models.Model):
     upload_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     remarks = models.TextField(blank=True, null=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, help_text="User who uploaded the document")
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                    help_text="User who uploaded the document")
 
     def save(self, *args, **kwargs):
         if self.uploaded_file:
@@ -500,6 +504,7 @@ class Task(models.Model):
                 changed_by=changed_by,
                 remarks=remarks
             )
+
     # Set `is_recurring` only when the task is first created.
     # Derived from `recurrence_period` to avoid auto-created
     # or copied tasks being incorrectly marked as recurring.
@@ -512,7 +517,7 @@ class Task(models.Model):
 
 
 class TaskRecurrence(models.Model):
-    task = models.OneToOneField(Task,on_delete=models.CASCADE,related_name="task_recurrence")
+    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="task_recurrence")
     recurrence_period = models.CharField(max_length=20)
     is_recurring = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
@@ -524,8 +529,10 @@ class TaskRecurrence(models.Model):
             raise ValidationError(
                 {"recurrence_period": "TaskRecurrence cannot be 'None'"}
             )
+
     def __str__(self):
         return self.task.task_title
+
 
 class TaskAssignmentStatus(models.Model):
     """
@@ -542,6 +549,7 @@ class TaskAssignmentStatus(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
+
     class Meta:
         unique_together = ('task', 'user', 'status_context')
         ordering = ['order']
@@ -654,7 +662,9 @@ class TaskDocument(models.Model):
     description = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
+
 from datetime import timedelta
+
 
 class Attendance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -690,7 +700,6 @@ class Attendance(models.Model):
     clock_out_long = models.DecimalField(
         max_digits=9, decimal_places=6, null=True, blank=True
     )
-
 
     class Meta:
         unique_together = ('user', 'date')
@@ -734,7 +743,6 @@ class Attendance(models.Model):
             return f"{hours}h {minutes}m"
         return f"{minutes}m {seconds}s"
 
-
     def get_work_duration(self):
         """Get formatted work duration for mobile display"""
         if self.clock_in and not self.clock_out:
@@ -748,23 +756,11 @@ class Attendance(models.Model):
         elif self.duration:
             return self.formatted_duration()
         return "00:00:00 Hrs"
-    
-    def should_show_pending_warning(self):
-        """Check if pending warning should still be shown"""
-        if self.status != 'pending':
-            return False
-        
-        # If not clocked out yet, always show warning
-        if not self.clock_out:
-            return True
-        
-        # If clocked out, show warning until clock_out + 4 hours
-        from django.utils import timezone
-        warning_cutoff = self.clock_out + timedelta(hours=4)
-        return timezone.now() < warning_cutoff
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
+
+
 class Notification(models.Model):
     TAG_CHOICES = (
         ('info', 'Info'),
@@ -792,7 +788,6 @@ class Notification(models.Model):
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-
     class Meta:
         ordering = ['-created_at']
 
@@ -805,7 +800,9 @@ ROLES_CHOICE = [
     ('ADMIN', 'Administrator'),
     ('STAFF', 'Staff')
 ]
-#Employee and Leave table
+
+
+# Employee and Leave table
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="employee")
     designation = models.CharField(max_length=255, blank=True, null=True)
@@ -814,7 +811,7 @@ class Employee(models.Model):
     personal_email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True, blank=True)
+    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True)
     role = models.CharField(max_length=255, choices=ROLES_CHOICE)
     supervisor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Supervisor_Or_Manager", null=True,
                                    blank=True)
@@ -835,8 +832,7 @@ class Employee(models.Model):
             "earned": self.earned_leave,
         }
 
-
-    #Leave Summary
+    # Leave Summary
     def get_leave_summary(self):
         summary = {}
         approved_leaves = self.leave_records.filter(status="approved")
@@ -862,7 +858,7 @@ class Employee(models.Model):
         return self.user.username
 
 
-#Leave model
+# Leave model
 class Leave(models.Model):
     LEAVE_TYPES = [
         ("sick", "Sick Leave"),
@@ -914,13 +910,21 @@ class Product(models.Model):
 
 
 class Invoice(models.Model):
+    INVOICE_STATUS = [
+        ('DRAFT', 'Draft'),
+        ('OPEN', 'Open'),
+        ('PARTIALLY_PAID', 'Partially Paid'),
+        ('PAID', 'Paid'),
+    ]
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invoices')
     services = models.ManyToManyField(Task, blank=True, related_name='tagged_invoices')
     due_date = models.DateField()
     invoice_date = models.DateTimeField(default=timezone.now)
     subject = models.CharField(max_length=255)
+    invoice_status = models.CharField(max_length=20, choices=INVOICE_STATUS, default="DRAFT")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return f"Invoice #{self.id} - {self.client.client_name}"
 
@@ -941,6 +945,7 @@ class InvoiceItem(models.Model):
     taxable_value = models.FloatField(editable=False)
     gst_percentage = models.IntegerField(choices=GST_CHOICES, default=0)
     net_total = models.FloatField(editable=False)
+
     def save(self, *args, **kwargs):
         # Logic: taxable_value = unit_cost - discount
         self.taxable_value = float(self.unit_cost) - float(self.discount)
@@ -951,8 +956,13 @@ class InvoiceItem(models.Model):
 
         super().save(*args, **kwargs)
 
+    def unit_cost_after_gst(self):
+        gst_value = self.taxable_value * (self.gst_percentage / 100)
+        return self.taxable_value - gst_value
+
     def __str__(self):
         return f"{self.product.item_name} - {self.invoice}"
+
 
 class Payment(models.Model):
     PAYMENT_METHOD_CHOICES = [
@@ -979,14 +989,18 @@ class Payment(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_date = models.DateField()
     # Auto-compute fields
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="payments_created")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name="payments_created")
     created_at = models.DateTimeField(auto_now_add=True)
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='PENDING')
     approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS, default='PENDING')
-    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_payments")
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name="approved_payments")
     approved_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return f"Payment {self.id} for Invoice #{self.invoice.id}"
+
 
 class Message(models.Model):
     STATUS_CHOICES = [
@@ -995,11 +1009,11 @@ class Message(models.Model):
         ('received', 'Received'),
     ]
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver= models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
-    is_seen = models.BooleanField(default = False)    
+    is_seen = models.BooleanField(default=False)
 
     def __str__(self):
         return f"From{self.sender} to {self.receiver} - {self.status}"

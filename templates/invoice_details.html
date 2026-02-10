@@ -1,0 +1,545 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block body %}
+
+    <main id="main" class="main">
+        <div class="pagetitle d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Invoice</h1>
+                <nav>
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#">Home</a></li>
+                        <li class="breadcrumb-item active">invoice</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+        <div class="row g-4 mb-3">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                    <!-- HEADER ROW -->
+                    <div class="d-flex justify-content-between align-items-start mt-3 mb-4">
+
+                        <div>
+                            <h4 class="fw-bold mb-1">
+                                Invoice Details of ID #{{ invoice.id }}
+                            </h4>
+                            <div class="text-muted small">
+                                Created on {{ invoice.invoice_date|date:"M d, Y" }}
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <strong class="me-2">Payment Status:</strong>
+                            <span id="statusBadge" class="badge px-4 py-2 fs-6
+                                {% if actual_payment_status == 'PAID' %}bg-success
+                                {% elif actual_payment_status == 'PARTIALLY_PAID' %}bg-warning text-dark
+                                {% elif actual_payment_status == 'OPEN' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                {{ payment_status_display }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+
+                        <!-- CLIENT INFO -->
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="text-uppercase text-muted fw-bold small mb-3">
+                                    Client Details
+                                </h6>
+
+                                <p class="mb-1 fw-bold">{{ invoice.client.client_name }}</p>
+                                <p class="mb-1 text-muted small">
+                                    <i class="bi bi-person-badge me-1"></i>
+                                    {{ invoice.client.assigned_ca }}
+                                </p>
+                                <p class="mb-1 small">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    {{ invoice.client.phone_number }}
+                                </p>
+                                <p class="mb-0 small">
+                                    <i class="bi bi-envelope me-1"></i>
+                                    {{ invoice.client.email|default:"N/A" }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- BUSINESS INFO -->
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="text-uppercase text-muted fw-bold small mb-3">
+                                    Business Info
+                                </h6>
+
+                                <p class="mb-1">
+                                    <strong>File No:</strong>
+                                    {{ invoice.client.file_number|default:"N/A" }}
+                                </p>
+                                <p class="mb-1">
+                                    <strong>Structure:</strong>
+                                    {{ invoice.client.business_structure|default:"N/A" }}
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Due Date:</strong>
+                                    {{ invoice.due_date }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- FINANCIAL INFORMATION -->
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <h6 class="text-uppercase text-muted fw-bold small mb-3">
+                                    Financial Information
+                                </h6>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small">Invoice Items</span>
+                                    <strong>₹{{ invoice_item_total|floatformat:2 }}</strong>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small">Client Agreed Fees</span>
+                                    <strong>₹{{ total_task_fees|floatformat:2 }}</strong>
+                                </div>
+
+                                <hr class="my-2">
+
+                                <div class="d-flex justify-content-between fs-6 fw-bold text-success">
+                                    <span>Total Exposure</span>
+                                    <span>
+                                        ₹{{ invoice_item_total|add:total_task_fees|floatformat:2 }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+       <!--Actions Section-->
+        <div class="row g-4 mb-3">
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">
+                                <i class="bi bi-gear-fill me-2"></i>Actions
+                            </h5>
+
+                            <div class="d-flex gap-2">
+                                {% if actual_payment_status == 'DRAFT' or actual_payment_status == 'OPEN' %}
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
+                                    <i class="bi bi-pencil-square me-1"></i> Update Status
+                                </button>
+                                {% endif %}
+
+                                {% if balance > 0 and actual_payment_status != 'DRAFT' %}
+                                <a href="{% url 'payment_collect' invoice.id %}" class="btn btn-success">
+                                    <i class="bi bi-cash-coin me-1"></i> Collect Payment
+                                </a>
+                                {% endif %}
+
+                                <button type="button" class="btn btn-outline-secondary" disabled>
+                                    <i class="bi bi-send me-1"></i> Approve & Send to Client
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+        <!-- Update Status Modal -->
+        <div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="updateStatusModalLabel">
+                            <i class="bi bi-arrow-left-right me-2"></i>Update Invoice Status
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <form method="post" action="{% url 'invoice_change_status' invoice.id %}" id="statusChangeForm">
+                        {% csrf_token %}
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Select New Status</label>
+                                <select name="invoice_status" id="invoiceStatusSelect" class="form-select form-select-lg">
+                                    <option value="DRAFT" {% if invoice.invoice_status == 'DRAFT' %}selected{% endif %}>Draft</option>
+                                    <option value="OPEN" {% if invoice.invoice_status == 'OPEN' %}selected{% endif %}>Open</option>
+                                </select>
+                            </div>
+
+                            <div class="alert alert-info mb-0" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Status Guide:</strong>
+                                <ul class="mb-0 mt-2 small">
+                                    <li><strong>Draft:</strong> Invoice is being prepared. Not visible to client.</li>
+                                    <li><strong>Open:</strong> Invoice is finalized and sent to client.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-1"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal 1-->
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Add Items</h5>
+                <button type="button" class="btn-close" id="closeModalBtn" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+
+                  <form id="itemForm" class="mb-4">
+                      {% csrf_token %}
+                      <div class="row g-3 align-items-end">
+                          <div class="col-md-4">
+                              <label>Product</label>
+                              {{ item_form.product }}
+                          </div>
+                          <div class="col-md-2">
+                              <label>Unit Cost</label>
+                              {{ item_form.unit_cost }}
+                          </div>
+                          <div class="col-md-2">
+                              <label>Discount</label>
+                              {{ item_form.discount }}
+                          </div>
+                          <div class="col-md-2">
+                              <label>GST %</label>
+                              {{ item_form.gst_percentage }}
+                          </div>
+
+                          <div class="col-md-2">
+                              <button class="btn btn-primary w-100">Add to List</button>
+                          </div>
+                      </div>
+                  </form>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+    <div class="row g-4 mb-3">
+                <div class="col-12">
+                    <div class="card recent-sales overflow-auto h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center my-3">
+                                <div>
+                                    <h5 class="card-title m-0">Invoice Items</h5>
+                                    <small class="text-muted">
+                                        Showing {{ invoice.items.count }} item(s)
+                                    </small>
+                                </div>
+
+                                <button class="btn btn-primary btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#exampleModal">
+                                    <i class="bi bi-plus-lg me-1"></i> Add Item
+                                </button>
+                            </div>
+
+                            <table class="table table-hover  align-middle" id="invoiceItemsTable">
+                                <thead class="table-light">
+                                <tr>
+                                  <th>Product</th>
+                                  <th>Unit Cost</th>
+                                    <th>Discount</th>
+                                    <th>Taxable value</th>
+                                    <th>GST Percentage</th>
+                                    <th>Unit Cost After GST</th>
+                                    <th>Net Total</th>
+
+                                    <th>Actions</th>
+
+                                </tr>
+                              </thead>
+                                <tbody>
+                                    {% for i in invoice.items.all %}
+                                    <tr id="row-{{ i.pk }}">
+
+                                        <td>{{ i.product }}</td>
+
+                                        <td>{{ i.unit_cost }}</td>
+
+                                        <td>{{ i.discount }}</td>
+
+                                        <td>₹{{ i.taxable_value|floatformat:2 }}</td>
+
+                                        <td>
+                                            <span class="badge bg-light text-dark border">
+                                                {{ i.gst_percentage }}%
+                                            </span>
+                                        </td>
+
+
+                                        <td>
+                                            ₹{{ i.unit_cost_after_gst|floatformat:2 }}
+                                        </td>
+
+                                        <td class="fw-bold text-success">
+                                            ₹{{ i.net_total|floatformat:2 }}
+                                        </td>
+
+                                         <td>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#deleteModal{{ i.pk }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+
+
+                                    {% endfor %}
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                    <tr>
+                                        <th colspan="6" class="text-end">
+                                            Total Invoice Items
+                                        </th>
+                                        <th class="text-success fw-bold">
+                                            ₹{{ invoice_item_total|floatformat:2 }}
+                                        </th>
+                                        <th></th>
+                                    </tr>
+                                    </tfoot>
+                                     <!--delete modal-->
+                                    {% for i in invoice.items.all %}
+                                    <div class="modal fade"
+                                             id="deleteModal{{ i.pk }}"
+                                             tabindex="-1"
+                                             data-bs-backdrop="static"
+                                             data-bs-keyboard="false"
+                                             aria-hidden="true">
+
+                                            <div class="modal-dialog modal-sm modal-dialog-centered">
+                                                <div class="modal-content border-0 shadow-sm">
+
+                                                    <div class="modal-header bg-light">
+                                                        <h6 class="modal-title fw-semibold text-danger">
+                                                            Confirm Deletion
+                                                        </h6>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+
+                                                    <div class="modal-body text-center py-4">
+                                                        <p class="mb-1 fw-semibold">
+                                                            Delete this invoice item?
+                                                        </p>
+                                                        <p class="text-muted small mb-0">
+                                                            This action cannot be undone.
+                                                        </p>
+                                                    </div>
+
+                                                    <div class="modal-footer justify-content-center border-0 pt-0">
+
+                                                            <button type="button"
+                                                                    class="btn btn-outline-secondary btn-sm px-4"
+                                                                    data-bs-dismiss="modal">
+                                                                Cancel
+                                                            </button>
+
+                                                            <button type="button"
+                                                                    class="btn btn-danger btn-sm px-4"
+                                                                    onclick="deleteInvoiceItem({{ i.pk }})">
+                                                                Delete
+                                                            </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    </div>
+                                    {% endfor %}
+
+                            </table>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+        <div class="row g-4 mb-3">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="card-title m-0">Invoice Tasks</h5>
+                                <small class="text-muted">
+                                    {{ client_tasks|length }} task(s) associated with this invoice
+                                </small>
+                            </div>
+                        </div>
+
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Task ID</th>
+                                    <th>Task Name</th>
+                                    <th>Created By</th>
+                                    <th>Status</th>
+                                    <th>Deadline</th>
+                                    <th class="text-end">Agreed Fee</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in client_tasks %}
+                                <tr>
+                                    <td>#{{ task.id }}</td>
+                                    <td>
+                                        <a href="{% url 'task_detail' task.id %}" class="fw-bold text-decoration-none">
+                                            {{ task.task_title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ task.created_by.first_name }}</td>
+                                    <td>
+                                        <span class="badge
+                                            {% if task.status == 'Completed' %}bg-success
+                                            {% elif task.status == 'Pending' %}bg-warning text-dark
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ task.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ task.due_date|date:"M d, Y" }}</td>
+                                    <td class="text-end fw-bold">
+                                        ₹{{ task.agreed_fee|default:0|floatformat:2 }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        No tasks found for this client.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+
+                            <!-- TOTAL ROW -->
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="5" class="text-end">Total Task Fees</th>
+                                    <th class="text-end text-success fw-bold">
+                                        ₹{{ total_task_fees|floatformat:2 }}
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+    <script>
+        document.getElementById('itemForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const form = this;
+            const formData = new FormData(form);
+
+            fetch("{% url 'add-invoice-item' invoice.id %}", {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin"
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    console.error(data.error);
+                    return;
+                }
+
+                const tableBody = document.querySelector('#invoiceItemsTable tbody');
+
+
+                const emptyRow = tableBody.querySelector('td.dataTables_empty');
+                if (emptyRow) {
+                    emptyRow.closest('tr').remove();
+                }
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                <td>${data.product}</td>
+                <td>₹${data.unit_cost}</td>
+                <td>₹${data.discount}</td>
+                <td>₹${data.taxable}</td>
+                <td>
+                    <span class="badge bg-light text-dark border">
+                        ${data.gst_percentage}%
+                    </span>
+                </td>
+                <td>₹${data.unit_cost_after_gst}</td>
+                <td class="fw-bold text-success">
+                    ₹${data.total}
+                </td>
+                <td>
+                    <button class="btn btn-outline-danger btn-sm" disabled>
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+
+                tableBody.appendChild(newRow);
+
+                //  Reset form
+                form.reset();
+
+                //  Close modal smoothly
+                const modalEl = document.getElementById('exampleModal');
+                bootstrap.Modal.getInstance(modalEl).hide();
+            })
+            .catch(err => console.error(err));
+        });
+
+            function deleteInvoiceItem(itemId) {
+                fetch(`/invoice/${itemId}/delete/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) return;
+
+                    // Close modal FIRST
+                    const modalEl = document.getElementById(`deleteModal${itemId}`);
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    modalInstance.hide();
+
+                    // Remove table row
+                    const row = document.getElementById(`row-${itemId}`);
+                    if (row) row.remove();
+                })
+                .catch(err => console.error(err));
+            }
+            </script>
+
+    </main>
+{% endblock body %}
