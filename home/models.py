@@ -670,7 +670,9 @@ class Attendance(models.Model):
         choices=[
             ("pending", "Pending"),
             ("approved", "Approved"),
-            ("rejected", "Rejected")
+            ("rejected", "Rejected"),
+            ("half_day", "Half Day Present"),
+            ("full_day", "Full Day Present")
         ],
         default="approved"
     )
@@ -705,16 +707,16 @@ class Attendance(models.Model):
             self.duration = self.clock_out - self.clock_in
 
             # Only auto-set status if admin logic didn’t already set it
-            if not self.status or self.status == "approved":
+            if not hasattr(self, '_skip_auto_status') and (not self.status or self.status == "approved"):
                 self.status = "approved"
 
         elif self.clock_in and not self.clock_out:
-            if not self.status:
+            if not hasattr(self, '_skip_auto_status') and not self.status:
                 self.status = "pending"
             self.duration = None
 
         else:
-            if not self.status:
+            if not hasattr(self, '_skip_auto_status') and not self.status:
                 self.status = "absent"
             self.duration = None
 
@@ -748,6 +750,20 @@ class Attendance(models.Model):
         elif self.duration:
             return self.formatted_duration()
         return "00:00:00 Hrs"
+    
+    def should_show_pending_warning(self):
+        """Check if pending warning should still be shown"""
+        if self.status != 'pending':
+            return False
+        
+        # If not clocked out yet, always show warning
+        if not self.clock_out:
+            return True
+        
+        # If clocked out, show warning until clock_out + 4 hours
+        from django.utils import timezone
+        warning_cutoff = self.clock_out + timedelta(hours=4)
+        return timezone.now() < warning_cutoff
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
@@ -800,7 +816,7 @@ class Employee(models.Model):
     personal_email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True)
+    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True, blank=True)
     role = models.CharField(max_length=255, choices=ROLES_CHOICE)
     supervisor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Supervisor_Or_Manager", null=True,
                                    blank=True)

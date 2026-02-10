@@ -398,7 +398,94 @@
                 </div>
             </div>
 
-        </section>
+        
+        <!-- DUE TASKS MODULE -->
+        <div class="row g-4 mb-4" id="due-tasks-section">
+            <div class="col-12">
+                <div class="card h-100">
+                    <div class="card-body" id="due-tasks-content">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <h5 class="card-title m-0">Due Tasks <span id="due-tasks-count" class="text-muted fw-normal">| {{ due_tasks|length }} Items</span></h5>
+                                <!-- Timeline Badge -->
+                                <span id="due-range-badge" class="badge rounded-pill px-3 py-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.3px;">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    {% if due_range == 'overdue' %}Overdue Tasks
+                                    {% elif due_range == 'today' %}Due Today
+                                    {% elif due_range == 'tomorrow' %}Due Tomorrow
+                                    {% elif due_range == '5days' %}Due in 5 Days
+                                    {% elif due_range == '10days' %}Due in 10 Days
+                                    {% elif due_range == '15days' %}Due in 15 Days
+                                    {% elif due_range == '30days' %}Due in 30 Days
+                                    {% else %}Overdue Tasks{% endif %}
+                                </span>
+                            </div>
+                            <select id="dueRangeSelector" class="form-select form-select-sm" style="width: auto;">
+                                <option value="overdue" {% if due_range == 'overdue' %}selected{% endif %}>Over Due</option>
+                                <option value="today" {% if due_range == 'today' %}selected{% endif %}>Due Today</option>
+                                <option value="tomorrow" {% if due_range == 'tomorrow' %}selected{% endif %}>Due Tomorrow</option>
+                                <option value="5days" {% if due_range == '5days' %}selected{% endif %}>Due in 5 Days</option>
+                                <option value="10days" {% if due_range == '10days' %}selected{% endif %}>Due in 10 Days</option>
+                                <option value="15days" {% if due_range == '15days' %}selected{% endif %}>Due in 15 Days</option>
+                                <option value="30days" {% if due_range == '30days' %}selected{% endif %}>Due in 30 Days</option>
+                            </select>
+                        </div>
+
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th>Title</th>
+                                    <th>Client</th>
+                                    <th>Service</th>
+                                    <th>Due Date</th>
+                                    <th>Team</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="due-tasks-tbody">
+                                {% if due_tasks %}
+                                {% for task in due_tasks %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td><a href="{% url 'task_detail' task.id %}">{{ task.title|truncatechars:30 }}</a></td>
+                                    <td>{{ task.client.name|default:"-" }}</td>
+                                    <td>{{ task.service.name|default:"-" }}</td>
+                                    <td>
+                                        {% if task.due_date %}
+                                        <span class="{% if task.due_date < today %}text-danger{% elif task.due_date == today %}text-warning{% else %}text-success{% endif %}">
+                                            {{ task.due_date|date:"M d, Y" }}
+                                        </span>
+                                        {% else %}-{% endif %}
+                                    </td>
+                                    <td>
+                                        {% for assignee in task.assignees.all|slice:":2" %}
+                                        <span class="badge bg-secondary">{{ assignee.get_full_name|default:assignee.username }}</span>
+                                        {% empty %}<span class="text-muted">-</span>{% endfor %}
+                                    </td>
+                                    <td><span class="badge bg-{{ task.status|lower }}">{{ task.get_status_display }}</span></td>
+                                    <td>
+                                        <a href="{% url 'task_detail' task.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">No tasks found for the selected due range.</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END DUE TASKS MODULE -->
+
+</section>
     </main>
 
     <script>
@@ -458,6 +545,63 @@
                     data: {{ client_distribution_chart_data|safe }}
                     }]
                 });
+
+        // Due Tasks AJAX Filter (JSON API Method)
+        function loadDueTasks(selectedRange) {
+            fetch(`/api/due-tasks/?due_range=${selectedRange}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update the badge text
+                    const badge = document.getElementById('due-range-badge');
+                    if (badge) {
+                        badge.innerHTML = '<i class="bi bi-calendar-event me-1"></i>' + data.range_label;
+                    }
+                    
+                    // Update item count
+                    const countSpan = document.getElementById('due-tasks-count');
+                    if (countSpan) countSpan.textContent = `| ${data.count} Items`;
+                    
+                    // Update dropdown selection
+                    const selector = document.getElementById('dueRangeSelector');
+                    if (selector) selector.value = data.due_range;
+                    
+                    // Build table body
+                    const tbody = document.getElementById('due-tasks-tbody');
+                    if (!tbody) return;
+                    
+                    if (data.tasks.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">No tasks found for the selected due range.</td></tr>`;
+                        return;
+                    }
+                    
+                    let html = '';
+                    data.tasks.forEach((task, index) => {
+                        const assigneeBadges = task.assignees.length > 0 
+                            ? task.assignees.map(a => `<span class="badge bg-secondary">${a}</span>`).join(' ')
+                            : '<span class="text-muted">-</span>';
+                        
+                        html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td><a href="/tasks/${task.id}/">${task.title}</a></td>
+                            <td>${task.client}</td>
+                            <td>${task.service}</td>
+                            <td><span class="${task.due_date_class}">${task.due_date}</span></td>
+                            <td>${assigneeBadges}</td>
+                            <td><span class="badge bg-${task.status_class}">${task.status}</span></td>
+                            <td><a href="/tasks/${task.id}/" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td>
+                        </tr>`;
+                    });
+                    tbody.innerHTML = html;
+                })
+                .catch(error => console.error('Error loading due tasks:', error));
+        }
+        
+        // Attach event listener to dropdown
+        document.getElementById('dueRangeSelector')?.addEventListener('change', function() {
+            loadDueTasks(this.value);
+        });
+
         });
     </script>
 
@@ -502,8 +646,9 @@
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary">
-                            Clock In
+                        <button type="submit" id="clockInBtn" class="btn btn-primary" disabled>
+                            <span class="spinner-border spinner-border-sm me-2" id="clockInSpinner"></span>
+                            Capturing Location...
                         </button>
                     </div>
                 </form>
@@ -573,8 +718,9 @@
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-danger">
-                            Clock Out
+                        <button type="submit" id="clockOutBtn" class="btn btn-danger" disabled>
+                            <span class="spinner-border spinner-border-sm me-2" id="clockOutSpinner"></span>
+                            Capturing Location...
                         </button>
                     </div>
                 </form>
@@ -590,10 +736,17 @@
 
         /* CLOCK IN */
         document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
+            const btn = document.getElementById("clockInBtn");
+            const spinner = document.getElementById("clockInSpinner");
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Capturing Location...';
+            
             setTimeout(() => {
                 LocationModule.loadLocation("clockin-lat", "clockin-long", "clockin-location", function(success) {
                     if (success) {
-                        // Create map after location is loaded
+                        btn.disabled = false;
+                        btn.innerHTML = 'Clock In';
+                        
                         const lat = parseFloat(document.getElementById("clockin-lat").value);
                         const lng = parseFloat(document.getElementById("clockin-long").value);
                         
@@ -603,6 +756,8 @@
                             attribution: "© OpenStreetMap"
                         }).addTo(clockInMap);
                         L.marker([lat, lng]).addTo(clockInMap).bindPopup("You are here").openPopup();
+                    } else {
+                        btn.innerHTML = 'Location Failed';
                     }
                 });
             }, 300);
@@ -610,10 +765,17 @@
 
         /* CLOCK OUT */
         document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
+            const btn = document.getElementById("clockOutBtn");
+            const spinner = document.getElementById("clockOutSpinner");
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Capturing Location...';
+            
             setTimeout(() => {
                 LocationModule.loadLocation("clockout-lat", "clockout-long", "clockout-location", function(success) {
                     if (success) {
-                        // Create map after location is loaded
+                        btn.disabled = false;
+                        btn.innerHTML = 'Clock Out';
+                        
                         const lat = parseFloat(document.getElementById("clockout-lat").value);
                         const lng = parseFloat(document.getElementById("clockout-long").value);
                         
@@ -623,6 +785,8 @@
                             attribution: "© OpenStreetMap"
                         }).addTo(clockOutMap);
                         L.marker([lat, lng]).addTo(clockOutMap).bindPopup("You are here").openPopup();
+                    } else {
+                        btn.innerHTML = 'Location Failed';
                     }
                 });
             }, 300);

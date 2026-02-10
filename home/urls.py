@@ -24,7 +24,7 @@ from home.customViews.notificationView import (
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
 # )
 from home.views import (
-    HomeView
+    HomeView, due_tasks_ajax
 )
 from home.customViews.payment_views import (
     payment_list, payment_collect, approve_payment,
@@ -33,8 +33,9 @@ from home.customViews.payment_views import (
 from home.views import client_search
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
+    path('api/due-tasks/', due_tasks_ajax, name='due_tasks_ajax'),
     path('accounts/login/', authView.LoginView.as_view(), name='login'),
-    path('accounts/logout/', authView.LoginView.as_view(), name='logout'),
+    path('accounts/logout/', authView.LogoutView.as_view(), name='logout'),
     # Client Details
     path('client/<int:client_id>/details/', clientView.client_details_view, name='client_details'),
     path('client/<int:client_id>/upload-document/', documentsUploadView.upload_document_view,
@@ -92,7 +93,7 @@ urlpatterns = [
     path('chat/<int:user_id>/', messageView.chat_view, name='chat_with_user'),
     
     # Mobile Attendance - Independent System
-    path('mobile/', mobile_login_view, name='mobile_login'),
+    path('mobile/', mobile_attendance_view, name='mobile_attendance'),
     path('mobile/logout/', mobile_logout_view, name='mobile_logout'),
     path('mobile/attendance/', mobile_attendance_view, name='mobile_attendance'),
     path('mobile/logs/', mobile_logs_view, name='mobile_logs'),
