@@ -60,8 +60,11 @@
                                     <th scope="row">{{ forloop.counter }}</th>
 
                                     <td>
-                                        <div class="fw-bold text-primary">
-                                            {{ service.item_name }}
+                                        <div class="fw-bold">
+                                            <a href="{% url 'service-details' service.id %}"
+                                               class="text-primary text-decoration-none">
+                                                {{ service.item_name }}
+                                            </a>
                                         </div>
                                         <div class="small text-muted">
                                             {{ service.item_description }}

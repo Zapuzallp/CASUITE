@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<style>
+    /* Gradient Avatar */
+    .avatar-gradient {
+        background: linear-gradient(135deg, #20c997, #0d6efd);
+        color: white;
+        width: 64px;
+        height: 64px;
+        font-size: 28px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3);
+    }
+
+    /* Meta Pill Style */
+    .meta-pill {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .meta-label {
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    .meta-value {
+        color: #212529;
+        font-weight: 500;
+    }
+
+    .card-unified {
+        border: 1px solid #eef1f4;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+</style>
+
+<main id="main" class="main">
+
+    <section class="section">
+        <div class="card card-unified">
+            <div class="card-body p-4">
+
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-gradient flex-shrink-0 me-3">
+                            {{ service.item_name|first|upper }}
+                        </div>
+
+                        <div>
+                            <h3 class="mb-2 fw-bold text-primary" style="letter-spacing: 0.5px;">
+                                {{ service.item_name|upper }}
+                            </h3>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <div class="meta-pill">
+                                    <i class="bi bi-box-seam text-muted"></i>
+                                    <span class="meta-label">Unit:</span>
+                                    <span class="meta-value">{{ service.unit }}</span>
+                                </div>
+
+                                <div class="meta-pill">
+                                    <i class="bi bi-upc-scan text-muted"></i>
+                                    <span class="meta-label">Short Code:</span>
+                                    <span class="meta-value">{{ service.short_code }}</span>
+                                </div>
+
+                                <div class="meta-pill">
+                                    <i class="bi bi-receipt text-muted"></i>
+                                    <span class="meta-label">HSN:</span>
+                                    <span class="meta-value">{{ service.hsn_code }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-2 mt-md-0">
+                        <a href="{% url 'list_services' %}"
+                           class="btn btn-outline-secondary btn-sm px-3 fw-semibold">
+                            ← Back
+                        </a>
+                    </div>
+
+                </div>
+
+                <hr class="mt-3 mb-2" style="border-top: 1px dashed #dee2e6;">
+
+                <div>
+                    <h6 class="text-uppercase text-muted small fw-bold mb-2">
+                        <i class="bi bi-info-circle me-1"></i> Description
+                    </h6>
+                    <div class="p-3 bg-light rounded-3 text-secondary border border-light">
+                        {{ service.item_description|default:"No description provided." }}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section class="section mt-4">
+        <div class="card card-unified">
+            <div class="card-body p-4">
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                    <div>
+                        <h5 class="fw-bold mb-1">
+                            <i class="bi bi-receipt-cutoff me-2 text-primary"></i>
+                            Invoices
+                        </h5>
+                        <p class="text-muted mb-0 small">
+                            List of invoices associated with this service
+                        </p>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Invoice No</th>
+                                <th>Client</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if invoices %}
+                                {% for invoice in invoices %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+
+                                    <td class="fw-semibold">
+                                        INV-{{ invoice.id }}
+                                    </td>
+
+                                    <td>
+                                        {{ invoice.client.client_name }}
+                                    </td>
+
+                                    <td>
+                                        {{ invoice.invoice_date|date:"d M Y" }}
+                                    </td>
+
+                                    <td>
+                                        ₹{{ invoice.services.first.agreed_fee|default:"0.00" }}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-info-subtle text-info">
+                                            {{ invoice.services.first.fee_status|default:"N/A" }}
+                                        </span>
+                                    </td>
+
+                                    <td class="text-end">
+                                        <a href="#" class="btn btn-outline-primary btn-sm">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        No invoices found for this service.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</main>
+{% endblock body %}

@@ -1003,3 +1003,13 @@ class Message(models.Model):
 
     def __str__(self):
         return f"From{self.sender} to {self.receiver} - {self.status}"
+
+class Service(models.Model):
+    item_name = models.CharField(max_length=255)
+    unit = models.CharField(max_length=50)
+    short_code = models.CharField(max_length=50)
+    hsn_code = models.CharField(max_length=50)
+    item_description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.item_name

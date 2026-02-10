@@ -31,6 +31,8 @@ from home.customViews.payment_views import (
     reject_payment, payment_detail, cancel_payment
 )
 
+from home.customViews.services import service_details
+
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
     path('accounts/login/', authView.LoginView.as_view(), name='login'),
@@ -106,4 +108,5 @@ urlpatterns = [
     path('payments/<int:payment_id>/reject/', reject_payment, name='reject_payment'),
     path('payments/<int:payment_id>/cancel/', cancel_payment, name='cancel_payment'),
     path('payments/<int:payment_id>/', payment_detail, name='payment_detail'),
+    path('services/<int:service_id>/details/',service_details,name='service-details'),
 ]
