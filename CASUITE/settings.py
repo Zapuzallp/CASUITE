@@ -21,9 +21,8 @@ SECRET_KEY = 'django-insecure-i%cb2hzh_ab!ecqqf)g4z)*x^l2qqfnd=d4eo^y3huioo83d1k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS=["*"]
-# ALLOWED_HOSTS = ["mondaltax.zapuza.in",'localhost']
-# CSRF_TRUSTED_ORIGINS = ["https://mondaltax.zapuza.in"]
+ALLOWED_HOSTS = ["mondaltax.zapuza.in",'localhost', '*']
+CSRF_TRUSTED_ORIGINS = ["https://mondaltax.zapuza.in"]
 
 # Application definition
 
@@ -73,6 +72,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'home.context_processors.notifications_context',
+                'home.context_processors.header_data',
                 'home.customViews.attendance_context.attendance_context',
             ],
         },
@@ -92,6 +92,8 @@ WSGI_APPLICATION = 'CASUITE.wsgi.application'
 #         'PASSWORD': os.environ.get('DB_PASSWORD'),
 #         'HOST': os.environ.get('DB_HOST'),
 #         'PORT': '3306',
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
 DATABASES = {

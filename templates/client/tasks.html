@@ -162,6 +162,7 @@
                         <table class="table table-hover datatable align-middle">
                             <thead class="table-light">
                             <tr>
+                                <th scope="col">#</th>
                                 <th>Title</th>
                                 <th>Client</th>
                                 <th>Service</th>
@@ -174,6 +175,13 @@
                             <tbody>
                             {% for task in tasks %}
                                 <tr>
+                                    <td>
+                                        {% if is_paginated %}
+                                            {{ page_obj.start_index|add:forloop.counter0 }}
+                                        {% else %}
+                                            {{ forloop.counter }}
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         <a href="{% url 'task_detail' task.id %}"
                                            class="fw-bold text-primary text-decoration-none">
@@ -292,11 +300,23 @@
         $(document).ready(function () {
             // Initialize Select2 on the client selector
             // We use dropdownParent so the search input works inside the Bootstrap modal
+            $('#clientSelector').empty();
             $('#clientSelector').select2({
                 dropdownParent: $('#selectClientModal'),
-                placeholder: "-- Search Client --",
-                allowClear: true,
-                width: '100%'
+                placeholder: 'Client Name || PAN Number || Prospect',
+                width: '100%',
+                minimumInputLength: 0,
+            ajax: {
+            url: '/clients/search/',
+            dataType: 'json',
+            delay: 300,
+            data: function (params) {
+                return { q: params.term };
+            },
+            processResults: function (data) {
+                return { results: data };
+            }
+        }
             });
 
             // Listen for change event on Select2

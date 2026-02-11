@@ -205,22 +205,30 @@
             </a>
         </li>
 
+        {% if request.user.is_superuser %}
+        <li class="nav-heading">Attendance Report</li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin_attendance_report' %}">
+                <i class="bi bi-person-check"></i>
+                <span>Attendance Report</span>
+            </a>
+        </li>
+        {% endif %}
+
+
         <li class="nav-heading">Services</li>
-
         <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-calculator"></i>
-                <span>Tax Filing</span>
+            <a class="nav-link" href="{% url 'list_services' %}">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>List Services</span>
             </a>
         </li>
-
+        <li class="nav-heading">Payments</li>
         <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-receipt"></i>
-                <span>GST Returns</span>
+            <a class="nav-link" href="{% url 'payment_list' %}">
+                <i class="bi bi-currency-rupee"></i>
+                <span>List Payments</span>
             </a>
-        </li>
-
         <li class="nav-heading">HR</li>
 
 
@@ -232,20 +240,27 @@
             </a>
         </li>
 
-        {% if user.is_staff or user.is_superuser %}
-<li class="nav-item">
-    <a class="nav-link " href="{% url 'manage-leaves' %}">
-        <i class="bi bi-clipboard-check"></i>
-        <span>Manage Leaves</span>
+        {% if request.user.employee.role == "BRANCH_MANAGER" or request.user.employee.role == "ADMIN" or request.user.is_superuser %}
+        <li class="nav-item">
+        <a class="nav-link " href="{% url 'manage-leaves' %}">
+            <i class="bi bi-clipboard-check"></i>
+            <span>Manage Leaves</span>
         {% if total_pending > 0 %}
         <span class="badge bg-danger rounded-pill">{{ total_pending }}</span>
         {% endif %}
-    </a>
-</li>
-{% endif %}
+        </a>
+        </li>
+        {% endif %}
 
 
         <li class="nav-heading">System</li>
+
+         <li class="nav-item">
+            <a class="nav-link" href="{% url 'chat_base' %}">
+                <i class="fa-regular fa-comment-dots"></i>
+                <span>Messages</span>
+            </a>
+        </li>
 
         <li class="nav-item">
             <a class="nav-link" href="#">

@@ -12,6 +12,8 @@ def is_admin(user):
 @login_required
 @user_passes_test(is_admin)
 def manage_leaves(request):
+    employees = Employee.objects.all()
+
     if request.method == 'POST':
         leave_id = request.POST.get('leave_id')
         status = request.POST.get('status')
@@ -21,10 +23,22 @@ def manage_leaves(request):
             leave.save()
             messages.success(request, f'Leave {status} successfully!')
             return redirect('manage-leaves')
-
+           
     # Get ALL leaves with employee data
-    all_leaves = Leave.objects.all().select_related('employee__user').order_by('-created_at')
+    if request.user.employee.role == 'BRANCH_MANAGER':
+        all_leaves = (
+        Leave.objects.all()
+        .exclude(employee=request.user.employee)
+        .select_related('employee__user')
+        .order_by('-created_at')
+        )
+        all_leaves = all_leaves.filter(employee__office_location = request.user.employee.office_location)
 
+    elif request.user.is_superuser or request.user.employee.role == 'ADMIN':
+        all_leaves = (Leave.objects.all().select_related('employee__user').order_by('-created_at'))
+    else:
+        all_leaves = Leave.objects.none()
+   
     # Prepare data for template
     leaves_with_data = []
 
@@ -62,6 +76,7 @@ def manage_leaves(request):
         'total_pending': total_pending,
         'total_approved': total_approved,
         'total_rejected': total_rejected,
+        'employees':employees,
     }
     return render(request, 'manage_leaves.html', context)
 

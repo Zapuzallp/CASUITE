@@ -3,7 +3,35 @@
 {% load custom_filters %}
 
 {% block body %}
+<style>
+  .table thead th {
+        font-size: 13px;
+        color: #444;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 
+    .table tbody td {
+        font-size: 14px;
+        
+    }
+
+    .h-100 {
+    height: 90% !important;
+    }
+
+    .table{
+        text-align: center;
+    }
+    
+    .table-light{
+        background:linear-gradient(#FFFFFF, #F8F9FA, #F8F9FA,#F1F9FD);
+    }
+</style>
+<!--  head section -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <main id="main" class="main">
 
         <div class="pagetitle d-flex justify-content-between align-items-center mb-4">
@@ -28,7 +56,7 @@
                         </div>
                     </div>
                 </div>
-    </div>
+          </div>
 
 
 
@@ -43,6 +71,42 @@
       <div class="modal-body">
             <form method="post">
                 {% csrf_token %}
+                 {% if form.non_field_errors %}
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {% for error in form.non_field_errors %}
+            {{ error }}
+        {% endfor %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+                <!-- New Section: Current Leave Balance-->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">Current Leave Balance</h6>
+                        <div class="row text-center">
+                            <div class="col-md-4 mb-2">
+                                <div class="border rounded p-2">
+                                    <small class="text-muted d-block">Sick Leave</small>
+                                    <strong id="sick-balance">{{ leave_summary.sick.remaining }}</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="border rounded p-2">
+                                    <small class="text-muted d-block">Casual Leave</small>
+                                    <strong id="casual-balance">{{ leave_summary.casual.remaining }}</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="border rounded p-2">
+                                    <small class="text-muted d-block">Earned Leave</small>
+                                    <strong id="earned-balance">{{ leave_summary.earned.remaining }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label">{{ form.leave_type.label }}</label>
                     {{ form.leave_type }}
@@ -74,8 +138,15 @@
                     <span id="total-days">0</span>
                 </div>
 
+                <!-- New Section: Remaining Balance After Application -->
+                <div class="mb-3 text-center">
+                    <strong>Remaining Balance After Application:</strong>
+                    <span id="remaining-after">-</span>
+                    <small class="d-block text-muted" id="balance-warning" style="display: none;"></small>
+                </div>
+
                 <div class="text-center">
-                    <button type="submit" class="btn btn-primary">Submit Application</button>
+                    <button type="submit" class="btn btn-primary" id="submit-btn">Submit Application</button>
                 </div>
             </form>
       </div>
@@ -88,16 +159,16 @@
 
     <div class="row g-4 mb-4">
                 <div class="col-12">
-                    <div class="card recent-sales overflow-auto h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Leave Balance</h5>
-                            <table class="table table-bordered">
-                              <thead>
-                                <tr>
-                                  <th scope="col">Leave Type</th>
-                                  <th scope="col">Total Allotted</th>
-                                  <th scope="col">Leaves Taken</th>
-                                  <th scope="col">Remaining</th>
+                    <div class="card recent-sales  h-100 shadow-sm">
+                        <div>
+                            <h5 class="card-title" style = "margin-left:12px;">Leave Balance</h5>
+                            <table class="table table-borderless table-hover align-middle">
+                              <thead class = "table-light">
+                                <tr class = "border-bottom">
+                                  <th  scope="col">Leave Type</th>
+                                  <th  scope="col">Total Allotted</th>
+                                  <th  scope="col">Leaves Taken</th>
+                                  <th  scope="col">Remaining</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -134,11 +205,11 @@
 
     <div class="row g-4 mb-4">
                 <div class="col-12">
-                    <div class="card recent-sales overflow-auto h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Previous Leave Requests</h5>
-                            <table class="table table-bordered">
-                              <thead>
+                    <div class="card recent-sales overflow-auto shadow-sm">
+                        <div>
+                            <h5 class="card-title" style = "margin-left: 12px;">Previous Leave Requests</h5>
+                            <table class="table table-borderless table-hover align-middle">
+                              <thead class = "table-light">
                                 <tr>
                                   <th scope="col">Sr. No.</th>
                                   <th scope="col">Leave Type</th>
@@ -147,51 +218,50 @@
                                     <th scope="col">Total Days</th>
                                     <th scope="col">Reason</th>
                                     <th scope="col">Status</th>
+                                    <th scope="col">Actions</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {% for item in all_items %}
                                 <tr>
                                     <td>{{ forloop.counter }}</td>
-                                  <td>{{ item.leave_type.capitalize }}</td>
+                                    <td>{{ item.leave_type.capitalize }}</td>
                                     <td>{{ item.start_date }}</td>
                                     <td>{{ item.end_date }}</td>
                                     <td>{{ item.duration }}</td>
-                                    <td>{{ item.reason }}</td>
+                                    <td style = "color:#6BBEC3">{{ item.reason }}</td>
                                     {% if item.status == 'pending' %}
                                         <td class="text-warning">{{ item.status.capitalize }}</td>
                                     {% elif item.status == 'approved' %}
-                                        <td class="text-success">{{ item.status.capitalize }}</td>
+                                        <td  class="text-success">{{ item.status.capitalize }}</td>
                                     {% else %}
-                                        <td class="text-danger">{{ item.status.capitalize }}</td>
+                                        <td  class="text-danger">{{ item.status.capitalize }}</td>
                                     {% endif %}
                                     <td>
-                                        {% if item.status == 'pending' %}
-                                            <!-- Button trigger modal -->
-                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
-                                              <i class="bi bi-trash"></i>
-                                            </button>
-
-                                            <!-- Modal -->
-                                            <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                                              <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                  <div class="modal-header">
-                                                    <h5 class="modal-title" id="staticBackdropLabel">Delete Request!!</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                  </div>
-                                                  <div class="modal-body">
-                                                    <p class="h6">Do you want to <i class="text-danger">Delete</i> the Leave request?</p>
-                                                      <div class="mb-3 text-center">
-                                                      <a href="{% url 'leave-delete' item.pk %}" class="btn btn-outline-danger m-1">Delete</a>
-                                                      <button type="button" class="btn btn-outline-primary m-1" data-bs-dismiss="modal">Cancel</button>
-                                                      </div>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </div>
-                                        {% endif %}
-                                    </td>
+    {% if item.status == 'pending' %}
+        <!-- Delete Button for Pending Leaves -->
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.pk }}">
+            <i class="bi bi-trash"></i>
+        </button>
+    {% elif item.status == 'rejected' %}
+        <!-- Check if leave dates are in future -->
+        {% if item.start_date > today %}
+            <!-- Future leave - can re-apply -->
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reapplyModal{{ item.pk }}">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        {% else %}
+            <!-- Past leave - disabled -->
+            <button type="button" class="btn btn-outline-secondary" disabled
+                    title="Cannot re-apply past leaves ({{ item.start_date }})">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        {% endif %}
+    {% else %}
+        <!-- No action for approved leaves -->
+        <span class="text-muted">-</span>
+    {% endif %}
+</td>
                                 </tr>
                                 {% endfor %}
                               </tbody>
@@ -201,16 +271,82 @@
                 </div>
     </div>
 
-    <script>
+    <!-- Delete Modals for Pending Leaves -->
+    {% for item in all_items %}
+        {% if item.status == 'pending' %}
+        <div class="modal fade" id="deleteModal{{ item.pk }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteModalLabel{{ item.pk }}" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel{{ item.pk }}">Delete Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p class="h6">Do you want to <i class="text-danger">Delete</i> the Leave request?</p>
+                <p><strong>Leave Type:</strong> {{ item.leave_type.capitalize }}</p>
+                <p><strong>Dates:</strong> {{ item.start_date }} to {{ item.end_date }} ({{ item.duration }} days)</p>
+                <p><strong>Reason:</strong> {{ item.reason }}</p>
+                  <div class="mb-3 text-center">
+                  <a href="{% url 'leave-delete' item.pk %}" class="btn btn-outline-danger m-1">Delete</a>
+                  <button type="button" class="btn btn-outline-primary m-1" data-bs-dismiss="modal">Cancel</button>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+
+    <!-- Re-apply Modals for Rejected Leaves -->
+    {% for item in all_items %}
+        {% if item.status == 'rejected' %}
+        <div class="modal fade" id="reapplyModal{{ item.pk }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="reapplyModalLabel{{ item.pk }}" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="reapplyModalLabel{{ item.pk }}">Re-apply Leave</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p class="h6">Do you want to <i class="text-primary">Re-apply</i> this Leave?</p>
+                <p><strong>Leave Type:</strong> {{ item.leave_type.capitalize }}</p>
+                <p><strong>Dates:</strong> {{ item.start_date }} to {{ item.end_date }} ({{ item.duration }} days)</p>
+                <p><strong>Reason:</strong> {{ item.reason }}</p>
+                <p><strong>Previous Status:</strong> <span class="text-danger">Rejected</span></p>
+                  <div class="mb-3 text-center">
+                  <form method="post" action="{% url 'leave-reapply' item.pk %}" style="display: inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-outline-primary m-1">Re-apply</button>
+                  </form>
+                  <button type="button" class="btn btn-outline-secondary m-1" data-bs-dismiss="modal">Cancel</button>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+
+       <script>
         //JS for dynamic update of number of days when selecting start date and end date
     document.addEventListener("DOMContentLoaded", function () {
         const startInput = document.getElementById("id_start_date");
         const endInput = document.getElementById("id_end_date");
+        const leaveTypeSelect = document.getElementById("id_leave_type");
         const output = document.getElementById("total-days");
+        const remainingAfter = document.getElementById("remaining-after");
+        const balanceWarning = document.getElementById("balance-warning");
+        const submitBtn = document.getElementById("submit-btn");
+
+        // Get current balances from the HTML
+        const sickBalance = parseInt(document.getElementById("sick-balance").textContent) || 0;
+        const casualBalance = parseInt(document.getElementById("casual-balance").textContent) || 0;
+        const earnedBalance = parseInt(document.getElementById("earned-balance").textContent) || 0;
 
         function calculateDays() {
             if (!startInput.value || !endInput.value) {
                 output.textContent = "0";
+                updateRemainingBalance();
                 return;
             }
 
@@ -219,6 +355,7 @@
 
             if (endDate < startDate) {
                 output.textContent = "0";
+                updateRemainingBalance();
                 return;
             }
 
@@ -229,13 +366,204 @@
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
             output.textContent = diffDays;
+            updateRemainingBalance();
         }
 
-        startInput.addEventListener("change", calculateDays);
-        endInput.addEventListener("change", calculateDays);
+        function updateRemainingBalance() {
+            const totalDays = parseInt(output.textContent) || 0;
+            const leaveType = leaveTypeSelect.value;
+            let currentBalance = 0;
+            let remaining = 0;
+
+            // Get current balance based on leave type
+            switch(leaveType) {
+                case 'sick':
+                    currentBalance = sickBalance;
+                    break;
+                case 'casual':
+                    currentBalance = casualBalance;
+                    break;
+                case 'earned':
+                    currentBalance = earnedBalance;
+                    break;
+                default:
+                    currentBalance = 0;
+            }
+
+            remaining = currentBalance - totalDays;
+
+            // Update the display
+            if (leaveType && totalDays > 0) {
+                remainingAfter.textContent = remaining;
+
+                // Add warning if insufficient balance
+                if (remaining < 0) {
+                    remainingAfter.style.color = "red";
+                    balanceWarning.style.display = "block";
+                    balanceWarning.style.color = "red";
+                    balanceWarning.textContent = `Warning: Insufficient balance! You need ${Math.abs(remaining)} more days.`;
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add("btn-secondary");
+                    submitBtn.classList.remove("btn-primary");
+                } else if (remaining === 0) {
+                    remainingAfter.style.color = "orange";
+                    balanceWarning.style.display = "block";
+                    balanceWarning.style.color = "orange";
+                    balanceWarning.textContent = "Note: This will use all your remaining leaves of this type.";
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove("btn-secondary");
+                    submitBtn.classList.add("btn-primary");
+                } else {
+                    remainingAfter.style.color = "green";
+                    balanceWarning.style.display = "none";
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove("btn-secondary");
+                    submitBtn.classList.add("btn-primary");
+                }
+            } else {
+                remainingAfter.textContent = "-";
+                remainingAfter.style.color = "inherit";
+                balanceWarning.style.display = "none";
+                submitBtn.disabled = false;
+                submitBtn.classList.remove("btn-secondary");
+                submitBtn.classList.add("btn-primary");
+            }
+        }
+
+        // Add validation to date change events
+        startInput.addEventListener("change", function() {
+            validateDatesImmediately();
+            calculateDays();
+        });
+
+        endInput.addEventListener("change", function() {
+            validateDatesImmediately();
+            calculateDays();
+        });
+
+        leaveTypeSelect.addEventListener("change", updateRemainingBalance);
+
+        // Initial calculation if dates are already filled
+        calculateDays();
     });
 
+    // VALIDATION FUNCTION
+    function validateDatesImmediately() {
+        const startInput = document.getElementById("id_start_date");
+        const endInput = document.getElementById("id_end_date");
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
+        // Clear previous error messages
+        startInput.classList.remove('is-invalid');
+        endInput.classList.remove('is-invalid');
+
+        // Remove existing error messages
+        let existingError = startInput.nextElementSibling;
+        if (existingError && existingError.classList.contains('invalid-feedback')) {
+            existingError.remove();
+        }
+
+        existingError = endInput.nextElementSibling;
+        if (existingError && existingError.classList.contains('invalid-feedback')) {
+            existingError.remove();
+        }
+
+        if (startInput.value) {
+            const startDate = new Date(startInput.value);
+
+            // Check if start date is in the past
+            if (startDate < today) {
+                startInput.classList.add('is-invalid');
+                const errorElement = document.createElement('div');
+                errorElement.className = 'invalid-feedback';
+                errorElement.textContent = 'Cannot apply for leaves in the past.';
+                startInput.parentNode.appendChild(errorElement);
+                return false;
+            }
+        }
+
+        if (startInput.value && endInput.value) {
+            const startDate = new Date(startInput.value);
+            const endDate = new Date(endInput.value);
+
+            // Check if end date is before start date
+            if (endDate < startDate) {
+                endInput.classList.add('is-invalid');
+                const errorElement = document.createElement('div');
+                errorElement.className = 'invalid-feedback';
+                errorElement.textContent = 'End date cannot be before start date.';
+                endInput.parentNode.appendChild(errorElement);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Auto-open modal when form has errors
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if there are form errors
+        const hasErrors = document.querySelector('.errorlist') !== null;
+
+        if (hasErrors) {
+            const modalElement = document.getElementById('exampleModal');
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
+        }
+    });
+
+    // Prevent modal from closing if there are errors
+    document.getElementById('exampleModal').addEventListener('hide.bs.modal', function(event) {
+        // Check if there are form errors visible
+        const hasErrors = document.querySelector('.invalid-feedback') !== null;
+
+        if (hasErrors) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        }
+    });
+
+    // SweetAlert date validation BEFORE submit
+    const form = document.querySelector('#exampleModal form');
+    if (form) {
+        form.onsubmit = function(e) {
+            const startDate = document.getElementById('id_start_date').value;
+            const endDate = document.getElementById('id_end_date').value;
+            const today = new Date().toISOString().split('T')[0];
+
+            // Check past dates
+            if (startDate && startDate < today) {
+                e.preventDefault();
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Date',
+                    text: 'Cannot apply for leaves in the past.',
+                    confirmButtonColor: '#3085d6',
+                });
+                return false;
+            }
+
+            // Check end date before start date
+            if (startDate && endDate && endDate < startDate) {
+                e.preventDefault();
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Dates',
+                    text: 'End date cannot be before start date.',
+                    confirmButtonColor: '#3085d6',
+                });
+                return false;
+            }
+
+            return true;
+        };
+    }
     </script>
 </main>
 {% endblock body %}

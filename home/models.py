@@ -7,6 +7,8 @@ from django.db import models
 # -------------------------
 # -------------------------
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.conf import settings
 
 
 # Create your models here.
@@ -66,7 +68,7 @@ class EmployeeShift(models.Model):
 
 
 STATE_CHOICES = (
-    ('01', 'Jammu and Kashmir'),
+    ('01', 'West Bengal'),
     ('02', 'Himachal Pradesh'),
     ('03', 'Punjab'),
     ('04', 'Chandigarh'),
@@ -84,7 +86,7 @@ STATE_CHOICES = (
     ('16', 'Tripura'),
     ('17', 'Meghalaya'),
     ('18', 'Assam'),
-    ('19', 'West Bengal'),
+    ('19', 'Jammu and Kashmir'),
     ('20', 'Jharkhand'),
     ('21', 'Odisha'),
     ('22', 'Chhattisgarh'),
@@ -192,7 +194,8 @@ class Client(models.Model):
     # --- Address ---
     address_line1 = models.TextField()
     city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
+    state = models.CharField(max_length=100,choices=STATE_CHOICES)
+
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=100, default='India')
 
@@ -224,14 +227,58 @@ class Client(models.Model):
     def __str__(self):
         return self.client_name
 
+GST_SCHEME_CHOICES = [
+    ('Regular', 'Regular Scheme'),
+    ('Composition', 'Composition Scheme'),
+    ('QRMP', 'QRMP Scheme'),
+]
+
+GST_STATUS_CHOICES = [
+    ('Active', 'Active'),
+    ('Closed', 'Closed'),
+]
+
+
 class GSTDetails(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='gst_details')
+
     gst_number = models.CharField(max_length=15)
+
     registered_address = models.TextField(blank=True, null=True)
-    state = models.CharField(max_length=50, blank=True)
+
+    #  State dropdown
+    state = models.CharField(
+        max_length=2,
+        choices=STATE_CHOICES,
+        blank=True,
+        null=True
+    )
+
+    #  NEW FIELD 1: GST Scheme Type
+    gst_scheme_type = models.CharField(
+        max_length=20,
+        choices=GST_SCHEME_CHOICES
+    )
+
+    #  NEW FIELD 2: Created By (logged-in user)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gst_created'
+    )
+
+    #  NEW FIELD 3: Status
+    status = models.CharField(
+        max_length=10,
+        choices=GST_STATUS_CHOICES,
+        default='Active'
+    )
 
     def __str__(self):
-        return f"{self.gst_number} - {self.state}"
+        return f"{self.gst_number} - {self.get_state_display()}"
+
 # -------------------------
 # 2. Universal Business Profile
 # -------------------------
@@ -441,7 +488,7 @@ class Task(models.Model):
     description = models.TextField(blank=True, null=True)
 
     # --- Dates & Status ---
-    due_date = models.DateField()
+    due_date = models.DateField(blank=True, null=True)
     completed_date = models.DateField(blank=True, null=True)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='Medium')
 
@@ -459,6 +506,8 @@ class Task(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # 🔑 This prevents duplicate auto-creation
+    last_auto_created_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.task_title} ({self.client.client_name})"
@@ -473,7 +522,32 @@ class Task(models.Model):
                 changed_by=changed_by,
                 remarks=remarks
             )
+    # Set `is_recurring` only when the task is first created.
+    # Derived from `recurrence_period` to avoid auto-created
+    # or copied tasks being incorrectly marked as recurring.
+    def save(self, *args, **kwargs):
+        if self.pk and not self.description:
+            old = Task.objects.get(pk=self.pk)
+            self.description = old.description
+        self.is_recurring = self.recurrence_period != 'None'
+        super().save(*args, **kwargs)
 
+
+class TaskRecurrence(models.Model):
+    task = models.OneToOneField(Task,on_delete=models.CASCADE,related_name="task_recurrence")
+    recurrence_period = models.CharField(max_length=20)
+    is_recurring = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    next_run_at = models.DateTimeField(null=True, blank=True)
+    last_auto_created_at = models.DateTimeField(null=True, blank=True)
+
+    def clean(self):
+        if self.recurrence_period == "None":
+            raise ValidationError(
+                {"recurrence_period": "TaskRecurrence cannot be 'None'"}
+            )
+    def __str__(self):
+        return self.task.task_title
 
 class TaskAssignmentStatus(models.Model):
     """
@@ -615,10 +689,17 @@ class Attendance(models.Model):
 
     status = models.CharField(
         max_length=20,
-        default="Absent"   # Absent / Present / Incomplete
+        choices=[
+            ("pending", "Pending"),
+            ("approved", "Approved"),
+            ("rejected", "Rejected"),
+            ("half_day", "Half Day Present"),
+            ("full_day", "Full Day Present")
+        ],
+        default="approved"
     )
 
-    remark = models.CharField(max_length=255, null=True, blank=True)
+    remark = models.TextField(blank=True, null=True)
 
     location_name = models.CharField(max_length=255, null=True, blank=True)
     clock_in_lat = models.DecimalField(
@@ -634,26 +715,31 @@ class Attendance(models.Model):
         max_digits=9, decimal_places=6, null=True, blank=True
     )
 
-    requires_approval = models.BooleanField(default=False)
-    approved_by_admin = models.BooleanField(default=False)
-
 
     class Meta:
         unique_together = ('user', 'date')
 
     def save(self, *args, **kwargs):
+
+        # Calculate duration
         if self.clock_in and self.clock_out:
-            # Ensure clock_out is always after clock_in
             if self.clock_out < self.clock_in:
-                self.clock_out += timedelta(days=1)  # adjust for cross-day clock-out
+                self.clock_out += timedelta(days=1)
 
             self.duration = self.clock_out - self.clock_in
-            self.status = "Present"
+
+            # Only auto-set status if admin logic didn’t already set it
+            if not hasattr(self, '_skip_auto_status') and (not self.status or self.status == "approved"):
+                self.status = "approved"
+
         elif self.clock_in and not self.clock_out:
-            self.status = "Incomplete"
+            if not hasattr(self, '_skip_auto_status') and not self.status:
+                self.status = "pending"
             self.duration = None
+
         else:
-            self.status = "Absent"
+            if not hasattr(self, '_skip_auto_status') and not self.status:
+                self.status = "absent"
             self.duration = None
 
         super().save(*args, **kwargs)
@@ -672,6 +758,34 @@ class Attendance(models.Model):
             return f"{hours}h {minutes}m"
         return f"{minutes}m {seconds}s"
 
+
+    def get_work_duration(self):
+        """Get formatted work duration for mobile display"""
+        if self.clock_in and not self.clock_out:
+            # Calculate current duration
+            current_time = timezone.now()
+            duration = current_time - self.clock_in
+            total_seconds = int(duration.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            return f"{hours:02d}:{minutes:02d}:00 Hrs"
+        elif self.duration:
+            return self.formatted_duration()
+        return "00:00:00 Hrs"
+    
+    def should_show_pending_warning(self):
+        """Check if pending warning should still be shown"""
+        if self.status != 'pending':
+            return False
+        
+        # If not clocked out yet, always show warning
+        if not self.clock_out:
+            return True
+        
+        # If clocked out, show warning until clock_out + 4 hours
+        from django.utils import timezone
+        warning_cutoff = self.clock_out + timedelta(hours=4)
+        return timezone.now() < warning_cutoff
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
@@ -825,18 +939,27 @@ class Employee(models.Model):
     personal_email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True)
+    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True, blank=True)
     role = models.CharField(max_length=255, choices=ROLES_CHOICE)
     supervisor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Supervisor_Or_Manager", null=True,
                                    blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    # single source of truth for limits
-    LEAVE_LIMITS = {
-        "sick": 7,
-        "casual": 8,
-        "earned": 5,
-    }
+
+    # leave types
+    sick_leave = models.FloatField(default=7.0)
+    casual_leave = models.FloatField(default=8.0)
+    earned_leave = models.FloatField(default=5.0)
+
+    @property
+    def LEAVE_LIMITS(self):
+        """Property that returns dictionary from FloatFields."""
+        return {
+            "sick": self.sick_leave,
+            "casual": self.casual_leave,
+            "earned": self.earned_leave,
+        }
+
 
     #Leave Summary
     def get_leave_summary(self):
@@ -895,7 +1018,7 @@ class Leave(models.Model):
         return (self.end_date - self.start_date).days + 1
 
     def total_days(self):
-        return self.duration  # Alias for our template
+        return self.duration
 
     def __str__(self):
         return f"{self.employee} - {self.leave_type}"
@@ -963,14 +1086,45 @@ class Payment(models.Model):
         ('UPI', 'UPI'),
         ('BANK', 'Bank Transfer'),
     ]
+    PAYMENT_STATUS = [
+        ('PENDING', 'Pending'),
+        ('PAID', 'Paid'),
+        ('UNPAID', 'Unpaid'),
+        ('CANCELED', 'Canceled'),
+    ]
+    APPROVAL_STATUS = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
 
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES)
     transaction_id = models.CharField(max_length=255, blank=True, null=True)
-    amount = models.FloatField()
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_date = models.DateField()
     # Auto-compute fields
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="payments_created")
     created_at = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='PENDING')
+    approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS, default='PENDING')
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_payments")
+    approved_at = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return f"Payment {self.id} for Invoice #{self.invoice.id}"
+
+class Message(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('received', 'Received'),
+    ]
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver= models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    is_seen = models.BooleanField(default = False)    
+
+    def __str__(self):
+        return f"From{self.sender} to {self.receiver} - {self.status}"

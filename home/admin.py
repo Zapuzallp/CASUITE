@@ -20,7 +20,9 @@ from .models import (
     GSTDetails,
     Employee,
     Shift, EmployeeShift, OfficeDetails,
-    Leave
+    Leave,
+    Message,
+    TaskRecurrence
 )
 
 
@@ -165,15 +167,17 @@ class ClientResource(resources.ModelResource):
             except Exception:
                 pass
 
+
 from django.contrib import admin
 from .models import Notification
+
 
 # =====================================================
 # INLINE BUSINESS PROFILE
 # =====================================================
 class ClientBusinessProfileInline(admin.StackedInline):
     model = ClientBusinessProfile
-    fk_name = "client"   # IMPORTANT: required in your case
+    fk_name = "client"  # IMPORTANT: required in your case
     extra = 0
     max_num = 1
     can_delete = False
@@ -222,13 +226,13 @@ class ClientAdmin(ImportExportModelAdmin):
     )
     date_hierarchy = "created_at"
     autocomplete_fields = ("assigned_ca", "created_by")
+
     # Restrict client list in admin
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
         return qs.filter(assigned_ca=request.user)
-
 
 
 @admin.register(ClientUserEntitle)
@@ -330,6 +334,7 @@ class TaskAdmin(admin.ModelAdmin):
         "fee_status",
         "created_by",
         "created_at",
+        "last_auto_created_at",
     )
     list_filter = (
         "service_type",
@@ -352,9 +357,10 @@ class TaskAdmin(admin.ModelAdmin):
     date_hierarchy = "due_date"
     autocomplete_fields = ("client", "created_by", "assignees")
     filter_horizontal = ("assignees",)
-    #-----------------------------------------------------------------
+
+    # -----------------------------------------------------------------
     # Prevent staff users from viewing tasks of unassigned clients.
-    #-----------------------------------------------------------------
+    # -----------------------------------------------------------------
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
@@ -410,6 +416,19 @@ class TaskStatusLogAdmin(admin.ModelAdmin):
     )
     date_hierarchy = "created_at"
     autocomplete_fields = ("task", "changed_by")
+
+
+@admin.register(TaskRecurrence)
+class TaskRecurrenceAdmin(admin.ModelAdmin):
+    list_display = (
+        "task",
+        "recurrence_period",
+        "created_at",
+        "is_recurring",
+        "next_run_at",
+        "last_auto_created_at"
+
+    )
 
 
 @admin.register(TaskExtendedAttributes)
@@ -488,8 +507,8 @@ class TaskDocumentAdmin(admin.ModelAdmin):
 
 @admin.register(GSTDetails)
 class GSTDetailsAdmin(admin.ModelAdmin):
-    list_display = ("client", "gst_number", "state", "registered_address")
-    list_filter = ("state",)
+    list_display = ("client", "gst_number", "state", "registered_address", "status", "gst_scheme_type")
+    list_filter = ("state", "status", "gst_scheme_type")
     search_fields = (
         "client__client_name",
         "client__pan_no",
@@ -498,8 +517,338 @@ class GSTDetailsAdmin(admin.ModelAdmin):
     )
     autocomplete_fields = ("client",)
 
+    change_list_template = "admin/gst_details_changelist.html"
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('import-gst/', self.admin_site.admin_view(self.import_gst_view), name='gst-import'),
+            path('download-template/', self.admin_site.admin_view(self.download_template_view),
+                 name='gst-download-template'),
+        ]
+        return custom_urls + urls
+
+    def download_template_view(self, request):
+        """Download Excel template with all GST fields"""
+        from django.http import HttpResponse
+        import pandas as pd
+        from io import BytesIO
+
+        # Create template with all fields and sample data
+        template_data = {
+            'CLIENT_NAME': ['ABC Traders', 'XYZ Industries', ''],
+            'GST_NUMBER': ['27AABCU9603R1ZM', '19AADCS1234F1Z5', ''],
+            'REGISTERED_ADDRESS': ['123 Main St, Mumbai', '456 Park Ave, Kolkata', ''],
+            'STATE_CODE': ['27', '19', ''],
+            'GST_SCHEME_TYPE': ['Regular', 'Composition', ''],
+            'STATUS': ['Active', 'Active', ''],
+        }
+
+        df = pd.DataFrame(template_data)
+
+        # Create Excel file in memory
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='GST Details')
+
+            # Get the workbook and worksheet
+            workbook = writer.book
+            worksheet = writer.sheets['GST Details']
+
+            # Add instructions sheet
+            instructions_data = {
+                'Field Name': [
+                    'CLIENT_NAME',
+                    'GST_NUMBER',
+                    'REGISTERED_ADDRESS',
+                    'STATE_CODE',
+                    'GST_SCHEME_TYPE',
+                    'STATUS'
+                ],
+                'Required': [
+                    'Yes',
+                    'Yes',
+                    'No',
+                    'No (auto-derived from GST)',
+                    'No (default: Regular)',
+                    'No (default: Active)'
+                ],
+                'Description': [
+                    'Client name (must match existing client)',
+                    '15-character GST number',
+                    'Registered address (optional)',
+                    'State code 01-38 (auto-filled if empty)',
+                    'Regular / Composition / QRMP',
+                    'Active / Closed'
+                ],
+                'Example': [
+                    'ABC Traders',
+                    '27AABCU9603R1ZM',
+                    '123 Main Street, Mumbai',
+                    '27',
+                    'Regular',
+                    'Active'
+                ]
+            }
+
+            df_instructions = pd.DataFrame(instructions_data)
+            df_instructions.to_excel(writer, index=False, sheet_name='Instructions')
+
+        output.seek(0)
+
+        # Create response
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename=GST_Import_Template.xlsx'
+
+        return response
+
+    def import_gst_view(self, request):
+        from django.shortcuts import render, redirect
+        from django.contrib import messages
+        from django.db import transaction
+        from django.db.models import Q
+        import pandas as pd
+        from home.models import Client, GSTDetails
+
+        if request.method == 'POST':
+            excel_file = request.FILES.get('excel_file')
+
+            if not excel_file:
+                messages.error(request, 'Please select an Excel file')
+                return redirect('..')
+
+            # Validate file extension
+            if not excel_file.name.endswith(('.xlsx', '.xls')):
+                messages.error(request, 'Please upload a valid Excel file (.xlsx or .xls)')
+                return redirect('..')
+
+            try:
+                # Read Excel file
+                df = pd.read_excel(excel_file, engine='openpyxl')
+
+                # Check for required columns (flexible naming)
+                # Support both old format (PROPRIETOR NAME, GST NO) and new format (CLIENT_NAME, GST_NUMBER)
+                client_col = None
+                gst_col = None
+
+                for col in df.columns:
+                    col_upper = col.upper().strip()
+                    if col_upper in ['CLIENT_NAME', 'PROPRIETOR NAME', 'CLIENT NAME']:
+                        client_col = col
+                    elif col_upper in ['GST_NUMBER', 'GST NO', 'GST NUMBER', 'GSTIN']:
+                        gst_col = col
+
+                if not client_col or not gst_col:
+                    messages.error(
+                        request,
+                        'Excel file must contain CLIENT_NAME and GST_NUMBER columns '
+                        '(or PROPRIETOR NAME and GST NO)'
+                    )
+                    return redirect('..')
+
+                # Optional columns
+                address_col = None
+                state_col = None
+                scheme_col = None
+                status_col = None
+
+                for col in df.columns:
+                    col_upper = col.upper().strip()
+                    if col_upper in ['REGISTERED_ADDRESS', 'ADDRESS']:
+                        address_col = col
+                    elif col_upper in ['STATE_CODE', 'STATE CODE', 'STATE']:
+                        state_col = col
+                    elif col_upper in ['GST_SCHEME_TYPE', 'SCHEME TYPE', 'SCHEME']:
+                        scheme_col = col
+                    elif col_upper in ['STATUS']:
+                        status_col = col
+
+                total_rows = len(df)
+
+                # Statistics
+                stats = {
+                    'success': 0,
+                    'skipped_missing_name': 0,
+                    'skipped_missing_gst': 0,
+                    'skipped_no_client': 0,
+                    'skipped_multiple_clients': 0,
+                    'skipped_duplicate_gst': 0,
+                    'skipped_invalid_gst': 0,
+                    'skipped_invalid_scheme': 0,
+                    'skipped_invalid_status': 0,
+                }
+
+                # GST State Code Mapping
+                GST_STATE_CODES = {
+                    '01': '01', '02': '02', '03': '03', '04': '04', '05': '05',
+                    '06': '06', '07': '07', '08': '08', '09': '09', '10': '10',
+                    '11': '11', '12': '12', '13': '13', '14': '14', '15': '15',
+                    '16': '16', '17': '17', '18': '18', '19': '19', '20': '20',
+                    '21': '21', '22': '22', '23': '23', '24': '24', '26': '26',
+                    '27': '27', '29': '29', '30': '30', '31': '31', '32': '32',
+                    '33': '33', '34': '34', '35': '35', '36': '36', '37': '37',
+                    '38': '38', '97': '97',
+                }
+
+                # Valid scheme types and statuses
+                VALID_SCHEMES = ['Regular', 'Composition', 'QRMP']
+                VALID_STATUSES = ['Active', 'Closed']
+
+                # Process each row
+                for index, row in df.iterrows():
+                    client_name = row.get(client_col)
+                    gst_no = row.get(gst_col)
+
+                    # Skip if missing required data
+                    if pd.isna(client_name) or str(client_name).strip() == '':
+                        stats['skipped_missing_name'] += 1
+                        continue
+
+                    if pd.isna(gst_no) or str(gst_no).strip() == '':
+                        stats['skipped_missing_gst'] += 1
+                        continue
+
+                    # Clean required data
+                    client_name = str(client_name).strip()
+                    gst_no = str(gst_no).strip().upper()
+
+                    # Validate GST format
+                    if len(gst_no) != 15:
+                        stats['skipped_invalid_gst'] += 1
+                        continue
+
+                    # Extract state code from GST
+                    state_code_from_gst = gst_no[:2]
+                    if state_code_from_gst not in GST_STATE_CODES:
+                        stats['skipped_invalid_gst'] += 1
+                        continue
+
+                    # Get optional fields
+                    registered_address = None
+                    if address_col and not pd.isna(row.get(address_col)):
+                        registered_address = str(row.get(address_col)).strip()
+
+                    state_code = state_code_from_gst  # Default from GST
+                    if state_col and not pd.isna(row.get(state_col)):
+                        provided_state = str(row.get(state_col)).strip()
+                        if provided_state in GST_STATE_CODES:
+                            state_code = provided_state
+
+                    gst_scheme_type = 'Regular'  # Default
+                    if scheme_col and not pd.isna(row.get(scheme_col)):
+                        provided_scheme = str(row.get(scheme_col)).strip()
+                        if provided_scheme in VALID_SCHEMES:
+                            gst_scheme_type = provided_scheme
+                        else:
+                            stats['skipped_invalid_scheme'] += 1
+                            continue
+
+                    status = 'Active'  # Default
+                    if status_col and not pd.isna(row.get(status_col)):
+                        provided_status = str(row.get(status_col)).strip()
+                        if provided_status in VALID_STATUSES:
+                            status = provided_status
+                        else:
+                            stats['skipped_invalid_status'] += 1
+                            continue
+
+                    # Find client (case-insensitive)
+                    clients = Client.objects.filter(Q(client_name__iexact=client_name))
+
+                    if not clients.exists():
+                        stats['skipped_no_client'] += 1
+                        continue
+
+                    if clients.count() > 1:
+                        stats['skipped_multiple_clients'] += 1
+                        continue
+
+                    client = clients.first()
+
+                    # Check if GST already exists
+                    if GSTDetails.objects.filter(client=client, gst_number=gst_no).exists():
+                        stats['skipped_duplicate_gst'] += 1
+                        continue
+
+                    # Use client's address if not provided in Excel
+                    if not registered_address and client.address_line1:
+                        registered_address = client.address_line1
+
+                    # Create GST Details
+                    try:
+                        with transaction.atomic():
+                            GSTDetails.objects.create(
+                                client=client,
+                                gst_number=gst_no,
+                                gst_scheme_type=gst_scheme_type,
+                                state=GST_STATE_CODES[state_code],
+                                registered_address=registered_address,
+                                status=status,
+                                created_by=request.user
+                            )
+                            stats['success'] += 1
+                    except Exception as e:
+                        messages.warning(request, f'Error creating GST for {client_name}: {str(e)}')
+
+                # Show summary
+                total_skipped = sum([
+                    stats['skipped_missing_name'],
+                    stats['skipped_missing_gst'],
+                    stats['skipped_invalid_gst'],
+                    stats['skipped_no_client'],
+                    stats['skipped_multiple_clients'],
+                    stats['skipped_duplicate_gst'],
+                    stats['skipped_invalid_scheme'],
+                    stats['skipped_invalid_status'],
+                ])
+
+                messages.success(
+                    request,
+                    f'✅ Import completed! Successfully created: {stats["success"]}, '
+                    f'Skipped: {total_skipped} (Total rows: {total_rows})'
+                )
+
+                if stats['skipped_missing_name'] > 0:
+                    messages.info(request, f'⚠️ Skipped {stats["skipped_missing_name"]} rows with missing CLIENT_NAME')
+                if stats['skipped_missing_gst'] > 0:
+                    messages.info(request, f'⚠️ Skipped {stats["skipped_missing_gst"]} rows with missing GST_NUMBER')
+                if stats['skipped_invalid_gst'] > 0:
+                    messages.info(request, f'⚠️ Skipped {stats["skipped_invalid_gst"]} rows with invalid GST format')
+                if stats['skipped_no_client'] > 0:
+                    messages.warning(request, f'❌ Skipped {stats["skipped_no_client"]} rows - no matching client found')
+                if stats['skipped_multiple_clients'] > 0:
+                    messages.warning(request,
+                                     f'❌ Skipped {stats["skipped_multiple_clients"]} rows - multiple clients found')
+                if stats['skipped_duplicate_gst'] > 0:
+                    messages.info(request, f'ℹ️ Skipped {stats["skipped_duplicate_gst"]} rows - GST already exists')
+                if stats['skipped_invalid_scheme'] > 0:
+                    messages.info(request,
+                                  f'⚠️ Skipped {stats["skipped_invalid_scheme"]} rows - invalid GST scheme type')
+                if stats['skipped_invalid_status'] > 0:
+                    messages.info(request, f'⚠️ Skipped {stats["skipped_invalid_status"]} rows - invalid status')
+
+                return redirect('..')
+
+            except Exception as e:
+                messages.error(request, f'Error processing Excel file: {str(e)}')
+                return redirect('..')
+
+        # GET request - show upload form
+        context = {
+            'title': 'Import GST Details',
+            'site_title': self.admin_site.site_title,
+            'site_header': self.admin_site.site_header,
+            'has_permission': True,
+        }
+        return render(request, 'admin/gst_import_form.html', context)
+
 
 from .models import Attendance
+
 
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
@@ -510,10 +859,11 @@ class AttendanceAdmin(admin.ModelAdmin):
         "clock_out",
         "duration",
         "status",
-        "requires_approval",
         "location_name",
+        "remark",
     )
-    list_filter = ("status", "requires_approval", "date")
+    list_filter = ("status", "date")
+    list_editable = ("status",)
     search_fields = ("user__username", "location_name")
 
 
@@ -543,12 +893,14 @@ class EmployeeAdmin(admin.ModelAdmin):
 
     date_hierarchy = "created_at"
 
-#notification
+
+# notification
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('user', 'title', 'is_read', 'created_at')
     list_filter = ('is_read', 'created_at')
     search_fields = ('title', 'message', 'user__username')
+
 
 @admin.register(Shift)
 class ShiftAdmin(admin.ModelAdmin):
@@ -590,6 +942,7 @@ class LeaveAdmin(admin.ModelAdmin):
 
 from .models import Client, Product, Invoice, InvoiceItem, Payment
 
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('item_name', 'short_code', 'unit', 'hsn_code')
@@ -609,18 +962,42 @@ class InvoiceItemInline(admin.TabularInline):
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = ('id', 'client', 'subject', 'invoice_date', 'due_date')
     list_filter = ('invoice_date', 'due_date', 'client')
-    search_fields = ('subject', 'client__name', 'id')
+    search_fields = ('subject', 'client__client_name', 'id')
     inlines = [InvoiceItemInline]
     filter_horizontal = ('services',)
 
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('invoice', 'amount', 'payment_method', 'payment_date', 'created_by')
-    list_filter = ('payment_method', 'payment_date')
+    list_display = (
+    'invoice', 'amount', 'payment_method', 'payment_date', 'created_by', 'payment_status', 'approval_status')
+    list_filter = ('payment_method', 'payment_date', 'payment_status', 'approval_status')
     search_fields = ('invoice__id', 'transaction_id')
     readonly_fields = ('created_at', 'created_by')
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # Superusers see everything
+        if request.user.is_superuser:
+            return qs
+        # If the user has an Employee profile, limit to their branch.
+        try:
+            office = request.user.employee.office_location
+        except Exception:
+            return qs.none()
+
+        # Return payments created by users in the same office
+        return qs.filter(created_by__employee__office_location=office)
+
     def save_model(self, request, obj, form, change):
         if not obj.created_by:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('sender', 'receiver', 'status', 'timestamp')
+    list_filter = ('status', 'timestamp')
+    search_fields = ('content', 'sender__username', 'receiver__username')
+    ordering = ('-timestamp',)

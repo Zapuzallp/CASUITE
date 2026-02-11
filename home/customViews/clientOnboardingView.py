@@ -12,7 +12,7 @@ from home.forms import ClientForm, ClientBusinessProfileForm
 from home.utils import is_gst_number
 # Import your models and forms
 from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee, TaskType
-
+from home.clients.client_access import get_accessible_clients
 
 # -------------------------------------------------------------------
 # Helper: Generate File Number (Only for new clients)
@@ -140,43 +140,13 @@ class ClientView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
+        # 1. Start with the Base Queryset (Optimized) & Apply Role-Based Logic
+        # Limit the queryset to only those clients the current user
+        # is permitted to view (role-based & assignment-based access)
+        qs = get_accessible_clients(user)
 
-        # 1. Start with the Base Queryset (Optimized)
-        qs = Client.objects.select_related('office_location', 'assigned_ca', 'business_profile')
 
-        # 2. Apply Role-Based Logic
-        if user.is_superuser:
-            # Superuser sees everything
-            pass
-        else:
-            try:
-                # Access the Employee profile linked to the user
-                employee = user.employee
-
-                if employee.role == 'ADMIN':
-                    # Admin role sees everything (Same as superuser)
-                    pass
-
-                elif employee.role == 'BRANCH_MANAGER':
-                    # Branch Manager sees all clients in their specific office location
-                    if employee.office_location:
-                        qs = qs.filter(office_location=employee.office_location)
-                    else:
-                        # Edge case: Manager assigned but no office linked in profile
-                        # Fallback to showing nothing or only assigned to be safe
-                        qs = qs.none()
-
-                else:
-                    # 'STAFF' or any other role defined in future
-                    # Can only see clients explicitly assigned to them
-                    qs = qs.filter(assigned_ca=user)
-
-            except Employee.DoesNotExist:
-                # If User exists but has no Employee profile (Edge Case)
-                # Fallback to strict 'Staff' behavior (Only assigned)
-                qs = qs.filter(assigned_ca=user)
-
-        # 3. Extract GET parameters for UI Filters
+        # 2. Extract GET parameters for UI Filters
         search_query = self.request.GET.get('q')
         filter_status = self.request.GET.get('status')
         filter_type = self.request.GET.get('client_type')
@@ -186,7 +156,7 @@ class ClientView(LoginRequiredMixin, ListView):
         filter_assigned_to = self.request.GET.get('assigned_to')
         filter_custom_view = self.request.GET.get('custom_view')
 
-        # 4. Apply UI Filters on top of Role-Based Queryset
+        # 3. Apply UI Filters on top of Role-Based Queryset
         if search_query:
             # Check if search query is a GST number pattern
             if is_gst_number(search_query):
