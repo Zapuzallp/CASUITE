@@ -1,3 +1,4 @@
+import re
 def generate_file_number(office_location):
     """
     Generates a unique file number based on office location.
@@ -29,6 +30,12 @@ def generate_file_number(office_location):
         next_number = 1
 
     return f"{office_code}{str(next_number).zfill(6)}"
+
+
+GST_REGEX = r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$'
+
+def is_gst_number(value: str) -> bool:
+    return bool(re.match(GST_REGEX, value))
 
 def get_visible_payments(user):
     """

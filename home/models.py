@@ -5,6 +5,7 @@ from django.db import models
 # -------------------------
 # Client Base Table
 # -------------------------
+# -------------------------
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -424,6 +425,24 @@ class ClientDocumentUpload(models.Model):
         return f"Upload by {self.client.client_name} for {self.requested_document}"
 
 
+# -----------------------------------------
+# Task Type Model (Master Data)
+# -----------------------------------------
+class TaskType(models.Model):
+    """
+    Dynamic Task Types loaded from database.
+    Allows flexible task categorization beyond service types.
+    """
+    task_type_name = models.CharField(max_length=100, unique=True)
+    task_type_value = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        ordering = ['task_type_name']
+
+    def __str__(self):
+        return self.task_type_name
+
+
 class Task(models.Model):
     # Static Service Choices matching Config Keys
     SERVICE_TYPE_CHOICES = [
@@ -459,6 +478,9 @@ class Task(models.Model):
 
     # CHANGED: Multi-User Assignment
     assignees = models.ManyToManyField(User, related_name='assigned_tasks', blank=True)
+    
+    # --- Task Type (Dynamic from database) ---
+    task_type = models.ForeignKey(TaskType, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
 
     # --- Task Details ---
     service_type = models.CharField(max_length=50, choices=SERVICE_TYPE_CHOICES)
@@ -800,6 +822,107 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.title} → {self.user.username}"
+
+#Code with Mohit Pandey
+
+STATE_CHOICES = (
+    ('01', 'Jammu and Kashmir'),
+    ('02', 'Himachal Pradesh'),
+    ('03', 'Punjab'),
+    ('04', 'Chandigarh'),
+    ('05', 'Uttarakhand'),
+    ('06', 'Haryana'),
+    ('07', 'Delhi'),
+    ('08', 'Rajasthan'),
+    ('09', 'Uttar Pradesh'),
+    ('10', 'Bihar'),
+    ('11', 'Sikkim'),
+    ('12', 'Arunachal Pradesh'),
+    ('13', 'Nagaland'),
+    ('14', 'Manipur'),
+    ('15', 'Mizoram'),
+    ('16', 'Tripura'),
+    ('17', 'Meghalaya'),
+    ('18', 'Assam'),
+    ('19', 'West Bengal'),
+    ('20', 'Jharkhand'),
+    ('21', 'Odisha'),
+    ('22', 'Chhattisgarh'),
+    ('23', 'Madhya Pradesh'),
+    ('24', 'Gujarat'),
+    # Note: 26 is the merged code for Daman, Diu, Dadra & Nagar Haveli
+    ('26', 'Dadra and Nagar Haveli and Daman and Diu'),
+    ('27', 'Maharashtra'),
+    ('29', 'Karnataka'),
+    ('30', 'Goa'),
+    ('31', 'Lakshadweep'),
+    ('32', 'Kerala'),
+    ('33', 'Tamil Nadu'),
+    ('34', 'Puducherry'),
+    ('35', 'Andaman and Nicobar Islands'),
+    ('36', 'Telangana'),
+    ('37', 'Andhra Pradesh'),
+    ('38', 'Ladakh'),
+    ('97', 'Other Territory'),
+)
+
+
+
+
+# Create your models here.
+
+# -----------------------------------------
+# 1. Shift Table
+# -----------------------------------------
+
+
+class Shift(models.Model):
+    DAY_CHOICES = (
+        ('Mon', 'Monday'),
+        ('Tue', 'Tuesday'),
+        ('Wed', 'Wednesday'),
+        ('Thu', 'Thursday'),
+        ('Fri', 'Friday'),
+        ('Sat', 'Saturday'),
+        ('Sun', 'Sunday'),
+    )
+
+    shift_name = models.CharField(max_length=100)
+    shift_start_time = models.TimeField()
+    shift_end_time = models.TimeField()
+    # Maximum allowed duration in hours (e.g., 8.5 for 8 hours 30 mins)
+    maximum_allowed_duration = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        help_text="Maximum permitted duration in hours (example: 8.5)"
+    )
+ #   Day off stored as a comma-separated string (e.g., 'Sat,Sun')
+    days_off = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        choices=DAY_CHOICES
+    )
+
+    def __str__(self):
+        return self.shift_name
+
+# -----------------------------------------
+# 2. Employee Shift Table
+# -----------------------------------------
+
+
+class EmployeeShift(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='employee_shifts')
+    shift = models.ForeignKey(
+        Shift, on_delete=models.CASCADE, related_name='assigned_employees')
+    # Optional: Track this assignment validity
+    valid_from = models.DateField(auto_now_add=True)
+    valid_to = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.get_username()} assigned to {self.shift.shift_name}"
 
 
 ROLES_CHOICE = [

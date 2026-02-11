@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
-    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message, GSTDetails  # Added GSTDetails to imports
+    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes, TaskType,Message, GSTDetails
 )
 from home.models import Leave
 from decimal import Decimal
@@ -174,7 +174,7 @@ class ClientForm(BootstrapFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['office_location'].required = True
+        self.fields['office_location'].required = False
 
     def clean(self):
         cleaned_data = super().clean()
@@ -248,11 +248,20 @@ class TaskForm(BootstrapFormMixin, forms.ModelForm):
         label="Assign Team Members",
         help_text="Hold Ctrl (Windows) or Cmd (Mac) to select multiple users."
     )
+    
+    # Task Type field - Dynamic from database
+    task_type = forms.ModelChoiceField(
+        queryset=TaskType.objects.filter(),
+        required=False,
+        label="Task Type",
+        empty_label="-- Select Task Type --",
+        help_text="Optional: Select the type of task"
+    )
 
     class Meta:
         model = Task
         # CHANGED: 'assigned_to' -> 'assignees'
-        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description','recurrence_period']
+        fields = ['service_type', 'task_title', 'task_type', 'due_date', 'priority', 'assignees', 'description','recurrence_period']
         widgets = {
             'task_title': forms.TextInput(attrs={'placeholder': 'Auto-generated if left blank'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
