@@ -48,6 +48,7 @@ class Shift(models.Model):
     def __str__(self):
         return self.shift_name
 
+
 # -----------------------------------------
 # 2. Employee Shift Table
 # -----------------------------------------
@@ -106,7 +107,6 @@ STATE_CHOICES = (
     ('38', 'Ladakh'),
     ('97', 'Other Territory'),
 )
-
 
 
 # -----------------------------------------
@@ -193,7 +193,7 @@ class Client(models.Model):
     # --- Address ---
     address_line1 = models.TextField()
     city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100,choices=STATE_CHOICES)
+    state = models.CharField(max_length=100, choices=STATE_CHOICES)
 
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=100, default='India')
@@ -225,6 +225,7 @@ class Client(models.Model):
 
     def __str__(self):
         return self.client_name
+
 
 GST_SCHEME_CHOICES = [
     ('Regular', 'Regular Scheme'),
@@ -277,6 +278,7 @@ class GSTDetails(models.Model):
 
     def __str__(self):
         return f"{self.gst_number} - {self.get_state_display()}"
+
 
 # -------------------------
 # 2. Universal Business Profile
@@ -336,6 +338,7 @@ class ClientBusinessProfile(models.Model):
 
     def __str__(self):
         return f"Profile: {self.client.client_name}"
+
 
 # -------------------------
 # Client User Mapping
@@ -408,7 +411,8 @@ class ClientDocumentUpload(models.Model):
     upload_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     remarks = models.TextField(blank=True, null=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, help_text="User who uploaded the document")
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                    help_text="User who uploaded the document")
 
     def save(self, *args, **kwargs):
         if self.uploaded_file:
@@ -500,6 +504,7 @@ class Task(models.Model):
                 changed_by=changed_by,
                 remarks=remarks
             )
+
     # Set `is_recurring` only when the task is first created.
     # Derived from `recurrence_period` to avoid auto-created
     # or copied tasks being incorrectly marked as recurring.
@@ -512,7 +517,7 @@ class Task(models.Model):
 
 
 class TaskRecurrence(models.Model):
-    task = models.OneToOneField(Task,on_delete=models.CASCADE,related_name="task_recurrence")
+    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="task_recurrence")
     recurrence_period = models.CharField(max_length=20)
     is_recurring = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
@@ -524,8 +529,10 @@ class TaskRecurrence(models.Model):
             raise ValidationError(
                 {"recurrence_period": "TaskRecurrence cannot be 'None'"}
             )
+
     def __str__(self):
         return self.task.task_title
+
 
 class TaskAssignmentStatus(models.Model):
     """
@@ -542,6 +549,7 @@ class TaskAssignmentStatus(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
+
     class Meta:
         unique_together = ('task', 'user', 'status_context')
         ordering = ['order']
@@ -750,16 +758,16 @@ class Attendance(models.Model):
         elif self.duration:
             return self.formatted_duration()
         return "00:00:00 Hrs"
-    
+
     def should_show_pending_warning(self):
         """Check if pending warning should still be shown"""
         if self.status != 'pending':
             return False
-        
+
         # If not clocked out yet, always show warning
         if not self.clock_out:
             return True
-        
+
         # If clocked out, show warning until clock_out + 4 hours
         from django.utils import timezone
         warning_cutoff = self.clock_out + timedelta(hours=4)
@@ -1001,7 +1009,64 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
-    is_seen = models.BooleanField(default = False)    
+    is_seen = models.BooleanField(default = False)
 
     def __str__(self):
         return f"From{self.sender} to {self.receiver} - {self.status}"
+
+
+# -----------------------------------------
+# Lead Management Model
+# -----------------------------------------
+class Lead(models.Model):
+    STATUS_CHOICES = [
+        ('New', 'New'),
+        ('Contacted', 'Contacted'),
+        ('Qualified', 'Qualified'),
+        ('Converted', 'Converted'),
+        ('Lost', 'Lost'),
+    ]
+
+    # Core Fields
+    lead_name = models.CharField(max_length=255, help_text="Display / business name of the lead")
+    full_name = models.CharField(max_length=255, help_text="Name of person/entity (used as Client Name on conversion)")
+    email = models.EmailField(blank=True, null=True)
+    phone_number = models.CharField(max_length=20)
+    requirements = models.TextField(help_text="Complete requirement details provided by lead")
+
+    # Value & Dates
+    lead_value = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True,
+                                     help_text="Expected business value")
+    expected_closure_date = models.DateField(blank=True, null=True, help_text="Expected date of conversion")
+    actual_closure_date = models.DateField(blank=True, null=True,
+                                           help_text="Actual date when lead was converted or lost")
+
+    # Status & Remarks
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='New')
+    remarks = models.TextField(blank=True, null=True, help_text="Internal notes or lost reason")
+
+    # Relationships
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, blank=True, null=True,
+                               related_name='converted_from_lead', help_text="Reference after conversion")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='leads_created')
+    assigned_to = models.ManyToManyField(User, related_name='assigned_leads', blank=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Lead'
+        verbose_name_plural = 'Leads'
+
+    def __str__(self):
+        return f"{self.lead_name} - {self.status}"
+
+    def is_editable(self):
+        """Check if lead can be edited (only New, Contacted, Qualified)"""
+        return self.status in ['New', 'Contacted', 'Qualified']
+
+    def is_final_status(self):
+        """Check if lead is in final status (Converted or Lost)"""
+        return self.status in ['Converted', 'Lost']
