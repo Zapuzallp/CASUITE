@@ -452,7 +452,38 @@ class Task(models.Model):
         ('Quarterly', 'Quarterly'),
         ('Yearly', 'Yearly'),
     ]
+    CONSULTANCY_TYPE_CHOICES = [
+        ('NEW_GST_NUMBER', 'New GST Number'),
+        ('INCOME_TAX_CASE', 'Income Tax Case'),
+        ('GST_CASE', 'GST Case'),
+        ('CONSULTANCY', 'Consultancy'),
+        ('NEW_INCORPORATION', 'New Incorporation'),
+        ('UPDATION_OF_MOA', 'Updation of MOA'),
+        ('DIRECTOR_UPDATION_REQUEST', 'Director Updation Request'),
+        ('DIRECTOR_REMOVAL_REQUEST', 'Director Removal Request'),
+        ('GST_SCHEME_CHANGE', 'GST Scheme Change'),
+        ('BANK_ACCOUNT_OPENING_(CURRENT)', 'Bank Account Opening (Current)'),
+        ('LLP_COMPLIANCE', 'LLP Compliance'),
+        ('PVT_LTD_COMPLIANCE', 'Pvt Ltd Compliance'),
+        ('NEW_DIN', 'New DIN'),
+        ('DIN_RENEWAL', 'DIN Renewal'),
+        ('NEW_DSC', 'New DSC'),
+        ('DSC_RENEWAL', 'DSC Renewal'),
+        ('CLUB_REGISTRATION','Club Registration'),
+        ('DSC','DSC'),
+        ('TRADE_LICENCE','Trade Licence'),
+        ('UDYAM_REG','Udyam Registration'),
+        ('PROJECT_AND_ESTIMATE','Project and Estimate'),
+        ('STOCK_STATEMENT','Stock Statement'),
+        ('P_TAX','P.Tax')
+    ]
 
+    consultancy_type = models.CharField(
+        max_length=100,
+        choices=CONSULTANCY_TYPE_CHOICES,
+        blank=True,
+        null=True
+    )
     # --- Core Links ---
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='tasks')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_tasks')

@@ -49,6 +49,7 @@ def copy_task(original_task, created_at= None,created_by=None, is_auto=False,nex
         created_by=created_by or original_task.created_by,
         service_type=original_task.service_type,
         task_title=title,
+        consultancy_type=original_task.consultancy_type,
         description=original_task.description,
         due_date=None,
         completed_date=None,
