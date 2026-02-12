@@ -6,11 +6,14 @@ from django.contrib.auth.models import User
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
-    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message, GSTDetails  # Added GSTDetails to imports
+    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message, Invoice, InvoiceItem, GSTDetails
+     # Added GSTDetails to imports
 )
 from home.models import Leave
+from django.core.exceptions import ValidationError
 from decimal import Decimal
-from .models import Payment, Invoice
+from .models import Payment, Invoice, Lead
+from .models import Payment
 from django.utils import timezone
 
 
@@ -364,6 +367,62 @@ class MessageForm(forms.ModelForm):
             'status': forms.Select(attrs={'class': 'form-control', 'style': 'width: auto; display: inline-block;'}),
         }
 
+#Invoice Form
+class InvoiceForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Invoice
+        fields = ['client', 'services', 'invoice_date', 'due_date','subject']
+        widgets = {
+            'invoice_date': forms.DateInput(attrs={'type': 'date'}),
+            'due_date': forms.DateInput(attrs={'type': 'date'}),
+            "client": forms.Select(attrs={
+                "class": "form-control",
+            })
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        #Default:no tasks
+        self.fields['services'].queryset = Task.objects.none()
+
+        if 'client' in self.data:
+            client_id = self.data.get('client')
+            self.fields['services'].queryset = Task.objects.filter(
+                client_id=client_id,
+                tagged_invoices__isnull=True
+            )
+        else:
+            self.fields['services'].queryset = Task.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        invoice_date = cleaned_data.get('invoice_date')
+        due_date = cleaned_data.get('due_date')
+
+        if invoice_date and due_date:
+            # invoice_date is DateTimeField, due_date is DateField
+            if due_date < invoice_date.date():
+                self.add_error(
+                    'due_date',
+                    'Due date cannot be earlier than invoice date.'
+                )
+
+        return cleaned_data
+
+
+class InvoiceItemForm(forms.ModelForm):
+    class Meta:
+        model = InvoiceItem
+        fields = ['product', 'unit_cost', 'discount', 'gst_percentage',]
+        widgets = {
+            'product': forms.Select(attrs={'class': 'form-select'}),
+            'unit_cost': forms.NumberInput(attrs={'class': "form-control"}),
+            'discount': forms.NumberInput(attrs={'class': "form-control"}),
+            'gst_percentage': forms.Select(attrs={'class': "form-select"}),
+        }
+
+
 # ---------------------------------------------------------
 # Dedicated PaymentForm And PaymentCollectForm
 # ---------------------------------------------------------
@@ -446,3 +505,83 @@ class GSTDetailsForm(BootstrapFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['gst_number'].widget.attrs.update({'placeholder': 'e.g., 29ABCDE1234F1Z5'})
+
+
+# ---------------------------------------------------------
+# 4. Lead Form
+# ---------------------------------------------------------
+class LeadForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Lead
+        fields = [
+            'lead_name', 'full_name', 'email', 'phone_number',
+            'requirements', 'lead_value', 'expected_closure_date'
+        ]
+        widgets = {
+            'lead_name': forms.TextInput(attrs={
+                'placeholder': 'e.g., ABC Traders',
+                'required': 'required'
+            }),
+            'full_name': forms.TextInput(attrs={
+                'placeholder': 'e.g., Rajesh Kumar',
+                'required': 'required'
+            }),
+            'email': forms.EmailInput(attrs={
+                'placeholder': 'e.g., rajesh@example.com',
+                'type': 'email'
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'placeholder': 'e.g., 9876543210',
+                'pattern': '[0-9]{10}',
+                'title': 'Please enter a valid 10-digit phone number',
+                'required': 'required'
+            }),
+            'requirements': forms.Textarea(attrs={
+                'rows': 4,
+                'placeholder': 'Describe the lead requirements...',
+                'required': 'required'
+            }),
+            'lead_value': forms.NumberInput(attrs={
+                'placeholder': '0.00',
+                'step': '0.01',
+                'min': '0'
+            }),
+            'expected_closure_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set required fields
+        self.fields['lead_name'].required = True
+        self.fields['full_name'].required = True
+        self.fields['phone_number'].required = True
+        self.fields['requirements'].required = True
+        self.fields['email'].required = False
+        self.fields['lead_value'].required = False
+        self.fields['expected_closure_date'].required = False
+
+    def clean_phone_number(self):
+        """Validate phone number - must be 10 digits"""
+        phone = self.cleaned_data.get('phone_number', '').strip()
+
+        # Remove any spaces or dashes
+        phone = phone.replace(' ', '').replace('-', '')
+
+        # Check if it contains only digits
+        if not phone.isdigit():
+            raise forms.ValidationError('Phone number must contain only digits.')
+
+        # Check if it's exactly 10 digits
+        if len(phone) != 10:
+            raise forms.ValidationError('Phone number must be exactly 10 digits.')
+
+        return phone
+
+    def clean_lead_value(self):
+        """Validate lead value - must not be negative"""
+        value = self.cleaned_data.get('lead_value')
+
+        if value is not None and value < 0:
+            raise forms.ValidationError('Lead value cannot be negative.')
+
+        return value
