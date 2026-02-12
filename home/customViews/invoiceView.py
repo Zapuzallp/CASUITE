@@ -247,11 +247,48 @@ def change_invoice_status(request, invoice_id):
 
         # Only allow DRAFT and OPEN
         if new_status in ['DRAFT', 'OPEN']:
+            old_status = invoice.invoice_status
             invoice.invoice_status = new_status
             invoice.save()
 
             status_display = 'Draft' if new_status == 'DRAFT' else 'Open'
-            messages.success(request, f"Invoice status changed to {status_display} successfully.")
+
+            # If approving (DRAFT → OPEN), show variance message
+            if old_status == 'DRAFT' and new_status == 'OPEN':
+                # Calculate variance
+                from decimal import Decimal
+                import math
+
+                total_task_fees = sum(task.agreed_fee or 0 for task in invoice.services.all())
+                invoice_item_total = sum(item.net_total for item in invoice.items.all())
+
+                # Round to nearest whole number
+                total_task_fees_rounded = math.ceil(float(total_task_fees))
+                invoice_item_total_rounded = math.ceil(float(invoice_item_total))
+
+                variance = invoice_item_total_rounded - total_task_fees_rounded
+
+                if variance > 0:
+                    messages.success(
+                        request,
+                        f"✅ Invoice approved and marked as Open! "
+                        f"Note: Invoice amount (₹{invoice_item_total_rounded}) is ₹{variance} higher than agreed fees (₹{total_task_fees_rounded}). "
+                        f"Ensure client is informed of additional charges."
+                    )
+                elif variance < 0:
+                    messages.success(
+                        request,
+                        f"✅ Invoice approved and marked as Open! "
+                        f"Note: Invoice amount (₹{invoice_item_total_rounded}) is ₹{abs(variance)} lower than agreed fees (₹{total_task_fees_rounded}). "
+                        f"Client receives a discount."
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f"✅ Invoice approved and marked as Open! Invoice amount matches agreed fees (₹{total_task_fees_rounded})."
+                    )
+            else:
+                messages.success(request, f"Invoice status changed to {status_display} successfully.")
         else:
             messages.error(request, "Invalid status selected.")
 
@@ -263,14 +300,14 @@ def change_invoice_status(request, invoice_id):
 @login_required
 def invoice_details(request, invoice_id):
     invoice = Invoice.objects.get(pk=invoice_id)
-    # invoice_items = InvoiceItem.objects.all()
 
     # Get only tasks associated with THIS invoice (not all client tasks)
     client_tasks = invoice.services.all()
 
     # Calculate total agreed fees from tasks
+    from decimal import Decimal
     total_task_fees = sum(
-        task.agreed_fee or 0 for task in client_tasks
+        task.agreed_fee or Decimal('0') for task in client_tasks
     )
 
     # Calculate invoice item totals
@@ -278,17 +315,25 @@ def invoice_details(request, invoice_id):
         item.net_total for item in invoice.items.all()
     )
 
+    # Ensure both are Decimal
+    if not isinstance(total_task_fees, Decimal):
+        total_task_fees = Decimal(str(total_task_fees))
+    if not isinstance(invoice_item_total, Decimal):
+        invoice_item_total = Decimal(str(invoice_item_total))
+
+    # Calculate variance (rounded to whole numbers)
+    variance = int(invoice_item_total) - int(total_task_fees)
+    variance_abs = abs(variance)
+
     # Check if any payment has been received
     has_payments = invoice.payments.filter(payment_status='PAID').exists()
 
     # Calculate actual payment status based on payments
-    from decimal import Decimal
     total_paid = invoice.payments.filter(payment_status='PAID').aggregate(
         total=Sum('amount'))['total'] or Decimal('0')
 
-    # Calculate total_amount from invoice items (convert to Decimal)
-    total_amount_raw = invoice.items.aggregate(total=Sum('net_total'))['total'] or 0
-    total_amount = Decimal(str(total_amount_raw))
+    # Calculate total_amount from invoice items
+    total_amount = invoice.items.aggregate(total=Sum('net_total'))['total'] or Decimal('0')
 
     balance = total_amount - total_paid
 
@@ -310,15 +355,17 @@ def invoice_details(request, invoice_id):
 
     return render(request, 'invoice_details.html', {
         'invoice': invoice,
-        # 'invoice_items': invoice_items
         'item_form': item_form,
         'client_tasks': client_tasks,
         'total_task_fees': total_task_fees,
         'invoice_item_total': invoice_item_total,
+        'variance': variance,
+        'variance_abs': variance_abs,
         'has_payments': has_payments,
         'actual_payment_status': actual_payment_status,
         'payment_status_display': payment_status_display,
         'balance': balance,
+        'total_paid': total_paid,
     })
 
 
