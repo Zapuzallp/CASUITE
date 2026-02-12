@@ -1,5 +1,7 @@
 from django.urls import path
 
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
+from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
     leave_views, messageView, ReApplyLeaveViews, invoiceView
 from home.customViews import resetPassword
@@ -110,6 +112,15 @@ urlpatterns = [
     path('payments/<int:payment_id>/cancel/', cancel_payment, name='cancel_payment'),
     path('payments/<int:payment_id>/', payment_detail, name='payment_detail'),
 
+    # Lead Management
+    path('leads/', leadView.lead_list_view, name='lead_list'),
+    path('leads/add/', leadView.add_lead_view, name='add_lead'),
+    path('leads/<int:lead_id>/', leadView.lead_detail_view, name='lead_detail'),
+    path('leads/<int:lead_id>/edit/', leadView.edit_lead_view, name='edit_lead'),
+    path('leads/<int:lead_id>/mark-contacted/', leadView.mark_lead_contacted, name='mark_lead_contacted'),
+    path('leads/<int:lead_id>/mark-qualified/', leadView.mark_lead_qualified, name='mark_lead_qualified'),
+    path('leads/<int:lead_id>/mark-lost/', leadView.mark_lead_lost, name='mark_lead_lost'),
+    path('leads/<int:lead_id>/convert/', leadView.convert_lead_view, name='convert_lead'),
     # Invoice URLs (using invoiceView)
     path('invoices/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_list'),
     path('invoice/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_all'),
