@@ -8,7 +8,7 @@ from django.views.generic import ListView
 from django.contrib.auth.models import User
 
 from home.clients.config import STRUCTURE_CONFIG
-from home.forms import ClientForm, ClientBusinessProfileForm,is_gst_number
+from home.forms import ClientForm, ClientBusinessProfileForm, is_gst_number
 # Import your models and forms
 from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee,TaskType
 from home.clients.client_access import get_accessible_clients
@@ -158,7 +158,7 @@ class ClientView(LoginRequiredMixin, ListView):
         # 3. Apply UI Filters on top of Role-Based Queryset
         if search_query:
             # Check if search query is a GST number pattern
-            if is_gst_number(search_query):
+            if (search_query):
                 # Search in GSTDetails for this GST number
                 qs = qs.filter(gst_details__gst_number__icontains=search_query).distinct()
 
