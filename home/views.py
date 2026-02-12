@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views import View
 from django.views.generic import ListView
@@ -121,6 +122,32 @@ class HomeView(LoginRequiredMixin, TemplateView):
         client_data = get_client_dashboard_data(user, today)
 
         # =========================================================
+        # 8. DUE TASKS FOR DASHBOARD MODULE
+        # =========================================================
+        due_range = self.request.GET.get('due_range', 'overdue')  # Default to overdue
+
+        # Base queryset with role-based visibility (same as all_tasks)
+        due_tasks_qs = all_tasks.exclude(status='Completed')
+
+        # Apply date range filter
+        if due_range == 'overdue':
+            due_tasks_qs = due_tasks_qs.filter(due_date__lt=today)
+        elif due_range == 'today':
+            due_tasks_qs = due_tasks_qs.filter(due_date=today)
+        elif due_range == 'tomorrow':
+            due_tasks_qs = due_tasks_qs.filter(due_date=today + timedelta(days=1))
+        elif due_range == '5days':
+            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=5))
+        elif due_range == '10days':
+            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=10))
+        elif due_range == '15days':
+            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=15))
+        elif due_range == '30days':
+            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=30))
+
+        due_tasks = due_tasks_qs.select_related('client').prefetch_related('assignees').order_by('due_date')[:20]
+
+        # =========================================================
         # CONTEXT PACKAGING
         # =========================================================
         context.update({
@@ -149,6 +176,10 @@ class HomeView(LoginRequiredMixin, TemplateView):
             'my_actionable_items': my_actionable_items[:6],  # Show top 6
             'my_actions_count': my_actions_count,
             'recent_tasks': recent_tasks,
+
+            # Due Tasks Module
+            'due_tasks': due_tasks,
+            'due_range': due_range,
 
             #clients
             'client_distribution_chart_data': client_data['client_distribution_chart_data'],
@@ -207,4 +238,98 @@ def get_client_dashboard_data(user, today):
         'new_clients': new_clients,
         'client_distribution_chart_data': client_distribution_chart_data,
     }
+
+@login_required(login_url='/login/')
+def client_search(request):
+    q = request.GET.get('q', '').strip()
+
+    clients = Client.objects.filter(
+        Q(client_name__icontains=q) |
+        Q(pan_no__icontains=q)
+    )[:20]
+
+    data = []
+    for c in clients:
+        data.append({
+            "id": c.id,
+            "text": f"{c.client_name} || {c.pan_no} || {c.status}"
+        })
+    return JsonResponse(data, safe=False)
+
+# =========================================================
+# AJAX VIEW FOR DUE TASKS FILTERING
+# =========================================================
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+
+@login_required
+def due_tasks_ajax(request):
+    """Return Due Tasks as JSON for AJAX filtering"""
+    from django.http import JsonResponse
+    
+    user = request.user
+    today = timezone.now().date()
+    
+    # Get all tasks (with role-based visibility)
+    all_tasks = Task.objects.all()
+    if not user.is_superuser:
+        all_tasks = all_tasks.filter(client__assigned_ca=user)
+    
+    due_range = request.GET.get('due_range', 'overdue')
+    
+    # Base queryset
+    due_tasks_qs = all_tasks.exclude(status='Completed')
+    
+    # Apply date range filter
+    if due_range == 'overdue':
+        due_tasks_qs = due_tasks_qs.filter(due_date__lt=today)
+    elif due_range == 'today':
+        due_tasks_qs = due_tasks_qs.filter(due_date=today)
+    elif due_range == 'tomorrow':
+        due_tasks_qs = due_tasks_qs.filter(due_date=today + timedelta(days=1))
+    elif due_range == '5days':
+        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=5))
+    elif due_range == '10days':
+        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=10))
+    elif due_range == '15days':
+        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=15))
+    elif due_range == '30days':
+        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=30))
+    
+    due_tasks = due_tasks_qs.select_related('client').prefetch_related('assignees').order_by('due_date')[:20]
+    
+    # Build JSON response
+    tasks_data = []
+    for task in due_tasks:
+        assignees = [a.get_full_name() or a.username for a in task.assignees.all()[:2]]
+        tasks_data.append({
+            'id': task.id,
+            'title': task.title[:30] + '...' if len(task.title) > 30 else task.title,
+            'client': task.client.name if task.client else '-',
+            'service': getattr(task, 'service', None).name if hasattr(task, 'service') and task.service else '-',
+            'due_date': task.due_date.strftime('%b %d, %Y') if task.due_date else '-',
+            'due_date_class': 'text-danger' if task.due_date and task.due_date < today else ('text-warning' if task.due_date == today else 'text-success'),
+            'assignees': assignees,
+            'status': task.get_status_display(),
+            'status_class': task.status.lower() if task.status else 'secondary',
+        })
+    
+    # Map due_range to display text
+    range_labels = {
+        'overdue': 'Overdue Tasks',
+        'today': 'Due Today',
+        'tomorrow': 'Due Tomorrow',
+        '5days': 'Due in 5 Days',
+        '10days': 'Due in 10 Days',
+        '15days': 'Due in 15 Days',
+        '30days': 'Due in 30 Days',
+    }
+    
+    return JsonResponse({
+        'tasks': tasks_data,
+        'count': len(tasks_data),
+        'due_range': due_range,
+        'range_label': range_labels.get(due_range, 'All Due Tasks'),
+    })
 

@@ -680,7 +680,9 @@ class Attendance(models.Model):
         choices=[
             ("pending", "Pending"),
             ("approved", "Approved"),
-            ("rejected", "Rejected")
+            ("rejected", "Rejected"),
+            ("half_day", "Half Day Present"),
+            ("full_day", "Full Day Present")
         ],
         default="approved"
     )
@@ -714,16 +716,16 @@ class Attendance(models.Model):
             self.duration = self.clock_out - self.clock_in
 
             # Only auto-set status if admin logic didn’t already set it
-            if not self.status or self.status == "approved":
+            if not hasattr(self, '_skip_auto_status') and (not self.status or self.status == "approved"):
                 self.status = "approved"
 
         elif self.clock_in and not self.clock_out:
-            if not self.status:
+            if not hasattr(self, '_skip_auto_status') and not self.status:
                 self.status = "pending"
             self.duration = None
 
         else:
-            if not self.status:
+            if not hasattr(self, '_skip_auto_status') and not self.status:
                 self.status = "absent"
             self.duration = None
 
