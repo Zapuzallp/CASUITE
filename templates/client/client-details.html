@@ -183,6 +183,13 @@
                                 <i class="bi bi-briefcase me-2"></i>Services
                             </button>
                         </li>
+                        {% if invoices_data %}
+                            <li class="nav-item">
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-invoices">
+                                    <i class="bi bi-receipt-cutoff me-2"></i>Invoices
+                                </button>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
                             <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-linked">
                                 <i class="bi bi-link-45deg me-2"></i>
@@ -350,6 +357,7 @@
                                         <th>Due Date</th>
                                         <th>Team</th>
                                         <th>Status</th>
+                                        <th>Invoice Status</th>
                                         <th>Action</th>
                                     </tr>
                                     </thead>
@@ -394,6 +402,17 @@
                                                     class="badge {% if service.status == 'Completed' %}bg-success{% elif service.status == 'Pending' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
                                              {{ service.status }}</span>
                                             </td>
+                                            <td>
+                                                {% if service.tagged_invoices.exists %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle me-1"></i>Invoiced
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-x-circle me-1"></i>Not Invoiced
+                                                    </span>
+                                                {% endif %}
+                                            </td>
                                             <td><a href="{% url "task_detail" service.id %}"
                                                    class="btn btn-sm btn-outline-primary"><i
                                                     class="bi bi-eye"></i></a>
@@ -402,7 +421,7 @@
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">No active services
+                                            <td colspan="7" class="text-center text-muted py-4">No active services
                                                 found.
                                             </td>
                                         </tr>
@@ -410,6 +429,118 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="profile-invoices">
+                            <h5 class="card-title text-primary"><i class="bi bi-receipt-cutoff me-2"></i>Client Invoices</h5>
+
+                            <form method="post" action="{% url 'invoice_bulk_status_update' %}" id="clientInvoiceBulkStatusForm">
+                              {% csrf_token %}
+                              <div class="table-responsive">
+                                <table class="table table-hover align-middle border" id="clientInvoicesTable">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Invoice #</th>
+                                        <th>Subject</th>
+                                        <th>Invoice Date</th>
+                                        <th>Due Date</th>
+                                        <th>Total Amount</th>
+                                        <th>Paid</th>
+                                        <th>Balance</th>
+                                        <th>Payment Status</th>
+                                        <th>Due Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for item in invoices_data %}
+                                        <tr>
+                                            <td class="fw-bold">#{{ item.invoice.id }}</td>
+                                            <td>{{ item.invoice.subject|truncatewords:5 }}</td>
+                                            <td>{{ item.invoice.invoice_date|date:"M d, Y" }}</td>
+                                            <td>{{ item.invoice.due_date|date:"M d, Y" }}</td>
+                                            <td>₹{{ item.total_amount|floatformat:0 }}</td>
+                                            <td class="text-success">₹{{ item.total_paid|floatformat:2 }}</td>
+                                            <td class="{% if item.balance > 0 %}text-warning fw-bold{% else %}text-success{% endif %}">
+                                                ₹{{ item.balance|floatformat:0 }}
+                                            </td>
+                                            <td>
+                                                {% if item.has_payments %}
+                                                  <!-- Status locked - payment received - show badge only -->
+                                                  <span class="badge
+                                                    {% if item.payment_status == 'PAID' %}bg-success
+                                                    {% elif item.payment_status == 'PARTIALLY_PAID' %}bg-warning text-dark
+                                                    {% elif item.payment_status == 'OPEN' %}bg-info
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ item.payment_status_display }}
+                                                  </span>
+                                                {% elif item.payment_status == 'DRAFT' or item.payment_status == 'OPEN' %}
+                                                  <!-- Status editable - no payment yet - show dropdown -->
+                                                  <select name="status_{{ item.invoice.id }}" class="form-select form-select-sm status-dropdown" style="min-width: 120px;">
+                                                    <option value="DRAFT" {% if item.payment_status == 'DRAFT' %}selected{% endif %}>Draft</option>
+                                                    <option value="OPEN" {% if item.payment_status == 'OPEN' %}selected{% endif %}>Open</option>
+                                                  </select>
+                                                {% else %}
+                                                  <!-- Fallback - show badge -->
+                                                  <span class="badge bg-secondary">
+                                                    {{ item.payment_status_display }}
+                                                  </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if item.due_status %}
+                                                  <span class="badge
+                                                    {% if item.due_status == 'overdue' %}bg-danger
+                                                    {% elif item.due_status == 'due_today' %}bg-warning text-dark
+                                                    {% else %}bg-light text-dark border{% endif %}">
+                                                    {% if item.due_status == 'overdue' %}
+                                                      <i class="bi bi-exclamation-triangle me-1"></i>Overdue
+                                                    {% elif item.due_status == 'due_today' %}
+                                                      <i class="bi bi-clock me-1"></i>Due Today
+                                                    {% else %}
+                                                      <i class="bi bi-check-circle me-1"></i>Not Due
+                                                    {% endif %}
+                                                  </span>
+                                                {% else %}
+                                                  <span class="text-muted small">—</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1">
+                                                    <a class="btn btn-sm btn-outline-primary"
+                                                       href="{% url 'invoice_details' item.invoice.id %}"
+                                                       title="View Invoice">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+
+                                                    {% if item.balance > 0 and item.payment_status != 'DRAFT' %}
+                                                        <a class="btn btn-sm btn-success"
+                                                           href="{% url 'payment_collect' item.invoice.id %}"
+                                                           title="Collect Payment">
+                                                            <i class="bi bi-cash-coin"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="10" class="text-center text-muted py-4">
+                                                No invoices found for this client.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                              </div>
+
+                              <!-- Save Button at Bottom -->
+                              <div class="d-flex justify-content-end mt-3">
+                                <button type="submit" class="btn btn-primary px-4" id="saveClientInvoiceStatusBtn">
+                                  <i class="bi bi-check-circle me-1"></i> Save Status Changes
+                                </button>
+                              </div>
+                            </form>
                         </div>
 
                         <div class="tab-pane fade" id="profile-linked">
@@ -638,5 +769,35 @@
                 selectBox.value = requestedDocId;
             }
         }
+
+        // Initialize DataTable for client invoices if the table exists and has data
+        document.addEventListener('DOMContentLoaded', function() {
+            var invoiceTable = document.getElementById('clientInvoicesTable');
+            if (invoiceTable) {
+                // Check if table has data rows (not just the empty state)
+                var hasData = invoiceTable.querySelector('tbody tr td:not([colspan])');
+                if (hasData) {
+                    $('#clientInvoicesTable').DataTable({
+                        "pageLength": 10,
+                        "order": [[0, "desc"]], // Sort by Invoice # descending
+                        "language": {
+                            "search": "Search:",
+                            "lengthMenu": "Show _MENU_ entries",
+                            "info": "Showing _START_ to _END_ of _TOTAL_ invoices",
+                            "infoEmpty": "No invoices available",
+                            "paginate": {
+                                "first": "First",
+                                "last": "Last",
+                                "next": "Next",
+                                "previous": "Previous"
+                            }
+                        },
+                        "columnDefs": [
+                            { "orderable": false, "targets": [8] } // Disable sorting on Action column
+                        ]
+                    });
+                }
+            }
+        });
     </script>
 {% endblock body %}
