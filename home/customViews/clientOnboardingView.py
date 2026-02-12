@@ -6,12 +6,14 @@ from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from home.clients.config import STRUCTURE_CONFIG
 from home.forms import ClientForm, ClientBusinessProfileForm
 # Import your models and forms
 from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee
 from home.clients.client_access import get_accessible_clients
+
 
 # -------------------------------------------------------------------
 # Helper: Generate File Number (Only for new clients)
@@ -29,6 +31,38 @@ def generate_file_number(office_location):
 # -------------------------------------------------------------------
 @login_required
 def onboard_client_view(request):
+    # Check if converting from lead
+    lead_id = request.GET.get('lead_id')
+    lead = None
+    initial_client_data = {}
+
+    if lead_id:
+        try:
+            from home.models import Lead
+            lead = Lead.objects.get(id=lead_id)
+
+            # Check if lead is qualified
+            if lead.status != 'Qualified':
+                messages.error(request, 'Can only convert Qualified leads.')
+                return redirect('lead_detail', lead_id=lead.id)
+
+            # Check if already converted
+            if lead.client:
+                messages.warning(request, f'This lead has already been converted to client: {lead.client.client_name}')
+                return redirect('client_details', client_id=lead.client.id)
+
+            # Prefill data from lead
+            initial_client_data = {
+                'client_name': lead.lead_name,
+                'primary_contact_name': lead.full_name,
+                'email': lead.email,
+                'phone_number': lead.phone_number,
+                'remarks': lead.requirements,
+            }
+        except Lead.DoesNotExist:
+            messages.error(request, 'Lead not found.')
+            return redirect('lead_list')
+
     if request.method == 'POST':
         client_form = ClientForm(request.POST)
         profile_form = ClientBusinessProfileForm(request.POST, request.FILES)
@@ -52,7 +86,17 @@ def onboard_client_view(request):
                     profile.save()
                     profile_form.save_m2m()  # Important for ManyToMany
 
-                    messages.success(request, f"Client {client.client_name} onboarded successfully!")
+                    # 3. If converting from lead, update lead status
+                    if lead:
+                        lead.client = client
+                        lead.status = 'Converted'
+                        lead.actual_closure_date = timezone.now().date()
+                        lead.save()
+                        messages.success(request,
+                                         f"Lead '{lead.lead_name}' successfully converted to client '{client.client_name}'!")
+                    else:
+                        messages.success(request, f"Client {client.client_name} onboarded successfully!")
+
                     return redirect('clients')
 
             except Exception as e:
@@ -60,15 +104,20 @@ def onboard_client_view(request):
         else:
             messages.error(request, "Please correct the errors below.")
     else:
-        client_form = ClientForm()
+        # Prefill form with lead data if available
+        if initial_client_data:
+            client_form = ClientForm(initial=initial_client_data)
+        else:
+            client_form = ClientForm()
         profile_form = ClientBusinessProfileForm()
 
     context = {
         'client_form': client_form,
         'profile_form': profile_form,
         'structure_config': STRUCTURE_CONFIG,
-        'page_title': 'Onboard New Client',
-        'btn_text': 'Complete Onboarding'
+        'page_title': f'Convert Lead to Client: {lead.lead_name}' if lead else 'Onboard New Client',
+        'btn_text': 'Complete Conversion' if lead else 'Complete Onboarding',
+        'lead': lead,
     }
 
     return render(request, 'onboard_client.html', context)
@@ -143,7 +192,6 @@ class ClientView(LoginRequiredMixin, ListView):
         # Limit the queryset to only those clients the current user
         # is permitted to view (role-based & assignment-based access)
         qs = get_accessible_clients(user)
-
 
         # 2. Extract GET parameters for UI Filters
         search_query = self.request.GET.get('q')

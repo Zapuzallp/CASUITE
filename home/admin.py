@@ -21,7 +21,8 @@ from .models import (
     Shift, EmployeeShift, OfficeDetails,
     Leave,
     Message,
-    TaskRecurrence
+    TaskRecurrence,
+    Lead
 )
 
 
@@ -983,3 +984,97 @@ class MessageAdmin(admin.ModelAdmin):
     list_filter = ('status', 'timestamp')
     search_fields = ('content', 'sender__username', 'receiver__username')
     ordering = ('-timestamp',)
+
+
+@admin.register(Lead)
+class LeadAdmin(admin.ModelAdmin):
+    list_display = (
+        'lead_name',
+        'full_name',
+        'phone_number',
+        'email',
+        'status',
+        'lead_value',
+        'expected_closure_date',
+        'created_by',
+        'created_at',
+    )
+    list_filter = (
+        'status',
+        'created_at',
+        'expected_closure_date',
+        'created_by',
+    )
+    search_fields = (
+        'lead_name',
+        'full_name',
+        'phone_number',
+        'email',
+        'requirements',
+    )
+    date_hierarchy = 'created_at'
+    autocomplete_fields = ('created_by', 'assigned_to', 'client')
+    filter_horizontal = ('assigned_to',)
+    readonly_fields = ('created_at', 'updated_at')
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('lead_name', 'full_name', 'email', 'phone_number', 'requirements')
+        }),
+        ('Value & Dates', {
+            'fields': ('lead_value', 'expected_closure_date', 'actual_closure_date')
+        }),
+        ('Status & Assignment', {
+            'fields': ('status', 'remarks', 'assigned_to', 'created_by')
+        }),
+        ('Conversion', {
+            'fields': ('client',),
+            'classes': ('collapse',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    def get_queryset(self, request):
+        """Filter leads based on user role"""
+        qs = super().get_queryset(request)
+
+        if request.user.is_superuser:
+            return qs
+
+        try:
+            employee = request.user.employee
+            role = employee.role
+
+            if role == 'ADMIN':
+                return qs
+            elif role == 'BRANCH_MANAGER':
+                office = employee.office_location
+                if office:
+                    from django.db.models import Q
+                    return qs.filter(
+                        Q(created_by__employee__office_location=office) |
+                        Q(assigned_to=request.user) |
+                        Q(created_by=request.user)
+                    ).distinct()
+                else:
+                    from django.db.models import Q
+                    return qs.filter(
+                        Q(assigned_to=request.user) |
+                        Q(created_by=request.user)
+                    ).distinct()
+            else:
+                # Staff can see leads assigned to them OR created by them
+                from django.db.models import Q
+                return qs.filter(
+                    Q(assigned_to=request.user) |
+                    Q(created_by=request.user)
+                ).distinct()
+        except:
+            from django.db.models import Q
+            return qs.filter(
+                Q(assigned_to=request.user) |
+                Q(created_by=request.user)
+            ).distinct()
