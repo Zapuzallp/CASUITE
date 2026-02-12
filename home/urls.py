@@ -2,13 +2,16 @@ from django.urls import path
 
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
+    leave_views, messageView, ReApplyLeaveViews, invoiceView
+from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
     AttendanceLogsView,
 )
 from home.customViews.mobileAttendanceView import (
-    mobile_login_view, mobile_logout_view, mobile_attendance_view, 
+    mobile_login_view, mobile_logout_view, mobile_attendance_view,
     mobile_apply_leave, mobile_clock_in, mobile_clock_out, mobile_logs_view, mobile_leave_logs_view
 )
 from home.customViews.adminReportsView import AdminAttendanceReportView
@@ -35,7 +38,7 @@ urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
     path('api/due-tasks/', due_tasks_ajax, name='due_tasks_ajax'),
     path('accounts/login/', authView.LoginView.as_view(), name='login'),
-    path('accounts/logout/', authView.LogoutView.as_view(), name='logout'),
+    path('accounts/logout/', authView.LoginView.as_view(), name='logout'),
     # Client Details
     path('client/<int:client_id>/details/', clientView.client_details_view, name='client_details'),
     path('client/<int:client_id>/upload-document/', documentsUploadView.upload_document_view,
@@ -76,24 +79,24 @@ urlpatterns = [
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
     path("admin-report/attendance/", AdminAttendanceReportView.as_view(), name="admin_attendance_report"),
 
-    #apply-leave
+    # apply-leave
     path('leave/apply/', leaveView.LeaveCreateView.as_view(), name='leave-apply'),
-    #delete-leave
-    path('leave/<int:leave_id>/',leaveView.LeaveDeleteView.as_view(), name='leave-delete'),
+    # delete-leave
+    path('leave/<int:leave_id>/', leaveView.LeaveDeleteView.as_view(), name='leave-delete'),
     # Leave re-apply URL
     path('leave/reapply/<int:pk>/', ReApplyLeaveViews.leave_reapply, name='leave-reapply'),
-    #list services
+    # list services
     path('services/', list_services, name='list_services'),
-    #delete service
+    # delete service
     path('services/delete/<int:service_id>/', delete_service, name='delete_service'),
-    #manage_leaves
+    # manage_leaves
     path('manage-leaves/', leave_views.manage_leaves, name='manage-leaves'),
     # chat message
     path('chat/', messageView.chat_view, name='chat_base'),
     path('chat/<int:user_id>/', messageView.chat_view, name='chat_with_user'),
-    
+
     # Mobile Attendance - Independent System
-    path('mobile/', mobile_attendance_view, name='mobile_attendance'),
+    path('mobile/', mobile_login_view, name='mobile_login'),
     path('mobile/logout/', mobile_logout_view, name='mobile_logout'),
     path('mobile/attendance/', mobile_attendance_view, name='mobile_attendance'),
     path('mobile/logs/', mobile_logs_view, name='mobile_logs'),
@@ -118,4 +121,14 @@ urlpatterns = [
     path('leads/<int:lead_id>/mark-qualified/', leadView.mark_lead_qualified, name='mark_lead_qualified'),
     path('leads/<int:lead_id>/mark-lost/', leadView.mark_lead_lost, name='mark_lead_lost'),
     path('leads/<int:lead_id>/convert/', leadView.convert_lead_view, name='convert_lead'),
+    # Invoice URLs (using invoiceView)
+    path('invoices/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_list'),
+    path('invoice/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_all'),
+    path('ajax/load-tasks/', invoiceView.load_tasks, name='load_tasks'),
+    path('invoice/<int:invoice_id>/details/', invoiceView.invoice_details, name='invoice_details'),
+    path('invoice/<int:pk>/items/add/', invoiceView.add_invoice_item_ajax, name='add-invoice-item'),
+    path('invoice/<int:item_id>/delete/', invoiceView.invoice_item_delete, name='invoice_delete-item'),
+    path('invoice/<int:invoice_id>/approve/', invoiceView.approve_invoice, name="invoice_approve"),
+    path('invoice/<int:invoice_id>/change-status/', invoiceView.change_invoice_status, name="invoice_change_status"),
+    path('invoices/bulk-status-update/', invoiceView.invoice_bulk_status_update, name="invoice_bulk_status_update"),
 ]
