@@ -95,40 +95,74 @@
     .msg-sent { align-self: flex-end; align-items: flex-end; }
     .msg-received { align-self: flex-start; align-items: flex-start; }
     .msg-user-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-
+   
+    
     .bubble {
-    color:white;
-    background-color: rgb(89, 178, 233);
-    padding: 10px 14px;
-    border-radius: 12px;
+    padding: 12px 16px;
+    border-radius: 7px;
     font-size: 14px;
-    line-height: 1.4;
-
-    /*  wrapping fix */
-    white-space: pre-wrap;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-
+    line-height: 1.5;
+    word-wrap: break-word;
+    color:white;
+    background-color: #0ea5e9;
+    
+   
     /* size fix */
     display: inline-block;
-    max-width: 80%;
-    }
-    .bubble p {
-    margin: 0;
-    }
-    
-    .bubble-new {
-        padding: 12px 16px;
-        border-radius: 12px;
-        font-size: 14px;
-        line-height: 1.5;
-        word-wrap: break-word;
-        color:white;
-        background-color: rgb(89, 178, 233);
+    max-width: 100%;
+
 
     }
+  
+    .bubble ol {
+        
+        padding-bottom:0;
+        margin-bottom: 0;
+        max-width: 100%;
+        padding-left: 10px;
+        
+
+
+    }
+     .bubble ul {
+   
+        padding-bottom:0;
+        margin-bottom: 0;
+        max-width: 100%;
+        padding-left: 15px;
+
+
+    }
+
+    .bubble p {
+        margin-bottom: 0;
+    
+    }
+    .note-editable p{
+        margin-bottom: 0;
+    }
+   
+    .bubble p br{
+        display: none;
+    }
+    .bubble img{
+        max-height: 98%;
+        max-width: 98%;
+        margin-bottom: 10px;
+  
+    }
+    .bubble a {
+        color:white;
+
+    }
+    .bubble a:hover{
+        color:#337ab7;
+    }
+    
+
+    
     .msg-sent .bubble { background: #0ea5e9; color: white; border-top-right-radius: 2px; }
-    .msg-received .bubble {   color:white; background-color: rgb(89, 178, 233); border: 1px solid #e2e8f0; border-top-left-radius: 2px; }
+    .msg-received .bubble {   color:white; background-color: #0ea5e9; border: 1px solid #e2e8f0; border-top-left-radius: 2px; }
 
     /* 6. EDITOR: Pinned to bottom */
     .full-width-editor {
@@ -146,7 +180,6 @@
     position: absolute;
     background: #fff;
     width: calc(100% - 30px);
-    border: 1px solid #ddd;
     border-top: none;
     max-height: 200px;
     overflow-y: auto;
@@ -234,14 +267,12 @@
                         </span>
                         <span style="font-size: 10px; color: #94a3b8;">{{ msg.timestamp|date:"H:i" }}</span>
                     </div>
-                    {% if msg.content|length > 50 %}
-                    <div class="bubble">
+                    {% if msg.content %}
+                    <div class="bubble" id = "bubble-id">
                         {{ msg.content|safe }}
+
                     </div>
-                    {% else %}
-                     <div class="bubble-new">
-                        {{ msg.content|safe }}
-                    </div>
+                    
                     {% endif %}
 
 
@@ -259,8 +290,9 @@
         {% if user_id  %}
         <!-- Summernote editor -->
         <div class="full-width-editor">
-            <form method="POST">
+            <form method="POST" >
                 {% csrf_token %}
+        
                 {{ form.content }}
 
                 <div class="footer-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
@@ -268,11 +300,11 @@
                         {{ form.status }}
                     </div>
                     <div>
-                        <button type="submit" name="save_draft" class="btn btn-default btn-sm">
+                        <button type="submit" name="save_draft" class="btn btn-default btn-sm" id = "save-draft">
                             Save Draft
                         </button>
                         <button type="submit" class="btn btn-primary btn-sm"
-                            style="background-color: #337ab7; border: none; padding: 8px 25px;">
+                            style="background-color: #337ab7; border: none; padding: 8px 25px;" id = "send-message">
                             Send Message
                         </button>
                     </div>
@@ -357,6 +389,7 @@ document.getElementById("userSearch").addEventListener("keyup", function () {
         $(document).ready(function() {
             // 1. Initialize Summernote
             $('textarea').summernote({
+
                 placeholder: 'Write your message here...',
                 height: 120,
                 toolbar: [
@@ -364,17 +397,60 @@ document.getElementById("userSearch").addEventListener("keyup", function () {
                     ['para', ['ul', 'ol', 'paragraph']],
                     ['insert', ['link', 'picture']],
                     ['view', ['codeview']]
-                ]
-            });
+                ],
+                
+                callbacks : { onPaste:function (e) {
+                    var bufferText = ((e.originalEvent || e).clipboardData || window.clipboardData).getData('Text');
+                    e.preventDefault();
+                    $(this).summernote('insertText', bufferText);
+                },
+                
+                
+        }
 
-            // 2. Auto-scroll to the latest message
+              
+    });
+
+            
+        // 2. Auto-scroll to the latest message
             var chatWindow = document.getElementById('chat-window');
             if (chatWindow) {
                 chatWindow.scrollTop = chatWindow.scrollHeight;
             }
-        });
+            
+    });
     })(jQuery);
 </script>
 
+
+<script>
+
+const send_btn = document.getElementById('send-message');
+const send_draft = document.getElementById('save-draft');
+send_btn.addEventListener('click', (e) => {
+    let note_editor = document.querySelector('.note-editable');
+    
+    let textContent = note_editor.innerText.trim();
+    
+    let hasImage = note_editor.querySelector('img') !== null;
+    
+    if (textContent === '' && !hasImage) {
+        e.preventDefault(); 
+    }
+});
+    send_draft.addEventListener('click', (e) => {
+    let note_editor = document.querySelector('.note-editable');
+    
+    let textContent = note_editor.innerText.trim();
+    
+    let hasImage = note_editor.querySelector('img') !== null;
+    
+    if (textContent === '' && !hasImage) {
+        e.preventDefault(); 
+    }
+});
+
+    
+</script>
 
 {% endblock body %}
