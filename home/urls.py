@@ -17,6 +17,7 @@ from home.customViews.mobileAttendanceView import (
 from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
 from home.customViews.services import list_services, delete_service
+from home.customViews.searchbarView import global_search
 from home.customViews.notificationView import (
     read_all_notifications,
     view_notification,
@@ -111,6 +112,9 @@ urlpatterns = [
     path('payments/<int:payment_id>/reject/', reject_payment, name='reject_payment'),
     path('payments/<int:payment_id>/cancel/', cancel_payment, name='cancel_payment'),
     path('payments/<int:payment_id>/', payment_detail, name='payment_detail'),
+
+    #search-bar
+    path('global-search/', global_search, name='global_search'),
 
     # Lead Management
     path('leads/', leadView.lead_list_view, name='lead_list'),
