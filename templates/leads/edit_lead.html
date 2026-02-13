@@ -100,7 +100,7 @@
                             <!-- Lead Value -->
                             <div class="col-md-6">
                                 <label for="{{ form.lead_value.id_for_label }}" class="form-label">
-                                    Lead Value (₹)
+                                    Lead Value (₹) <span class="text-danger">*</span>
                                 </label>
                                 {{ form.lead_value }}
                                 {% if form.lead_value.errors %}
@@ -112,7 +112,7 @@
                             <!-- Expected Closure Date -->
                             <div class="col-md-6">
                                 <label for="{{ form.expected_closure_date.id_for_label }}" class="form-label">
-                                    Expected Closure Date
+                                    Expected Closure Date <span class="text-danger">*</span>
                                 </label>
                                 {{ form.expected_closure_date }}
                                 {% if form.expected_closure_date.errors %}
