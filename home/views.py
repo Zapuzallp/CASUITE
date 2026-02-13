@@ -136,13 +136,13 @@ class HomeView(LoginRequiredMixin, TemplateView):
         elif due_range == 'tomorrow':
             due_tasks_qs = due_tasks_qs.filter(due_date=today + timedelta(days=1))
         elif due_range == '5days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=5))
+            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=5))
         elif due_range == '10days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=10))
+            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=10))
         elif due_range == '15days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=15))
+            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=15))
         elif due_range == '30days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=30))
+            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=30))
 
         due_tasks = due_tasks_qs.select_related('client').prefetch_related('assignees').order_by('due_date')[:20]
 
@@ -272,13 +272,13 @@ def due_tasks_ajax(request):
     elif due_range == 'tomorrow':
         due_tasks_qs = due_tasks_qs.filter(due_date=today + timedelta(days=1))
     elif due_range == '5days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=5))
+        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=5))
     elif due_range == '10days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=10))
+        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=10))
     elif due_range == '15days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=15))
+        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=15))
     elif due_range == '30days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=30))
+        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=30))
     
     due_tasks = due_tasks_qs.select_related('client').prefetch_related('assignees').order_by('due_date')[:20]
     
@@ -288,9 +288,9 @@ def due_tasks_ajax(request):
         assignees = [a.get_full_name() or a.username for a in task.assignees.all()[:2]]
         tasks_data.append({
             'id': task.id,
-            'title': task.title[:30] + '...' if len(task.title) > 30 else task.title,
-            'client': task.client.name if task.client else '-',
-            'service': getattr(task, 'service', None).name if hasattr(task, 'service') and task.service else '-',
+            'title': task.task_title[:30] + '...' if len(task.task_title) > 30 else task.task_title,
+            'client': task.client.client_name if task.client else '-',
+            'service': task.get_service_type_display() or '-',
             'due_date': task.due_date.strftime('%b %d, %Y') if task.due_date else '-',
             'due_date_class': 'text-danger' if task.due_date and task.due_date < today else ('text-warning' if task.due_date == today else 'text-success'),
             'assignees': assignees,
