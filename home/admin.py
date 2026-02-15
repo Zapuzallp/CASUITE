@@ -22,7 +22,8 @@ from .models import (
     Leave,
     Message,
     TaskRecurrence,
-    Lead
+    Lead,
+    LeadCallLog
 )
 
 
@@ -1077,4 +1078,101 @@ class LeadAdmin(admin.ModelAdmin):
             return qs.filter(
                 Q(assigned_to=request.user) |
                 Q(created_by=request.user)
+            ).distinct()
+
+
+@admin.register(LeadCallLog)
+class LeadCallLogAdmin(admin.ModelAdmin):
+    list_display = (
+        'lead',
+        'get_direction',
+        'get_employee',
+        'call_duration',
+        'created_at',
+        'created_by',
+    )
+    list_filter = (
+        'created_at',
+        'created_by',
+        'lead__status',
+    )
+    search_fields = (
+        'lead__lead_name',
+        'lead__full_name',
+        'lead__phone_number',
+        'called_by_user__username',
+        'called_by_user__first_name',
+        'called_by_user__last_name',
+        'called_to_user__username',
+        'called_to_user__first_name',
+        'called_to_user__last_name',
+        'description',
+    )
+    date_hierarchy = 'created_at'
+    autocomplete_fields = ('lead', 'called_by_user', 'called_to_user', 'created_by')
+    readonly_fields = ('created_at',)
+
+    fieldsets = (
+        ('Call Information', {
+            'fields': ('lead', 'called_by_user', 'called_to_user', 'call_duration')
+        }),
+        ('Discussion Details', {
+            'fields': ('description',)
+        }),
+        ('Audit Information', {
+            'fields': ('created_by', 'created_at'),
+        }),
+    )
+
+    def get_direction(self, obj):
+        return obj.get_direction_display()
+    get_direction.short_description = 'Direction'
+
+    def get_employee(self, obj):
+        employee = obj.get_employee()
+        if employee:
+            return employee.get_full_name() or employee.username
+        return '-'
+    get_employee.short_description = 'Employee'
+
+    def get_queryset(self, request):
+        """Filter call logs based on user role - same as Lead access"""
+        qs = super().get_queryset(request)
+
+        if request.user.is_superuser:
+            return qs
+
+        try:
+            employee = request.user.employee
+            role = employee.role
+
+            if role == 'ADMIN':
+                return qs
+            elif role == 'BRANCH_MANAGER':
+                office = employee.office_location
+                if office:
+                    from django.db.models import Q
+                    return qs.filter(
+                        Q(lead__created_by__employee__office_location=office) |
+                        Q(lead__assigned_to=request.user) |
+                        Q(lead__created_by=request.user)
+                    ).distinct()
+                else:
+                    from django.db.models import Q
+                    return qs.filter(
+                        Q(lead__assigned_to=request.user) |
+                        Q(lead__created_by=request.user)
+                    ).distinct()
+            else:
+                # Staff can see call logs for leads assigned to them OR created by them
+                from django.db.models import Q
+                return qs.filter(
+                    Q(lead__assigned_to=request.user) |
+                    Q(lead__created_by=request.user)
+                ).distinct()
+        except:
+            from django.db.models import Q
+            return qs.filter(
+                Q(lead__assigned_to=request.user) |
+                Q(lead__created_by=request.user)
             ).distinct()

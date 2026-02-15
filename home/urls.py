@@ -125,6 +125,7 @@ urlpatterns = [
     path('leads/<int:lead_id>/mark-qualified/', leadView.mark_lead_qualified, name='mark_lead_qualified'),
     path('leads/<int:lead_id>/mark-lost/', leadView.mark_lead_lost, name='mark_lead_lost'),
     path('leads/<int:lead_id>/convert/', leadView.convert_lead_view, name='convert_lead'),
+    path('leads/<int:lead_id>/add-call-log/', leadView.add_lead_call_log, name='add_lead_call_log'),
     # Invoice URLs (using invoiceView)
     path('invoices/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_list'),
     path('invoice/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_all'),
