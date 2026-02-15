@@ -13,12 +13,37 @@
         <i class="bi bi-list toggle-sidebar-btn"></i>
     </div><!-- End Logo -->
 
-    <div class="search-bar">
-        <form class="search-form d-flex align-items-center" method="POST" action="#">
-            <input type="text" name="query" placeholder="Search" title="Enter search keyword">
+<!--    <div class="search-bar">-->
+<!--        <form class="search-form d-flex align-items-center" method="POST" action="#">-->
+<!--            <input type="text" name="query" placeholder="Search" title="Enter search keyword">-->
+<!--            <button type="submit" title="Search"><i class="bi bi-search"></i></button>-->
+<!--        </form>-->
+<!--    </div>&lt;!&ndash; End Search Bar &ndash;&gt;-->
+
+<!--    <div class="search-bar position-relative">-->
+<!--        <form class="search-form d-flex align-items-center" onsubmit="return false;">-->
+<!--            <input type="text" id="global-search-input" name="query" placeholder="Search" title="Enter search keyword" autocomplete="off">-->
+<!--            <button type="submit" title="Search"><i class="bi bi-search"></i></button>-->
+<!--        </form>-->
+
+<!--        <div id="search-results-container" class="search-results-dropdown shadow-lg d-none">-->
+<!--            <div class="results-content">-->
+<!--                <div id="search-status" class="p-3 text-muted small">Type 4+ characters to search...</div>-->
+<!--                <div id="results-list"></div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+    <div class="search-bar position-relative">
+        <form class="search-form d-flex align-items-center" onsubmit="return false;">
+            <input type="text" id="global-search-input" name="query" placeholder="Search" title="Enter search keyword" autocomplete="off">
             <button type="submit" title="Search"><i class="bi bi-search"></i></button>
         </form>
-    </div><!-- End Search Bar -->
+
+        <div id="search-results-container" class="search-results-dropdown shadow-lg d-none">
+            <div id="results-list"></div>
+        </div>
+    </div>
 
     <nav class="header-nav ms-auto">
         <ul class="d-flex align-items-center">
