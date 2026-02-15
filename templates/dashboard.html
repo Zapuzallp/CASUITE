@@ -788,15 +788,16 @@
 
                 </div>
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        Clock In
-                    </button>
-                </div>
-            </form>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="submit" id="clockInBtn" class="btn btn-primary" disabled>
+                            <span class="spinner-border spinner-border-sm me-2" id="clockInSpinner"></span>
+                            Capturing Location...
+                        </button>
+                    </div>
+                </form>
 
         </div>
     </div>
@@ -854,6 +855,14 @@
                             </p>
                         </div>
 
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="submit" id="clockOutBtn" class="btn btn-danger" disabled>
+                            <span class="spinner-border spinner-border-sm me-2" id="clockOutSpinner"></span>
+                            Capturing Location...
+                        </button>
                     </div>
                 </div>
 
@@ -872,69 +881,67 @@
 </div>
 
 
-<script>
-    let clockInMap = null;
-    let clockOutMap = null;
+    <script>
+        let clockInMap = null;
+        let clockOutMap = null;
 
-    /* CLOCK IN */
-    document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
-        setTimeout(() => {
-            LocationModule.loadLocation("clockin-lat", "clockin-long", "clockin-location", function (success) {
-                if (success) {
-                    // Create map after location is loaded
-                    const lat = parseFloat(document.getElementById("clockin-lat").value);
-                    const lng = parseFloat(document.getElementById("clockin-long").value);
+        /* CLOCK IN */
+        document.getElementById("clockInModal")?.addEventListener("shown.bs.modal", function () {
+            const btn = document.getElementById("clockInBtn");
+            const spinner = document.getElementById("clockInSpinner");
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Capturing Location...';
+            
+            setTimeout(() => {
+                LocationModule.loadLocation("clockin-lat", "clockin-long", "clockin-location", function(success) {
+                    if (success) {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Clock In';
+                        
+                        const lat = parseFloat(document.getElementById("clockin-lat").value);
+                        const lng = parseFloat(document.getElementById("clockin-long").value);
+                        
+                        if (clockInMap) clockInMap.remove();
+                        clockInMap = L.map("clockInMap").setView([lat, lng], 16);
+                        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                            attribution: "© OpenStreetMap"
+                        }).addTo(clockInMap);
+                        L.marker([lat, lng]).addTo(clockInMap).bindPopup("You are here").openPopup();
+                    } else {
+                        btn.innerHTML = 'Location Failed';
+                    }
+                });
+            }, 300);
+        });
 
-                    if (clockInMap) clockInMap.remove();
-                    clockInMap = L.map("clockInMap").setView([lat, lng], 16);
-                    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                        attribution: "© OpenStreetMap"
-                    }).addTo(clockInMap);
-                    L.marker([lat, lng]).addTo(clockInMap).bindPopup("You are here").openPopup();
-                }
-            });
-        }, 300);
-    });
-
-    /* CLOCK OUT */
-    document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
-        setTimeout(() => {
-            LocationModule.loadLocation("clockout-lat", "clockout-long", "clockout-location", function (success) {
-                if (success) {
-                    // Create map after location is loaded
-                    const lat = parseFloat(document.getElementById("clockout-lat").value);
-                    const lng = parseFloat(document.getElementById("clockout-long").value);
-
-                    if (clockOutMap) clockOutMap.remove();
-                    clockOutMap = L.map("clockOutMap").setView([lat, lng], 16);
-                    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                        attribution: "© OpenStreetMap"
-                    }).addTo(clockOutMap);
-                    L.marker([lat, lng]).addTo(clockOutMap).bindPopup("You are here").openPopup();
-                }
-            });
-        }, 300);
-    });
-
-
-    /* LIVE CLOCK */
-    function startLiveClock(elId) {
-        const el = document.getElementById(elId);
-        if (!el) return;
-
-        function update() {
-            const now = new Date();
-            el.innerText = now.toLocaleTimeString("en-IN", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true
-            });
-        }
-
-        update();
-        return setInterval(update, 1000);
-    }
+        /* CLOCK OUT */
+        document.getElementById("clockOutModal")?.addEventListener("shown.bs.modal", function () {
+            const btn = document.getElementById("clockOutBtn");
+            const spinner = document.getElementById("clockOutSpinner");
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Capturing Location...';
+            
+            setTimeout(() => {
+                LocationModule.loadLocation("clockout-lat", "clockout-long", "clockout-location", function(success) {
+                    if (success) {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Clock Out';
+                        
+                        const lat = parseFloat(document.getElementById("clockout-lat").value);
+                        const lng = parseFloat(document.getElementById("clockout-long").value);
+                        
+                        if (clockOutMap) clockOutMap.remove();
+                        clockOutMap = L.map("clockOutMap").setView([lat, lng], 16);
+                        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                            attribution: "© OpenStreetMap"
+                        }).addTo(clockOutMap);
+                        L.marker([lat, lng]).addTo(clockOutMap).bindPopup("You are here").openPopup();
+                    } else {
+                        btn.innerHTML = 'Location Failed';
+                    }
+                });
+            }, 300);
+        });
 
     let clockInterval = null;
 

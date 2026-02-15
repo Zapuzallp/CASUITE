@@ -172,6 +172,22 @@
             </a>
         </li>
 
+        <li class="nav-heading">Lead Management</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'lead_list' %}">
+                <i class="bi bi-funnel"></i>
+                <span>All Leads</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'add_lead' %}">
+                <i class="bi bi-plus-circle"></i>
+                <span>Add New Lead</span>
+            </a>
+        </li>
+
         <li class="nav-heading">Operations</li>
 
         {% get_sidebar_counts as sidebar_counts %}
@@ -185,6 +201,7 @@
                 {% endif %}
             </a>
         </li>
+
 
         <li class="nav-heading">Documents</li>
 
@@ -216,7 +233,14 @@
         {% endif %}
 
 
-        <li class="nav-heading">Services</li>
+
+        <li class="nav-heading ">Accounts</li>
+        <li class="nav-item" >
+            <a class="nav-link"  href="{% url 'invoice_list' %}"">
+                <i class="bi bi-view-list" ></i> <span>All Invoices</span>
+            </a>
+        </li>
+
         <li class="nav-item">
             <a class="nav-link" href="{% url 'list_services' %}">
                 <i class="bi bi-file-earmark-text"></i>
@@ -282,7 +306,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const currentPath = window.location.pathname;
         const navLinks = document.querySelectorAll('.sidebar-nav .nav-link:not(.has-dropdown)');
-        
+
         navLinks.forEach(link => {
             // Check if href matches current path (handling trailing slashes)
             let href = link.getAttribute('href');

@@ -128,6 +128,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="lat" id="lat-input">
                         <input type="hidden" name="long" id="long-input">
+                        <input type="hidden" name="location_name" id="location-name-input">
                         <button type="submit" id="finalPunchBtn" class="btn btn-dark w-100 py-3 rounded-3 fw-bold" disabled>CONFIRM PUNCH</button>
                     </form>
                 </div>
@@ -192,6 +193,18 @@
             const lat = pos.coords.latitude, lng = pos.coords.longitude;
             document.getElementById('lat-input').value = lat;
             document.getElementById('long-input').value = lng;
+            
+            // Reverse geocode to get location name
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                .then(res => res.json())
+                .then(data => {
+                    const locationName = data.display_name || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                    document.getElementById('location-name-input').value = locationName;
+                })
+                .catch(() => {
+                    document.getElementById('location-name-input').value = `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                });
+            
             document.getElementById('finalPunchBtn').disabled = false;
             document.getElementById('loc-status').className = "alert alert-success py-2 small";
             document.getElementById('loc-status').innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Position Locked';

@@ -60,7 +60,7 @@
     </h2>
     <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
       <div class="accordion-body">
-        
+                        
                         <div style = "display:flex;gap:2px; width:50%;">
                         <div class="col-md-6 mb-3">
                         <label class="form-label">Start date</label>
@@ -73,11 +73,36 @@
                         
                         </div>
                            
+                     <div class="col-md-5" style = "margin-left:3px;">
+                                            <label class="form-label small fw-bold text-secondary">
+                                                    All Employees
+                                            </label>
+                                            <select id = "eachuser"  class="form-select">
+                                                <option  id = "all employees">All Employees</option>
+                                                {% for employee in employees %}
+                                                 <option  value = "{{employee.user.first_name}} {{employee.user.last_name}}" > {{employee.user.first_name}} {{employee.user.last_name}}</option>   
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                         
 
+
+                         
+                        </div>
+                        <br>
+                        <div class="col-md-6 d-flex align-items-start">
+                                            <button type="submit"  id = "btn-apply" class="btn btn-primary me-2">
+                                                <i class="bi bi-search"></i> Apply Filters
+                                            </button>
+                                            <a href="/manage-leaves/" class="btn btn-secondary">
+                                                <i class="bi bi-x-circle"></i> Clear
+                          </a>
                         </div>
                     </div>
                 </div>
+              
             </div>
+            
         </div>
 
 <!--End of filter -->
@@ -109,7 +134,7 @@
 <tr data-status="{{ leave.status }}">
 
 <td >{{ leave.id }}</td>
-<td class="fw-bold" style = "color:#4154f1;"> {{ leave.user.first_name}} {{leave.user.lastname}}</td>
+<td class="fw-bold Name" style = "color:#4154f1;"> {{ leave.user.first_name}} {{leave.user.last_name}}</td>
 <td><h6 class = "badge  border
      {% if leave.get_leave_type_display == 'Casual Leave' %}bg-info
      {% elif leave.get_leave_type_display == 'Sick Leave' %}bg-warning text-white
@@ -224,50 +249,51 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 // filtertable function    
-function filterTable() {
+let apply_filter = document.getElementById("btn-apply");
+apply_filter.addEventListener("click", function filterTable(){
+    function normalizeDate(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
     const from = document.getElementById('startSearch').value;
-    const to = document.getElementById('endSearch').value;
+    const to   = document.getElementById('endSearch').value;
+    const user = document.getElementById('eachuser').value.trim();
 
     const rows = document.querySelectorAll('tbody tr');
-    
+
     rows.forEach(row => {
-        const start = row.querySelector('.start')?.innerText.trim();
-        const end = row.querySelector('.end')?.innerText.trim();
+        let show = true; 
 
-        if (!start || !end) return;
-
-        let show;
-
-        if (from && to) {
-            const startDate = new Date(start);
-            const endDate = new Date(end);
-            const fromDate = new Date(from);
-            const toDate = new Date(to);
-
-           
-            if (startDate > toDate || endDate < fromDate) {
+    
+        if (user && user !== "All Employees") {
+            const name = row.querySelector('.Name')?.innerText.trim();
+            if (name !== user) {
                 show = false;
-            }
-            else if ((fromDate<startDate)&&(toDate.getDate()===startDate.getDate())){
-                show=false;
-
-            }
-            else if (fromDate>toDate){
-                show = false;
-            }
-           
-            else{
-                show = true;
             }
         }
 
-    row.style.display = show ? 'table-row' : 'none';
-        
-    });
-}
+        if (from && to) {
+            const startText = row.querySelector('.start')?.innerText;
+            const endText   = row.querySelector('.end')?.innerText;
 
-document.getElementById('startSearch').addEventListener('input', filterTable);
-document.getElementById('endSearch').addEventListener('input', filterTable);
+            const startDate = normalizeDate(new Date(startText));
+            const endDate   = normalizeDate(new Date(endText));
+            const fromDate  = normalizeDate(new Date(from));
+            const toDate    = normalizeDate(new Date(to));
+            
+            if (
+                startDate > toDate ||
+                endDate < fromDate ||
+                fromDate > toDate
+            ) {
+                show = false;
+            }
+        }
+
+        row.style.display = show ? 'table-row' : 'none';
+    });
+})
+
+
 </script>
 
 {% endblock %}
