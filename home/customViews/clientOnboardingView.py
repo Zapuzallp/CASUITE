@@ -9,9 +9,9 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from home.clients.config import STRUCTURE_CONFIG
-from home.forms import ClientForm, ClientBusinessProfileForm
+from home.forms import ClientForm, ClientBusinessProfileForm, is_gst_number
 # Import your models and forms
-from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee
+from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee,TaskType
 from home.clients.client_access import get_accessible_clients
 
 
@@ -201,6 +201,14 @@ class ClientView(LoginRequiredMixin, ListView):
         filter_office = self.request.GET.get('office')
         filter_service = self.request.GET.get('service_type')
         filter_assigned_to = self.request.GET.get('assigned_to')
+        filter_custom_view = self.request.GET.get('custom_view')
+
+        # 3. Apply UI Filters on top of Role-Based Queryset
+        if search_query:
+            # Check if search query is a GST number pattern
+            if (search_query):
+                # Search in GSTDetails for this GST number
+                qs = qs.filter(gst_details__gst_number__icontains=search_query).distinct()
 
         # 3. Apply UI Filters on top of Role-Based Queryset
         if search_query:
@@ -231,6 +239,25 @@ class ClientView(LoginRequiredMixin, ListView):
 
         if filter_assigned_to:
             qs = qs.filter(assigned_ca_id=filter_assigned_to)
+
+            # Apply Custom View Filter
+            if filter_custom_view:
+                if filter_custom_view == 'aadhaar_mobile_linked':
+                    # Filter clients with both Aadhaar and phone number present and non-empty
+                    qs = qs.filter(
+                        aadhar__isnull=False,
+                        phone_number__isnull=False
+                    ).exclude(
+                        aadhar=''
+                    ).exclude(
+                        phone_number=''
+                    )
+                elif filter_custom_view == 'gst_enabled':
+                    # Filter clients who have at least one GST number
+                    qs = qs.filter(gst_details__isnull=False).distinct()
+                elif filter_custom_view == 'director_din_valid':
+                    # Filter clients with valid DIN numbers (not null and not empty)
+                    qs = qs.filter(din_no__isnull=False).exclude(din_no='')
 
         return qs.order_by('-created_at')
 
