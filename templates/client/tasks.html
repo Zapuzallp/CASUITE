@@ -108,6 +108,32 @@
                                                 {% endfor %}
                                             </select>
                                         </div>
+                                                <!-- Consultancy Type -->
+                                        <div class="col-md-3" id="consultancyFilterWrapper" style="display: none;">
+                                                <label class="form-label small fw-bold text-secondary">
+                                                    Consultancy Type
+                                                </label>
+                                        <select name="consultancy_type" id="consultancyFilter"
+                                                    class="form-select js-consultancy-select">
+                                            <option value="">All Consultancy Types</option>
+                                                    {% for code, name in consultancy_type_choices %}
+                                            <option value="{{ code }}"
+                                            {% if request.GET.consultancy_type == code %}selected{% endif %}>
+                                                {{ name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        </div>
+
+                                        <!-- Invoice Status -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Invoice Status</label>
+                                            <select name="invoice_status" class="form-select">
+                                                <option value="">All</option>
+                                                <option value="invoiced" {% if request.GET.invoice_status == 'invoiced' %}selected{% endif %}>Invoiced</option>
+                                                <option value="not_invoiced" {% if request.GET.invoice_status == 'not_invoiced' %}selected{% endif %}>Not Invoiced</option>
+                                            </select>
+                                        </div>
 
                                         <!-- Filter Actions -->
                                         <div class="col-md-12 d-flex justify-content-end">
@@ -151,6 +177,7 @@
                                 <th>Due Date</th>
                                 <th>Team</th>
                                 <th>Status</th>
+                                <th>Invoice Status</th>
                                 <th>Action</th>
                             </tr>
                             </thead>
@@ -183,6 +210,9 @@
                                         </div>
                                     </td>
                                     <td><span class="badge bg-light text-dark border">{{ task.service_type }}</span>
+                                        <div class="small text-muted" style="font-size: 11px;">
+                                            {{ task.consultancy_type|default:"" }}
+                                        </div>
                                     </td>
                                     <td>
                                         <span class="{% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
@@ -214,6 +244,17 @@
                                         </span>
                                     </td>
                                     <td>
+                                        {% if task.tagged_invoices.exists %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>Invoiced
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-x-circle me-1"></i>Not Invoiced
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         <a href="{% url 'task_detail' task.id %}"
                                            class="btn btn-sm btn-outline-primary"><i
                                                 class="bi bi-eye"></i></a>
@@ -221,7 +262,7 @@
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">
+                                    <td colspan="9" class="text-center py-4 text-muted">
                                         No tasks found. Use the 'Add New Task' button to create one.
                                     </td>
                                 </tr>
@@ -282,11 +323,23 @@
         $(document).ready(function () {
             // Initialize Select2 on the client selector
             // We use dropdownParent so the search input works inside the Bootstrap modal
+            $('#clientSelector').empty();
             $('#clientSelector').select2({
                 dropdownParent: $('#selectClientModal'),
-                placeholder: "-- Search Client --",
-                allowClear: true,
-                width: '100%'
+                placeholder: 'Client Name || PAN Number || Prospect',
+                width: '100%',
+                minimumInputLength: 0,
+            ajax: {
+            url: '/clients/search/',
+            dataType: 'json',
+            delay: 300,
+            data: function (params) {
+                return { q: params.term };
+            },
+            processResults: function (data) {
+                return { results: data };
+            }
+        }
             });
 
             // Listen for change event on Select2
@@ -317,5 +370,31 @@
             });
         });
     </script>
+<script>
+    // Initialize Select2 for consultancy filter
+$('.js-consultancy-select').select2({
+    width: '100%',
+    placeholder: "Select Consultancy Type",
+    allowClear: true
+});
+    function toggleConsultancyFilter() {
+    const serviceType = $('select[name="service_type"]').val();
+
+    if (serviceType === "Consultancy") {   //    your actual DB value
+        $('#consultancyFilterWrapper').show();
+    } else {
+        $('#consultancyFilterWrapper').hide();
+        $('#consultancyFilter').val(null).trigger('change');
+    }
+}
+
+// Run on page load
+toggleConsultancyFilter();
+
+// Run when service type changes
+$('select[name="service_type"]').on('change', function () {
+    toggleConsultancyFilter();
+});
+</script>
 
 {% endblock body %}

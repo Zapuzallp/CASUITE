@@ -1,3 +1,6 @@
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from home.models import Attendance
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -65,3 +68,63 @@ def sync_task_recurrence(sender, instance, created, **kwargs):
     if recurrence.next_run_at is None:
         recurrence.next_run_at = get_next_recurrence_date(recurrence)
         recurrence.save(update_fields=["next_run_at"])
+
+from django.db.models import Sum, Q
+from decimal import Decimal
+
+from home.models import Payment, Invoice
+
+
+@receiver(post_save, sender=Payment)
+def update_invoice_status_on_payment_change(sender, instance, **kwargs):
+    invoice = instance.invoice
+
+    # Calculate totals dynamically
+    total_amount = invoice.items.aggregate(
+        total=Sum('net_total')
+    )['total'] or Decimal('0.00')
+
+    total_paid = invoice.payments.filter(
+        payment_status='PAID',
+        approval_status='APPROVED'
+    ).aggregate(
+        total=Sum('amount')
+    )['total'] or Decimal('0.00')
+
+    # Decide status
+    if total_amount > 0 and total_paid >= total_amount:
+        new_status = 'PAID'
+    elif total_paid > 0:
+        new_status = 'PARTIALLY_PAID'
+    else:
+        new_status = 'OPEN'
+
+    # Avoid unnecessary DB writes
+    if invoice.invoice_status != new_status:
+        invoice.invoice_status = new_status
+        invoice.save(update_fields=['invoice_status'])
+        
+@receiver(pre_save, sender=Attendance)
+def update_attendance_remark(sender, instance, **kwargs):
+    """Update remark when admin changes status to full_day or half_day"""
+    if instance.pk:
+        try:
+            old_instance = Attendance.objects.get(pk=instance.pk)
+            old_status = old_instance.status
+            
+            # Check if status changed to full_day or half_day
+            if old_status != instance.status:
+                if instance.status == 'full_day':
+                    if instance.remark:
+                        if "Marked as full-day present" not in instance.remark:
+                            instance.remark += "; Marked as full-day present"
+                    else:
+                        instance.remark = "Marked as full-day present"
+                elif instance.status == 'half_day':
+                    if instance.remark:
+                        if "Marked as half-day present" not in instance.remark:
+                            instance.remark += "; Marked as half-day present"
+                    else:
+                        instance.remark = "Marked as half-day present"
+        except Attendance.DoesNotExist:
+            pass

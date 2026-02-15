@@ -106,7 +106,9 @@ def task_list_view(request):
     search_query = request.GET.get('q')
     filter_client = request.GET.get('client')
     filter_service = request.GET.get('service_type')
+    filter_consultancy_type = request.GET.get('consultancy_type')
     filter_status = request.GET.get('status')
+    filter_invoice_status = request.GET.get('invoice_status')
 
     if search_query:
         tasks_qs = tasks_qs.filter(
@@ -125,12 +127,29 @@ def task_list_view(request):
     if filter_status:
         tasks_qs = tasks_qs.filter(status=filter_status)
 
+    if filter_consultancy_type:
+        tasks_qs = tasks_qs.filter(consultancy_type=filter_consultancy_type)
+    # Invoice Status Filter
+    if filter_invoice_status:
+        if filter_invoice_status == 'invoiced':
+            # Tasks that have at least one invoice
+            tasks_qs = tasks_qs.filter(tagged_invoices__isnull=False).distinct()
+        elif filter_invoice_status == 'not_invoiced':
+            # Tasks that have no invoices
+            tasks_qs = tasks_qs.filter(tagged_invoices__isnull=True)
+
     context = {
         'tasks': tasks_qs.order_by('-created_at'),
         'clients': clients_qs.order_by('client_name'),  # For the "Add Task" modal
         'filter_clients': clients_qs.order_by('client_name'),  # For the Filter dropdown
         'today': timezone.now().date(),
         'service_type_choices': Task.SERVICE_TYPE_CHOICES,
+        # 'consultancy_type_choices': Task.CONSULTANCY_TYPE_CHOICES,
+        'consultancy_type_choices': sorted(
+            Task.CONSULTANCY_TYPE_CHOICES,
+            key=lambda x: x[1]
+        ),
+
         'status_choices': Task.STATUS_CHOICES,
     }
     return render(request, 'client/tasks.html', context)
