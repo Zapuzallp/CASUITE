@@ -213,7 +213,7 @@ TASK_CONFIG = {
     # --------------------------------------------------------------------------
     'GST Return': {
         'default_due_days': 20,
-        'workflow_steps': ['Pending', 'Data Collection', 'Draft Preparation', 'Review', 'Filed', 'Completed'],
+        'workflow_steps': ['Documents collect', 'Accounts Ready', 'Complete', 'GSTR Submit'],
         'fields': {
             'include': [
                 'gstin_number', 'period_month', 'period_year', 'total_turnover',
@@ -242,7 +242,7 @@ TASK_CONFIG = {
     # --------------------------------------------------------------------------
     'ITR Filing': {
         'default_due_days': 120,
-        'workflow_steps': ['Pending', 'Docs Received', 'Computation', 'Review', 'Filed', 'Completed'],
+        'workflow_steps': ['Phone Call', 'Documents collection in progress', 'Documents collection complete', 'Manual', 'Account Ready', 'Form Fill up & Submit','EVC', 'Documents ready & billing', 'Delivered'],
         'fields': {
             'include': ['pan_number', 'assessment_year', 'gross_total_income', 'tax_payable', 'refund_amount',
                         'ack_number', 'computation_file'],
@@ -261,7 +261,7 @@ TASK_CONFIG = {
     # --------------------------------------------------------------------------
     'Audit': {
         'default_due_days': 180,
-        'workflow_steps': ['Planning', 'Fieldwork', 'Draft Report', 'Partner Review', 'Signed', 'Completed'],
+        'workflow_steps': ['Phone Call', 'Documents collection in progress', 'Documents collection complete', 'Manual', 'Account Ready', 'Send to Auditor','Accepts 3CB-3CD', 'Return Submit & Billing', 'Delivered'],
         'fields': {
             'include': ['financial_year', 'audit_fee', 'turnover_audited', 'udin_number', 'date_of_signing',
                         'audit_report_file']
