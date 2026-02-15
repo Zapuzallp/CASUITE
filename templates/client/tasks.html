@@ -108,6 +108,22 @@
                                                 {% endfor %}
                                             </select>
                                         </div>
+                                                <!-- Consultancy Type -->
+                                        <div class="col-md-3" id="consultancyFilterWrapper" style="display: none;">
+                                                <label class="form-label small fw-bold text-secondary">
+                                                    Consultancy Type
+                                                </label>
+                                        <select name="consultancy_type" id="consultancyFilter"
+                                                    class="form-select js-consultancy-select">
+                                            <option value="">All Consultancy Types</option>
+                                                    {% for code, name in consultancy_type_choices %}
+                                            <option value="{{ code }}"
+                                            {% if request.GET.consultancy_type == code %}selected{% endif %}>
+                                                {{ name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        </div>
 
                                         <!-- Invoice Status -->
                                         <div class="col-md-3">
@@ -194,6 +210,9 @@
                                         </div>
                                     </td>
                                     <td><span class="badge bg-light text-dark border">{{ task.service_type }}</span>
+                                        <div class="small text-muted" style="font-size: 11px;">
+                                            {{ task.consultancy_type|default:"" }}
+                                        </div>
                                     </td>
                                     <td>
                                         <span class="{% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
@@ -351,5 +370,31 @@
             });
         });
     </script>
+<script>
+    // Initialize Select2 for consultancy filter
+$('.js-consultancy-select').select2({
+    width: '100%',
+    placeholder: "Select Consultancy Type",
+    allowClear: true
+});
+    function toggleConsultancyFilter() {
+    const serviceType = $('select[name="service_type"]').val();
+
+    if (serviceType === "Consultancy") {   //    your actual DB value
+        $('#consultancyFilterWrapper').show();
+    } else {
+        $('#consultancyFilterWrapper').hide();
+        $('#consultancyFilter').val(null).trigger('change');
+    }
+}
+
+// Run on page load
+toggleConsultancyFilter();
+
+// Run when service type changes
+$('select[name="service_type"]').on('change', function () {
+    toggleConsultancyFilter();
+});
+</script>
 
 {% endblock body %}

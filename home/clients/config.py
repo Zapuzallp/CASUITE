@@ -282,5 +282,16 @@ TASK_CONFIG = {
         'dynamic_defaults': {
             'din_numbers': 'din_no'
         }
+    },
+
+    # --------------------------------------------------------------------------
+    # 5. GENERAL CONSULTANCY
+    # --------------------------------------------------------------------------
+    'Consultancy': {
+        'workflow_steps': ['Documents_Received', 'Ready', 'Billing', 'Delivered'],
+        # NEW 👇
+        'ui_controls': {
+            'show_consultancy_type': True
+        }
     }
 }

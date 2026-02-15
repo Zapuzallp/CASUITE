@@ -255,11 +255,21 @@ class TaskForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         # CHANGED: 'assigned_to' -> 'assignees'
-        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description','recurrence_period']
+        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description','recurrence_period','consultancy_type']
         widgets = {
             'task_title': forms.TextInput(attrs={'placeholder': 'Auto-generated if left blank'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
+            'consultancy_type': forms.Select(attrs={'class': 'form-select'})
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Sort consultancy_type choices alphabetically by label
+        self.fields['consultancy_type'].choices = sorted(
+            self.fields['consultancy_type'].choices,
+            key=lambda x: x[1].lower()
+        )
 
 
 # ---------------------------------------------------------
