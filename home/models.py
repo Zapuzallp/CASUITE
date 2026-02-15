@@ -456,7 +456,38 @@ class Task(models.Model):
         ('Quarterly', 'Quarterly'),
         ('Yearly', 'Yearly'),
     ]
+    CONSULTANCY_TYPE_CHOICES = [
+        ('NEW_GST_NUMBER', 'New GST Number'),
+        ('INCOME_TAX_CASE', 'Income Tax Case'),
+        ('GST_CASE', 'GST Case'),
+        ('CONSULTANCY', 'Consultancy'),
+        ('NEW_INCORPORATION', 'New Incorporation'),
+        ('UPDATION_OF_MOA', 'Updation of MOA'),
+        ('DIRECTOR_UPDATION_REQUEST', 'Director Updation Request'),
+        ('DIRECTOR_REMOVAL_REQUEST', 'Director Removal Request'),
+        ('GST_SCHEME_CHANGE', 'GST Scheme Change'),
+        ('BANK_ACCOUNT_OPENING_(CURRENT)', 'Bank Account Opening (Current)'),
+        ('LLP_COMPLIANCE', 'LLP Compliance'),
+        ('PVT_LTD_COMPLIANCE', 'Pvt Ltd Compliance'),
+        ('NEW_DIN', 'New DIN'),
+        ('DIN_RENEWAL', 'DIN Renewal'),
+        ('NEW_DSC', 'New DSC'),
+        ('DSC_RENEWAL', 'DSC Renewal'),
+        ('CLUB_REGISTRATION','Club Registration'),
+        ('DSC','DSC'),
+        ('TRADE_LICENCE','Trade Licence'),
+        ('UDYAM_REG','Udyam Registration'),
+        ('PROJECT_AND_ESTIMATE','Project and Estimate'),
+        ('STOCK_STATEMENT','Stock Statement'),
+        ('P_TAX','P.Tax')
+    ]
 
+    consultancy_type = models.CharField(
+        max_length=100,
+        choices=CONSULTANCY_TYPE_CHOICES,
+        blank=True,
+        null=True
+    )
     # --- Core Links ---
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='tasks')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_tasks')
@@ -1090,3 +1121,66 @@ class Lead(models.Model):
     def is_final_status(self):
         """Check if lead is in final status (Converted or Lost)"""
         return self.status in ['Converted', 'Lost']
+
+
+# -----------------------------------------
+# Lead Call Log Model
+# -----------------------------------------
+class LeadCallLog(models.Model):
+    """
+    Tracks phone call interactions between Lead and Employees.
+    Direction Logic:
+    - If called_by_user is NULL → Lead initiated the call
+    - If called_to_user is NULL → Employee initiated the call
+    """
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='call_logs')
+
+    # Direction: Only one should be NULL per record
+    called_by_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='calls_made_to_leads',
+                                       help_text="Employee who made the call (NULL if Lead called)")
+    called_to_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='calls_received_from_leads',
+                                       help_text="Employee who received the call (NULL if Employee called Lead)")
+
+    call_duration = models.DurationField(help_text="Duration of the call")
+    description = models.TextField(help_text="Discussion summary and notes")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+                                   related_name='call_logs_created',
+                                   help_text="User who logged this call")
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Lead Call Log'
+        verbose_name_plural = 'Lead Call Logs'
+
+    def __str__(self):
+        direction = self.get_direction_display()
+        return f"{self.lead.lead_name} - {direction} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+    def get_direction_display(self):
+        """Returns human-readable call direction"""
+        if self.called_by_user is None:
+            # Lead called an employee
+            employee_name = self.called_to_user.get_full_name() or self.called_to_user.username if self.called_to_user else "Unknown"
+            return f"Lead → {employee_name}"
+        elif self.called_to_user is None:
+            # Employee called the lead
+            employee_name = self.called_by_user.get_full_name() or self.called_by_user.username if self.called_by_user else "Unknown"
+            return f"{employee_name} → Lead"
+        else:
+            return "Invalid Direction"
+
+    def get_employee(self):
+        """Returns the employee involved in the call"""
+        return self.called_by_user or self.called_to_user
+
+    def clean(self):
+        """Validate that exactly one direction field is NULL"""
+        from django.core.exceptions import ValidationError
+        if self.called_by_user is None and self.called_to_user is None:
+            raise ValidationError("At least one of 'called_by_user' or 'called_to_user' must be set.")
+        if self.called_by_user is not None and self.called_to_user is not None:
+            raise ValidationError("Only one of 'called_by_user' or 'called_to_user' should be set, not both.")

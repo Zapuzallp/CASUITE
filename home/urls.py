@@ -17,6 +17,7 @@ from home.customViews.mobileAttendanceView import (
 from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
 from home.customViews.services import list_services, delete_service
+from home.customViews.searchbarView import global_search
 from home.customViews.notificationView import (
     read_all_notifications,
     view_notification,
@@ -112,6 +113,10 @@ urlpatterns = [
     path('payments/<int:payment_id>/cancel/', cancel_payment, name='cancel_payment'),
     path('payments/<int:payment_id>/', payment_detail, name='payment_detail'),
     path('payments/bulk-action/', bulk_payment_action, name='bulk_payment_action'),
+
+    #search-bar
+    path('global-search/', global_search, name='global_search'),
+
     # Lead Management
     path('leads/', leadView.lead_list_view, name='lead_list'),
     path('leads/add/', leadView.add_lead_view, name='add_lead'),
@@ -121,6 +126,7 @@ urlpatterns = [
     path('leads/<int:lead_id>/mark-qualified/', leadView.mark_lead_qualified, name='mark_lead_qualified'),
     path('leads/<int:lead_id>/mark-lost/', leadView.mark_lead_lost, name='mark_lead_lost'),
     path('leads/<int:lead_id>/convert/', leadView.convert_lead_view, name='convert_lead'),
+    path('leads/<int:lead_id>/add-call-log/', leadView.add_lead_call_log, name='add_lead_call_log'),
     # Invoice URLs (using invoiceView)
     path('invoices/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_list'),
     path('invoice/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_all'),

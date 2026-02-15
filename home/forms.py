@@ -255,11 +255,21 @@ class TaskForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         # CHANGED: 'assigned_to' -> 'assignees'
-        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description','recurrence_period']
+        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description','recurrence_period','consultancy_type']
         widgets = {
             'task_title': forms.TextInput(attrs={'placeholder': 'Auto-generated if left blank'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
+            'consultancy_type': forms.Select(attrs={'class': 'form-select'})
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Sort consultancy_type choices alphabetically by label
+        self.fields['consultancy_type'].choices = sorted(
+            self.fields['consultancy_type'].choices,
+            key=lambda x: x[1].lower()
+        )
 
 
 # ---------------------------------------------------------
@@ -544,9 +554,10 @@ class LeadForm(BootstrapFormMixin, forms.ModelForm):
             'lead_value': forms.NumberInput(attrs={
                 'placeholder': '0.00',
                 'step': '0.01',
-                'min': '0'
+                'min': '0',
+                'required': 'required'
             }),
-            'expected_closure_date': forms.DateInput(attrs={'type': 'date'}),
+            'expected_closure_date': forms.DateInput(attrs={'type': 'date', 'required': 'required'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -557,8 +568,8 @@ class LeadForm(BootstrapFormMixin, forms.ModelForm):
         self.fields['phone_number'].required = True
         self.fields['requirements'].required = True
         self.fields['email'].required = False
-        self.fields['lead_value'].required = False
-        self.fields['expected_closure_date'].required = False
+        self.fields['lead_value'].required = True
+        self.fields['expected_closure_date'].required = True
 
     def clean_phone_number(self):
         """Validate phone number - must be 10 digits"""

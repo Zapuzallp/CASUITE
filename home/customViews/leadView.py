@@ -5,8 +5,10 @@ from django.db.models import Q
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from datetime import timedelta
+from django.contrib.auth.models import User
 
-from home.models import Lead
+from home.models import Lead, LeadCallLog
 from home.forms import LeadForm
 
 
@@ -165,8 +167,51 @@ def lead_detail_view(request, lead_id):
         messages.error(request, 'You do not have permission to view this lead.')
         return redirect('lead_list')
 
+    # Get call logs for this lead
+    call_logs = lead.call_logs.select_related('called_by_user', 'called_to_user', 'created_by').all()
+
+    # Check if user can add call logs (creator, assigned users, branch manager, or admin)
+    can_add_call_log = False
+    if request.user.is_superuser:
+        can_add_call_log = True
+    elif lead.created_by == request.user or request.user in lead.assigned_to.all():
+        can_add_call_log = True
+    else:
+        try:
+            employee = request.user.employee
+            if employee.role in ['ADMIN', 'BRANCH_MANAGER']:
+                # Branch manager can add if lead is from their office
+                if employee.role == 'BRANCH_MANAGER' and employee.office_location:
+                    if lead.created_by and hasattr(lead.created_by, 'employee'):
+                        if lead.created_by.employee.office_location == employee.office_location:
+                            can_add_call_log = True
+                else:
+                    can_add_call_log = True
+        except:
+            pass
+
+    # Get authorized users for dropdown (creator + assigned users + branch manager if applicable)
+    authorized_users = set()
+    if lead.created_by:
+        authorized_users.add(lead.created_by)
+    authorized_users.update(lead.assigned_to.all())
+
+    # Add branch manager if applicable
+    if lead.created_by and hasattr(lead.created_by, 'employee'):
+        office = lead.created_by.employee.office_location
+        if office:
+            from django.contrib.auth.models import User
+            branch_managers = User.objects.filter(
+                employee__role='BRANCH_MANAGER',
+                employee__office_location=office
+            )
+            authorized_users.update(branch_managers)
+
     context = {
         'lead': lead,
+        'call_logs': call_logs,
+        'can_add_call_log': can_add_call_log,
+        'authorized_users': sorted(authorized_users, key=lambda u: u.get_full_name() or u.username),
     }
     return render(request, 'leads/lead_detail.html', context)
 
@@ -270,3 +315,100 @@ def convert_lead_view(request, lead_id):
     # Redirect to onboarding form with lead_id
     messages.info(request, f'Converting lead "{lead.lead_name}" to client. Please complete the onboarding form.')
     return redirect(f'/onboard/?lead_id={lead.id}')
+
+
+@login_required
+@require_POST
+def add_lead_call_log(request, lead_id):
+    """Add a new call log for a lead"""
+    lead = get_object_or_404(Lead, id=lead_id)
+
+    # Check if user has access to this lead
+    accessible_leads = get_accessible_leads(request.user)
+    if not accessible_leads.filter(id=lead.id).exists():
+        return JsonResponse({'success': False, 'error': 'You do not have permission to add call logs for this lead.'},
+                            status=403)
+
+    # Verify user can add call logs
+    can_add = False
+    if request.user.is_superuser:
+        can_add = True
+    elif lead.created_by == request.user or request.user in lead.assigned_to.all():
+        can_add = True
+    else:
+        try:
+            employee = request.user.employee
+            if employee.role in ['ADMIN', 'BRANCH_MANAGER']:
+                if employee.role == 'BRANCH_MANAGER' and employee.office_location:
+                    if lead.created_by and hasattr(lead.created_by, 'employee'):
+                        if lead.created_by.employee.office_location == employee.office_location:
+                            can_add = True
+                else:
+                    can_add = True
+        except:
+            pass
+
+    if not can_add:
+        return JsonResponse({'success': False, 'error': 'You do not have permission to add call logs.'}, status=403)
+
+    # Get form data
+    called_by = request.POST.get('called_by')
+    called_to = request.POST.get('called_to')
+    duration_minutes = request.POST.get('duration_minutes')
+    description = request.POST.get('description', '').strip()
+
+    # Validate inputs
+    if not called_by or not called_to:
+        return JsonResponse({'success': False, 'error': 'Please select both caller and receiver.'}, status=400)
+
+    if not duration_minutes:
+        return JsonResponse({'success': False, 'error': 'Please enter call duration.'}, status=400)
+
+    if not description:
+        return JsonResponse({'success': False, 'error': 'Please provide a description of the call.'}, status=400)
+
+    try:
+        duration_minutes = int(duration_minutes)
+        if duration_minutes <= 0:
+            return JsonResponse({'success': False, 'error': 'Duration must be greater than 0.'}, status=400)
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'Invalid duration value.'}, status=400)
+
+    # Determine direction
+    called_by_user = None
+    called_to_user = None
+
+    if called_by == 'lead':
+        # Lead called an employee
+        if called_to == 'lead':
+            return JsonResponse({'success': False, 'error': 'Invalid selection: Lead cannot call Lead.'}, status=400)
+        try:
+            called_to_user = User.objects.get(id=int(called_to))
+        except (ValueError, User.DoesNotExist):
+            return JsonResponse({'success': False, 'error': 'Invalid employee selection.'}, status=400)
+    else:
+        # Employee called the lead
+        try:
+            called_by_user = User.objects.get(id=int(called_by))
+        except (ValueError, User.DoesNotExist):
+            return JsonResponse({'success': False, 'error': 'Invalid employee selection.'}, status=400)
+
+        if called_to != 'lead':
+            return JsonResponse({'success': False, 'error': 'When employee calls, the receiver must be the Lead.'},
+                                status=400)
+
+    # Create call log
+    try:
+        call_log = LeadCallLog.objects.create(
+            lead=lead,
+            called_by_user=called_by_user,
+            called_to_user=called_to_user,
+            call_duration=timedelta(minutes=duration_minutes),
+            description=description,
+            created_by=request.user
+        )
+
+        messages.success(request, 'Call log added successfully!')
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error creating call log: {str(e)}'}, status=500)
