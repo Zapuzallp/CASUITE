@@ -955,6 +955,7 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.item_name} ({self.short_code})"
 
+from decimal import Decimal
 
 class Invoice(models.Model):
     INVOICE_STATUS = [

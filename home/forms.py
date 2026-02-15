@@ -474,18 +474,33 @@ class PaymentCollectForm(PaymentForm):
     class Meta(PaymentForm.Meta):
         fields = ['invoice'] + PaymentForm.Meta.fields
 
-    def __init__(self, *args, invoice_instance=None, **kwargs):
+    def __init__(self, *args, invoice_instance=None, balance_amount=None, **kwargs):
         """
         invoice_instance: if provided, lock the invoice (hide the field and set initial)
         """
         super().__init__(*args, **kwargs)
+        self.invoice_instance = invoice_instance
+        self.balance_amount = balance_amount
+
         if invoice_instance:
-            # set the initial invoice and hide the field so user can't change it
             self.fields['invoice'].initial = invoice_instance
             self.fields['invoice'].widget = forms.HiddenInput()
-            self.invoice_instance = invoice_instance
-        else:
-            self.invoice_instance = None
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        amount = cleaned_data.get('amount')
+        invoice = self.invoice_instance or cleaned_data.get('invoice')
+
+        if not amount or not invoice:
+            return cleaned_data
+
+        balance = self.balance_amount
+
+        if balance is not None and amount > balance:
+            self.add_error('amount', 'Amount cannot be greater than remaining balance.')
+
+        return cleaned_data
 # ---------------------------------------------------------
 # 3. GST Details Form (NEW)
 # ---------------------------------------------------------

@@ -17,94 +17,284 @@
 
   <section class="section">
     <div class="row">
-      <div class="col-lg-8">
+      <div class="col-lg-12">
+        <div class="card mb-4 shadow-sm border-0">
+          <div class="card-body pt-4 pb-4">
+            <div class="d-flex justify-content-between text-center position-relative">
+              <div class="position-absolute top-50 start-0 translate-middle-y bg-secondary bg-opacity-25 w-100" style="height: 3px; z-index: 0;"></div>
 
-        <div class="card shadow-sm border-0">
-          <div class="card-body">
+              <div class="bg-white position-relative z-1 px-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white bg-success" style="width: 32px; height: 32px;">
+                  <i class="bi bi-check"></i>
+                </div>
+                <small class="fw-bold d-block">Recorded</small>
+              </div>
 
-            <h5 class="card-title">Payment #{{ payment.id }}</h5>
+              {% if payment.approval_status == 'CANCELED' %}
+                <div class="bg-white position-relative z-1 px-3">
+                  <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white bg-secondary" style="width: 32px; height: 32px;">
+                    <i class="bi bi-x-lg"></i>
+                  </div>
+                  <small class="fw-bold text-secondary d-block">Record Canceled</small>
+                </div>
+              {% else %}
+                <div class="bg-white position-relative z-1 px-3">
+                  {% if payment.approval_status == 'APPROVED' %}
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white bg-success" style="width: 32px; height: 32px;">
+                      <i class="bi bi-check-all"></i>
+                    </div>
+                    <small class="fw-bold text-success d-block">Approved</small>
+                  {% elif payment.approval_status == 'REJECTED' %}
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white bg-danger" style="width: 32px; height: 32px;">
+                      <i class="bi bi-x-lg"></i>
+                    </div>
+                    <small class="fw-bold text-danger d-block">Rejected</small>
+                  {% else %}
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white bg-warning" style="width: 32px; height: 32px;">
+                      <i class="bi bi-hourglass-split"></i>
+                    </div>
+                    <small class="fw-bold text-warning d-block">Pending</small>
+                  {% endif %}
+                </div>
 
-            <table class="table table-sm table-borderless">
-              <tr>
-                <th>Invoice</th>
-                <td>#{{ payment.invoice.id }}</td>
-              </tr>
-
-              <tr>
-                <th>Client</th>
-                <td>{{ payment.invoice.client.client_name }}</td>
-              </tr>
-
-              <tr>
-                <th>Amount</th>
-                <td>₹{{ payment.amount|floatformat:2|intcomma }}</td>
-              </tr>
-
-              <tr>
-                <th>Payment Method</th>
-                <td>{{ payment.get_payment_method_display }}</td>
-              </tr>
-
-              <tr>
-                <th>Payment Date</th>
-                <td>{{ payment.payment_date|date:"M d, Y" }}</td>
-              </tr>
-
-              <tr>
-                <th>Transaction ID</th>
-                <td>{{ payment.transaction_id|default:"-" }}</td>
-              </tr>
-
-              <tr>
-                <th>Status</th>
-                <td>
-                  <span class="badge
-                    {% if payment.payment_status == 'PAID' %}bg-success
-                    {% elif payment.payment_status == 'PENDING' %}bg-warning
-                    {% elif payment.payment_status == 'CANCELED' %}bg-secondary
-                    {% else %}bg-danger{% endif %}">
-                    {{ payment.payment_status }}
-                  </span>
-                </td>
-              </tr>
-
-              <tr>
-                <th>Approval Status</th>
-                <td>{{ payment.approval_status }}</td>
-              </tr>
-
-              <tr>
-                <th>Created By</th>
-                <td>{{ payment.created_by.get_full_name|default:payment.created_by.username }}</td>
-              </tr>
-
-              <tr>
-                <th>Created At</th>
-                <td>{{ payment.created_at|date:"M d, Y H:i" }}</td>
-              </tr>
-
-              {% if payment.approved_by %}
-              <tr>
-                <th>Approved By</th>
-                <td>{{ payment.approved_by.get_full_name|default:payment.approved_by.username }}</td>
-              </tr>
-              <tr>
-                <th>Approved At</th>
-                <td>{{ payment.approved_at|date:"M d, Y H:i" }}</td>
-              </tr>
+                <div class="bg-white position-relative z-1 px-3">
+                  {% if payment.payment_status == 'PAID' %}
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-white bg-success" style="width: 32px; height: 32px;">
+                      <i class="bi bi-cash-stack"></i>
+                    </div>
+                    <small class="fw-bold d-block">Settled</small>
+                  {% else %}
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 text-secondary bg-light border" style="width: 32px; height: 32px;">
+                      <i class="bi bi-circle"></i>
+                    </div>
+                    <small class="text-muted d-block">Finish</small>
+                  {% endif %}
+                </div>
               {% endif %}
-            </table>
-
-            <a href="{% url 'payment_list' %}" class="btn btn-outline-secondary btn-sm">
-              ← Back to Payments
-            </a>
-
+            </div>
           </div>
         </div>
+      </div>
+    </div>
 
+    <div class="row">
+      <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+             <h5 class="card-title m-0">Payment Information</h5>
+             <div>
+                <a href="{% url 'payment_list' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Payment List
+                </a>
+             </div>
+          </div>
+          <div class="card-body pt-3">
+            <table class="table table-borderless">
+              <tr>
+                <th class="text-muted w-25">Reference ID</th>
+                <td>#{{ payment.id }}</td>
+              </tr>
+              <tr>
+                  <th class='text-muted'>Amount</th>
+                  <td class="badge bg-primary text-white fs-6">₹{{ payment.amount|intcomma }}</td>
+              </tr>
+              <tr>
+                <th class="text-muted">Invoice</th>
+                <td><span class="badge bg-light text-dark border">#{{ payment.invoice.id }}</span></td>
+              </tr>
+              <tr>
+                <th class="text-muted">Client</th>
+                <td class="fw-bold">{{ payment.invoice.client.client_name }}</td>
+              </tr>
+              <tr>
+                <th class="text-muted">Payment Date</th>
+                <td>{{ payment.payment_date|date:"l, d M Y" }}</td>
+              </tr>
+              <tr>
+                <th class="text-muted">Method</th>
+                <td><span class="badge bg-light text-dark border">{{ payment.get_payment_method_display }}</span></td>
+              </tr>
+              <tr>
+                <th class="text-muted">Transaction ID</th>
+                <td class="font-monospace text-break">{{ payment.transaction_id|default:"-" }}</td>
+              </tr>
+              <tr>
+                <th class="text-muted">Created By</th>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-sm bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width:24px; height:24px; font-size:12px;">
+                            {{ payment.created_by.username|slice:":1"|upper }}
+                        </div>
+                        {{ payment.created_by.get_full_name|default:payment.created_by.username }}
+                    </div>
+                </td>
+              </tr>
+              <tr>
+                <th class="text-muted">Created At</th>
+                <td>{{ payment.created_at|date:"M d, Y h:i A" }}</td>
+              </tr>
+            </table>
+          </div>
+
+          {% if payment.approval_status == 'PENDING' and payment.payment_status != 'CANCELED' %}
+          <div class="card-footer bg-light p-3">
+             <div class="d-flex gap-2 justify-content-end">
+                 {% if can_cancel %}
+                    <button class="btn btn-outline-secondary" onclick="triggerActionModal('cancel', '{% url 'cancel_payment' payment.id %}')">
+                        <i class="bi bi-x-circle me-1"></i> Cancel
+                    </button>
+                 {% endif %}
+                 {% if can_approve %}
+                    <button class="btn btn-danger" onclick="triggerActionModal('reject', '{% url 'reject_payment' payment.id %}')">Reject</button>
+                    <button class="btn btn-success" onclick="triggerActionModal('approve', '{% url 'approve_payment' payment.id %}')">
+                        <i class="bi bi-check-lg me-1"></i> Approve Payment
+                    </button>
+                 {% endif %}
+             </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-light">
+                <h6 class="m-0 fw-bold text-secondary">
+                    <i class="bi bi-receipt me-1"></i> Invoice Details
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                {% if invoice_items %}
+                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                    <table class="table table-sm mb-0 align-middle">
+                        <thead class="table-light sticky-top" style="z-index: 1;">
+                            <tr>
+                                <th class="ps-3">Service</th>
+                                <th class="text-end pe-3">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in invoice_items %}
+                            <tr>
+                                <td class="ps-3">
+                                    <strong>{{ item.product.item_name|default:"Service" }}</strong><br>
+                                    <small class="text-muted" style="font-size: 0.75rem;">
+                                        Unit: {{ item.product.unit }} | GST: {{ item.gst_percentage }}%
+                                    </small>
+                                </td>
+                                <td class="text-end pe-3">₹{{ item.net_total|floatformat:2|intcomma }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <p class="p-3 text-muted text-center mb-0">No invoice items found.</p>
+                {% endif %}
+
+                <div class="p-3 border-top bg-white">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Total Invoice Amount</span>
+                        <span class="fw-bold">₹{{ invoice_total|floatformat:2|intcomma }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 text-success">
+                        <span>Amount Paid (Approved)</span>
+                        <span>- ₹{{ invoice_paid|floatformat:2|intcomma }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between pt-2 border-top mt-2">
+                        <span class="fw-bold text-dark">Balance Due</span>
+                        <span class="fw-bold text-danger">₹{{ balance_amount|floatformat:2|intcomma }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if payment.approved_by %}
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="card-title text-muted mb-3 text-uppercase small ls-1">Audit Trail</h6>
+                <div class="d-flex align-items-start mb-3">
+                    <div class="me-2 text-success"><i class="bi bi-check-circle-fill"></i></div>
+                    <div>
+                        <span class="d-block fw-bold small">Approved By</span>
+                        <span class="small">{{ payment.approved_by.get_full_name|default:payment.approved_by.username }}</span>
+                        <span class="d-block text-muted small" style="font-size: 0.75rem;">
+                            {{ payment.approved_at|date:"M d, Y • h:i A" }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </section>
-
 </main>
+
+<div class="modal fade" id="actionModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header" id="modalHeader">
+        <h5 class="modal-title fw-bold text-white" id="modalTitle">Confirm Action</h5>
+        <button type="button" class="btn-close btn-close-white" id="modalCloseBtn" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <div class="mb-3" id="modalIcon"></div>
+        <p id="modalMessage" class="fs-6 text-secondary mb-0"></p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center pb-4">
+        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" id="actionForm" action="">
+            {% csrf_token %}
+            <button type="submit" class="btn px-4 text-white" id="modalConfirmBtn">Yes, Confirm</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    function triggerActionModal(actionType, url) {
+        const modalEl = document.getElementById('actionModal');
+        const form = document.getElementById('actionForm');
+        const header = document.getElementById('modalHeader');
+        const title = document.getElementById('modalTitle');
+        const msg = document.getElementById('modalMessage');
+        const btn = document.getElementById('modalConfirmBtn');
+        const icon = document.getElementById('modalIcon');
+
+        header.className = 'modal-header';
+        form.action = url;
+
+        if (actionType === 'approve') {
+            header.classList.add('bg-success');
+            title.innerText = "Approve Payment";
+            msg.innerHTML = "Are you sure you want to <strong>APPROVE</strong> this payment?";
+            btn.className = "btn btn-success px-4";
+            btn.innerText = "Yes, Approve";
+            icon.innerHTML = '<i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>';
+        }
+        else if (actionType === 'reject') {
+            header.classList.add('bg-danger');
+            title.innerText = "Reject Payment";
+            msg.innerHTML = "Are you sure you want to <strong>REJECT</strong> this payment?<br><small class='text-danger'>This will mark it as Canceled.</small>";
+            btn.className = "btn btn-danger px-4";
+            btn.innerText = "Yes, Reject";
+            icon.innerHTML = '<i class="bi bi-x-circle text-danger" style="font-size: 3rem;"></i>';
+        }
+        else if (actionType === 'cancel') {
+            header.classList.add('bg-warning');
+            title.classList.replace('text-white', 'text-dark'); // Warning needs dark text
+            title.innerText = "Cancel Payment";
+            msg.innerHTML = "Are you sure you want to <strong>CANCEL</strong> this record?<br>This action cannot be undone.";
+            btn.className = "btn btn-warning px-4 text-dark";
+            btn.innerText = "Yes, Cancel";
+            icon.innerHTML = '<i class="bi bi-exclamation-circle text-warning" style="font-size: 3rem;"></i>';
+            }
+
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+</script>
+
 {% endblock body %}
