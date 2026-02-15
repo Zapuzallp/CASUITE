@@ -4,6 +4,7 @@ from django.shortcuts import redirect, render
 from django.views import View
 from django.views.generic import ListView
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 
 from .models import (Client,ClientUserEntitle )
 

@@ -9,9 +9,9 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from home.clients.config import STRUCTURE_CONFIG
-from home.forms import ClientForm, ClientBusinessProfileForm, is_gst_number
+from home.forms import ClientForm, ClientBusinessProfileForm
 # Import your models and forms
-from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee,TaskType
+from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee
 from home.clients.client_access import get_accessible_clients
 
 

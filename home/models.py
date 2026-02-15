@@ -858,7 +858,7 @@ class Employee(models.Model):
     personal_email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True)
+    office_location = models.ForeignKey(OfficeDetails, on_delete=models.CASCADE, null=True, blank=True)
     role = models.CharField(max_length=255, choices=ROLES_CHOICE)
     supervisor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Supervisor_Or_Manager", null=True,
                                    blank=True)
