@@ -281,6 +281,92 @@ if (keyPersons) {
         closeOnSelect: false
     });
 }
+            // POSTAL CODE AUTO-FILL LOGIC
+            const postalInput = document.getElementById('id_postal_code');
+
+            if (postalInput) {
+                postalInput.addEventListener('input', function(e) {
+                    // Enforce numeric input
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length > 6) value = value.substring(0, 6);
+                    e.target.value = value;
+
+                    // Trigger API when 6 digits are reached
+                    if (value.length === 6) {
+                        fetchLocationDetails(value);
+                    }
+                });
+            }
+
+            async function fetchLocationDetails(pincode) {
+                const cityField = document.getElementById('id_city');
+                const stateField = document.getElementById('id_state');
+                const countryField = document.getElementById('id_country');
+
+                // Visual Feedback
+                if (cityField) cityField.placeholder = "Fetching...";
+                if (stateField) stateField.style.opacity = '0.5';
+
+                try {
+                    const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+                    if (!response.ok) throw new Error("API Request Failed");
+
+                    const data = await response.json();
+
+                    if (data && data.length > 0 && data[0].Status === "Success") {
+                        const details = data[0].PostOffice[0];
+                        const city = details.District;
+                        const stateName = details.State;
+
+                        // Set City
+                        if (cityField) {
+                            cityField.value = city;
+                            cityField.dispatchEvent(new Event('input'));
+                        }
+
+                        // Set Country
+                        if (countryField) {
+                            countryField.value = "India";
+                        }
+
+                        // Smart State Selection (Text -> ID)
+                        if (stateField) {
+                            let matchedValue = '';
+                            const searchStr = stateName.toLowerCase().trim();
+
+                            // Loop to find the matching ID (e.g. "West Bengal" -> "01")
+                            for (let i = 0; i < stateField.options.length; i++) {
+                                const optText = stateField.options[i].text.toLowerCase().trim();
+
+                                // precise match or partial match
+                                if (optText === searchStr || optText.includes(searchStr)) {
+                                    matchedValue = stateField.options[i].value;
+                                    break;
+                                }
+                            }
+
+                            if (matchedValue) {
+                                // Update standard select
+                                stateField.value = matchedValue;
+                                // Update Select2 visual
+                                $(stateField).val(matchedValue).trigger('change');
+                            }
+                        }
+                    } else {
+                        // If API returns "Error" status (invalid pincode)
+                        if (cityField) {
+                            cityField.value = "";
+                            cityField.placeholder = "Invalid Pincode";
+                        }
+                    }
+                } catch (error) {
+                    console.error("API Error:", error);
+                    if (cityField) cityField.placeholder = "Enter manually";
+                } finally {
+                    if (stateField) stateField.style.opacity = '1';
+                }
+            }
+            // END POSTAL CODE LOGIC
         });
     </script>
 {% endblock %}
