@@ -849,6 +849,58 @@ class AttendanceAdmin(admin.ModelAdmin):
     list_filter = ("status", "date")
     list_editable = ("status",)
     search_fields = ("user__username", "location_name")
+    actions = ["clock_out_with_shift_time"]
+
+    def clock_out_with_shift_time(self, request, queryset):
+        from django.contrib import messages
+        from django.utils import timezone
+        from django.db.models import Q
+        from datetime import datetime
+
+        success_count = 0
+        error_count = 0
+        errors = []
+
+        for attendance in queryset:
+            try:
+                employee_shift = EmployeeShift.objects.filter(
+                    user=attendance.user,
+                    valid_from__lte=attendance.date
+                ).filter(
+                    Q(valid_to__isnull=True) | Q(valid_to__gte=attendance.date)
+                ).first()
+
+                if employee_shift:
+                    shift_end_time = employee_shift.shift.shift_end_time
+                else:
+                    default_shift = Shift.objects.filter(is_default=True).first()
+                    if not default_shift:
+                        default_shift = Shift.objects.first()
+                    if not default_shift:
+                        errors.append(f"{attendance.user.username} ({attendance.date}): No shift configured")
+                        error_count += 1
+                        continue
+                    shift_end_time = default_shift.shift_end_time
+
+                attendance.clock_out = timezone.make_aware(datetime.combine(attendance.date, shift_end_time))
+                remark_text = f"Clock-out set to shift time by {request.user.username} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+                if attendance.remark:
+                    attendance.remark = f"{attendance.remark}; {remark_text}"
+                else:
+                    attendance.remark = remark_text
+                attendance._skip_auto_status = True
+                attendance.save()
+                success_count += 1
+            except Exception as e:
+                errors.append(f"{attendance.user.username} ({attendance.date}): {str(e)}")
+                error_count += 1
+
+        if success_count > 0:
+            messages.success(request, f"Successfully updated {success_count} attendance record(s) with shift clock-out time.")
+        if error_count > 0:
+            messages.error(request, f"Failed to update {error_count} record(s). Errors: {'; '.join(errors[:5])}")
+
+    clock_out_with_shift_time.short_description = "Clock out with shift time"
 
 
 @admin.register(Employee)
@@ -889,7 +941,8 @@ class NotificationAdmin(admin.ModelAdmin):
 @admin.register(Shift)
 class ShiftAdmin(admin.ModelAdmin):
     list_display = ('shift_name', 'shift_start_time',
-                    'shift_end_time', 'maximum_allowed_duration', 'days_off')
+                    'shift_end_time', 'maximum_allowed_duration', 'days_off', 'is_default')
+    list_editable = ('is_default',)
 
 
 @admin.register(EmployeeShift)

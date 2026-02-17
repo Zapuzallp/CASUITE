@@ -251,6 +251,9 @@
                                 <button type="button" class="btn btn-sm btn-warning" onclick="bulkUpdateStatus()">
                                     <i class="bi bi-arrow-repeat"></i> Update Selected
                                 </button>
+                                <button type="button" class="btn btn-sm btn-info" onclick="clockOutWithShiftTime()">
+                                    <i class="bi bi-clock-history"></i> Clock Out with Shift Time
+                                </button>
                             </div>
                         </div>
 
@@ -792,6 +795,35 @@ function bulkUpdateStatus() {
     document.getElementById('confirmUpdate').onclick = function() {
         document.getElementById('hiddenBulkStatus').value = bulkStatus;
         document.getElementById('bulkUpdateForm').submit();
+    };
+}
+
+// Clock out with shift time function
+function clockOutWithShiftTime() {
+    const selectedRecords = document.querySelectorAll('.record-checkbox:checked');
+
+    if (selectedRecords.length === 0) {
+        alert('Please select at least one record.');
+        return;
+    }
+
+    // Show confirmation modal
+    document.getElementById('confirmMessage').textContent =
+        `Are you sure you want to set clock-out time to shift end time for ${selectedRecords.length} record(s)?`;
+
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+
+    // Handle confirmation
+    document.getElementById('confirmUpdate').onclick = function() {
+        // Create a hidden input for the action
+        const form = document.getElementById('bulkUpdateForm');
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'clock_out_shift';
+        actionInput.value = '1';
+        form.appendChild(actionInput);
+        form.submit();
     };
 }
 

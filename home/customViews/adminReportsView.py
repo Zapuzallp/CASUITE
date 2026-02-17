@@ -238,6 +238,80 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request):
+        # Handle clock out with shift time
+        if 'clock_out_shift' in request.POST:
+            from django.utils import timezone
+            from django.db.models import Q
+            from home.models import EmployeeShift, Shift
+            from datetime import datetime
+            
+            selected_records = request.POST.getlist('selected_records')
+            
+            if not selected_records:
+                messages.error(request, 'Please select at least one attendance record.')
+                return redirect(request.get_full_path())
+            
+            success_count = 0
+            error_count = 0
+            errors = []
+            
+            for record_id in selected_records:
+                try:
+                    attendance = Attendance.objects.get(id=record_id)
+                    
+                    # Get employee shift
+                    employee_shift = EmployeeShift.objects.filter(
+                        user=attendance.user,
+                        valid_from__lte=attendance.date
+                    ).filter(
+                        Q(valid_to__isnull=True) | Q(valid_to__gte=attendance.date)
+                    ).first()
+                    
+                    if employee_shift:
+                        shift_end_time = employee_shift.shift.shift_end_time
+                    else:
+                        # Use default shift (marked with is_default=True)
+                        default_shift = Shift.objects.filter(is_default=True).first()
+                        if not default_shift:
+                            # Fallback to first shift if no default marked
+                            default_shift = Shift.objects.first()
+                        if not default_shift:
+                            errors.append(f"{attendance.user.username} ({attendance.date}): No shift configured")
+                            error_count += 1
+                            continue
+                        shift_end_time = default_shift.shift_end_time
+                    
+                    # Set clock_out to shift end time
+                    attendance.clock_out = timezone.make_aware(datetime.combine(attendance.date, shift_end_time))
+                    
+                    # Append remark
+                    remark_text = f"Clock-out set to shift time by {request.user.username} on {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+                    if attendance.remark:
+                        attendance.remark = f"{attendance.remark}; {remark_text}"
+                    else:
+                        attendance.remark = remark_text
+                    
+                    attendance._skip_auto_status = True
+                    attendance.save()
+                    success_count += 1
+                    
+                except Attendance.DoesNotExist:
+                    errors.append(f"Record ID {record_id}: Not found")
+                    error_count += 1
+                except Exception as e:
+                    errors.append(f"Record ID {record_id}: {str(e)}")
+                    error_count += 1
+            
+            if success_count > 0:
+                messages.success(request, f'Successfully updated {success_count} record(s) with shift clock-out time.')
+            if error_count > 0:
+                error_msg = f'Failed to update {error_count} record(s).'
+                if errors:
+                    error_msg += f' Errors: {"; ".join(errors[:3])}'
+                messages.error(request, error_msg)
+            
+            return redirect(request.get_full_path())
+        
         # Handle bulk status update
         selected_records = request.POST.getlist('selected_records')
         new_status = request.POST.get('bulk_status')

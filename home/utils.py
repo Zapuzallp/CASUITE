@@ -158,25 +158,22 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
         employee = Employee.objects.get(user=user)
         office = employee.office_location
         
-        # Add device tracking remark based on action
+        # Add device tracking remark
         if device_type and clock_in_time and not clock_out_time:
-            # This is a clock-in action
             if device_type == 'mobile':
-                remarks.append("Clocked in from mobile device")
+                remarks.append("In: Mobile")
             elif device_type == 'web':
-                remarks.append("Clocked in from web")
+                remarks.append("In: Web")
         elif device_type and clock_out_time:
-            # This is a clock-out action
             if device_type == 'mobile':
-                remarks.append("Clocked out from mobile device")
+                remarks.append("Out: Mobile")
             elif device_type == 'web':
-                remarks.append("Clocked out from web")
+                remarks.append("Out: Web")
         
-        # Check if office location is assigned
         if not office:
-            remarks.append("No office location assigned to employee")
+            remarks.append("No office assigned")
         
-        # Get employee's shift timing - use same logic as attendance report
+        # Get employee's shift timing
         from django.db.models import Q
         today_date = date.today()
         
@@ -187,20 +184,17 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
             Q(valid_to__isnull=True) | Q(valid_to__gte=today_date)
         ).first()
         if not employee_shift:
-            # No shift assigned - add remark and proceed without validation
-            remarks.append("Shift timing not assigned; attendance processed without shift validation")
+            remarks.append("No shift assigned")
             
-            # Check office location for both clock-in and clock-out when no shift
             if office and clock_in_lat and clock_in_lng and office.latitude and office.longitude:
                 distance = get_distance(float(clock_in_lat), float(clock_in_lng), float(office.latitude), float(office.longitude))
                 if distance > 100:
-                    remarks.append(f"Clocked in from {distance:.0f} meters away from office")
+                    remarks.append(f"In: {distance:.0f}m away")
             
-            # Check clock-out location when no shift assigned
             if office and clock_out_lat and clock_out_lng and office.latitude and office.longitude:
                 distance = get_distance(float(clock_out_lat), float(clock_out_lng), float(office.latitude), float(office.longitude))
                 if distance > 100:
-                    remarks.append(f"Clocked out from {distance:.0f} meters away from office")
+                    remarks.append(f"Out: {distance:.0f}m away")
             
             return remarks
         
@@ -208,85 +202,83 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
         shift_start = shift.shift_start_time
         shift_end = shift.shift_end_time
         
-        # Use maximum_allowed_duration as buffer time (convert hours to minutes)
+        # Use maximum_allowed_duration as late arrival buffer
         buffer_hours = float(shift.maximum_allowed_duration)
         buffer_minutes = int(buffer_hours * 60)
         
         # Handle night shifts that cross midnight
         shift_crosses_midnight = shift_end < shift_start
         
-        # Calculate allowed time windows
+        # Calculate maximum allowed clock-in time
         if shift_crosses_midnight:
-            # For night shifts: 7:20 PM to 12:20 AM (next day)
-            shift_start_with_buffer = (datetime.combine(date.today(), shift_start) + timedelta(minutes=buffer_minutes)).time()
-            # For end time, we need to handle next day
+            max_clock_in_time = (datetime.combine(date.today(), shift_start) + timedelta(minutes=buffer_minutes)).time()
             shift_end_datetime = datetime.combine(date.today() + timedelta(days=1), shift_end)
-            shift_end_with_buffer = (shift_end_datetime - timedelta(minutes=buffer_minutes)).time()
+            min_clock_out_time = (shift_end_datetime - timedelta(minutes=buffer_minutes)).time()
         else:
-            # Regular day shifts
-            shift_start_with_buffer = (datetime.combine(date.today(), shift_start) + timedelta(minutes=buffer_minutes)).time()
-            shift_end_with_buffer = (datetime.combine(date.today(), shift_end) - timedelta(minutes=buffer_minutes)).time()
+            max_clock_in_time = (datetime.combine(date.today(), shift_start) + timedelta(minutes=buffer_minutes)).time()
+            min_clock_out_time = (datetime.combine(date.today(), shift_end) - timedelta(minutes=buffer_minutes)).time()
         
         # Check clock-in compliance
         if clock_in_time:
-            clock_in_time_only = clock_in_time.time()
-            
-            # Check if late (clocked in after shift start + buffer)
-            if shift_crosses_midnight:
-                # For night shifts, check if time is after start time with buffer
-                if clock_in_time_only > shift_start_with_buffer:
-                    late_minutes = (datetime.combine(date.today(), clock_in_time_only) - 
-                                  datetime.combine(date.today(), shift_start)).seconds // 60
-                    remarks.append(f"Clocked in late by {late_minutes} minutes")
+            if timezone.is_aware(clock_in_time):
+                clock_in_local = timezone.localtime(clock_in_time)
             else:
-                # Regular day shift
-                if clock_in_time_only > shift_start_with_buffer:
+                clock_in_local = clock_in_time
+            
+            clock_in_time_only = clock_in_local.time()
+            
+            if shift_crosses_midnight:
+                if clock_in_time_only > shift_start:
                     late_minutes = (datetime.combine(date.today(), clock_in_time_only) - 
                                   datetime.combine(date.today(), shift_start)).seconds // 60
-                    remarks.append(f"Clocked in late by {late_minutes} minutes")
+                    remarks.append(f"Late: {late_minutes}min")
+            else:
+                if clock_in_time_only > shift_start:
+                    late_minutes = (datetime.combine(date.today(), clock_in_time_only) - 
+                                  datetime.combine(date.today(), shift_start)).seconds // 60
+                    remarks.append(f"Late: {late_minutes}min")
             
-            # Check location if office assigned
             if office and clock_in_lat and clock_in_lng and office.latitude and office.longitude:
                 distance = get_distance(float(clock_in_lat), float(clock_in_lng), float(office.latitude), float(office.longitude))
                 if distance > 100:
-                    remarks.append(f"Clocked in from {distance:.0f} meters away from office")
+                    remarks.append(f"In: {distance:.0f}m away")
             elif office and (not office.latitude or not office.longitude):
-                remarks.append("Office coordinates not configured for location validation")
+                remarks.append("Office GPS not set")
             elif office and (not clock_in_lat or not clock_in_lng):
-                remarks.append("GPS coordinates not available for clock-in location validation")
+                remarks.append("In: No GPS data")
         
         # Check clock-out compliance
         if clock_out_time:
-            clock_out_time_only = clock_out_time.time()
+            if timezone.is_aware(clock_out_time):
+                clock_out_local = timezone.localtime(clock_out_time)
+            else:
+                clock_out_local = clock_out_time
             
-            # Check if early (clocked out before shift end - buffer)
+            clock_out_time_only = clock_out_local.time()
+            
             if shift_crosses_midnight:
-                # For night shifts, check if clocking out early (before shift end next day)
-                if clock_out_time_only < shift_end_with_buffer:
-                    # Calculate early minutes considering next day
+                if clock_out_time_only < min_clock_out_time:
                     shift_end_datetime = datetime.combine(date.today() + timedelta(days=1), shift_end)
                     clock_out_datetime = datetime.combine(date.today() + timedelta(days=1), clock_out_time_only)
                     early_minutes = (shift_end_datetime - clock_out_datetime).seconds // 60
-                    remarks.append(f"Clocked out early by {early_minutes} minutes")
+                    remarks.append(f"Early: {early_minutes}min")
             else:
-                # Regular day shift
-                if clock_out_time_only < shift_end_with_buffer:
+                if clock_out_time_only < min_clock_out_time:
                     early_minutes = (datetime.combine(date.today(), shift_end) - 
                                    datetime.combine(date.today(), clock_out_time_only)).seconds // 60
-                    remarks.append(f"Clocked out early by {early_minutes} minutes")
+                    remarks.append(f"Early: {early_minutes}min")
             
-            # Check location if office assigned
             if office and clock_out_lat and clock_out_lng and office.latitude and office.longitude:
                 distance = get_distance(float(clock_out_lat), float(clock_out_lng), float(office.latitude), float(office.longitude))
                 if distance > 100:
-                    remarks.append(f"Clocked out from {distance:.0f} meters away from office")
+                    remarks.append(f"Out: {distance:.0f}m away")
             elif office and (not office.latitude or not office.longitude):
-                remarks.append("Office coordinates not configured for location validation")
+                remarks.append("Office GPS not set")
             elif office and (not clock_out_lat or not clock_out_lng):
-                remarks.append("GPS coordinates not available for clock-out location validation")
+                remarks.append("Out: No GPS data")
     
     except Employee.DoesNotExist:
-        remarks.append("Employee profile not found")
+        remarks.append("No employee profile")
     
     return remarks
 
@@ -318,19 +310,16 @@ def process_clock_in(user, lat=None, long=None, location_name=None, device_type=
         except (ValueError, TypeError):
             attendance.clock_in_long = None
     
-    # Set location_name if provided
     if location_name and location_name.strip():
         attendance.location_name = location_name
 
-    # Check compliance with device type
+    # Check compliance
     compliance_remarks = check_attendance_compliance(user, current_time, clock_in_lat=lat, clock_in_lng=long, device_type=device_type)
     
     if compliance_remarks:
-        # Check if there are actual violations (not just device/shift info)
-        violation_keywords = ['late', 'away from office', 'early']
+        violation_keywords = ['late', 'away', 'early']
         has_violations = any(keyword in remark.lower() for remark in compliance_remarks for keyword in violation_keywords)
         
-        # Append to existing remarks
         new_remarks = "; ".join(compliance_remarks)
         if attendance.remark:
             attendance.remark = f"{attendance.remark}; {new_remarks}"
@@ -342,13 +331,11 @@ def process_clock_in(user, lat=None, long=None, location_name=None, device_type=
             message = f"Attendance marked as pending: {'; '.join(compliance_remarks)}"
             success = False
         else:
-            # Only informational remarks (device, no shift)
             attendance.status = 'approved'
             message = 'Clocked in successfully!'
             success = True
     else:
-        # Append device info to existing remarks
-        device_remark = f"Clocked in from {device_type}"
+        device_remark = f"In: {device_type.capitalize()}"
         if attendance.remark:
             attendance.remark = f"{attendance.remark}; {device_remark}"
         else:
@@ -357,7 +344,6 @@ def process_clock_in(user, lat=None, long=None, location_name=None, device_type=
         message = 'Clocked in successfully!'
         success = True
 
-    # Set flag to prevent model save from overriding status
     attendance._skip_auto_status = True
     attendance.save()
     return {'success': success, 'message': message}
@@ -378,7 +364,6 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
         from home.models import EmployeeShift
         from django.db.models import Q
         
-        # Get user's shift end time using same logic as compliance check
         today_date = attendance.date
         employee_shift = EmployeeShift.objects.filter(
             user=user,
@@ -391,16 +376,16 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
             shift_end_time = employee_shift.shift.shift_end_time
             attendance.clock_out = timezone.make_aware(datetime.combine(attendance.date, shift_end_time))
             if attendance.remark:
-                attendance.remark = f"{attendance.remark}; Missing clock-out; system used shift end time"
+                attendance.remark = f"{attendance.remark}; Auto out (shift time)"
             else:
-                attendance.remark = "Missing clock-out; system used shift end time"
+                attendance.remark = "Auto out (shift time)"
         else:
             shift_end_time = time(23, 59)
             attendance.clock_out = timezone.make_aware(datetime.combine(attendance.date, shift_end_time))
             if attendance.remark:
-                attendance.remark = f"{attendance.remark}; Auto clocked out"
+                attendance.remark = f"{attendance.remark}; Auto out"
             else:
-                attendance.remark = "Auto clocked out"
+                attendance.remark = "Auto out"
         
         attendance.status = "pending"
         auto_clocked_out = True
@@ -420,7 +405,6 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
         except (ValueError, TypeError):
             attendance.clock_out_long = None
     
-    # Set location_name if provided or generate from coordinates
     if location_name and location_name.strip():
         attendance.location_name = location_name
     elif not attendance.location_name and lat and long:
@@ -431,9 +415,8 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
         except (ValueError, TypeError):
             pass
 
-    # Check compliance for clock-out (skip if auto clocked out)
+    # Check compliance for clock-out
     if not auto_clocked_out:
-        # Only check clock-out compliance, not clock-in again
         compliance_remarks = check_attendance_compliance(
             user, None, attendance.clock_out,
             None, None,
@@ -442,11 +425,9 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
         )
         
         if compliance_remarks:
-            # Check if there are actual violations
-            violation_keywords = ['late', 'away from office', 'early']
+            violation_keywords = ['late', 'away', 'early']
             has_violations = any(keyword in remark.lower() for remark in compliance_remarks for keyword in violation_keywords)
             
-            # Append to existing remarks
             new_remarks = "; ".join(compliance_remarks)
             if attendance.remark:
                 attendance.remark = f"{attendance.remark}; {new_remarks}"
@@ -458,13 +439,11 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
                 message = f"Attendance marked as pending: {'; '.join(compliance_remarks)}"
                 success = False
             else:
-                # Only informational remarks
                 attendance.status = 'approved'
                 message = 'Clocked out successfully!'
                 success = True
         else:
-            # Append device info to existing remarks
-            device_remark = f"Clocked out from {device_type}"
+            device_remark = f"Out: {device_type.capitalize()}"
             if attendance.remark:
                 attendance.remark = f"{attendance.remark}; {device_remark}"
             else:
@@ -473,11 +452,9 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
             message = 'Clocked out successfully!'
             success = True
     else:
-        # Already set status and remark for auto clock-out
         message = 'Auto clocked out due to missing clock-out'
         success = False
 
-    # Set flag to prevent model save from overriding status
     attendance._skip_auto_status = True
     attendance.save()
     return {'success': success, 'message': message}

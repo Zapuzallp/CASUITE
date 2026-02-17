@@ -44,6 +44,10 @@ class Shift(models.Model):
         null=True,
         choices=DAY_CHOICES
     )
+    is_default = models.BooleanField(
+        default=False,
+        help_text="Mark as default shift for employees without assigned shift"
+    )
 
     def __str__(self):
         return self.shift_name
