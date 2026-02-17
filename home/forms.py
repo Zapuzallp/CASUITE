@@ -163,13 +163,6 @@ def validate_against_config(form, structure_key):
 class ClientForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Client
-        fields = [
-            'client_name', 'primary_contact_name', 'pan_no', 'aadhar',
-            'aadhar_linked_mobile', 'din_no', 'tan_no', 'email', 'phone_number',
-            'father_name', 'address_line1', 'postal_code', 'city', 'state',
-            'country', 'office_location', 'date_of_engagement', 'assigned_ca',
-            'client_type', 'business_structure', 'remarks'
-        ]
         exclude = ['created_by', 'created_at', 'updated_at', 'status', 'file_number']
         widgets = {
             'assigned_ca': forms.Select(

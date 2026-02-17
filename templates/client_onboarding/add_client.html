@@ -125,14 +125,6 @@
                 </div>
 
                 <!-- Existing Row 6: City, State, Postal Code -->
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="{{ client_form.postal_code.id_for_label }}" class="form-label"> Code <span class="text-danger">*</span></label>
-                            {{ client_form.postal_code }}
-                            <div class="invalid-feedback" id="postal_code_error"></div>
-                        </div>
-                    </div>
                     <div class="col-md-4">
                         <div class="mb-3">
                             <label for="{{ client_form.city.id_for_label }}" class="form-label">City <span class="text-danger">*</span></label>
@@ -145,6 +137,13 @@
                             <label for="{{ client_form.state.id_for_label }}" class="form-label">State <span class="text-danger">*</span></label>
                             {{ client_form.state }}
                             <div class="invalid-feedback" id="state_error"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ client_form.postal_code.id_for_label }}" class="form-label">Postal Code <span class="text-danger">*</span></label>
+                            {{ client_form.postal_code }}
+                            <div class="invalid-feedback" id="postal_code_error"></div>
                         </div>
                     </div>
                 </div>
