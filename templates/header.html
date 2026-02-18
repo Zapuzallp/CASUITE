@@ -218,75 +218,140 @@
                  </ul><!--End Messages Dropdown Items --> 
 
             </li>
-            
 
-            <li class="nav-item dropdown pe-3">
+<li class="nav-item dropdown pe-3 linkedin-profile">
 
-                <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-                    {% if user.is_staff and user.employee.profile_pic %}
-                    <img src="{{ user.employee.profile_pic.url }}" alt="Profile" class="rounded-circle"
-                         style="width:40px;height:40px;object-fit:cover;">
-                    {% else %}
-                    <img src=" {% static 'assets/img/profile-img.jpg' %}" alt="Profile" class="rounded-circle">
-                    {% endif %}
-                    <span class="d-none d-md-block dropdown-toggle ps-2">{{ user.get_full_name|default:user.username }}</span>
-                </a><!-- End Profile Iamge Icon -->
+<form id="dropdownProfileForm" method="POST" enctype="multipart/form-data"
+      action="{% url 'upload_profile_pic' %}" style="display:none;">
+    {% csrf_token %}
+    <input type="file" name="profile_pic" id="dropdownProfileInput" accept="image/*">
+</form>
 
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile overflow-y:auto">
-                    <li class="dropdown-header">
+    <!-- Profile Icon -->
+    <a class="nav-link d-flex align-items-center p-0" href="#" data-bs-toggle="dropdown">
+        {% if user.is_staff and user.employee.profile_pic %}
+            <img src="{{ user.employee.profile_pic.url }}" class="linkedin-avatar">
+        {% else %}
+            <img src="{% static 'assets/img/profile-img.jpg' %}" class="linkedin-avatar">
+        {% endif %}
+    </a>
+
+
+    <!-- Dropdown -->
+    <ul class="dropdown-menu dropdown-menu-end linkedin-dropdown">
+
+        <!-- Header -->
+        <li class="linkedin-header">
+            <div class="linkedin-header-row">
+                {% if user.is_staff and user.employee.profile_pic %}
+                   <img src="{{ user.employee.profile_pic.url }}"
+     class="linkedin-avatar-lg"
+     id="dropdownProfileClick"
+     style="cursor:pointer;">
+
+                {% else %}
+                    <img src="{% static 'assets/img/profile-img.jpg' %}"
+     class="linkedin-avatar-lg"
+     id="dropdownProfileClick"
+     style="cursor:pointer;">
+
+                {% endif %}
+
+                <div class="linkedin-user-info">
+                    <div class="linkedin-name">
+                        {{ user.get_full_name|default:user.username }}
+                    </div>
+
+                    <div class="linkedin-role">
                         {% if user.is_staff %}
-                        <h6>{{ user.get_full_name|default:user.username }}</h6>
-                        <span>{{ user.employee.designation }} </span>
+                            {{ user.employee.designation }}
                         {% else %}
-                        <h6>{{ user.get_full_name}}</h6>
-                        <span>Client</span>
+                            Client
                         {% endif %}
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
+                    </div>
+                </div>
+            </div>
 
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center" href="users-profile.html">
-                            <i class="bi bi-person"></i>
-                            <span>My Profile</span>
-                        </a>
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
 
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center" href="users-profile.html">
-                            <i class="bi bi-gear"></i>
-                            <span>Account Settings</span>
-                        </a>
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
+        </li>
 
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center" href="/admin">
-                            <i class="bi bi-shield-exclamation"></i>
-                            <span>Admin Panel</span>
-                        </a>
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
+        <li class="linkedin-divider"></li>
 
-                    <li>
-                        <a class="dropdown-item d-flex align-items-center" href="/accounts/logout/">
-                            <i class="bi bi-box-arrow-right"></i>
-                            <span>Sign Out</span>
-                        </a>
-                    </li>
+        <!-- Menu -->
+        <li>
+            <a class="linkedin-item" href="#">
+                <i class="bi bi-person"></i>
+                My Profile
+            </a>
+        </li>
 
-                </ul><!-- End Profile Dropdown Items -->
-            </li><!-- End Profile Nav -->
+        <li>
+            <a class="linkedin-item" href="#">
+                <i class="bi bi-gear"></i>
+                Account Settings
+            </a>
+        </li>
+
+        {% if user.is_staff %}
+        <li>
+            <a class="linkedin-item" href="/admin">
+                <i class="bi bi-shield-lock"></i>
+                Admin Panel
+            </a>
+        </li>
+        <li>
+                         <a class="linkedin-item" href="{% url 'password_change' %}">
+                            <i class="bi bi-key"></i>
+                             <span>Reset Password</span>
+                         </a>
+        </li>
+        {% endif %}
+
+        <li class="linkedin-divider"></li>
+
+        <li>
+            <a class="linkedin-item logout" href="/accounts/logout/">
+                <i class="bi bi-box-arrow-right"></i>
+                Sign Out
+            </a>
+        </li>
+
+    </ul>
+</li>
+
 
         </ul>
     </nav><!-- End Icons Navigation -->
 
 </header>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const dropdownIcon = document.getElementById("dropdownProfileClick");
+    const fileInput = document.getElementById("dropdownProfileInput");
+    const form = document.getElementById("dropdownProfileForm");
+
+    if(!dropdownIcon || !fileInput || !form){
+        console.log("❌ Dropdown upload elements missing");
+        return;
+    }
+
+    dropdownIcon.addEventListener("click", function(e){
+        e.preventDefault();
+        e.stopPropagation();  // stop dropdown close
+        console.log("✅ Second profile icon clicked");
+        fileInput.click();
+    });
+
+    fileInput.addEventListener("change", function(){
+        if(this.files.length > 0){
+            console.log("✅ File selected from dropdown icon");
+            form.submit();
+        }
+    });
+
+});
+</script>
+
+
+

@@ -548,18 +548,21 @@
 
 <script>
 $(document).ready(function() {
-  $('#invoicesTable').DataTable({
-    "pageLength": 25,
-    "order": [[0, "desc"]],
-    "language": {
-      "search": "",
-      "searchPlaceholder": "Search invoices...",
-      "paginate": { "first": "«", "last": "»", "next": "›", "previous": "‹" }
-    },
-    "columnDefs": [
-      { "orderable": false, "targets": [10] }
-    ]
-  });
+  // Only initialize DataTables if there are rows in the table
+  if ($('#invoicesTable tbody tr').length > 0 && !$('#invoicesTable tbody tr td[colspan]').length) {
+    $('#invoicesTable').DataTable({
+      "pageLength": 25,
+      "order": [[0, "desc"]],
+      "language": {
+        "search": "",
+        "searchPlaceholder": "Search invoices...",
+        "paginate": { "first": "«", "last": "»", "next": "›", "previous": "‹" }
+      },
+      "columnDefs": [
+        { "orderable": false, "targets": [10] }
+      ]
+    });
+  }
 
   // Apply Bootstrap classes
   $('#id_client, #id_subject, #id_invoice_date, #id_due_date').addClass('form-control');
@@ -621,9 +624,11 @@ $(document).ready(function() {
   }
 
   // AJAX to load tasks
-  $('#id_client').change(function() {
+  $('#id_client').on('change', function() {
     var clientId = $(this).val();
     var servicesField = $('#id_services');
+
+    console.log('Client changed:', clientId); // Debug log
 
     if (clientId) {
       servicesField.next('.select2-container').find('.select2-selection').css('opacity', '0.6');
@@ -631,13 +636,17 @@ $(document).ready(function() {
       $.ajax({
         url: '{% url "load_tasks" %}',
         data: { 'client': clientId },
+        dataType: 'json',
         beforeSend: function() {
+          console.log('Loading tasks for client:', clientId); // Debug log
           servicesField.prop('disabled', true);
           servicesField.empty().append('<option value="">Loading tasks...</option>');
+          servicesField.trigger('change');
         },
         success: function(data) {
+          console.log('Tasks loaded:', data); // Debug log
           servicesField.empty();
-          if (data.length === 0) {
+          if (!data || data.length === 0) {
             servicesField.append(new Option("No available tasks for this client", "", false, false));
           } else {
             $.each(data, function(index, task) {
@@ -649,10 +658,12 @@ $(document).ready(function() {
           servicesField.next('.select2-container').find('.select2-selection').css('opacity', '1');
           servicesField.trigger('change');
         },
-        error: function() {
+        error: function(xhr, status, error) {
+          console.error('Error loading tasks:', error, xhr.responseText); // Debug log
           servicesField.empty().append('<option value="">Error loading tasks</option>');
           servicesField.prop('disabled', false);
           servicesField.next('.select2-container').find('.select2-selection').css('opacity', '1');
+          servicesField.trigger('change');
         }
       });
     } else {
