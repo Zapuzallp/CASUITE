@@ -461,24 +461,46 @@
                                     <th>Client</th>
                                     <th>Team</th>
                                     <th>Status</th>
-                                    <th>View</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 {% for task in recent_tasks %}
                                     <tr>
-                                        <td class="fw-bold text-primary">{{ task.task_title }}</td>
+                                        <td class="fw-bold">
+                                            <a href="{% url 'task_detail' task.id %}"
+                                               class="text-primary text-decoration-none">
+                                                {{ task.task_title }}
+                                            </a>
+                                        </td>
+
                                         <td>{{ task.client.client_name }}</td>
                                         <td>
-                                            <div class="d-flex">
-                                                {% for user in task.assignees.all|slice:":3" %}
-                                                    <div class="avatar-circle"
-                                                         style="width:24px; height:24px; font-size:0.6rem; margin-right:-8px; border:1px solid #fff; background:#ccc; color:#fff;">
-                                                        {{ user.first_name|slice:":1" }}
-                                                    </div>
-                                                {% endfor %}
-                                            </div>
+                                            {% with task.assignees.all as assignees %}
+                                                <div class="d-flex align-items-center"
+                                                     data-bs-toggle="tooltip"
+                                                     data-bs-placement="top"
+                                                     data-bs-title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+
+                                                    {% for user in assignees|slice:":3" %}
+                                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};">
+                                                            {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+                                                        </div>
+                                                    {% empty %}
+                                                        <span class="text-muted small fst-italic">Unassigned</span>
+                                                    {% endfor %}
+
+                                                    {% if assignees.count > 3 %}
+                                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                             style="width: 28px; height: 28px; font-size: 10px;">
+                                                            +{{ assignees.count|add:"-3" }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endwith %}
                                         </td>
+
+
                                         <td>
                                         <span class="badge rounded-pill
                                                 {% if task.status == 'Completed' %}bg-success
@@ -487,8 +509,6 @@
                                             {{ task.status }}
                                         </span>
                                         </td>
-                                        <td><a href="{% url 'task_detail' task.id %}" class="btn btn-light btn-sm"><i
-                                                class="bi bi-eye"></i></a></td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>
@@ -1004,6 +1024,15 @@
             {% endif %}
         });
     </script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+            new bootstrap.Tooltip(el);
+        });
+    });
+    </script>
+
 
 
 {% endblock body %}
