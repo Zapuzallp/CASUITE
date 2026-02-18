@@ -204,11 +204,11 @@ class ClientView(LoginRequiredMixin, ListView):
         filter_custom_view = self.request.GET.get('custom_view')
 
         # 3. Apply UI Filters on top of Role-Based Queryset
-        if search_query:
-            # Check if search query is a GST number pattern
-            if (search_query):
-                # Search in GSTDetails for this GST number
-                qs = qs.filter(gst_details__gst_number__icontains=search_query).distinct()
+        # if search_query:
+        #     # Check if search query is a GST number pattern
+        #     if (search_query):
+        #         # Search in GSTDetails for this GST number
+        #         qs = qs.filter(gst_details__gst_number__icontains=search_query).distinct()
 
         # 3. Apply UI Filters on top of Role-Based Queryset
         if search_query:
