@@ -631,8 +631,7 @@
                                         <tr>
                                             <td>{{ forloop.counter }}</td>
                                             <td><a href="{% url 'task_detail' task.id %}">
-                                                {{ task.task_title|truncatechars:30
-                                                        }}</a>
+                                                {{ task.task_title|truncatechars:30}}</a>
                                             </td>
                                             <td>{{ task.client.client_name|default:"-" }}</td>
                                             <td>{{ task.get_service_type_display|default:"-" }}</td>
