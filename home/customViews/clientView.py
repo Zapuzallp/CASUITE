@@ -197,6 +197,13 @@ def client_details_view(request, client_id):
         })
     # ===================
 
+    # === PORTAL CREDENTIALS LOGIC ===
+    from home.models import ClientPortalCredentials
+    from home.forms import ClientPortalCredentialsForm
+    portal_credentials = ClientPortalCredentials.objects.filter(client=client).select_related('dropdown').order_by('-created_at')
+    credential_form = ClientPortalCredentialsForm(client=client)
+    # =================================
+
     context = {
         'client': client,
         'client_fields': client_fields,
@@ -212,6 +219,8 @@ def client_details_view(request, client_id):
         'gst_details_list': gst_details_list,  # Include List
         'gst_form': gst_form,  # Include Form
         'invoices_data': invoices_data,  # Include Invoices
+        'portal_credentials': portal_credentials,  # Include Portal Credentials
+        'credential_form': credential_form,  # Include Credential Form
     }
 
     return render(request, 'client/client-details.html', context)
