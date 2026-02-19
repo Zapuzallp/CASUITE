@@ -134,21 +134,8 @@
                                             </select>
                                         </div>
 
-                                        <!-- Business Structure -->
-                                        <div class="col-md-3">
-                                            <label class="form-label small fw-bold text-secondary">Structure</label>
-                                            <select name="business_structure" class="form-select">
-                                                <option value="">All Structures</option>
-                                                {% for code, name in business_structure_choices %}
-                                                    <option value="{{ code }}"
-                                                            {% if request.GET.business_structure == code %}selected{% endif %}>
-                                                        {{ name }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
 
-                                         <!-- Custom View -->
+                                        <!-- Custom View -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Custom View</label>
                                             <select name="custom_view" class="form-select">
@@ -183,6 +170,21 @@
                         </div>
                     </div>
                 </div>
+                                        <!-- Business Structure -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Structure</label>
+                                            <select name="business_structure" class="form-select">
+                                                <option value="">All Structures</option>
+                                                {% for code, name in business_structure_choices %}
+                                                    <option value="{{ code }}"
+                                                            {% if request.GET.business_structure == code %}selected{% endif %}>
+                                                        {{ name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+
 
                 <!-- TABLE SECTION -->
                 <div class="card overflow-auto shadow-sm">
