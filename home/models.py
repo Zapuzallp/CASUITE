@@ -8,7 +8,7 @@ from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.conf import settings
-
+from cryptography.fernet import Fernet
 
 # Create your models here.
 
@@ -1060,6 +1060,13 @@ class Message(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
     is_seen = models.BooleanField(default = False)
+
+    @property
+    def body_decrypted(self):
+        f = Fernet(settings.ENCRYPTION_KEY)
+        message_decrypted = f.decrypt(self.content)
+        message_decoded = message_decrypted.decode('utf-8')
+        return message_decoded
 
     def __str__(self):
         return f"From{self.sender} to {self.receiver} - {self.status}"
