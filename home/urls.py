@@ -3,7 +3,7 @@ from django.urls import path
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView,profileView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView,profileView,credentialsView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -139,6 +139,10 @@ urlpatterns = [
     path('invoices/bulk-status-update/', invoiceView.invoice_bulk_status_update, name="invoice_bulk_status_update"),
     #profile url
     path('upload-profile-pic/', profileView.upload_profile_pic, name='upload_profile_pic'),
+    # Portal Credentials
+    path('client/<int:client_id>/credentials/add/', credentialsView.add_portal_credential,name='add_portal_credential'),
+    path('credentials/<int:credential_id>/view/', credentialsView.view_portal_credential,name='view_portal_credential'),
+    path('credentials/<int:credential_id>/delete/', credentialsView.delete_portal_credential,name='delete_portal_credential'),
 
 
 ]

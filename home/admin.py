@@ -1087,11 +1087,12 @@ class LeadCallLogAdmin(admin.ModelAdmin):
         'lead',
         'get_direction',
         'get_employee',
-        'call_duration',
+        'call_date',
         'created_at',
         'created_by',
     )
     list_filter = (
+        'call_date',
         'created_at',
         'created_by',
         'lead__status',
@@ -1108,13 +1109,13 @@ class LeadCallLogAdmin(admin.ModelAdmin):
         'called_to_user__last_name',
         'description',
     )
-    date_hierarchy = 'created_at'
+    date_hierarchy = 'call_date'
     autocomplete_fields = ('lead', 'called_by_user', 'called_to_user', 'created_by')
     readonly_fields = ('created_at',)
 
     fieldsets = (
         ('Call Information', {
-            'fields': ('lead', 'called_by_user', 'called_to_user', 'call_duration')
+            'fields': ('lead', 'called_by_user', 'called_to_user', 'call_date')
         }),
         ('Discussion Details', {
             'fields': ('description',)
@@ -1176,3 +1177,60 @@ class LeadCallLogAdmin(admin.ModelAdmin):
                 Q(lead__assigned_to=request.user) |
                 Q(lead__created_by=request.user)
             ).distinct()
+
+
+# ============================================
+# Portal Credentials Admin
+# ============================================
+from home.models import Dropdown, ClientPortalCredentials
+
+
+@admin.register(Dropdown)
+class DropdownAdmin(admin.ModelAdmin):
+    list_display = ('label', 'value', 'type', 'is_active', 'created_at')
+    list_filter = ('type', 'is_active')
+    search_fields = ('label', 'value')
+    list_editable = ('is_active',)
+    ordering = ('type', 'label')
+
+
+@admin.register(ClientPortalCredentials)
+class ClientPortalCredentialsAdmin(admin.ModelAdmin):
+    list_display = ('client', 'get_portal_type', 'portal_url', 'username', 'masked_password', 'updated_at')
+    list_filter = ('dropdown__label', 'created_at')
+    search_fields = ('client__client_name', 'username', 'portal_url')
+    autocomplete_fields = ('client',)
+    readonly_fields = ('created_at', 'updated_at', 'masked_password')
+
+    fieldsets = (
+        ('Client & Portal Information', {
+            'fields': ('client', 'dropdown', 'portal_url')
+        }),
+        ('Credentials', {
+            'fields': ('username', 'password', 'masked_password'),
+            'description': 'Password is encrypted before storage. The masked password shows the encrypted value.'
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_portal_type(self, obj):
+        return obj.dropdown.label
+
+    get_portal_type.short_description = 'Portal Type'
+    get_portal_type.admin_order_field = 'dropdown__label'
+
+    def masked_password(self, obj):
+        """Show encrypted password (not decrypted) in admin"""
+        if obj.password:
+            return f"{obj.password[:20]}..." if len(obj.password) > 20 else obj.password
+        return '-'
+
+    masked_password.short_description = 'Encrypted Password'
+
+    def save_model(self, request, obj, form, change):
+        """Handle password encryption on save"""
+        # Password encryption is handled in the model's save method
+        super().save_model(request, obj, form, change)

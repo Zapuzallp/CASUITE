@@ -444,15 +444,15 @@
                             <div class="timeline-header">
                                 <h6 class="timeline-title">
                                     {% if log.called_by_user %}
-                                        <i class="bi bi-arrow-right-circle text-success"></i>
+                                        <i class="bi bi-person"></i>
                                         {{ log.called_by_user.get_full_name|default:log.called_by_user.username }} → {{ lead.lead_name }}
                                     {% else %}
-                                        <i class="bi bi-arrow-left-circle text-info"></i>
+                                        <i class="bi bi-person"></i>
                                         {{ lead.lead_name }} → {{ log.called_to_user.get_full_name|default:log.called_to_user.username }}
                                     {% endif %}
                                 </h6>
                                 <span class="timeline-badge">
-                                    <i class="bi bi-stopwatch"></i> {% widthratio log.call_duration.total_seconds 60 1 %} min
+                                    <i class="bi bi-calendar-event"></i> {{ log.call_date|date:"d M Y" }}
                                 </span>
                             </div>
 
@@ -500,27 +500,9 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="calledBy" class="form-label">Called By <span class="text-danger">*</span></label>
-                        <select class="form-select" id="calledBy" name="called_by" required>
-                            <option value="">-- Select --</option>
-                            <option value="lead">{{ lead.lead_name }} (Lead)</option>
-                            {% for user in authorized_users %}
-                            <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="calledTo" class="form-label">Called To <span class="text-danger">*</span></label>
-                        <select class="form-select" id="calledTo" name="called_to" required>
-                            <option value="">-- Select --</option>
-                        </select>
-                        <small class="form-text text-muted">Options will update based on "Called By" selection</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="durationMinutes" class="form-label">Call Duration (minutes) <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="durationMinutes" name="duration_minutes" min="1" required placeholder="e.g., 15">
+                        <label for="callDate" class="form-label">Call Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="callDate" name="call_date" required max="{{ today|date:'Y-m-d' }}">
+                        <small class="form-text text-muted">Select the date when the discussion happened</small>
                     </div>
 
                     <div class="mb-3">
@@ -610,43 +592,8 @@
         modal.show();
     }
 
-    // Dynamic dropdown logic for Call Log Modal
+    // Handle call log form submission
     document.addEventListener('DOMContentLoaded', function() {
-        const calledBySelect = document.getElementById('calledBy');
-        const calledToSelect = document.getElementById('calledTo');
-
-        if (calledBySelect && calledToSelect) {
-            const leadName = "{{ lead.lead_name|escapejs }}";
-            const authorizedUsers = [
-                {% for user in authorized_users %}
-                {id: {{ user.id }}, name: "{{ user.get_full_name|default:user.username|escapejs }}"},
-                {% endfor %}
-            ];
-
-            calledBySelect.addEventListener('change', function() {
-                const selectedValue = this.value;
-                calledToSelect.innerHTML = '<option value="">-- Select --</option>';
-
-                if (selectedValue === 'lead') {
-                    // Lead called, show employees only
-                    authorizedUsers.forEach(user => {
-                        const option = document.createElement('option');
-                        option.value = user.id;
-                        option.textContent = user.name;
-                        calledToSelect.appendChild(option);
-                    });
-                } else if (selectedValue !== '') {
-                    // Employee called, show lead only
-                    const option = document.createElement('option');
-                    option.value = 'lead';
-                    option.textContent = leadName + ' (Lead)';
-                    calledToSelect.appendChild(option);
-                    calledToSelect.value = 'lead';
-                }
-            });
-        }
-
-        // Handle form submission
         const callLogForm = document.getElementById('addCallLogForm');
         if (callLogForm) {
             callLogForm.addEventListener('submit', function(e) {

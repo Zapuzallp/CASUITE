@@ -212,6 +212,7 @@ def lead_detail_view(request, lead_id):
         'call_logs': call_logs,
         'can_add_call_log': can_add_call_log,
         'authorized_users': sorted(authorized_users, key=lambda u: u.get_full_name() or u.username),
+        'today': timezone.now().date(),
     }
     return render(request, 'leads/lead_detail.html', context)
 
@@ -320,7 +321,7 @@ def convert_lead_view(request, lead_id):
 @login_required
 @require_POST
 def add_lead_call_log(request, lead_id):
-    """Add a new call log for a lead"""
+    """Add a new call log for a lead - Employee always calls Lead"""
     lead = get_object_or_404(Lead, id=lead_id)
 
     # Check if user has access to this lead
@@ -352,58 +353,33 @@ def add_lead_call_log(request, lead_id):
         return JsonResponse({'success': False, 'error': 'You do not have permission to add call logs.'}, status=403)
 
     # Get form data
-    called_by = request.POST.get('called_by')
-    called_to = request.POST.get('called_to')
-    duration_minutes = request.POST.get('duration_minutes')
+    call_date = request.POST.get('call_date')
     description = request.POST.get('description', '').strip()
 
     # Validate inputs
-    if not called_by or not called_to:
-        return JsonResponse({'success': False, 'error': 'Please select both caller and receiver.'}, status=400)
-
-    if not duration_minutes:
-        return JsonResponse({'success': False, 'error': 'Please enter call duration.'}, status=400)
+    if not call_date:
+        return JsonResponse({'success': False, 'error': 'Please select call date.'}, status=400)
 
     if not description:
         return JsonResponse({'success': False, 'error': 'Please provide a description of the call.'}, status=400)
 
+    # Validate date format and ensure it's not in the future
     try:
-        duration_minutes = int(duration_minutes)
-        if duration_minutes <= 0:
-            return JsonResponse({'success': False, 'error': 'Duration must be greater than 0.'}, status=400)
+        from datetime import datetime
+        call_date_obj = datetime.strptime(call_date, '%Y-%m-%d').date()
+        today = datetime.now().date()
+        if call_date_obj > today:
+            return JsonResponse({'success': False, 'error': 'Call date cannot be in the future.'}, status=400)
     except ValueError:
-        return JsonResponse({'success': False, 'error': 'Invalid duration value.'}, status=400)
+        return JsonResponse({'success': False, 'error': 'Invalid date format.'}, status=400)
 
-    # Determine direction
-    called_by_user = None
-    called_to_user = None
-
-    if called_by == 'lead':
-        # Lead called an employee
-        if called_to == 'lead':
-            return JsonResponse({'success': False, 'error': 'Invalid selection: Lead cannot call Lead.'}, status=400)
-        try:
-            called_to_user = User.objects.get(id=int(called_to))
-        except (ValueError, User.DoesNotExist):
-            return JsonResponse({'success': False, 'error': 'Invalid employee selection.'}, status=400)
-    else:
-        # Employee called the lead
-        try:
-            called_by_user = User.objects.get(id=int(called_by))
-        except (ValueError, User.DoesNotExist):
-            return JsonResponse({'success': False, 'error': 'Invalid employee selection.'}, status=400)
-
-        if called_to != 'lead':
-            return JsonResponse({'success': False, 'error': 'When employee calls, the receiver must be the Lead.'},
-                                status=400)
-
-    # Create call log
+    # Create call log - Employee (logged-in user) always calls Lead
     try:
         call_log = LeadCallLog.objects.create(
             lead=lead,
-            called_by_user=called_by_user,
-            called_to_user=called_to_user,
-            call_duration=timedelta(minutes=duration_minutes),
+            called_by_user=request.user,  # Employee who made the call
+            called_to_user=None,  # NULL means Lead received the call
+            call_date=call_date_obj,
             description=description,
             created_by=request.user
         )

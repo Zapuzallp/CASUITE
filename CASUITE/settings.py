@@ -16,6 +16,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-i%cb2hzh_ab!ecqqf)g4z)*x^l2qqfnd=d4eo^y3huioo83d1k'
 
+
+# Encryption key for portal credentials (generate with: Fernet.generate_key())
+ENCRYPTION_KEY = b'8fHQqZ8vN5YJ0KxP7LZxQJ9vN5YJ0KxP7LZxQJ9vN5Y='
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
