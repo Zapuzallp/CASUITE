@@ -12,13 +12,91 @@ from home.models import Attendance, OfficeDetails, Leave
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "admin_reports/attendance_report.html"
 
-    # Only Superadmin
     def test_func(self):
-        return self.request.user.is_superuser
+        """
+        Access Control:
+        - Superuser: Full access
+        - Admin (is_staff): Full access
+        - Branch Manager: Access to own branch (or all branches if has can_manage_all_attendance permission)
+        - Staff: No access (they should use attendance logs page)
+        """
+        user = self.request.user
+
+        # Superuser has full access
+        if user.is_superuser:
+            return True
+
+        # Check if user has Employee profile
+        try:
+            employee = user.employee
+
+            # Staff users cannot access this report
+            if employee.role == 'STAFF':
+                return False
+
+            # Admin and Branch Manager have access
+            if employee.role in ['ADMIN', 'BRANCH_MANAGER']:
+                return True
+
+        except Exception:
+            # If no employee profile but is_staff, allow (Django admin users)
+            if user.is_staff:
+                return True
+
+        return False
 
     def get(self, request):
-        employees = User.objects.filter(is_active=True, is_staff=True)
-        offices = OfficeDetails.objects.all()
+        user = request.user
+
+        # Determine user's access level
+        has_global_access = False
+        user_branch = None
+
+        # Superuser has global access
+        if user.is_superuser:
+            has_global_access = True
+        else:
+            try:
+                employee = user.employee
+
+                # Admin has global access
+                if employee.role == 'ADMIN':
+                    has_global_access = True
+                # Branch Manager
+                elif employee.role == 'BRANCH_MANAGER':
+                    # Check for global attendance permission
+                    if user.has_perm('home.can_manage_all_attendance'):
+                        has_global_access = True
+                    else:
+                        user_branch = employee.office_location
+                # Staff should not reach here (blocked by test_func)
+                elif employee.role == 'STAFF':
+                    # Redirect to their own logs page
+                    from django.shortcuts import redirect
+                    messages.warning(request, 'Staff users can only view their own attendance logs.')
+                    return redirect('attendance_logs')
+            except Exception:
+                # If no employee profile but is_staff, give global access (Django admin users)
+                if user.is_staff:
+                    has_global_access = True
+
+        # Get base querysets with branch filtering
+        if has_global_access:
+            employees = User.objects.filter(is_active=True, is_staff=True)
+            offices = OfficeDetails.objects.all()
+        else:
+            # Branch Manager: only their branch
+            if user_branch:
+                employees = User.objects.filter(
+                    is_active=True,
+                    is_staff=True,
+                    employee__office_location=user_branch
+                )
+                offices = OfficeDetails.objects.filter(id=user_branch.id)
+            else:
+                # No access
+                employees = User.objects.none()
+                offices = OfficeDetails.objects.none()
 
         months = [
             (1, "January"), (2, "February"), (3, "March"),
@@ -37,11 +115,30 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         # Default to today's records for initial load
         today = date.today()
-        records = Attendance.objects.select_related("user").filter(date=today)
+
+        # Apply branch filtering to attendance records
+        if has_global_access:
+            records = Attendance.objects.select_related("user").filter(date=today)
+        else:
+            if user_branch:
+                records = Attendance.objects.select_related("user").filter(
+                    date=today,
+                    user__employee__office_location=user_branch
+                )
+            else:
+                records = Attendance.objects.none()
 
         # Apply filters if provided
         if employee_id or month or year or office_id or status_filter:
-            records = Attendance.objects.select_related("user").all()
+            if has_global_access:
+                records = Attendance.objects.select_related("user").all()
+            else:
+                if user_branch:
+                    records = Attendance.objects.select_related("user").filter(
+                        user__employee__office_location=user_branch
+                    )
+                else:
+                    records = Attendance.objects.none()
 
             if employee_id:
                 records = records.filter(user__id=employee_id)
@@ -59,7 +156,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             except (ValueError, TypeError):
                 # If office_id is not a number, try filtering by office name
                 records = records.filter(user__employee__office_location__office_name=office_id)
-            
+
         if status_filter:
             records = records.filter(status=status_filter)
 
@@ -86,14 +183,14 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             for emp in employees:
                 if employee_id and str(emp.id) != employee_id:
                     continue
-                
+
                 # Filter by office if specified
                 if office_id:
                     try:
                         employee_profile = emp.employee
                         if not employee_profile.office_location:
                             continue
-                        
+
                         try:
                             office_id_int = int(office_id)
                             if employee_profile.office_location.id != office_id_int:
@@ -103,22 +200,22 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                                 continue
                     except Exception:
                         continue
-                
+
                 # Get employee's shift to check days_off
                 from home.models import EmployeeShift
                 from django.db.models import Q
-                
+
                 # Get shift valid for the month being viewed
                 month_start = date(year_int, month_int, 1)
                 month_end = date(year_int, month_int, days_in_month)
-                
+
                 employee_shift = EmployeeShift.objects.filter(
                     user=emp,
                     valid_from__lte=month_end
                 ).filter(
                     Q(valid_to__isnull=True) | Q(valid_to__gte=month_start)
                 ).first()
-                
+
                 days_off_list = []
                 if employee_shift and employee_shift.shift.days_off:
                     days_off_str = employee_shift.shift.days_off
@@ -131,33 +228,33 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                 else:
                     # Default: Saturday and Sunday if no shift assigned
                     days_off_list = [5, 6]  # Sat=5, Sun=6
-                    
+
                 daily_status = []
                 total_present = 0
                 total_days_till_today = 0
                 total_week_offs = 0
                 total_leaves = 0
-                
+
                 # Only count days up to today if viewing current month
                 today = date.today()
                 max_day = days_in_month
                 if year_int == today.year and month_int == today.month:
                     max_day = today.day
-                
+
                 for day in calendar_days:
                     current_date = date(year_int, month_int, day)
-                    
+
                     # Only process days up to today for current month
                     if day <= max_day:
                         total_days_till_today += 1
-                    
+
                     # Check if it's a day off according to shift
                     if current_date.weekday() in days_off_list:
                         daily_status.append('sunday')
                         if day <= max_day:
                             total_week_offs += 1
                         continue
-                    
+
                     # Check for approved leave
                     try:
                         leave = Leave.objects.filter(
@@ -166,7 +263,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             start_date__lte=current_date,
                             end_date__gte=current_date
                         ).first()
-                        
+
                         if leave:
                             daily_status.append('leave')
                             if day <= max_day:
@@ -174,14 +271,14 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             continue
                     except Exception:
                         pass
-                    
+
                     # Check attendance
                     try:
                         attendance = Attendance.objects.get(
                             user=emp,
                             date=current_date
                         )
-                        
+
                         if attendance.status == 'rejected':
                             daily_status.append('absent')
                         elif attendance.status in ['approved', 'full_day']:
@@ -196,7 +293,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             daily_status.append('pending')
                     except Attendance.DoesNotExist:
                         daily_status.append('absent')
-                
+
                 # Calculate absent: Total days till today - (present + week offs + leaves)
                 total_absent = total_days_till_today - (total_present + total_week_offs + total_leaves)
                 total_absent = max(0, total_absent)  # Ensure non-negative
@@ -233,21 +330,82 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             "status_choices": status_choices,
             "today": today.isoformat(),
             "employee_id": employee_id,
+            "has_global_access": has_global_access,
+            "user_branch": user_branch,
         }
 
         return render(request, self.template_name, context)
 
     def post(self, request):
+        """
+        Handle bulk status update with permission checks
+        """
+        user = request.user
+
+        # Determine user's access level and edit permissions
+        has_global_access = False
+        user_branch = None
+        can_edit = False
+
+        # Superuser can edit all
+        if user.is_superuser:
+            has_global_access = True
+            can_edit = True
+        else:
+            try:
+                employee = user.employee
+
+                # Admin can edit all
+                if employee.role == 'ADMIN':
+                    has_global_access = True
+                    can_edit = True
+                # Branch Manager
+                elif employee.role == 'BRANCH_MANAGER':
+                    can_edit = True
+                    # Check for global attendance permission
+                    if user.has_perm('home.can_manage_all_attendance'):
+                        has_global_access = True
+                    else:
+                        user_branch = employee.office_location
+                # Staff cannot edit
+                elif employee.role == 'STAFF':
+                    can_edit = False
+            except Exception:
+                # If no employee profile but is_staff, allow edit (Django admin users)
+                if user.is_staff:
+                    has_global_access = True
+                    can_edit = True
+
+        # Staff cannot edit
+        if not can_edit:
+            messages.error(request, 'You do not have permission to edit attendance records.')
+            return redirect(request.get_full_path())
+
         # Handle bulk status update
         selected_records = request.POST.getlist('selected_records')
         new_status = request.POST.get('bulk_status')
 
         if selected_records and new_status:
-            updated_count = Attendance.objects.filter(
-                id__in=selected_records
-            ).update(status=new_status)
+            # Get the attendance records based on access level
+            if has_global_access:
+                records_to_update = Attendance.objects.filter(id__in=selected_records)
+            else:
+                # Branch Manager: only their branch
+                if user_branch:
+                    records_to_update = Attendance.objects.filter(
+                        id__in=selected_records,
+                        user__employee__office_location=user_branch
+                    )
+                else:
+                    records_to_update = Attendance.objects.none()
 
-            messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
+            updated_count = records_to_update.update(status=new_status)
+
+            if updated_count > 0:
+                messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
+            else:
+                messages.warning(request,
+                                 'No records were updated. You may not have permission to edit the selected records.')
         else:
             messages.error(request, 'Please select records and status to update.')
 

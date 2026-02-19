@@ -850,6 +850,145 @@ class AttendanceAdmin(admin.ModelAdmin):
     list_editable = ("status",)
     search_fields = ("user__username", "location_name")
 
+    def get_queryset(self, request):
+        """
+        Filter attendance records based on user role and permissions
+        """
+        qs = super().get_queryset(request)
+        user = request.user
+
+        # Superuser has full access
+        if user.is_superuser:
+            return qs
+
+        # Check if user has Employee profile
+        try:
+            employee = user.employee
+
+            # Admin has full access
+            if employee.role == 'ADMIN':
+                return qs
+
+            # Branch Manager with global permission
+            if employee.role == 'BRANCH_MANAGER' and user.has_perm('home.can_manage_all_attendance'):
+                return qs
+
+            # Branch Manager without global permission - only their branch
+            if employee.role == 'BRANCH_MANAGER' and employee.office_location:
+                return qs.filter(user__employee__office_location=employee.office_location)
+
+            # Staff - only their own records
+            if employee.role == 'STAFF':
+                return qs.filter(user=user)
+
+        except Exception:
+            # If no employee profile but is_staff, give full access (Django admin users)
+            if user.is_staff:
+                return qs
+
+        # Default: no access
+        return qs.none()
+
+    def has_add_permission(self, request):
+        """
+        Control who can add attendance records
+        """
+        user = request.user
+
+        # Superuser can add
+        if user.is_superuser:
+            return True
+
+        # Check if user has Employee profile
+        try:
+            employee = user.employee
+
+            # Admin and Branch Manager can add
+            if employee.role in ['ADMIN', 'BRANCH_MANAGER']:
+                return True
+
+            # Staff cannot add
+            if employee.role == 'STAFF':
+                return False
+        except Exception:
+            # If no employee profile but is_staff, allow (Django admin users)
+            if user.is_staff:
+                return True
+
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        """
+        Control who can edit attendance records
+        """
+        user = request.user
+
+        # Superuser can edit
+        if user.is_superuser:
+            return True
+
+        # Check if user has Employee profile
+        try:
+            employee = user.employee
+
+            # Admin can edit all
+            if employee.role == 'ADMIN':
+                return True
+
+            # Branch Manager can edit
+            if employee.role == 'BRANCH_MANAGER':
+                # If editing specific object, check branch access
+                if obj:
+                    # Global permission - can edit all
+                    if user.has_perm('home.can_manage_all_attendance'):
+                        return True
+                    # Check if same branch
+                    try:
+                        if obj.user.employee.office_location == employee.office_location:
+                            return True
+                    except Exception:
+                        pass
+                    return False
+                return True
+
+            # Staff cannot edit
+            if employee.role == 'STAFF':
+                return False
+
+        except Exception:
+            # If no employee profile but is_staff, allow (Django admin users)
+            if user.is_staff:
+                return True
+
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """
+        Control who can delete attendance records
+        """
+        user = request.user
+
+        # Only Superuser can delete
+        if user.is_superuser:
+            return True
+
+        # Check if user has Employee profile
+        try:
+            employee = user.employee
+
+            # Admin can delete
+            if employee.role == 'ADMIN':
+                return True
+
+            # Branch Manager and Staff cannot delete
+            return False
+
+        except Exception:
+            # If no employee profile but is_staff, allow (Django admin users)
+            if user.is_staff:
+                return True
+
+        return False
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):

@@ -70,6 +70,24 @@
         </nav>
     </div>
 
+    <!-- Access Level Indicator -->
+    {% if not has_global_access and user_branch %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Branch Access:</strong> You are viewing attendance data for <strong>{{ user_branch.office_name }}</strong> only.
+        {% if request.user.employee.role == "BRANCH_MANAGER" %}
+        <br><small>To access all branches, contact your administrator to grant global attendance permission.</small>
+        {% endif %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% elif has_global_access %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        <strong>Global Access:</strong> You have access to attendance data across all branches.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
     <section class="section">
         <div class="row">
             <div class="col-lg-12">
@@ -242,6 +260,7 @@
                                 {% endif %}
 
                                 <!-- Bulk Update Controls -->
+                                {% if request.user.is_superuser %}
                                 <select id="bulkStatus" class="form-select form-select-sm" style="width: auto;">
                                     <option value="">Select Status</option>
                                     {% for value, label in status_choices %}
@@ -251,6 +270,17 @@
                                 <button type="button" class="btn btn-sm btn-warning" onclick="bulkUpdateStatus()">
                                     <i class="bi bi-arrow-repeat"></i> Update Selected
                                 </button>
+                                {% elif request.user.employee.role == "ADMIN" or request.user.employee.role == "BRANCH_MANAGER" %}
+                                <select id="bulkStatus" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="">Select Status</option>
+                                    {% for value, label in status_choices %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-sm btn-warning" onclick="bulkUpdateStatus()">
+                                    <i class="bi bi-arrow-repeat"></i> Update Selected
+                                </button>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -262,7 +292,11 @@
                                 <table class="table table-bordered table-striped" id="attendanceTable">
                                     <thead>
                                         <tr>
+                                            {% if request.user.is_superuser %}
                                             <th><input type="checkbox" id="selectAll"></th>
+                                            {% elif request.user.employee.role == "ADMIN" or request.user.employee.role == "BRANCH_MANAGER" %}
+                                            <th><input type="checkbox" id="selectAll"></th>
+                                            {% endif %}
                                             <th>User</th>
                                             <th>Date</th>
                                             <th>Clock In</th>
@@ -275,7 +309,11 @@
                                     <tbody>
                                         {% for r in records %}
                                         <tr>
+                                            {% if request.user.is_superuser %}
                                             <td><input type="checkbox" name="selected_records" value="{{ r.id }}" class="record-checkbox"></td>
+                                            {% elif request.user.employee.role == "ADMIN" or request.user.employee.role == "BRANCH_MANAGER" %}
+                                            <td><input type="checkbox" name="selected_records" value="{{ r.id }}" class="record-checkbox"></td>
+                                            {% endif %}
                                             <td>{{ r.user.username }}</td>
                                             <td>{{ r.date }}</td>
                                             <td>{{ r.clock_in|date:"Y-m-d H:i:s"|default:"-" }}</td>
@@ -293,7 +331,7 @@
                                         </tr>
                                         {% empty %}
                                         <tr>
-                                            <td colspan="8" class="text-center text-muted">
+                                            <td colspan="{% if request.user.is_superuser or request.user.employee.role == 'ADMIN' or request.user.employee.role == 'BRANCH_MANAGER' %}8{% else %}7{% endif %}" class="text-center text-muted">
                                                 No records found. Try adjusting your filters.
                                             </td>
                                         </tr>
@@ -758,12 +796,15 @@ function updateMap(locations) {
 }
 
 // Select All functionality
-document.getElementById('selectAll').addEventListener('change', function() {
-    const checkboxes = document.querySelectorAll('.record-checkbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = this.checked;
+const selectAllCheckbox = document.getElementById('selectAll');
+if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.record-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
     });
-});
+}
 
 // Bulk update function
 function bulkUpdateStatus() {

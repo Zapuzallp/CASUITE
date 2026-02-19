@@ -868,6 +868,11 @@ class Employee(models.Model):
     sick_leave = models.FloatField(default=7.0)
     casual_leave = models.FloatField(default=8.0)
     earned_leave = models.FloatField(default=5.0)
+    class Meta:
+        permissions = [
+            ('can_access_attendance_report', 'Can access and manage attendance reports'),
+            ('can_manage_all_attendance', 'Can manage attendance records across all branches'),
+        ]
 
     @property
     def LEAVE_LIMITS(self):
