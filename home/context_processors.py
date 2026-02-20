@@ -40,15 +40,7 @@ def header_data(request):
             id__in=latest_message_ids
         ).order_by('-timestamp')
         
-        # yield notifications
-        def yield_notifications():
-            i = 0
-            while i <len(header_messages):
-                yield header_messages[i]
-                i+=1
-        # for loop on yield notifications
-        for h in yield_notifications():
-            h.content = fernet.decrypt(h.content.encode()).decode()
+  
 
 
         return {
