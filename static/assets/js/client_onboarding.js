@@ -1414,3 +1414,273 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start
     initializeForm();
 });
+
+    //  Oboard_client logic
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    if (!document.getElementById('onboardingForm')) return;
+
+    const clientTypeSelect = document.getElementById('id_client_type');
+    const structureSelect = document.getElementById('id_business_structure');
+    const profileSection = document.getElementById('businessProfileSection');
+    const profileHeader = document.getElementById('profileHeader');
+
+    // Get ALL available fields from the DOM initially
+    const clientDOMFields = Array.from(document.querySelectorAll('.client-field-wrapper'));
+    const profileDOMFields = Array.from(document.querySelectorAll('.profile-field-wrapper'));
+
+    // Helper: Get list of field names from DOM elements
+    const getFieldNames = (domList) => domList.map(el => el.getAttribute('data-field-name'));
+
+    // Load Config
+    let configData = {};
+    try {
+        configData = JSON.parse(document.getElementById('structure-config-data').textContent);
+    } catch (e) {
+        console.error("Config Load Error", e);
+    }
+
+    // --- LOGIC: Calculate Final Visible List ---
+    function calculateFinalList(allAvailableNames, rules) {
+        if (!rules) return [];
+
+        let include = rules.include || [];
+        let exclude = rules.exclude || [];
+        let finalList = [];
+
+        // 1. Handle Include
+        if (include.length === 0) {
+            // Include [] means "Include All"
+            finalList = [...allAvailableNames];
+        } else {
+            // Include specific fields only
+            finalList = [...include];
+        }
+
+        // 2. Handle Exclude (Remove excluded items from finalList)
+        finalList = finalList.filter(name => !exclude.includes(name));
+
+        return finalList;
+    }
+
+
+    function updateFormVisibility() {
+        const cType = clientTypeSelect.value;
+        const sType = structureSelect.value;
+
+        let activeKey = null;
+                if (sType && configData[sType]) {
+            activeKey = sType;
+        } else if (cType === 'Individual' && configData['Individual']) {
+            activeKey = 'Individual';
+        }
+
+    if (activeKey) {
+        const config = configData[activeKey];
+        const customLabels = config.labels || {};
+        const conditionalRules = config.conditional_rules || [];
+
+        // --- 1. PROCESS CLIENT FIELDS (Basic Info) ---
+        const allClientNames = getFieldNames(clientDOMFields);
+        const visibleClientFields = calculateFinalList(allClientNames, config.client);
+
+    clientDOMFields.forEach(wrapper => {
+        const name = wrapper.getAttribute('data-field-name');
+        const labelEl = document.getElementById(`label_${name}`);
+
+        // Save original label
+        if (labelEl && !labelEl.dataset.originalLabel) labelEl.dataset.originalLabel = labelEl.textContent;
+
+        if (visibleClientFields.includes(name)) {
+            wrapper.style.display = 'block';
+            if (labelEl && customLabels[name]) labelEl.textContent = customLabels[name];
+            else if (labelEl) labelEl.textContent = labelEl.dataset.originalLabel;
+        } else {
+            wrapper.style.display = 'none';
+        }
+    });
+
+    // --- 2. PROCESS PROFILE FIELDS (Entity Info) ---
+    const allProfileNames = getFieldNames(profileDOMFields);
+    const visibleProfileFields = calculateFinalList(allProfileNames, config.profile);
+
+    // Show/Hide Section based on if any fields are visible
+                    if (visibleProfileFields.length > 0 && !visibleProfileFields.includes('_none')) {
+        profileSection.style.display = 'block';
+        profileHeader.textContent = (activeKey === 'Individual') ? 'Additional Details' : `${activeKey} Details`;
+
+        profileDOMFields.forEach(wrapper => {
+            const name = wrapper.getAttribute('data-field-name');
+            const labelEl = document.getElementById(`label_${name}`);
+
+            if (labelEl && !labelEl.dataset.originalLabel) labelEl.dataset.originalLabel = labelEl.textContent;
+
+            if (visibleProfileFields.includes(name)) {
+                wrapper.style.display = 'block';
+                if (labelEl && customLabels[name]) labelEl.textContent = customLabels[name];
+                                else if (labelEl) labelEl.textContent = labelEl.dataset.originalLabel;
+            } else {
+                wrapper.style.display = 'none';
+            }
+        });
+    } else {
+        profileSection.style.display = 'none';
+    }
+
+        // --- 3. APPLY CONDITIONALS ---
+        applyConditionalRules(conditionalRules);
+
+            } else {
+                // Fallback: If no structure selected (e.g. Entity selected but no structure yet),
+                // hide profile but SHOW all basic client fields so user can see "Business Structure".
+                profileSection.style.display = 'none';
+
+                clientDOMFields.forEach(wrapper => {
+                    wrapper.style.display = 'block';
+                    const name = wrapper.getAttribute('data-field-name');
+                    const labelEl = document.getElementById(`label_${name}`);
+                    if (labelEl && labelEl.dataset.originalLabel) {
+                        labelEl.textContent = labelEl.dataset.originalLabel;
+                    }
+                });
+        }
+    }
+
+            // --- Conditional Logic (Checkbox triggers) ---
+            function applyConditionalRules(rules) {
+                if (!rules || rules.length === 0) return;
+
+                rules.forEach(rule => {
+                    const triggerName = rule.trigger_field;
+                    const targetNames = rule.targets;
+                    const requiredValue = rule.trigger_value;
+
+                    const triggerInput = document.querySelector(`[name="${triggerName}"]`);
+                    if (triggerInput) {
+                        const checkCondition = () => {
+                            let currentValue = (triggerInput.type === 'checkbox')
+                                ? (triggerInput.checked ? 'true' : 'false')
+                                : triggerInput.value;
+
+                            const isMatch = (currentValue === requiredValue);
+
+                            targetNames.forEach(targetName => {
+                                // Find field in either section
+                                const targetWrapper = document.querySelector(`.field-wrapper[data-field-name="${targetName}"]`);
+                                if (targetWrapper) {
+                                    targetWrapper.style.display = isMatch ? 'block' : 'none';
+                                }
+                            });
+                        };
+
+                        checkCondition(); // Run now
+                        if (!triggerInput.dataset.listenerAttached) {
+                            triggerInput.addEventListener('change', checkCondition);
+                            triggerInput.dataset.listenerAttached = "true";
+                        }
+                    }
+                });
+            }
+
+    if (clientTypeSelect) clientTypeSelect.addEventListener('change', updateFormVisibility);
+    if (structureSelect) structureSelect.addEventListener('change', updateFormVisibility);
+
+    updateFormVisibility();
+
+    // IMPORTANT: select2 init
+    const keyPersons = document.getElementById('id_key_persons');
+    if (keyPersons) {
+        keyPersons.classList.add('select2');
+        $(keyPersons).select2({
+            width: '100%',
+            closeOnSelect: false
+        });
+    }
+    // POSTAL CODE AUTO-FILL LOGIC
+    const postalInput = document.getElementById('id_postal_code');
+
+    if (postalInput) {
+        postalInput.addEventListener('input', function(e) {
+            // Enforce numeric input
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 6) value = value.substring(0, 6);
+            e.target.value = value;
+
+            // Trigger API when 6 digits are reached
+            if (value.length === 6) {
+                fetchLocationDetails(value);
+            }
+        })
+    }
+
+    async function fetchLocationDetails(pincode) {
+        const cityField = document.getElementById('id_city');
+        const stateField = document.getElementById('id_state');
+        const countryField = document.getElementById('id_country');
+
+        // Visual Feedback
+        if (cityField) cityField.placeholder = "Fetching...";
+        if (stateField) stateField.style.opacity = '0.5';
+
+        try {
+            const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+            if (!response.ok) throw new Error("API Request Failed");
+
+            const data = await response.json();
+
+            if (data && data.length > 0 && data[0].Status === "Success") {
+                const details = data[0].PostOffice[0];
+                const city = details.District;
+                const stateName = details.State;
+
+                // Set City
+                if (cityField) {
+                    cityField.value = city;
+                    cityField.dispatchEvent(new Event('input'));
+                }
+
+                // Set Country
+                if (countryField) {
+                    countryField.value = "India";
+                }
+
+                // Smart State Selection (Text -> ID)
+                if (stateField) {
+                    let matchedValue = '';
+                    const searchStr = stateName.toLowerCase().trim();
+
+                    // Loop to find the matching ID (e.g. "West Bengal" -> "01")
+                    for (let i = 0; i < stateField.options.length; i++) {
+                        const optText = stateField.options[i].text.toLowerCase().trim();
+
+                        // precise match or partial match
+                        if (optText === searchStr || optText.includes(searchStr)) {
+                            matchedValue = stateField.options[i].value;
+                            break;
+                        }
+                    }
+
+                     if (matchedValue) {
+                         // Update standard select
+                         stateField.value = matchedValue;
+                         // Update Select2 visual
+                         $(stateField).val(matchedValue).trigger('change');
+                     }
+                }
+            } else {
+                   // If API returns "Error" status (invalid pincode)
+                   if (cityField) {
+                       cityField.value = "";
+                       cityField.placeholder = "Invalid Pincode";
+                   }
+            }
+        } catch (error) {
+                    console.error("API Error:", error);
+                    if (cityField) cityField.placeholder = "Enter manually";
+                } finally {
+                    if (stateField) stateField.style.opacity = '1';
+                }
+    }
+     // END POSTAL CODE LOGIC
+})

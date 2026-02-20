@@ -72,8 +72,10 @@
                             </div>
                             <div class="col-md-3"><label
                                     class="form-label">Recurrence</label>{{ task_form.recurrence_period }}</div>
-                            <div class="col-md-3"><label class="form-label">Team</label>{{ task_form.assignees }}</div>
-                        </div>
+                            <div class="col-md-3" id="consultancyTypeWrapper" style="display:none;">
+                                <label class="form-label">Consultancy Type</label>
+                                {{ task_form.consultancy_type }}
+                            </div>
                         <div class="mb-4">
                             <label class="form-label">Description</label>
                             <input type="hidden" name="description" id="hiddenDescription" value= "{{ task_form.instance.description|default:'' }}" >
@@ -204,5 +206,24 @@
             serviceSelect.addEventListener('change', updateForm);
             updateForm();
         });
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const serviceType = document.getElementById('id_service_type');
+    const consultancyWrapper = document.getElementById('consultancyTypeWrapper');
+
+    function toggleConsultancyDropdown() {
+        if (serviceType.value === 'Consultancy') {
+            consultancyWrapper.style.display = 'block';
+        } else {
+            consultancyWrapper.style.display = 'none';
+            const select = consultancyWrapper.querySelector('select');
+            if (select) select.value = '';
+        }
+    }
+
+    serviceType.addEventListener('change', toggleConsultancyDropdown);
+    toggleConsultancyDropdown(); // on page load
+    });
     </script>
 {% endblock %}
