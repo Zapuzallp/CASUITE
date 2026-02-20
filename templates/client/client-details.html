@@ -2,6 +2,10 @@
 {% load static %}
 
 {% block body %}
+<!--Added summernote css-->
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.css" rel="stylesheet">
+
+
     <style>
         /* Scope styles to this page */
         .profile-header-card {
@@ -241,6 +245,12 @@
                                     Directors{% endif %}
                             </button>
                         </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-marketing">
+                                <i class="bi bi-bullseye me-2"></i>Marketing
+                            </button>
+                        </li>
+
                         {% if client.client_type == 'Entity' %}
                             <li class="nav-item">
                                 <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-entity">
@@ -717,6 +727,165 @@
                             </div>
                         </div>
 
+          <div class="tab-pane fade" id="profile-marketing">
+    <div class="py-2">
+    <div class="d-flex flex-wrap gap-2 mb-3" id="marketing-tab" role="tablist">
+
+        <button class="btn btn-sm btn-outline-primary" id="compose-mail-tab"
+                data-bs-toggle="pill" data-bs-target="#pills-compose" type="button" role="tab">
+            <i class="bi bi-envelope me-1"></i> Compose Email
+        </button>
+
+        <button class="btn btn-sm btn-outline-primary" id="send-wa-tab"
+                data-bs-toggle="pill" data-bs-target="#pills-wa" type="button" role="tab">
+            <i class="bi bi-whatsapp me-1"></i> Send WA MSG
+        </button>
+
+        <button class="btn btn-sm btn-outline-primary" id="payment-reminder-tab"
+                data-bs-toggle="pill" data-bs-target="#pills-payment" type="button" role="tab">
+            <i class="bi bi-bell me-1"></i> Send Payment Reminder
+        </button>
+
+        <button class="btn btn-sm btn-outline-primary" id="account-statement-tab"
+                data-bs-toggle="pill" data-bs-target="#pills-statement" type="button" role="tab">
+            <i class="bi bi-file-earmark-text me-1"></i> Send Account Statement
+        </button>
+
+    </div>
+</div>
+
+        <div class="tab-content" id="pills-tabContent">
+
+            <div class="tab-pane fade" id="pills-compose" role="tabpanel">
+
+    <div class="card shadow-sm border-0">
+
+            <form method="POST" action="{% url 'send_marketing_email' client.id %}">
+                {% csrf_token %}
+
+                 <!-- TO, CC, BCC fields -->
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <input type="text" name="to_email" class="form-control" placeholder="TO" required>
+            </div>
+            <div class="col-md-6">
+                <input type="text" name="cc_email" class="form-control" placeholder="CC">
+            </div>
+            <div class="col-md-6">
+                <input type="text" name="bcc_email" class="form-control" placeholder="Bcc">
+            </div>
+        </div>
+
+                <!-- MESSAGE -->
+                <div class="mb-3">
+                <textarea id="summernote_email" name="email_body" class="form-control"></textarea>
+            </div>
+
+                <!-- ACTION -->
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="reset"
+                        class="btn btn-light btn-sm px-4"
+                        onclick="$('#summernote_email').summernote('code', '');">
+                        Clear
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-sm btn-send-uniform">
+                    <i class="bi bi-send me-1"></i> Send Mail
+                    </button>
+                </div>
+
+
+            </form>
+
+<!--        </div>-->
+    </div>
+
+</div>
+
+            <div class="tab-pane fade" id="pills-wa" role="tabpanel">
+                <div class="mb-2">
+                  <textarea id="summernote_wa" name="wa_body" class="form-control"></textarea>
+                </div>
+
+            <div class="text-end">
+               <button type="submit" class="btn btn-primary btn-sm btn-send-uniform">Send</button>
+            </div>
+
+            </div>
+
+            <div class="tab-pane fade" id="pills-payment" role="tabpanel">
+                <div class="row g-2 align-items-center">
+
+                       <form method="POST" action="{% url 'send_payment_reminder' client.id %}">
+                        {% csrf_token %}
+                        <div class="d-flex align-items-center gap-3">
+
+        <!-- Dropdown -->
+        <select class="form-select form-select-sm flex-grow-1" name="invoice_status">
+            <option value="" selected disabled>Invoice List</option>
+            <option value="new">New</option>
+            <option value="overdue">Overdue</option>
+            <option value="partially_paid">Partially Paid</option>
+        </select>
+
+        <!-- Checkboxes -->
+        <div class="d-flex gap-3 ms-2">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" name="send_email" id="stmtEmail">
+                        <label class="form-check-label small" for="stmtEmail">Email</label>
+                    </div>
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" name="send_wa" id="stmtWA">
+                        <label class="form-check-label small" for="stmtWA">WhatsApp</label>
+                    </div>
+                </div>
+
+        <!-- Send Button -->
+        <button type="submit" class="btn btn-primary btn-sm btn-send-uniform">Send</button>
+
+             </div>
+        </form>
+
+                </div>
+            </div>
+
+      <div class="tab-pane fade" id="pills-statement" role="tabpanel">
+         <div class="row g-2 align-items-center">
+            <form method="POST" action="{% url 'send_account_statement' client.id %}">
+            {% csrf_token %}
+
+            <div class="d-flex align-items-center flex-wrap gap-4">
+
+                <div class="d-flex align-items-center">
+                    <label class="mb-0 me-2 text-muted small" style="white-space: nowrap;">From Date</label>
+                    <input type="date" name="from_date" class="form-control form-control-sm" style="width: 200px;">
+                </div>
+
+                <div class="d-flex align-items-center">
+                    <label class="mb-0 me-2 text-muted small" style="white-space: nowrap;">To Date</label>
+                    <input type="date" name="to_date" class="form-control form-control-sm" style="width: 200px;">
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" name="send_email" id="stmtEmail">
+                        <label class="form-check-label small" for="stmtEmail">Email</label>
+                    </div>
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" name="send_wa" id="stmtWA">
+                        <label class="form-check-label small" for="stmtWA">WhatsApp</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-sm btn-send-uniform">Send</button>
+
+            </div>
+          </form>
+         </div>
+       </div>
+        </div>
+    </div>
+</div>
+
                         {% if client.client_type == 'Entity' %}
                             <div class="tab-pane fade" id="profile-entity">
                                 <h5 class="card-title text-primary"><i class="bi bi-building me-2"></i>Registration
@@ -959,7 +1128,40 @@
             </div>
         </div>
     </main>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.js"></script>
+<script>
+(function($) {
+    $(document).ready(function() {
+        $('#profile-marketing textarea').summernote({
+            placeholder: 'Write your message here...',
+            height: 150,           // This sets the initial height
+            minHeight: 150,        // Ensures it doesn't shrink
+            maxHeight: 150,        // This is key: it forces a scrollbar after 150px
+            disableResizeEditor: true, // Prevents the user from dragging the bottom handle
+            tabsize: 2,
+            toolbar: [
+                ['style', ['bold', 'italic', 'underline', 'clear']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['link']],
+                ['view', ['codeview']]
+            ]
+        });
 
+        // ... rest of your tab fix and reset logic remains the same ...
+        $('button[data-bs-toggle="pill"]').on('shown.bs.tab', function (e) {
+            $('#profile-marketing textarea').each(function() {
+                $(this).summernote('reLayout');
+            });
+        });
+
+        $('button[type="reset"]').on('click', function() {
+            $('#summernote_email').summernote('code', '');
+            $('#summernote_wa').summernote('code', '');
+        });
+    });
+})(jQuery);
+</script>
     <script>
         function openUploadModal(requestedDocId) {
             var myModal = new bootstrap.Modal(document.getElementById('uploadDocumentModal'));
@@ -1135,4 +1337,6 @@
             }
         });
     </script>
+
+
 {% endblock body %}

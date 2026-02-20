@@ -1,9 +1,9 @@
 from django.urls import path
-
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews,marketingView
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
     leave_views, messageView, ReApplyLeaveViews, invoiceView,profileView,credentialsView
+
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -42,6 +42,9 @@ urlpatterns = [
     path('accounts/logout/', authView.LoginView.as_view(), name='logout'),
     # Client Details
     path('client/<int:client_id>/details/', clientView.client_details_view, name='client_details'),
+    path("marketing/compose-mail/<int:client_id>/", marketingView.ComposeMailView.as_view(), name="send_marketing_email"),
+    path("marketing/payment-reminder/<int:client_id>/",marketingView.SendPaymentReminderView.as_view(), name="send_payment_reminder"),
+    path("marketing/account-statement/<int:client_id>/",marketingView.SendAccountStatementView.as_view(), name="send_account_statement"),
     path('client/<int:client_id>/upload-document/', documentsUploadView.upload_document_view,
          name='upload_client_document'),
     path('client/<int:client_id>/create-request/', documentsUploadView.create_document_request_view,
