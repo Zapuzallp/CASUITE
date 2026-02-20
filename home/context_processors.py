@@ -1,6 +1,8 @@
 from home.models import Notification
 from home.models import Message
 from django.db.models import Max
+from django.conf import settings 
+from cryptography.fernet import Fernet 
 
 def notifications_context(request):
     if request.user.is_authenticated:
@@ -24,6 +26,7 @@ def notifications_context(request):
 
 # header_data for notification messages
 def header_data(request):
+    fernet = Fernet(settings.ENCRYPTION_KEY)
     if request.user.is_authenticated:
         latest_message_ids = Message.objects.filter(
             receiver=request.user,
@@ -32,12 +35,23 @@ def header_data(request):
         ).values('sender').annotate(
             latest_id=Max('id')
         ).values_list('latest_id', flat=True)
-
+        
         header_messages = Message.objects.filter(
             id__in=latest_message_ids
         ).order_by('-timestamp')
         
+        # yield notifications
+        def yield_notifications():
+            i = 0
+            while i <len(header_messages):
+                yield header_messages[i]
+                i+=1
+        # for loop on yield notifications
+        for h in yield_notifications():
+            h.content = fernet.decrypt(h.content.encode()).decode()
+
+
         return {
             "header_messages": header_messages
         }
-    return {"header_messages":{}}
+    return {"header_messages":{},}
