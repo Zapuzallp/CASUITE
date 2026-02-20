@@ -37,6 +37,7 @@ def get_visible_payments(user):
     - STAFF: sees only own payments
     - BRANCH_MANAGER: sees payments created by staff under them AND their own payments
     - ADMIN: sees all payments in same office
+    - PARTNER: sees all payments (view-only access enforced in views)
     """
     from home.models import Payment, Employee
     from django.db.models import Q
@@ -65,6 +66,10 @@ def get_visible_payments(user):
     if role == 'ADMIN':
         # Admin can see all payments in branch
         return Payment.objects.filter(created_by__employee__office_location=employee.office_location)
+
+    if role == 'PARTNER':
+        # Partner can see all payments (view-only)
+        return Payment.objects.all()
 
     return Payment.objects.none()
 

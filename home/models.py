@@ -844,6 +844,7 @@ class Notification(models.Model):
 ROLES_CHOICE = [
     ('BRANCH_MANAGER', 'Branch Manager'),
     ('ADMIN', 'Administrator'),
+    ('PARTNER', 'Partner'),
     ('STAFF', 'Staff')
 ]
 

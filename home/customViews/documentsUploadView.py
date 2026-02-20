@@ -11,6 +11,11 @@ from home.models import RequestedDocument, Client
 @require_POST
 @login_required
 def upload_document_view(request, client_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to upload documents.')
+        return redirect('client_details', client_id=client_id)
+
     client = get_object_or_404(Client, id=client_id)
     form = DocumentUploadForm(client_id, request.POST, request.FILES)
 
@@ -35,6 +40,11 @@ def upload_document_view(request, client_id):
 @require_POST
 @login_required
 def create_document_request_view(request, client_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to create document requests.')
+        return redirect('client_details', client_id=client_id)
+
     client = get_object_or_404(Client, id=client_id)
     form = DocumentRequestForm(request.POST)
 

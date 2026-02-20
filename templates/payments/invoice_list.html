@@ -100,7 +100,7 @@
     color: white !important;
   }
 
-  /* --- DROPDOWN CHECKBOX STYLING --- */
+  /* --- DROPDOWN CHECKBOX STYLING (FOR MULTI-SELECT ONLY) --- */
   .select2-container--bootstrap-5 .select2-dropdown {
     border-color: #dee2e6;
     border-radius: 0 0 12px 12px;
@@ -111,28 +111,41 @@
 
   /* Dropdown Options */
   .select2-container--bootstrap-5 .select2-results__option {
-    padding: 8px 15px 8px 38px !important; /* Space for checkbox */
+    padding: 8px 15px !important;
     position: relative;
     font-size: 0.9rem;
     color: #333;
     background-color: #fff;
+    transition: all 0.2s ease;
   }
 
-  /* Hover State */
+  /* Hover State - Clean highlight without checkbox */
   .select2-container--bootstrap-5 .select2-results__option--highlighted {
-    background-color: #f3f4f6 !important;
-    color: #000 !important;
+    background-color: #0d6efd !important;
+    color: #fff !important;
   }
 
-  /* Selected State */
+  /* Selected State - Subtle background */
   .select2-container--bootstrap-5 .select2-results__option[aria-selected="true"] {
-    background-color: #fff !important;
-    color: #333 !important;
+    background-color: #e7f3ff !important;
+    color: #0d6efd !important;
+    font-weight: 500;
   }
 
-  /* Custom Checkbox Box */
-  .select2-container--bootstrap-5 .select2-results__option::before {
+  /* Remove checkbox styling for single-select dropdowns */
+  .select2-container--bootstrap-5 .select2-results__option::before,
+  .select2-container--bootstrap-5 .select2-results__option::after {
+    display: none !important;
+  }
+
+  /* Only show checkboxes for multi-select (services field) */
+  #select2-id_services-results .select2-results__option {
+    padding-left: 38px !important;
+  }
+
+  #select2-id_services-results .select2-results__option::before {
     content: '';
+    display: block !important;
     position: absolute;
     left: 12px;
     top: 50%;
@@ -145,15 +158,14 @@
     transition: all 0.2s;
   }
 
-  /* Custom Checkbox Active State */
-  .select2-container--bootstrap-5 .select2-results__option[aria-selected="true"]::before {
+  #select2-id_services-results .select2-results__option[aria-selected="true"]::before {
     background-color: #0d6efd;
     border-color: #0d6efd;
   }
 
-  /* Custom Checkbox Checkmark */
-  .select2-container--bootstrap-5 .select2-results__option[aria-selected="true"]::after {
+  #select2-id_services-results .select2-results__option[aria-selected="true"]::after {
     content: '';
+    display: block !important;
     position: absolute;
     left: 16px;
     top: 50%;
@@ -230,13 +242,15 @@
             <div class="d-flex justify-content-between align-items-center my-3">
               <div>
                 <h5 class="card-title m-0">All Invoices</h5>
-                <small class="text-muted">Showing {{ invoices|length }} invoice(s)</small>
+                <small class="text-muted">Showing {{ invoices|length}} invoice(s)</small>
               </div>
+              {% if not is_partner %}
               <div>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInvoiceModal">
                   <i class="bi bi-plus-circle me-1"></i> Add Invoice
                 </button>
               </div>
+              {% endif %}
             </div>
 
             {% if messages %}
@@ -374,11 +388,19 @@
                             {{ item.payment_status_display }}
                           </span>
                         {% elif item.payment_status == 'DRAFT' or item.payment_status == 'OPEN' %}
-                          <!-- Status editable - no payment yet - show dropdown -->
-                          <select name="status_{{ item.invoice.id }}" class="form-select form-select-sm status-dropdown" style="min-width: 120px;">
-                            <option value="DRAFT" {% if item.payment_status == 'DRAFT' %}selected{% endif %}>Draft</option>
-                            <option value="OPEN" {% if item.payment_status == 'OPEN' %}selected{% endif %}>Open</option>
-                          </select>
+                          <!-- Status editable - no payment yet - show dropdown (unless partner) -->
+                          {% if is_partner %}
+                            <span class="badge
+                              {% if item.payment_status == 'DRAFT' %}bg-secondary
+                              {% else %}bg-info{% endif %}">
+                              {{ item.payment_status_display }}
+                            </span>
+                          {% else %}
+                            <select name="status_{{ item.invoice.id }}" class="form-select form-select-sm status-dropdown" style="min-width: 120px;">
+                              <option value="DRAFT" {% if item.payment_status == 'DRAFT' %}selected{% endif %}>Draft</option>
+                              <option value="OPEN" {% if item.payment_status == 'OPEN' %}selected{% endif %}>Open</option>
+                            </select>
+                          {% endif %}
                         {% else %}
                           <!-- Fallback - show badge -->
                           <span class="badge bg-secondary">
@@ -413,11 +435,13 @@
                           </a>
 
                           {% if item.balance > 0 and item.payment_status != 'DRAFT' %}
+                            {% if not is_partner %}
                             <a class="btn btn-sm btn-success"
                                href="{% url 'payment_collect' item.invoice.id %}"
                                title="Collect Payment">
                               <i class="bi bi-cash-coin"></i>
                             </a>
+                            {% endif %}
                           {% endif %}
                         </div>
                       </td>
@@ -434,12 +458,14 @@
                 </table>
               </div>
 
-              <!-- Save Button at Bottom -->
+              <!-- Save Button at Bottom (Hide for partners) -->
+              {% if not is_partner %}
               <div class="d-flex justify-content-end mt-3">
                 <button type="submit" class="btn btn-primary px-4" id="saveStatusBtn">
                   <i class="bi bi-check-circle me-1"></i> Save Status Changes
                 </button>
               </div>
+              {% endif %}
             </form>
 
           </div>
@@ -465,18 +491,18 @@
           <div class="modal-body">
             <div class="row g-3">
 
-              <!-- Client Selection (Floating Label) -->
+              <!-- Client Selection (with Select2 search) -->
               <div class="col-md-6">
-                <div class="form-floating">
-                  {{ form.client }}
-                  <label for="{{ form.client.id_for_label }}">Select Client <span class="text-danger">*</span></label>
-                  {% if form.client.errors %}
-                    <div class="invalid-feedback d-block">{{ form.client.errors }}</div>
-                  {% endif %}
-                </div>
+                <label class="form-label small fw-bold text-secondary mb-1">
+                  <i class="bi bi-person-fill me-1"></i>Select Client <span class="text-danger">*</span>
+                </label>
+                {{ form.client }}
+                {% if form.client.errors %}
+                  <div class="invalid-feedback d-block">{{ form.client.errors }}</div>
+                {% endif %}
               </div>
 
-              <!-- Subject (Floating Label) -->
+              <!-- Subject -->
               <div class="col-md-6">
                 <div class="form-floating">
                   {{ form.subject }}
@@ -565,10 +591,38 @@ $(document).ready(function() {
   }
 
   // Apply Bootstrap classes
-  $('#id_client, #id_subject, #id_invoice_date, #id_due_date').addClass('form-control');
-  $('#id_client').addClass('form-select');
+  $('#id_subject, #id_invoice_date, #id_due_date').addClass('form-control');
 
-  // Initialize Select2 with Bootstrap 5 theme
+  // Initialize Select2 for Client dropdown with search
+  $('#id_client').select2({
+    theme: 'bootstrap-5',
+    placeholder: 'Search and select client...',
+    allowClear: true,
+    dropdownParent: $('#addInvoiceModal'),
+    width: '100%',
+    matcher: function(params, data) {
+      // If there are no search terms, return all data
+      if ($.trim(params.term) === '') {
+        return data;
+      }
+
+      // Do not display the item if there is no 'text' property
+      if (typeof data.text === 'undefined') {
+        return null;
+      }
+
+      // `params.term` is the user's search term
+      // `data.text` is the text that is displayed for the data object
+      if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
+        return data;
+      }
+
+      // Return `null` if the term should not be displayed
+      return null;
+    }
+  });
+
+  // Initialize Select2 for Services with Bootstrap 5 theme
   var servicesSelect = $('#id_services').select2({
     theme: 'bootstrap-5',
     placeholder: 'Select tasks...',

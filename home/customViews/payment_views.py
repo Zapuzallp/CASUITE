@@ -16,10 +16,17 @@ from home.utils import get_visible_payments, can_approve_payment, can_cancel_pay
 
 @login_required
 def payment_list(request):
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(request.user, 'employee'):
+        is_partner = request.user.employee.role == 'PARTNER'
 
     # Payments listing
     # Get base queryset (visibility handled by utils.get_visible_payments)
-    payments_qs = get_visible_payments(request.user).select_related('invoice__client', 'created_by', 'created_by__employee', 'created_by__employee__supervisor').order_by('-payment_date', '-id')
+    payments_qs = get_visible_payments(request.user).select_related('invoice__client', 'created_by',
+                                                                    'created_by__employee',
+                                                                    'created_by__employee__supervisor').order_by(
+        '-payment_date', '-id')
 
     # Accordion Filter
     q = request.GET.get('q', '').strip()
@@ -49,7 +56,7 @@ def payment_list(request):
     if date_to:
         payments_qs = payments_qs.filter(payment_date__lte=date_to)
 
-    has_filters =any([
+    has_filters = any([
         q, client_id, payment_status,
         approval_status, date_from, date_to,
     ])
@@ -59,13 +66,15 @@ def payment_list(request):
     page_obj = paginator.get_page(page_number)
 
     # Determine if user has permission to Approve/Reject (Admins, Branch Managers, Superusers)
+    # Partners cannot perform bulk actions
     show_bulk_actions = False
-    if request.user.is_superuser:
-        show_bulk_actions = True
-    elif hasattr(request.user, 'employee'):
-        # Only ADMIN and BRANCH_MANAGER can perform bulk approvals/rejections
-        if request.user.employee.role in ['ADMIN', 'BRANCH_MANAGER']:
+    if not is_partner:
+        if request.user.is_superuser:
             show_bulk_actions = True
+        elif hasattr(request.user, 'employee'):
+            # Only ADMIN and BRANCH_MANAGER can perform bulk approvals/rejections
+            if request.user.employee.role in ['ADMIN', 'BRANCH_MANAGER']:
+                show_bulk_actions = True
 
     # Provide recent invoices for modal
     invoices = Invoice.objects.filter(
@@ -75,8 +84,8 @@ def payment_list(request):
     for p in page_obj:
         # safe getattr: created_by might be None
         p.creator_employee = getattr(p.created_by, 'employee', None)
-        p.can_approve = can_approve_payment(request.user, p)
-        p.can_cancel = can_cancel_payment(request.user, p)
+        p.can_approve = can_approve_payment(request.user, p) and not is_partner
+        p.can_cancel = can_cancel_payment(request.user, p) and not is_partner
 
     clients = Client.objects.order_by('client_name')
 
@@ -95,6 +104,7 @@ def payment_list(request):
         'approval_status': approval_status,
         'date_from': date_from,
         'date_to': date_to,
+        'is_partner': is_partner,
         # template sometimes references emp (current user's employee)
         'emp': getattr(request.user, 'employee', None),
     }
@@ -107,6 +117,11 @@ def payment_collect(request, invoice_id=None):
        GET/POST for /payment/<invoice_id>/collect/
        Uses PaymentCollectForm(invoice_instance=invoice) so invoice can be locked.
     """
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to collect payments.')
+        return redirect('payment_list')
+
     invoice = None
     total_amount = paid_amount = balance_amount = Decimal('0.00')
 
@@ -157,6 +172,11 @@ def payment_collect(request, invoice_id=None):
 
 @login_required
 def approve_payment(request, payment_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to approve payments.')
+        return redirect('payment_list')
+
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     payment = get_object_or_404(Payment, id=payment_id)
@@ -177,6 +197,11 @@ def approve_payment(request, payment_id):
 
 @login_required
 def reject_payment(request, payment_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to reject payments.')
+        return redirect('payment_list')
+
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     payment = get_object_or_404(Payment, id=payment_id)
@@ -197,6 +222,11 @@ def reject_payment(request, payment_id):
 
 @login_required
 def cancel_payment(request, payment_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to cancel payments.')
+        return redirect('payment_list')
+
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     payment = get_object_or_404(Payment, id=payment_id)
@@ -213,13 +243,19 @@ def cancel_payment(request, payment_id):
     messages.success(request, "Payment canceled.")
     return redirect('payment_list')
 
+
 @login_required
 def payment_detail(request, payment_id):
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(request.user, 'employee'):
+        is_partner = request.user.employee.role == 'PARTNER'
+
     qs = get_visible_payments(request.user)
 
     payment = get_object_or_404(
         qs.select_related('invoice__client', 'created_by', 'approved_by')
-          .prefetch_related('invoice__items__product'),
+        .prefetch_related('invoice__items__product'),
         id=payment_id
     )
 
@@ -227,8 +263,8 @@ def payment_detail(request, payment_id):
 
     invoice_total, invoice_paid, balance_amount = get_invoice_totals(invoice)
 
-    user_can_approve = can_approve_payment(request.user, payment)
-    user_can_cancel = can_cancel_payment(request.user, payment)
+    user_can_approve = can_approve_payment(request.user, payment) and not is_partner
+    user_can_cancel = can_cancel_payment(request.user, payment) and not is_partner
 
     context = {
         'payment': payment,
@@ -238,6 +274,7 @@ def payment_detail(request, payment_id):
         'balance_amount': balance_amount,
         'can_approve': user_can_approve,
         'can_cancel': user_can_cancel,
+        'is_partner': is_partner,
     }
 
     return render(request, 'payments/payment_detail.html', context)
@@ -252,6 +289,11 @@ def bulk_payment_action(request):
     - payment_ids: list of IDs
     - action: 'approve' or 'reject'
     """
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to perform bulk payment actions.')
+        return redirect('payment_list')
+
     action = request.POST.get('action')
     payment_ids = request.POST.getlist('payment_ids')
 
