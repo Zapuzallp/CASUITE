@@ -6,11 +6,15 @@ from django.contrib.auth.models import User
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
-    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message, GSTDetails  # Added GSTDetails to imports
+    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes, Message, Invoice,
+    InvoiceItem, GSTDetails
+    # Added GSTDetails to imports
 )
 from home.models import Leave
+from django.core.exceptions import ValidationError
 from decimal import Decimal
-from .models import Payment, Invoice
+from .models import Payment, Invoice, Lead
+from .models import Payment
 from django.utils import timezone
 
 
@@ -252,11 +256,22 @@ class TaskForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         # CHANGED: 'assigned_to' -> 'assignees'
-        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description','recurrence_period']
+        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description', 'recurrence_period',
+                  'consultancy_type']
         widgets = {
             'task_title': forms.TextInput(attrs={'placeholder': 'Auto-generated if left blank'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
+            'consultancy_type': forms.Select(attrs={'class': 'form-select'})
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Sort consultancy_type choices alphabetically by label
+        self.fields['consultancy_type'].choices = sorted(
+            self.fields['consultancy_type'].choices,
+            key=lambda x: x[1].lower()
+        )
 
 
 # ---------------------------------------------------------
@@ -296,7 +311,8 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
         self.fields['total_turnover'].widget.attrs.update({'placeholder': '0.00'})
         self.fields['tax_payable'].widget.attrs.update({'placeholder': '0.00'})
 
-#Leave form
+
+# Leave form
 class LeaveForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Leave
@@ -317,17 +333,16 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
                 if value == "" or value is None:
 
                     updated_choices.append(
-                        (value, label) )
+                        (value, label))
                 else:
                     remaining = leave_summary.get(value, {}).get("remaining", 0)
                     if remaining == 0:
                         display_text = f"{label} (-)"
                     else:
-                            display_text = f"{label} ({remaining})"
-                            updated_choices.append((value, display_text))
+                        display_text = f"{label} ({remaining})"
+                        updated_choices.append((value, display_text))
 
             self.fields["leave_type"].choices = updated_choices
-
 
     def clean(self):
         """Validate dates"""
@@ -351,18 +366,76 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
 
         return cleaned_data
 
-#Message form
+
+# Message form
 class MessageForm(forms.ModelForm):
     class Meta:
         model = Message
         fields = ['content', 'status']
         widgets = {
             'content': forms.Textarea(attrs={
-                'id': 'summernote', # Required for JS initialization
+                'id': 'summernote',  # Required for JS initialization
                 'class': 'form-control',
             }),
             'status': forms.Select(attrs={'class': 'form-control', 'style': 'width: auto; display: inline-block;'}),
         }
+
+
+# Invoice Form
+class InvoiceForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Invoice
+        fields = ['client', 'services', 'invoice_date', 'due_date', 'subject']
+        widgets = {
+            'invoice_date': forms.DateInput(attrs={'type': 'date'}),
+            'due_date': forms.DateInput(attrs={'type': 'date'}),
+            "client": forms.Select(attrs={
+                "class": "form-control",
+            })
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Default:no tasks
+        self.fields['services'].queryset = Task.objects.none()
+
+        if 'client' in self.data:
+            client_id = self.data.get('client')
+            self.fields['services'].queryset = Task.objects.filter(
+                client_id=client_id,
+                tagged_invoices__isnull=True
+            )
+        else:
+            self.fields['services'].queryset = Task.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        invoice_date = cleaned_data.get('invoice_date')
+        due_date = cleaned_data.get('due_date')
+
+        if invoice_date and due_date:
+            # invoice_date is DateTimeField, due_date is DateField
+            if due_date < invoice_date.date():
+                self.add_error(
+                    'due_date',
+                    'Due date cannot be earlier than invoice date.'
+                )
+
+        return cleaned_data
+
+
+class InvoiceItemForm(forms.ModelForm):
+    class Meta:
+        model = InvoiceItem
+        fields = ['product', 'unit_cost', 'discount', 'gst_percentage', ]
+        widgets = {
+            'product': forms.Select(attrs={'class': 'form-select'}),
+            'unit_cost': forms.NumberInput(attrs={'class': "form-control"}),
+            'discount': forms.NumberInput(attrs={'class': "form-control"}),
+            'gst_percentage': forms.Select(attrs={'class': "form-select"}),
+        }
+
 
 # ---------------------------------------------------------
 # Dedicated PaymentForm And PaymentCollectForm
@@ -377,6 +450,7 @@ class PaymentForm(forms.ModelForm):
             'payment_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'transaction_id': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
     def clean_amount(self):
         amt = self.cleaned_data.get('amount')
         if amt is None:
@@ -395,6 +469,7 @@ class PaymentForm(forms.ModelForm):
             raise forms.ValidationError("Payment date cannot be in the future.")
         return payment_date
 
+
 class PaymentCollectForm(PaymentForm):
     invoice = forms.ModelChoiceField(
         queryset=Invoice.objects.select_related('client').order_by('-id'),
@@ -405,18 +480,35 @@ class PaymentCollectForm(PaymentForm):
     class Meta(PaymentForm.Meta):
         fields = ['invoice'] + PaymentForm.Meta.fields
 
-    def __init__(self, *args, invoice_instance=None, **kwargs):
+    def __init__(self, *args, invoice_instance=None, balance_amount=None, **kwargs):
         """
         invoice_instance: if provided, lock the invoice (hide the field and set initial)
         """
         super().__init__(*args, **kwargs)
+        self.invoice_instance = invoice_instance
+        self.balance_amount = balance_amount
+
         if invoice_instance:
-            # set the initial invoice and hide the field so user can't change it
             self.fields['invoice'].initial = invoice_instance
             self.fields['invoice'].widget = forms.HiddenInput()
-            self.invoice_instance = invoice_instance
-        else:
-            self.invoice_instance = None
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        amount = cleaned_data.get('amount')
+        invoice = self.invoice_instance or cleaned_data.get('invoice')
+
+        if not amount or not invoice:
+            return cleaned_data
+
+        balance = self.balance_amount
+
+        if balance is not None and amount > balance:
+            self.add_error('amount', 'Amount cannot be greater than remaining balance.')
+
+        return cleaned_data
+
+
 # ---------------------------------------------------------
 # 3. GST Details Form (NEW)
 # ---------------------------------------------------------
@@ -431,3 +523,158 @@ class GSTDetailsForm(BootstrapFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['gst_number'].widget.attrs.update({'placeholder': 'e.g., 29ABCDE1234F1Z5'})
+
+
+# ---------------------------------------------------------
+# 4. Lead Form
+# ---------------------------------------------------------
+class LeadForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = Lead
+        fields = [
+            'lead_name', 'full_name', 'email', 'phone_number',
+            'requirements', 'lead_value', 'expected_closure_date'
+        ]
+        widgets = {
+            'lead_name': forms.TextInput(attrs={
+                'placeholder': 'e.g., ABC Traders',
+                'required': 'required'
+            }),
+            'full_name': forms.TextInput(attrs={
+                'placeholder': 'e.g., Rajesh Kumar',
+                'required': 'required'
+            }),
+            'email': forms.EmailInput(attrs={
+                'placeholder': 'e.g., rajesh@example.com',
+                'type': 'email'
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'placeholder': 'e.g., 9876543210',
+                'pattern': '[0-9]{10}',
+                'title': 'Please enter a valid 10-digit phone number',
+                'required': 'required'
+            }),
+            'requirements': forms.Textarea(attrs={
+                'rows': 4,
+                'placeholder': 'Describe the lead requirements...',
+                'required': 'required'
+            }),
+            'lead_value': forms.NumberInput(attrs={
+                'placeholder': '0.00',
+                'step': '0.01',
+                'min': '0',
+                'required': 'required'
+            }),
+            'expected_closure_date': forms.DateInput(attrs={'type': 'date', 'required': 'required'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set required fields
+        self.fields['lead_name'].required = True
+        self.fields['full_name'].required = True
+        self.fields['phone_number'].required = True
+        self.fields['requirements'].required = True
+        self.fields['email'].required = False
+        self.fields['lead_value'].required = True
+        self.fields['expected_closure_date'].required = True
+
+    def clean_phone_number(self):
+        """Validate phone number - must be 10 digits"""
+        phone = self.cleaned_data.get('phone_number', '').strip()
+
+        # Remove any spaces or dashes
+        phone = phone.replace(' ', '').replace('-', '')
+
+        # Check if it contains only digits
+        if not phone.isdigit():
+            raise forms.ValidationError('Phone number must contain only digits.')
+
+        # Check if it's exactly 10 digits
+        if len(phone) != 10:
+            raise forms.ValidationError('Phone number must be exactly 10 digits.')
+
+        return phone
+
+    def clean_lead_value(self):
+        """Validate lead value - must not be negative"""
+        value = self.cleaned_data.get('lead_value')
+
+        if value is not None and value < 0:
+            raise forms.ValidationError('Lead value cannot be negative.')
+
+        return value
+
+
+# ---------------------------------------------------------
+# 5. Client Portal Credentials Form
+# ---------------------------------------------------------
+from home.models import ClientPortalCredentials, Dropdown
+
+
+class ClientPortalCredentialsForm(BootstrapFormMixin, forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter client portal password'
+        }),
+        help_text="Password will be encrypted before storage",
+        required=True
+    )
+
+    class Meta:
+        model = ClientPortalCredentials
+        fields = ['dropdown', 'portal_url', 'username', 'password']
+        widgets = {
+            'dropdown': forms.Select(attrs={'class': 'form-select'}),
+            'portal_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://example.com'
+            }),
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter client username for this portal'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.client = kwargs.pop('client', None)
+        super().__init__(*args, **kwargs)
+        # Only show active password-type dropdowns
+        self.fields['dropdown'].queryset = Dropdown.objects.filter(
+            type='password',
+            is_active=True
+        )
+        self.fields['dropdown'].label = "Portal Type"
+
+        # Ensure fields start blank (no initial values)
+        if not self.instance.pk:
+            self.fields['username'].initial = ''
+            self.fields['password'].initial = ''
+
+        # If editing existing credential, show masked password
+        if self.instance and self.instance.pk:
+            self.fields['password'].required = False
+            self.fields['password'].help_text = "Leave blank to keep current password"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        dropdown = cleaned_data.get('dropdown')
+
+        # Check for duplicate portal type for this client
+        if self.client and dropdown:
+            # Exclude current instance if editing
+            existing = ClientPortalCredentials.objects.filter(
+                client=self.client,
+                dropdown=dropdown
+            )
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+
+            if existing.exists():
+                raise forms.ValidationError(
+                    f"A credential for '{dropdown.label}' already exists for this client. "
+                    f"Please update the existing credential or choose a different portal type."
+                )
+
+        return cleaned_data

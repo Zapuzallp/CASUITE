@@ -48,6 +48,7 @@ class Shift(models.Model):
     def __str__(self):
         return self.shift_name
 
+
 # -----------------------------------------
 # 2. Employee Shift Table
 # -----------------------------------------
@@ -106,7 +107,6 @@ STATE_CHOICES = (
     ('38', 'Ladakh'),
     ('97', 'Other Territory'),
 )
-
 
 
 # -----------------------------------------
@@ -192,10 +192,9 @@ class Client(models.Model):
 
     # --- Address ---
     address_line1 = models.TextField()
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100,choices=STATE_CHOICES)
-
     postal_code = models.CharField(max_length=10)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100, choices=STATE_CHOICES)
     country = models.CharField(max_length=100, default='India')
 
     office_location = models.ForeignKey(
@@ -225,6 +224,7 @@ class Client(models.Model):
 
     def __str__(self):
         return self.client_name
+
 
 GST_SCHEME_CHOICES = [
     ('Regular', 'Regular Scheme'),
@@ -277,6 +277,7 @@ class GSTDetails(models.Model):
 
     def __str__(self):
         return f"{self.gst_number} - {self.get_state_display()}"
+
 
 # -------------------------
 # 2. Universal Business Profile
@@ -336,6 +337,7 @@ class ClientBusinessProfile(models.Model):
 
     def __str__(self):
         return f"Profile: {self.client.client_name}"
+
 
 # -------------------------
 # Client User Mapping
@@ -408,7 +410,8 @@ class ClientDocumentUpload(models.Model):
     upload_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     remarks = models.TextField(blank=True, null=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, help_text="User who uploaded the document")
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                    help_text="User who uploaded the document")
 
     def save(self, *args, **kwargs):
         if self.uploaded_file:
@@ -452,7 +455,38 @@ class Task(models.Model):
         ('Quarterly', 'Quarterly'),
         ('Yearly', 'Yearly'),
     ]
+    CONSULTANCY_TYPE_CHOICES = [
+        ('NEW_GST_NUMBER', 'New GST Number'),
+        ('INCOME_TAX_CASE', 'Income Tax Case'),
+        ('GST_CASE', 'GST Case'),
+        ('CONSULTANCY', 'Consultancy'),
+        ('NEW_INCORPORATION', 'New Incorporation'),
+        ('UPDATION_OF_MOA', 'Updation of MOA'),
+        ('DIRECTOR_UPDATION_REQUEST', 'Director Updation Request'),
+        ('DIRECTOR_REMOVAL_REQUEST', 'Director Removal Request'),
+        ('GST_SCHEME_CHANGE', 'GST Scheme Change'),
+        ('BANK_ACCOUNT_OPENING_(CURRENT)', 'Bank Account Opening (Current)'),
+        ('LLP_COMPLIANCE', 'LLP Compliance'),
+        ('PVT_LTD_COMPLIANCE', 'Pvt Ltd Compliance'),
+        ('NEW_DIN', 'New DIN'),
+        ('DIN_RENEWAL', 'DIN Renewal'),
+        ('NEW_DSC', 'New DSC'),
+        ('DSC_RENEWAL', 'DSC Renewal'),
+        ('CLUB_REGISTRATION','Club Registration'),
+        ('DSC','DSC'),
+        ('TRADE_LICENCE','Trade Licence'),
+        ('UDYAM_REG','Udyam Registration'),
+        ('PROJECT_AND_ESTIMATE','Project and Estimate'),
+        ('STOCK_STATEMENT','Stock Statement'),
+        ('P_TAX','P.Tax')
+    ]
 
+    consultancy_type = models.CharField(
+        max_length=100,
+        choices=CONSULTANCY_TYPE_CHOICES,
+        blank=True,
+        null=True
+    )
     # --- Core Links ---
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='tasks')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_tasks')
@@ -500,6 +534,7 @@ class Task(models.Model):
                 changed_by=changed_by,
                 remarks=remarks
             )
+
     # Set `is_recurring` only when the task is first created.
     # Derived from `recurrence_period` to avoid auto-created
     # or copied tasks being incorrectly marked as recurring.
@@ -512,7 +547,7 @@ class Task(models.Model):
 
 
 class TaskRecurrence(models.Model):
-    task = models.OneToOneField(Task,on_delete=models.CASCADE,related_name="task_recurrence")
+    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="task_recurrence")
     recurrence_period = models.CharField(max_length=20)
     is_recurring = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
@@ -524,8 +559,10 @@ class TaskRecurrence(models.Model):
             raise ValidationError(
                 {"recurrence_period": "TaskRecurrence cannot be 'None'"}
             )
+
     def __str__(self):
         return self.task.task_title
+
 
 class TaskAssignmentStatus(models.Model):
     """
@@ -542,6 +579,7 @@ class TaskAssignmentStatus(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
+
     class Meta:
         unique_together = ('task', 'user', 'status_context')
         ordering = ['order']
@@ -654,7 +692,9 @@ class TaskDocument(models.Model):
     description = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
+
 from datetime import timedelta
+
 
 class Attendance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -692,7 +732,6 @@ class Attendance(models.Model):
     clock_out_long = models.DecimalField(
         max_digits=9, decimal_places=6, null=True, blank=True
     )
-
 
     class Meta:
         unique_together = ('user', 'date')
@@ -736,7 +775,6 @@ class Attendance(models.Model):
             return f"{hours}h {minutes}m"
         return f"{minutes}m {seconds}s"
 
-
     def get_work_duration(self):
         """Get formatted work duration for mobile display"""
         if self.clock_in and not self.clock_out:
@@ -750,16 +788,16 @@ class Attendance(models.Model):
         elif self.duration:
             return self.formatted_duration()
         return "00:00:00 Hrs"
-    
+
     def should_show_pending_warning(self):
         """Check if pending warning should still be shown"""
         if self.status != 'pending':
             return False
-        
+
         # If not clocked out yet, always show warning
         if not self.clock_out:
             return True
-        
+
         # If clocked out, show warning until clock_out + 4 hours
         from django.utils import timezone
         warning_cutoff = self.clock_out + timedelta(hours=4)
@@ -767,6 +805,8 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
+
+
 class Notification(models.Model):
     TAG_CHOICES = (
         ('info', 'Info'),
@@ -794,7 +834,6 @@ class Notification(models.Model):
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-
     class Meta:
         ordering = ['-created_at']
 
@@ -807,7 +846,9 @@ ROLES_CHOICE = [
     ('ADMIN', 'Administrator'),
     ('STAFF', 'Staff')
 ]
-#Employee and Leave table
+
+
+# Employee and Leave table
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="employee")
     designation = models.CharField(max_length=255, blank=True, null=True)
@@ -837,8 +878,7 @@ class Employee(models.Model):
             "earned": self.earned_leave,
         }
 
-
-    #Leave Summary
+    # Leave Summary
     def get_leave_summary(self):
         summary = {}
         approved_leaves = self.leave_records.filter(status="approved")
@@ -864,7 +904,7 @@ class Employee(models.Model):
         return self.user.username
 
 
-#Leave model
+# Leave model
 class Leave(models.Model):
     LEAVE_TYPES = [
         ("sick", "Sick Leave"),
@@ -914,19 +954,28 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.item_name} ({self.short_code})"
 
+from decimal import Decimal
 
 class Invoice(models.Model):
+    INVOICE_STATUS = [
+        ('DRAFT', 'Draft'),
+        ('OPEN', 'Open'),
+        ('PARTIALLY_PAID', 'Partially Paid'),
+        ('PAID', 'Paid'),
+    ]
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invoices')
     services = models.ManyToManyField(Task, blank=True, related_name='tagged_invoices')
     due_date = models.DateField()
     invoice_date = models.DateTimeField(default=timezone.now)
     subject = models.CharField(max_length=255)
+    invoice_status = models.CharField(max_length=20, choices=INVOICE_STATUS, default="DRAFT")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return f"Invoice #{self.id} - {self.client.client_name}"
 
-
+from decimal import Decimal
 class InvoiceItem(models.Model):
     GST_CHOICES = [
         (0, '0%'),
@@ -938,23 +987,28 @@ class InvoiceItem(models.Model):
 
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
-    unit_cost = models.FloatField()
-    discount = models.FloatField(default=0.0)
-    taxable_value = models.FloatField(editable=False)
+    unit_cost = models.DecimalField(max_digits=12, decimal_places=2)
+    discount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    taxable_value = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
     gst_percentage = models.IntegerField(choices=GST_CHOICES, default=0)
-    net_total = models.FloatField(editable=False)
+    net_total = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
     def save(self, *args, **kwargs):
         # Logic: taxable_value = unit_cost - discount
-        self.taxable_value = float(self.unit_cost) - float(self.discount)
+        self.taxable_value = self.unit_cost - self.discount
 
         # Logic: net_total = taxable_value + gst %
-        gst_amount = self.taxable_value * (self.gst_percentage / 100.0)
+        gst_amount = (self.taxable_value * Decimal(self.gst_percentage) / Decimal('100'))
         self.net_total = self.taxable_value + gst_amount
 
         super().save(*args, **kwargs)
 
+    def unit_cost_after_gst(self):
+        gst_value = self.taxable_value * (Decimal(self.gst_percentage) / Decimal('100'))
+        return self.taxable_value - gst_value
+
     def __str__(self):
         return f"{self.product.item_name} - {self.invoice}"
+
 
 class Payment(models.Model):
     PAYMENT_METHOD_CHOICES = [
@@ -981,14 +1035,18 @@ class Payment(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     payment_date = models.DateField()
     # Auto-compute fields
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="payments_created")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name="payments_created")
     created_at = models.DateTimeField(auto_now_add=True)
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='PENDING')
     approval_status = models.CharField(max_length=20, choices=APPROVAL_STATUS, default='PENDING')
-    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_payments")
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name="approved_payments")
     approved_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return f"Payment {self.id} for Invoice #{self.invoice.id}"
+
 
 class Message(models.Model):
     STATUS_CHOICES = [
@@ -997,11 +1055,222 @@ class Message(models.Model):
         ('received', 'Received'),
     ]
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver= models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
-    is_seen = models.BooleanField(default = False)    
+    is_seen = models.BooleanField(default = False)
 
     def __str__(self):
         return f"From{self.sender} to {self.receiver} - {self.status}"
+
+
+# -----------------------------------------
+# Lead Management Model
+# -----------------------------------------
+class Lead(models.Model):
+    STATUS_CHOICES = [
+        ('New', 'New'),
+        ('Contacted', 'Contacted'),
+        ('Qualified', 'Qualified'),
+        ('Converted', 'Converted'),
+        ('Lost', 'Lost'),
+    ]
+
+    # Core Fields
+    lead_name = models.CharField(max_length=255, help_text="Display / business name of the lead")
+    full_name = models.CharField(max_length=255, help_text="Name of person/entity (used as Client Name on conversion)")
+    email = models.EmailField(blank=True, null=True)
+    phone_number = models.CharField(max_length=20)
+    requirements = models.TextField(help_text="Complete requirement details provided by lead")
+
+    # Value & Dates
+    lead_value = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True,
+                                     help_text="Expected business value")
+    expected_closure_date = models.DateField(blank=True, null=True, help_text="Expected date of conversion")
+    actual_closure_date = models.DateField(blank=True, null=True,
+                                           help_text="Actual date when lead was converted or lost")
+
+    # Status & Remarks
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='New')
+    remarks = models.TextField(blank=True, null=True, help_text="Internal notes or lost reason")
+
+    # Relationships
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, blank=True, null=True,
+                               related_name='converted_from_lead', help_text="Reference after conversion")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='leads_created')
+    assigned_to = models.ManyToManyField(User, related_name='assigned_leads', blank=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Lead'
+        verbose_name_plural = 'Leads'
+
+    def __str__(self):
+        return f"{self.lead_name} - {self.status}"
+
+    def is_editable(self):
+        """Check if lead can be edited (only New, Contacted, Qualified)"""
+        return self.status in ['New', 'Contacted', 'Qualified']
+
+    def is_final_status(self):
+        """Check if lead is in final status (Converted or Lost)"""
+        return self.status in ['Converted', 'Lost']
+
+
+# -----------------------------------------
+# Lead Call Log Model
+# -----------------------------------------
+class LeadCallLog(models.Model):
+    """
+    Tracks phone call interactions between Lead and Employees.
+    Direction Logic:
+    - If called_by_user is NULL → Lead initiated the call
+    - If called_to_user is NULL → Employee initiated the call
+    """
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='call_logs')
+
+    # Direction: Only one should be NULL per record
+    called_by_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='calls_made_to_leads',
+                                       help_text="Employee who made the call (NULL if Lead called)")
+    called_to_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='calls_received_from_leads',
+                                       help_text="Employee who received the call (NULL if Employee called Lead)")
+
+    call_date = models.DateField(help_text="Date when the call/discussion happened", default=timezone.now)
+    description = models.TextField(help_text="Discussion summary and notes")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+                                   related_name='call_logs_created',
+                                   help_text="User who logged this call")
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Lead Call Log'
+        verbose_name_plural = 'Lead Call Logs'
+
+    def __str__(self):
+        direction = self.get_direction_display()
+        return f"{self.lead.lead_name} - {direction} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+    def get_direction_display(self):
+        """Returns human-readable call direction"""
+        if self.called_by_user is None:
+            # Lead called an employee
+            employee_name = self.called_to_user.get_full_name() or self.called_to_user.username if self.called_to_user else "Unknown"
+            return f"Lead → {employee_name}"
+        elif self.called_to_user is None:
+            # Employee called the lead
+            employee_name = self.called_by_user.get_full_name() or self.called_by_user.username if self.called_by_user else "Unknown"
+            return f"{employee_name} → Lead"
+        else:
+            return "Invalid Direction"
+
+    def get_employee(self):
+        """Returns the employee involved in the call"""
+        return self.called_by_user or self.called_to_user
+
+    def clean(self):
+        """Validate that exactly one direction field is NULL"""
+        from django.core.exceptions import ValidationError
+        if self.called_by_user is None and self.called_to_user is None:
+            raise ValidationError("At least one of 'called_by_user' or 'called_to_user' must be set.")
+        if self.called_by_user is not None and self.called_to_user is not None:
+            raise ValidationError("Only one of 'called_by_user' or 'called_to_user' should be set, not both.")
+
+
+from cryptography.fernet import Fernet
+from django.conf import settings
+import base64
+
+
+# Encryption utility functions
+def get_encryption_key():
+    """Get or generate encryption key"""
+    key = getattr(settings, 'ENCRYPTION_KEY', None)
+    if not key:
+        # Generate a key if not in settings (for development)
+        key = Fernet.generate_key()
+    if isinstance(key, str):
+        key = key.encode()
+    return key
+
+
+def encrypt_password(plain_password):
+    """Encrypt password using Fernet symmetric encryption"""
+    if not plain_password:
+        return ''
+    f = Fernet(get_encryption_key())
+    encrypted = f.encrypt(plain_password.encode())
+    return base64.urlsafe_b64encode(encrypted).decode()
+
+
+def decrypt_password(encrypted_password):
+    """Decrypt password"""
+    if not encrypted_password:
+        return ''
+    try:
+        f = Fernet(get_encryption_key())
+        decoded = base64.urlsafe_b64decode(encrypted_password.encode())
+        decrypted = f.decrypt(decoded)
+        return decrypted.decode()
+    except Exception:
+        return '[Decryption Error]'
+
+
+class Dropdown(models.Model):
+    """Generic dropdown model for reusable dropdown configurations"""
+    TYPE_CHOICES = [
+        ('password', 'Password/Credential Portal'),
+    ]
+
+    label = models.CharField(max_length=100, help_text="Display name (e.g., GST, ITR)")
+    value = models.CharField(max_length=100, help_text="Internal value (e.g., gst, itr)")
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES, help_text="Usage category")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['label']
+        unique_together = ['value', 'type']
+
+    def __str__(self):
+        return f"{self.label} ({self.type})"
+
+
+class ClientPortalCredentials(models.Model):
+    """Store encrypted portal credentials per client"""
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='portal_credentials')
+    dropdown = models.ForeignKey(Dropdown, on_delete=models.PROTECT,
+                                 limit_choices_to={'type': 'password', 'is_active': True})
+    portal_url = models.URLField(max_length=500)
+    username = models.CharField(max_length=255)
+    password = models.TextField(help_text="Stored encrypted")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Client Portal Credential"
+        verbose_name_plural = "Client Portal Credentials"
+        ordering = ['-created_at']
+        unique_together = ['client', 'dropdown']
+
+    def __str__(self):
+        return f"{self.client.client_name} - {self.dropdown.label}"
+
+    def save(self, *args, **kwargs):
+        # Encrypt password before saving if it's not already encrypted
+        if self.password and not self.password.startswith('Z0ZC'):  # Simple check to avoid double encryption
+            self.password = encrypt_password(self.password)
+        super().save(*args, **kwargs)
+
+    def get_decrypted_password(self):
+        """Decrypt and return password"""
+        return decrypt_password(self.password)
+

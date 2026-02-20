@@ -98,8 +98,17 @@
         {% if messages %}
             <div class="container-fluid px-0 mb-3">
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0">
-                        <i class="bi bi-info-circle me-1"></i> {{ message }}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm border-0">
+                        {% if message.tags == 'error' or message.tags == 'danger' %}
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                        {% elif message.tags == 'success' %}
+                            <i class="bi bi-check-circle-fill me-1"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="bi bi-exclamation-circle-fill me-1"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle me-1"></i>
+                        {% endif %}
+                        {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
@@ -139,18 +148,46 @@
                     </a>
                 {% endif %}
 
-                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createRequestModal">
-                    <i class="bi bi-plus-square me-1"></i> Request Docs
-                </button>
-                <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#addGSTModal">
-                    <i class="bi bi-plus-circle-fill"></i> Add New GST
-                </button>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
-                    <i class="bi bi-cloud-upload me-1"></i> Upload
-                </button>
-                <a href="{% url 'create_service_task' client.id %}" class="btn btn-primary">
-                    <i class="bi bi-plus-lg"></i> Add Task
-                </a>
+                <!-- Actions Dropdown Button -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical me-1"></i> Actions
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'edit_client' client.id %}">
+                                <i class="bi bi-pencil-square me-2"></i>Edit Client
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#createRequestModal">
+                                <i class="bi bi-plus-square me-2"></i>Request Docs
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addGSTModal">
+                                <i class="bi bi-plus-circle-fill me-2"></i>Add New GST
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addPasswordModal">
+                                <i class="bi bi-key-fill me-2"></i>Add Password
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+                                <i class="bi bi-cloud-upload me-2"></i>Upload Document
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'create_service_task' client.id %}">
+                                <i class="bi bi-plus-lg me-2"></i>Add Task
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -183,6 +220,20 @@
                                 <i class="bi bi-briefcase me-2"></i>Services
                             </button>
                         </li>
+                        {% if invoices_data %}
+                            <li class="nav-item">
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-invoices">
+                                    <i class="bi bi-receipt-cutoff me-2"></i>Invoices
+                                </button>
+                            </li>
+                        {% endif %}
+                        {% if portal_credentials %}
+                            <li class="nav-item">
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-passwords">
+                                    <i class="bi bi-key me-2"></i>Passwords
+                                </button>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
                             <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-linked">
                                 <i class="bi bi-link-45deg me-2"></i>
@@ -350,6 +401,7 @@
                                         <th>Due Date</th>
                                         <th>Team</th>
                                         <th>Status</th>
+                                        <th>Invoice Status</th>
                                         <th>Action</th>
                                     </tr>
                                     </thead>
@@ -394,6 +446,17 @@
                                                     class="badge {% if service.status == 'Completed' %}bg-success{% elif service.status == 'Pending' %}bg-warning text-dark{% else %}bg-light text-dark border{% endif %}">
                                              {{ service.status }}</span>
                                             </td>
+                                            <td>
+                                                {% if service.tagged_invoices.exists %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle me-1"></i>Invoiced
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-x-circle me-1"></i>Not Invoiced
+                                                    </span>
+                                                {% endif %}
+                                            </td>
                                             <td><a href="{% url "task_detail" service.id %}"
                                                    class="btn btn-sm btn-outline-primary"><i
                                                     class="bi bi-eye"></i></a>
@@ -402,8 +465,201 @@
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">No active services
+                                            <td colspan="7" class="text-center text-muted py-4">No active services
                                                 found.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="profile-invoices">
+                            <h5 class="card-title text-primary"><i class="bi bi-receipt-cutoff me-2"></i>Client Invoices</h5>
+
+                            <form method="post" action="{% url 'invoice_bulk_status_update' %}" id="clientInvoiceBulkStatusForm">
+                              {% csrf_token %}
+                              <div class="table-responsive">
+                                <table class="table table-hover align-middle border" id="clientInvoicesTable">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Invoice #</th>
+                                        <th>Subject</th>
+                                        <th>Invoice Date</th>
+                                        <th>Due Date</th>
+                                        <th>Total Amount</th>
+                                        <th>Paid</th>
+                                        <th>Balance</th>
+                                        <th>Payment Status</th>
+                                        <th>Due Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for item in invoices_data %}
+                                        <tr>
+                                            <td class="fw-bold">#{{ item.invoice.id }}</td>
+                                            <td>{{ item.invoice.subject|truncatewords:5 }}</td>
+                                            <td>{{ item.invoice.invoice_date|date:"M d, Y" }}</td>
+                                            <td>{{ item.invoice.due_date|date:"M d, Y" }}</td>
+                                            <td>₹{{ item.total_amount|floatformat:0 }}</td>
+                                            <td class="text-success">₹{{ item.total_paid|floatformat:2 }}</td>
+                                            <td class="{% if item.balance > 0 %}text-warning fw-bold{% else %}text-success{% endif %}">
+                                                ₹{{ item.balance|floatformat:0 }}
+                                            </td>
+                                            <td>
+                                                {% if item.has_payments %}
+                                                  <!-- Status locked - payment received - show badge only -->
+                                                  <span class="badge
+                                                    {% if item.payment_status == 'PAID' %}bg-success
+                                                    {% elif item.payment_status == 'PARTIALLY_PAID' %}bg-warning text-dark
+                                                    {% elif item.payment_status == 'OPEN' %}bg-info
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ item.payment_status_display }}
+                                                  </span>
+                                                {% elif item.payment_status == 'DRAFT' or item.payment_status == 'OPEN' %}
+                                                  <!-- Status editable - no payment yet - show dropdown -->
+                                                  <select name="status_{{ item.invoice.id }}" class="form-select form-select-sm status-dropdown" style="min-width: 120px;">
+                                                    <option value="DRAFT" {% if item.payment_status == 'DRAFT' %}selected{% endif %}>Draft</option>
+                                                    <option value="OPEN" {% if item.payment_status == 'OPEN' %}selected{% endif %}>Open</option>
+                                                  </select>
+                                                {% else %}
+                                                  <!-- Fallback - show badge -->
+                                                  <span class="badge bg-secondary">
+                                                    {{ item.payment_status_display }}
+                                                  </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if item.due_status %}
+                                                  <span class="badge
+                                                    {% if item.due_status == 'overdue' %}bg-danger
+                                                    {% elif item.due_status == 'due_today' %}bg-warning text-dark
+                                                    {% else %}bg-light text-dark border{% endif %}">
+                                                    {% if item.due_status == 'overdue' %}
+                                                      <i class="bi bi-exclamation-triangle me-1"></i>Overdue
+                                                    {% elif item.due_status == 'due_today' %}
+                                                      <i class="bi bi-clock me-1"></i>Due Today
+                                                    {% else %}
+                                                      <i class="bi bi-check-circle me-1"></i>Not Due
+                                                    {% endif %}
+                                                  </span>
+                                                {% else %}
+                                                  <span class="text-muted small">—</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-1">
+                                                    <a class="btn btn-sm btn-outline-primary"
+                                                       href="{% url 'invoice_details' item.invoice.id %}"
+                                                       title="View Invoice">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+
+                                                    {% if item.balance > 0 and item.payment_status != 'DRAFT' %}
+                                                        <a class="btn btn-sm btn-success"
+                                                           href="{% url 'payment_collect' item.invoice.id %}"
+                                                           title="Collect Payment">
+                                                            <i class="bi bi-cash-coin"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="10" class="text-center text-muted py-4">
+                                                No invoices found for this client.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                              </div>
+
+                              <!-- Save Button at Bottom -->
+                              <div class="d-flex justify-content-end mt-3">
+                                <button type="submit" class="btn btn-primary px-4" id="saveClientInvoiceStatusBtn">
+                                  <i class="bi bi-check-circle me-1"></i> Save Status Changes
+                                </button>
+                              </div>
+                            </form>
+                        </div>
+
+                        <!-- Passwords Tab -->
+                        <div class="tab-pane fade" id="profile-passwords">
+                            <h5 class="card-title text-primary"><i class="bi bi-key me-2"></i>Portal Credentials</h5>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle border">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Portal Type</th>
+                                        <th>Portal URL</th>
+                                        <th>Username</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for credential in portal_credentials %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-primary">{{ credential.dropdown.label }}</span>
+                                            </td>
+                                            <td>
+                                                <a href="{{ credential.portal_url }}" target="_blank" class="text-decoration-none">
+                                                    {{ credential.portal_url|truncatechars:50 }}
+                                                    <i class="bi bi-box-arrow-up-right ms-1"></i>
+                                                </a>
+                                            </td>
+                                            <td>{{ credential.username }}</td>
+                                            <td class="text-end">
+                                                <a href="{% url 'view_portal_credential' credential.id %}"
+                                                   class="btn btn-sm btn-outline-primary"
+                                                   title="View Credential">
+                                                    <i class="bi bi-eye"></i> View
+                                                </a>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteCredentialModal{{ credential.id }}"
+                                                        title="Delete Credential">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Delete Confirmation Modal -->
+                                        <div class="modal fade" id="deleteCredentialModal{{ credential.id }}" tabindex="-1">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-danger text-white">
+                                                        <h5 class="modal-title">
+                                                            <i class="bi bi-exclamation-triangle me-2"></i>Confirm Delete
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Are you sure you want to delete the <strong>{{ credential.dropdown.label }}</strong> credential?</p>
+                                                        <p class="text-muted small mb-0">This action cannot be undone.</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <form method="post" action="{% url 'delete_portal_credential' credential.id %}" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-danger">
+                                                                <i class="bi bi-trash me-1"></i>Delete
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">
+                                                No portal credentials found for this client.
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -627,6 +883,81 @@
                 </div>
             </div>
         </div>
+
+        <!-- Add Password Modal -->
+        <div class="modal fade" id="addPasswordModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-key me-2"></i>Add Portal Credential
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <form action="{% url 'add_portal_credential' client.id %}" method="post" id="addPasswordForm">
+                        {% csrf_token %}
+
+                        <div class="alert alert-info mb-0 rounded-0" role="alert">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            <small>Password will be encrypted before storage</small>
+                        </div>
+
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Portal Type <span class="text-danger">*</span></label>
+                                {{ credential_form.dropdown }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Portal URL <span class="text-danger">*</span></label>
+                                {{ credential_form.portal_url }}
+                                <small class="text-muted d-block">Enter full URL (e.g., https://example.com)</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Username <span class="text-danger">*</span></label>
+                                {{ credential_form.username }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Password <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    {{ credential_form.password }}
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleModalPassword">
+                                        <i class="bi bi-eye" id="toggleModalIcon"></i>
+                                    </button>
+                                </div>
+                                <div id="modalPasswordError" class="text-danger small mt-1" style="display: none;"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Confirm Password <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="password"
+                                           class="form-control"
+                                           id="modal_confirm_password"
+                                           name="confirm_password"
+                                           placeholder="Re-enter password to confirm"
+                                           required>
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleModalConfirmPassword">
+                                        <i class="bi bi-eye" id="toggleModalConfirmIcon"></i>
+                                    </button>
+                                </div>
+                                <div id="modalConfirmPasswordError" class="text-danger small mt-1" style="display: none;"></div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning px-4">
+                                <i class="bi bi-check-circle me-1"></i>Save Credential
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
@@ -638,5 +969,170 @@
                 selectBox.value = requestedDocId;
             }
         }
+
+        // Toggle password visibility in modal
+        document.addEventListener('DOMContentLoaded', function() {
+            var toggleBtn = document.getElementById('toggleModalPassword');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    var passwordField = document.querySelector('#addPasswordModal input[name="password"]');
+                    var toggleIcon = document.getElementById('toggleModalIcon');
+
+                    if (passwordField.type === 'password') {
+                        passwordField.type = 'text';
+                        toggleIcon.classList.remove('bi-eye');
+                        toggleIcon.classList.add('bi-eye-slash');
+                    } else {
+                        passwordField.type = 'password';
+                        toggleIcon.classList.remove('bi-eye-slash');
+                        toggleIcon.classList.add('bi-eye');
+                    }
+                });
+            }
+
+            // Toggle confirm password visibility in modal
+            var toggleConfirmBtn = document.getElementById('toggleModalConfirmPassword');
+            if (toggleConfirmBtn) {
+                toggleConfirmBtn.addEventListener('click', function() {
+                    var confirmPasswordField = document.getElementById('modal_confirm_password');
+                    var toggleConfirmIcon = document.getElementById('toggleModalConfirmIcon');
+
+                    if (confirmPasswordField.type === 'password') {
+                        confirmPasswordField.type = 'text';
+                        toggleConfirmIcon.classList.remove('bi-eye');
+                        toggleConfirmIcon.classList.add('bi-eye-slash');
+                    } else {
+                        confirmPasswordField.type = 'password';
+                        toggleConfirmIcon.classList.remove('bi-eye-slash');
+                        toggleConfirmIcon.classList.add('bi-eye');
+                    }
+                });
+            }
+
+            // Password validation for modal
+            var modalPasswordField = document.querySelector('#addPasswordModal input[name="password"]');
+            var modalConfirmPasswordField = document.getElementById('modal_confirm_password');
+            var modalPasswordError = document.getElementById('modalPasswordError');
+            var modalConfirmPasswordError = document.getElementById('modalConfirmPasswordError');
+            var modalForm = document.getElementById('addPasswordForm');
+
+            // Real-time validation on confirm password input
+            if (modalConfirmPasswordField) {
+                modalConfirmPasswordField.addEventListener('input', function() {
+                    validateModalPasswords();
+                });
+            }
+
+            if (modalPasswordField) {
+                modalPasswordField.addEventListener('input', function() {
+                    if (modalConfirmPasswordField.value) {
+                        validateModalPasswords();
+                    }
+                });
+            }
+
+            function validateModalPasswords() {
+                var password = modalPasswordField.value;
+                var confirmPassword = modalConfirmPasswordField.value;
+
+                // Clear previous errors
+                modalPasswordError.style.display = 'none';
+                modalConfirmPasswordError.style.display = 'none';
+                modalPasswordField.classList.remove('is-invalid');
+                modalConfirmPasswordField.classList.remove('is-invalid', 'is-valid');
+
+                if (confirmPassword && password !== confirmPassword) {
+                    modalConfirmPasswordError.textContent = 'Passwords do not match';
+                    modalConfirmPasswordError.style.display = 'block';
+                    modalConfirmPasswordField.classList.add('is-invalid');
+                    return false;
+                } else if (confirmPassword && password === confirmPassword) {
+                    modalConfirmPasswordField.classList.add('is-valid');
+                    return true;
+                }
+
+                return true;
+            }
+
+            // Form submission validation for modal
+            if (modalForm) {
+                modalForm.addEventListener('submit', function(e) {
+                    var password = modalPasswordField.value;
+                    var confirmPassword = modalConfirmPasswordField.value;
+
+                    // Clear previous errors
+                    modalPasswordError.style.display = 'none';
+                    modalConfirmPasswordError.style.display = 'none';
+                    modalPasswordField.classList.remove('is-invalid');
+                    modalConfirmPasswordField.classList.remove('is-invalid');
+
+                    var isValid = true;
+
+                    // Check if password is empty
+                    if (!password) {
+                        modalPasswordError.textContent = 'Password is required';
+                        modalPasswordError.style.display = 'block';
+                        modalPasswordField.classList.add('is-invalid');
+                        isValid = false;
+                    }
+
+                    // Check if confirm password is empty
+                    if (!confirmPassword) {
+                        modalConfirmPasswordError.textContent = 'Please confirm your password';
+                        modalConfirmPasswordError.style.display = 'block';
+                        modalConfirmPasswordField.classList.add('is-invalid');
+                        isValid = false;
+                    }
+
+                    // Check if passwords match
+                    if (password && confirmPassword && password !== confirmPassword) {
+                        modalConfirmPasswordError.textContent = 'Passwords do not match';
+                        modalConfirmPasswordError.style.display = 'block';
+                        modalConfirmPasswordField.classList.add('is-invalid');
+                        modalPasswordField.classList.add('is-invalid');
+                        isValid = false;
+                    }
+
+                    if (!isValid) {
+                        e.preventDefault();
+                        // Focus on first error field
+                        var firstError = modalForm.querySelector('.is-invalid');
+                        if (firstError) {
+                            firstError.focus();
+                        }
+                    }
+                });
+            }
+        });
+
+        // Initialize DataTable for client invoices if the table exists and has data
+        document.addEventListener('DOMContentLoaded', function() {
+            var invoiceTable = document.getElementById('clientInvoicesTable');
+            if (invoiceTable) {
+                // Check if table has data rows (not just the empty state)
+                var hasData = invoiceTable.querySelector('tbody tr td:not([colspan])');
+                if (hasData) {
+                    $('#clientInvoicesTable').DataTable({
+                        "pageLength": 10,
+                        "order": [[0, "desc"]], // Sort by Invoice # descending
+                        "language": {
+                            "search": "Search:",
+                            "lengthMenu": "Show _MENU_ entries",
+                            "info": "Showing _START_ to _END_ of _TOTAL_ invoices",
+                            "infoEmpty": "No invoices available",
+                            "paginate": {
+                                "first": "First",
+                                "last": "Last",
+                                "next": "Next",
+                                "previous": "Previous"
+                            }
+                        },
+                        "columnDefs": [
+                            { "orderable": false, "targets": [8] } // Disable sorting on Action column
+                        ]
+                    });
+                }
+            }
+        });
     </script>
 {% endblock body %}

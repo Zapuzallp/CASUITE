@@ -21,7 +21,9 @@ from .models import (
     Shift, EmployeeShift, OfficeDetails,
     Leave,
     Message,
-    TaskRecurrence
+    TaskRecurrence,
+    Lead,
+    LeadCallLog
 )
 
 
@@ -942,8 +944,8 @@ class InvoiceItemInline(admin.TabularInline):
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'client', 'subject', 'invoice_date', 'due_date')
-    list_filter = ('invoice_date', 'due_date', 'client')
+    list_display = ('id', 'client', 'subject', 'invoice_date', 'due_date', 'invoice_status')
+    list_filter = ('invoice_date', 'due_date', 'client', 'invoice_status')
     search_fields = ('subject', 'client__client_name', 'id')
     inlines = [InvoiceItemInline]
     filter_horizontal = ('services',)
@@ -983,3 +985,252 @@ class MessageAdmin(admin.ModelAdmin):
     list_filter = ('status', 'timestamp')
     search_fields = ('content', 'sender__username', 'receiver__username')
     ordering = ('-timestamp',)
+
+
+@admin.register(Lead)
+class LeadAdmin(admin.ModelAdmin):
+    list_display = (
+        'lead_name',
+        'full_name',
+        'phone_number',
+        'email',
+        'status',
+        'lead_value',
+        'expected_closure_date',
+        'created_by',
+        'created_at',
+    )
+    list_filter = (
+        'status',
+        'created_at',
+        'expected_closure_date',
+        'created_by',
+    )
+    search_fields = (
+        'lead_name',
+        'full_name',
+        'phone_number',
+        'email',
+        'requirements',
+    )
+    date_hierarchy = 'created_at'
+    autocomplete_fields = ('created_by', 'assigned_to', 'client')
+    filter_horizontal = ('assigned_to',)
+    readonly_fields = ('created_at', 'updated_at')
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('lead_name', 'full_name', 'email', 'phone_number', 'requirements')
+        }),
+        ('Value & Dates', {
+            'fields': ('lead_value', 'expected_closure_date', 'actual_closure_date')
+        }),
+        ('Status & Assignment', {
+            'fields': ('status', 'remarks', 'assigned_to', 'created_by')
+        }),
+        ('Conversion', {
+            'fields': ('client',),
+            'classes': ('collapse',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    def get_queryset(self, request):
+        """Filter leads based on user role"""
+        qs = super().get_queryset(request)
+
+        if request.user.is_superuser:
+            return qs
+
+        try:
+            employee = request.user.employee
+            role = employee.role
+
+            if role == 'ADMIN':
+                return qs
+            elif role == 'BRANCH_MANAGER':
+                office = employee.office_location
+                if office:
+                    from django.db.models import Q
+                    return qs.filter(
+                        Q(created_by__employee__office_location=office) |
+                        Q(assigned_to=request.user) |
+                        Q(created_by=request.user)
+                    ).distinct()
+                else:
+                    from django.db.models import Q
+                    return qs.filter(
+                        Q(assigned_to=request.user) |
+                        Q(created_by=request.user)
+                    ).distinct()
+            else:
+                # Staff can see leads assigned to them OR created by them
+                from django.db.models import Q
+                return qs.filter(
+                    Q(assigned_to=request.user) |
+                    Q(created_by=request.user)
+                ).distinct()
+        except:
+            from django.db.models import Q
+            return qs.filter(
+                Q(assigned_to=request.user) |
+                Q(created_by=request.user)
+            ).distinct()
+
+
+@admin.register(LeadCallLog)
+class LeadCallLogAdmin(admin.ModelAdmin):
+    list_display = (
+        'lead',
+        'get_direction',
+        'get_employee',
+        'call_date',
+        'created_at',
+        'created_by',
+    )
+    list_filter = (
+        'call_date',
+        'created_at',
+        'created_by',
+        'lead__status',
+    )
+    search_fields = (
+        'lead__lead_name',
+        'lead__full_name',
+        'lead__phone_number',
+        'called_by_user__username',
+        'called_by_user__first_name',
+        'called_by_user__last_name',
+        'called_to_user__username',
+        'called_to_user__first_name',
+        'called_to_user__last_name',
+        'description',
+    )
+    date_hierarchy = 'call_date'
+    autocomplete_fields = ('lead', 'called_by_user', 'called_to_user', 'created_by')
+    readonly_fields = ('created_at',)
+
+    fieldsets = (
+        ('Call Information', {
+            'fields': ('lead', 'called_by_user', 'called_to_user', 'call_date')
+        }),
+        ('Discussion Details', {
+            'fields': ('description',)
+        }),
+        ('Audit Information', {
+            'fields': ('created_by', 'created_at'),
+        }),
+    )
+
+    def get_direction(self, obj):
+        return obj.get_direction_display()
+    get_direction.short_description = 'Direction'
+
+    def get_employee(self, obj):
+        employee = obj.get_employee()
+        if employee:
+            return employee.get_full_name() or employee.username
+        return '-'
+    get_employee.short_description = 'Employee'
+
+    def get_queryset(self, request):
+        """Filter call logs based on user role - same as Lead access"""
+        qs = super().get_queryset(request)
+
+        if request.user.is_superuser:
+            return qs
+
+        try:
+            employee = request.user.employee
+            role = employee.role
+
+            if role == 'ADMIN':
+                return qs
+            elif role == 'BRANCH_MANAGER':
+                office = employee.office_location
+                if office:
+                    from django.db.models import Q
+                    return qs.filter(
+                        Q(lead__created_by__employee__office_location=office) |
+                        Q(lead__assigned_to=request.user) |
+                        Q(lead__created_by=request.user)
+                    ).distinct()
+                else:
+                    from django.db.models import Q
+                    return qs.filter(
+                        Q(lead__assigned_to=request.user) |
+                        Q(lead__created_by=request.user)
+                    ).distinct()
+            else:
+                # Staff can see call logs for leads assigned to them OR created by them
+                from django.db.models import Q
+                return qs.filter(
+                    Q(lead__assigned_to=request.user) |
+                    Q(lead__created_by=request.user)
+                ).distinct()
+        except:
+            from django.db.models import Q
+            return qs.filter(
+                Q(lead__assigned_to=request.user) |
+                Q(lead__created_by=request.user)
+            ).distinct()
+
+
+# ============================================
+# Portal Credentials Admin
+# ============================================
+from home.models import Dropdown, ClientPortalCredentials
+
+
+@admin.register(Dropdown)
+class DropdownAdmin(admin.ModelAdmin):
+    list_display = ('label', 'value', 'type', 'is_active', 'created_at')
+    list_filter = ('type', 'is_active')
+    search_fields = ('label', 'value')
+    list_editable = ('is_active',)
+    ordering = ('type', 'label')
+
+
+@admin.register(ClientPortalCredentials)
+class ClientPortalCredentialsAdmin(admin.ModelAdmin):
+    list_display = ('client', 'get_portal_type', 'portal_url', 'username', 'masked_password', 'updated_at')
+    list_filter = ('dropdown__label', 'created_at')
+    search_fields = ('client__client_name', 'username', 'portal_url')
+    autocomplete_fields = ('client',)
+    readonly_fields = ('created_at', 'updated_at', 'masked_password')
+
+    fieldsets = (
+        ('Client & Portal Information', {
+            'fields': ('client', 'dropdown', 'portal_url')
+        }),
+        ('Credentials', {
+            'fields': ('username', 'password', 'masked_password'),
+            'description': 'Password is encrypted before storage. The masked password shows the encrypted value.'
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_portal_type(self, obj):
+        return obj.dropdown.label
+
+    get_portal_type.short_description = 'Portal Type'
+    get_portal_type.admin_order_field = 'dropdown__label'
+
+    def masked_password(self, obj):
+        """Show encrypted password (not decrypted) in admin"""
+        if obj.password:
+            return f"{obj.password[:20]}..." if len(obj.password) > 20 else obj.password
+        return '-'
+
+    masked_password.short_description = 'Encrypted Password'
+
+    def save_model(self, request, obj, form, change):
+        """Handle password encryption on save"""
+        # Password encryption is handled in the model's save method
+        super().save_model(request, obj, form, change)

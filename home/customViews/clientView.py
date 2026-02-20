@@ -139,6 +139,71 @@ def client_details_view(request, client_id):
     gst_form = GSTDetailsForm()
     # =================
 
+    # === INVOICES LOGIC ===
+    from django.db.models import Sum
+    from decimal import Decimal
+    invoices = client.invoices.all().order_by('-invoice_date')
+    invoices_data = []
+    today = timezone.now().date()
+
+    for inv in invoices:
+        # Calculate total_paid from payments
+        total_paid = inv.payments.filter(payment_status='PAID').aggregate(
+            total=Sum('amount'))['total'] or Decimal('0')
+
+        # Calculate total_amount from invoice items
+        total_amount_raw = inv.items.aggregate(total=Sum('net_total'))['total'] or 0
+        total_amount = Decimal(str(total_amount_raw))
+
+        balance = total_amount - total_paid
+
+        # Calculate Payment Status (business status)
+        if inv.invoice_status == 'DRAFT':
+            payment_status = 'DRAFT'
+            payment_status_display = 'Draft'
+        elif total_paid == 0:
+            payment_status = 'OPEN'
+            payment_status_display = 'Open'
+        elif total_paid >= total_amount:
+            payment_status = 'PAID'
+            payment_status_display = 'Paid'
+        else:
+            payment_status = 'PARTIALLY_PAID'
+            payment_status_display = 'Partially Paid'
+
+        # Calculate Due Status (time-based status)
+        # Only show due status for Open and Partially Paid invoices
+        due_status = None
+        if payment_status in ['OPEN', 'PARTIALLY_PAID'] and inv.due_date:
+            if inv.due_date < today:
+                due_status = 'overdue'
+            elif inv.due_date == today:
+                due_status = 'due_today'
+            else:
+                due_status = 'not_due'
+
+        # Check if invoice has any payments
+        has_payments = inv.payments.filter(payment_status='PAID').exists()
+
+        invoices_data.append({
+            'invoice': inv,
+            'total_amount': total_amount,
+            'total_paid': total_paid,
+            'balance': balance,
+            'payment_status': payment_status,
+            'payment_status_display': payment_status_display,
+            'due_status': due_status,
+            'has_payments': has_payments,
+        })
+    # ===================
+
+    # === PORTAL CREDENTIALS LOGIC ===
+    from home.models import ClientPortalCredentials
+    from home.forms import ClientPortalCredentialsForm
+    portal_credentials = ClientPortalCredentials.objects.filter(client=client).select_related('dropdown').order_by('-created_at')
+    credential_form = ClientPortalCredentialsForm(client=client)
+    # =================================
+
     context = {
         'client': client,
         'client_fields': client_fields,
@@ -153,6 +218,9 @@ def client_details_view(request, client_id):
         'today': timezone.now().date(),
         'gst_details_list': gst_details_list,  # Include List
         'gst_form': gst_form,  # Include Form
+        'invoices_data': invoices_data,  # Include Invoices
+        'portal_credentials': portal_credentials,  # Include Portal Credentials
+        'credential_form': credential_form,  # Include Credential Form
     }
 
     return render(request, 'client/client-details.html', context)
