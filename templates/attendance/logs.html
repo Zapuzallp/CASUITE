@@ -1,82 +1,261 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
 {% block body %}
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #7c3aed;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --bg-body: #f8fafc;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
 
-<main id="main" class="main">
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
+        }
 
-    <div class="pagetitle">
-        <h1>Attendance Logs</h1>
-        <nav>
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                <li class="breadcrumb-item active">Attendance</li>
-            </ol>
-        </nav>
-    </div>
+        .main-content { padding: 1.5rem; max-width: 100%; overflow-x: hidden; }
 
-    <section class="section">
+        /* Header Styling */
+        .pagetitle h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.025em; }
 
-        <div class="card">
-            <div class="card-body">
+        /* Card Modernization */
+        .card {
+            border: none;
+            border-radius: 1.25rem;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            background: #ffffff;
+            /* Removed margin-bottom to let grid gutters handle spacing for full sizing */
+        }
 
-                <h5 class="card-title">Clock In Report</h5>
+        .card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
 
-                <table class="table table-bordered table-striped align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Date</th>
-                            <th>Clock In</th>
-                            <th>Clock Out</th>
-                            <th>Duration</th>
-                            <th>Status</th>
-                            <th>Location</th>
-                        </tr>
-                    </thead>
+        .card-stats-indigo { background: linear-gradient(180deg, #ffffff 0%, #f0f3ff 100%); }
+        .card-stats-emerald { background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%); }
+        .card-stats-amber { background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%); }
+        .card-stats-rose { background: linear-gradient(180deg, #ffffff 0%, #fff1f1 100%); }
 
-                    <tbody>
-                        {% for log in logs %}
-                        <tr>
-                            <td>{{ log.date }}</td>
+        .stat-icon {
+            width: 56px; height: 56px; border-radius: 1rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem; flex-shrink: 0;
+        }
 
-                            <td>
-                                {{ log.clock_in|date:"h:i A"|default:"-" }}
-                            </td>
+        .bg-indigo-light { background: #e0e7ff; color: #4338ca; }
+        .bg-emerald-light { background: #dcfce7; color: #059669; }
+        .bg-amber-light { background: #fef3c7; color: #d97706; }
+        .bg-rose-light { background: #fee2e2; color: #dc2626; }
 
-                            <td>
-                                {{ log.clock_out|date:"h:i A"|default:"-" }}
-                            </td>
+        .table thead th {
+            background-color: #f8fafc; color: #64748b;
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            padding: 1rem; text-align: center; border: none;
+        }
+        .table tbody td { padding: 1.2rem 1rem; border-bottom: 1px solid #f1f5f9; text-align: center; }
 
-                            <td>
-                                {{ log.formatted_duration }}
-                            </td>
+        .badge-soft-success { background: #dcfce7; color: #15803d; }
+        .badge-soft-warning { background: #fef3c7; color: #92400e; }
+        .badge-soft-primary { background: #e0e7ff; color: #4338ca; }
 
-                            <td>
-                                <span class="badge
-                                    {% if log.status == 'Present' %}bg-success
-                                    {% elif log.status == 'Incomplete' %}bg-warning text-dark
-                                    {% else %}bg-secondary{% endif %}">
-                                    {{ log.status }}
-                                </span>
-                            </td>
+        .chart-container { height: 320px; width: 100%; }
 
-                            <td>
-                                {{ log.location_name|default:"-" }}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted">
-                                No attendance records found
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        /* Fix for card consistency in rows */
+        .section-row { margin-bottom: 1.5rem; }
+    </style>
 
+    <main id="main" class="main-content">
+        <div class="pagetitle d-md-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Attendance Logs</h1>
+                <nav>
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}" class="text-decoration-none text-muted">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Attendance Report</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="bg-white border rounded-pill px-3 py-2 shadow-sm d-flex align-items-center mt-3 mt-md-0">
+                <i class="bi bi-calendar-event me-2 text-primary"></i>
+                <span class="small fw-bold">{{ today|date:"F Y" }}</span>
             </div>
         </div>
 
-    </section>
+        <!-- Stat Bar (Top Cards) -->
+        <div class="row g-4 section-row">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card h-100 border-start border-4 border-primary card-stats-indigo">
+                    <div class="card-body d-flex align-items-center py-4">
+                        <div class="stat-icon bg-indigo-light"><i class="bi bi-calendar-check"></i></div>
+                        <div class="ms-3">
+                            <h3 class="mb-0 fw-bold">{{ stats.total_entries }}</h3>
+                            <p class="text-muted small mb-0 fw-medium">Days Present</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card h-100 border-start border-4 border-success card-stats-emerald">
+                    <div class="card-body d-flex align-items-center py-4">
+                        <div class="stat-icon bg-emerald-light"><i class="bi bi-sun"></i></div>
+                        <div class="ms-3">
+                            <h3 class="mb-0 fw-bold">{{ stats.full_days }}</h3>
+                            <p class="text-muted small mb-0 fw-medium">Full Days</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card h-100 border-start border-4 border-warning card-stats-amber">
+                    <div class="card-body d-flex align-items-center py-4">
+                        <div class="stat-icon bg-amber-light"><i class="bi bi-cloud-sun"></i></div>
+                        <div class="ms-3">
+                            <h3 class="mb-0 fw-bold">{{ stats.half_days }}</h3>
+                            <p class="text-muted small mb-0 fw-medium">Half Days</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="card h-100 border-start border-4 border-danger card-stats-rose">
+                    <div class="card-body d-flex align-items-center py-4">
+                        <div class="stat-icon bg-rose-light"><i class="bi bi-clock-history"></i></div>
+                        <div class="ms-3">
+                            <h3 class="mb-0 fw-bold text-danger">{{ stats.avg_hours }}h</h3>
+                            <p class="text-muted small mb-0 fw-medium">Avg Daily Hours</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-</main>
+        <!-- Charts -->
+        <div class="row g-4 section-row">
+            <div class="col-12 col-lg-8">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Weekly Working Hours <span>| Last 7 Days</span></h5>
+                        <div id="weeklyChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Monthly Distribution <span>| Current Month</span></h5>
+                        <div id="monthlyChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-{% endblock %}
+        <!-- Logs Table -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Clock In</th>
+                                <th>Clock Out</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Location</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td class="fw-bold">{{ log.date|date:"d M Y" }}</td>
+                                <td class="text-primary fw-medium">{{ log.clock_in|date:"h:i A"|default:"-" }}</td>
+                                <td class="text-muted">{{ log.clock_out|date:"h:i A"|default:"-" }}</td>
+                                <td><span class="badge bg-light text-dark border px-3 rounded-pill">{{ log.formatted_duration }}</span></td>
+                                <td>
+                                    {% if log.status == 'approved' or log.status == 'full_day' %}
+                                        <span class="badge badge-soft-success rounded-pill px-3">Present</span>
+                                    {% elif log.status == 'half_day' %}
+                                        <span class="badge badge-soft-warning rounded-pill px-3">Half Day</span>
+                                    {% else %}
+                                        <span class="badge badge-soft-primary rounded-pill px-3">{{ log.status|title }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted text-start" style="max-width: 200px;">
+                                    <i class="bi bi-geo-alt me-1"></i>{{ log.location_name|default:"-" }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Data from Django Context
+            const weeklyLabels = {{ chart_data.weekly_labels|safe }};
+            const weeklyValues = {{ chart_data.weekly_values|safe }};
+            const monthlyDist = {{ chart_data.monthly_dist|safe }};
+
+            // 1. Weekly Hours Chart
+            const weeklyChart = echarts.init(document.getElementById('weeklyChart'));
+            weeklyChart.setOption({
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: weeklyLabels,
+                    axisLine: { lineStyle: { color: '#e2e8f0' } }
+                },
+                yAxis: {
+                    type: 'value',
+                    splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } },
+                    name: 'Hours'
+                },
+                series: [{
+                    name: 'Working Hours',
+                    type: 'bar',
+                    barWidth: '40%',
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: '#4f46e5' },
+                            { offset: 1, color: '#7c3aed' }
+                        ]),
+                        borderRadius: [6, 6, 0, 0]
+                    },
+                    data: weeklyValues
+                }]
+            });
+
+            // 2. Monthly Status Chart
+            const monthlyChart = echarts.init(document.getElementById('monthlyChart'));
+            monthlyChart.setOption({
+                tooltip: { trigger: 'item' },
+                legend: { bottom: '0', icon: 'circle' },
+                series: [{
+                    name: 'Attendance',
+                    type: 'pie',
+                    radius: ['50%', '75%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+                    label: { show: false },
+                    data: monthlyDist
+                }]
+            });
+
+            window.addEventListener('resize', () => {
+                weeklyChart.resize();
+                monthlyChart.resize();
+            });
+        });
+    </script>
+{% endblock body %}
