@@ -215,9 +215,24 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="{% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
-                                            {{ task.due_date|date:"M d, Y" }}
-                                        </span>
+                                        {% if task.due_date %}
+                                            <div class="d-flex flex-column text-center">
+                                            <!-- Due date -->
+                                            <span class="small {% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
+                                                {{ task.due_date|date:"M d, Y" }}
+                                            </span>
+                                            <!-- Badge -->
+                                            {% if task.status != 'Completed' %}
+                                                {% if task.due_date < today %}
+                                                <span class="badge bg-danger ms-1 align-self-center small">Overdue</span>
+                                                {% elif task.due_date == today %}
+                                                <span class="badge bg-warning ms-1 align-self-center small">Today</span>
+                                                {% elif task.due_date == tomorrow %}
+                                                <span class="badge bg-info ms-1 align-self-center small">Tomorrow</span>
+                                                {% endif %}
+                                            {% endif %}
+                                            </div>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
