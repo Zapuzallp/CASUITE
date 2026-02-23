@@ -134,24 +134,17 @@
                                             </select>
                                         </div>
 
-
-                                        <!-- Custom View -->
+                                        <!-- Business Structure -->
                                         <div class="col-md-3">
-                                            <label class="form-label small fw-bold text-secondary">Custom View</label>
-                                            <select name="custom_view" class="form-select">
-                                                <option value="">All Clients</option>
-                                                <option value="aadhaar_mobile_linked"
-                                                        {% if request.GET.custom_view == 'aadhaar_mobile_linked' %}selected{% endif %}>
-                                                    Aadhaar Linked with Mobile
-                                                </option>
-                                                <option value="gst_enabled"
-                                                        {% if request.GET.custom_view == 'gst_enabled' %}selected{% endif %}>
-                                                    GST Enabled Clients
-                                                </option>
-                                                <option value="director_din_valid"
-                                                        {% if request.GET.custom_view == 'director_din_valid' %}selected{% endif %}>
-                                                    Directors with Valid DIN
-                                                </option>
+                                            <label class="form-label small fw-bold text-secondary">Structure</label>
+                                            <select name="business_structure" class="form-select">
+                                                <option value="">All Structures</option>
+                                                {% for code, name in business_structure_choices %}
+                                                    <option value="{{ code }}"
+                                                            {% if request.GET.business_structure == code %}selected{% endif %}>
+                                                        {{ name }}
+                                                    </option>
+                                                {% endfor %}
                                             </select>
                                         </div>
 
@@ -170,21 +163,6 @@
                         </div>
                     </div>
                 </div>
-                                        <!-- Business Structure -->
-                                        <div class="col-md-3">
-                                            <label class="form-label small fw-bold text-secondary">Structure</label>
-                                            <select name="business_structure" class="form-select">
-                                                <option value="">All Structures</option>
-                                                {% for code, name in business_structure_choices %}
-                                                    <option value="{{ code }}"
-                                                            {% if request.GET.business_structure == code %}selected{% endif %}>
-                                                        {{ name }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-
-
 
                 <!-- TABLE SECTION -->
                 <div class="card overflow-auto shadow-sm">
