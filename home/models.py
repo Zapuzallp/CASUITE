@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import User
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Q
 # -------------------------
 # Client Base Table
 # -------------------------
@@ -44,9 +45,19 @@ class Shift(models.Model):
         null=True,
         choices=DAY_CHOICES
     )
+    is_default = models.BooleanField(
+        default=False,
+        help_text="Mark this shift as default for employees without assigned shift"
+    )
 
     def __str__(self):
         return self.shift_name
+
+    def save(self, *args, **kwargs):
+        # Ensure only one default shift
+        if self.is_default:
+            Shift.objects.filter(is_default=True).update(is_default=False)
+        super().save(*args, **kwargs)
 
 
 # -----------------------------------------
