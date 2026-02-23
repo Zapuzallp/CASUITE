@@ -622,7 +622,6 @@
                                     <th>Due Date</th>
                                     <th>Team</th>
                                     <th>Status</th>
-                                    <th>Action</th>
                                 </tr>
                                 </thead>
                                 <tbody id="due-tasks-tbody">
@@ -630,7 +629,7 @@
                                     {% for task in due_tasks %}
                                         <tr>
                                             <td>{{ forloop.counter }}</td>
-                                            <td><a href="{% url 'task_detail' task.id %}">
+                                            <td class="fw-bold"><a href="{% url 'task_detail' task.id %}">
                                                 {{ task.task_title|truncatechars:30}}</a>
                                             </td>
                                             <td>{{ task.client.client_name|default:"-" }}</td>
@@ -643,21 +642,42 @@
                                         </span>
                                                 {% else %}-{% endif %}
                                             </td>
-                                            <td>
-                                                {% for assignee in task.assignees.all|slice:":2" %}
-                                                    <span class="badge bg-secondary">{{
-                                                            assignee.get_full_name|default:assignee.username }}</span>
-                                                {% empty %}<span class="text-muted">Unassigned</span>{% endfor %}
-                                            </td>
-                                            <td><span
-                                                    class="badge bg-{{ task.status|lower }}">{{ task.get_status_display
-                                                    }}</span></td>
-                                            <td>
-                                                <a href="{% url 'task_detail' task.id %}"
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                            </td>
+                                             <td>
+                                            {% with task.assignees.all as assignees %}
+                                                <div class="d-flex align-items-center"
+                                                     data-bs-toggle="tooltip"
+                                                     data-bs-placement="top"
+                                                     data-bs-title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+
+                                                    {% for user in assignees|slice:":3" %}
+                                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};">
+                                                            {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+                                                        </div>
+                                                    {% empty %}
+                                                        <span class="text-muted small fst-italic">Unassigned</span>
+                                                    {% endfor %}
+
+                                                    {% if assignees.count > 3 %}
+                                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                             style="width: 28px; height: 28px; font-size: 10px;">
+                                                            +{{ assignees.count|add:"-3" }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endwith %}
+                                        </td>
+
+                                        <td>
+                                        <span class="badge rounded-pill
+                                                {% if task.status == 'Completed' %}bg-success
+                                                {% elif task.status == 'Review' %}bg-warning text-dark
+                                                {% else %}bg-light text-dark border{% endif %}">
+                                            {{ task.status }}
+                                        </span>
+                                        </td>
+
+
                                         </tr>
                                     {% endfor %}
                                 {% else %}
