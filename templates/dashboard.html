@@ -458,6 +458,85 @@
                                     </div>
                                 {% endfor %}
                             </div>
+
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th>Title</th>
+                                    <th>Client</th>
+                                    <th>Service</th>
+                                    <th>Due Date</th>
+                                    <th>Team</th>
+                                    <th>Status</th>
+                                </tr>
+                                </thead>
+                                <tbody id="due-tasks-tbody">
+                                {% if due_tasks %}
+                                    {% for task in due_tasks %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td class="fw-bold"><a href="{% url 'task_detail' task.id %}">
+                                                {{ task.task_title|truncatechars:30}}</a>
+                                            </td>
+                                            <td>{{ task.client.client_name|default:"-" }}</td>
+                                            <td>{{ task.get_service_type_display|default:"-" }}</td>
+                                            <td>
+                                                {% if task.due_date %}
+                                                    <span
+                                                            class="{% if task.due_date < today %}text-danger{% elif task.due_date == today %}text-warning{% else %}text-success{% endif %}">
+                                            {{ task.due_date|date:"M d, Y" }}
+                                        </span>
+                                                {% else %}-{% endif %}
+                                            </td>
+                                             <td>
+                                            {% with task.assignees.all as assignees %}
+                                                <div class="d-flex align-items-center"
+                                                     data-bs-toggle="tooltip"
+                                                     data-bs-placement="top"
+                                                     data-bs-title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+
+                                                    {% for user in assignees|slice:":3" %}
+                                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};">
+                                                            {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+                                                        </div>
+                                                    {% empty %}
+                                                        <span class="text-muted small fst-italic">Unassigned</span>
+                                                    {% endfor %}
+
+                                                    {% if assignees.count > 3 %}
+                                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                             style="width: 28px; height: 28px; font-size: 10px;">
+                                                            +{{ assignees.count|add:"-3" }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endwith %}
+                                        </td>
+
+                                        <td>
+                                        <span class="badge rounded-pill
+                                                {% if task.status == 'Completed' %}bg-success
+                                                {% elif task.status == 'Review' %}bg-warning text-dark
+                                                {% else %}bg-light text-dark border{% endif %}">
+                                            {{ task.status }}
+                                        </span>
+                                        </td>
+
+
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">No tasks found for the
+                                            selected
+                                            due range.
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
