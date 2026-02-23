@@ -177,12 +177,8 @@
         }
 
         @keyframes floatParticle {
-            0%, 100% {
-                transform: translate(0, 0) scale(1);
-            }
-            50% {
-                transform: translate(20px, -20px) scale(1.1);
-            }
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, -20px) scale(1.1); }
         }
 
         /* Tables & Lists */
@@ -231,17 +227,24 @@
             width: 100%;
         }
 
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 1rem;
-            }
+        /* Map Placeholder / Loader */
+        .map-loader {
+            background: #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            color: #64748b;
+        }
 
+        @media (max-width: 768px) {
+            .main-content { padding: 1rem; }
             .pagetitle .d-flex {
                 flex-direction: column;
                 align-items: flex-start !important;
                 gap: 1rem;
             }
-
             .header-actions {
                 width: 100%;
                 justify-content: space-between;
@@ -261,8 +264,8 @@
                     </ol>
                 </nav>
             </div>
-
         </div>
+
         <div class="header-actions d-flex gap-2 mb-4">
             <div class="bg-white border rounded-pill px-3 py-2 d-flex align-items-center shadow-sm">
                 <i class="bi bi-calendar3 me-2 text-primary"></i>
@@ -272,8 +275,9 @@
                 <i class="bi bi-plus-lg me-1"></i> New Task
             </a>
         </div>
+
         <section class="section dashboard">
-            <!-- Row 1: Summary Statistics (Clickable with Gradients) -->
+            <!-- Row 1: Summary Statistics -->
             <div class="row g-4 mb-4">
                 <div class="col-12 col-md-6 col-xl-3">
                     <div class="card h-100 border-start border-4 border-primary card-stats-indigo">
@@ -284,8 +288,7 @@
                                 <div class="stat-icon bg-indigo-light"><i class="bi bi-list-task"></i></div>
                                 <div class="ms-3">
                                     <h3 class="mb-0 fw-bold">{{ pending_tasks }}</h3>
-                                    <p class="text-success small mb-0 fw-bold">{{ my_actions_count }} <span
-                                            class="text-muted fw-normal">pending for me</span></p>
+                                    <p class="text-success small mb-0 fw-bold">{{ my_actions_count }} <span class="text-muted fw-normal">pending for me</span></p>
                                 </div>
                             </div>
                         </div>
@@ -301,8 +304,7 @@
                                 <div class="stat-icon bg-emerald-light"><i class="bi bi-currency-rupee"></i></div>
                                 <div class="ms-3">
                                     <h3 class="mb-0 fw-bold">₹{{ total_paid|floatformat:0 }}</h3>
-                                    <p class="text-danger small mb-0 fw-bold">₹{{ total_billed|floatformat:0 }} <span
-                                            class="text-muted fw-normal">unpaid</span></p>
+                                    <p class="text-danger small mb-0 fw-bold">₹{{ total_billed|floatformat:0 }} <span class="text-muted fw-normal">unpaid</span></p>
                                 </div>
                             </div>
                         </div>
@@ -318,8 +320,7 @@
                                 <div class="stat-icon bg-amber-light"><i class="bi bi-people"></i></div>
                                 <div class="ms-3">
                                     <h3 class="mb-0 fw-bold">{{ total_clients }}</h3>
-                                    <p class="text-success small mb-0 fw-bold">+{{ new_clients }} <span
-                                            class="text-muted fw-normal">this month</span></p>
+                                    <p class="text-success small mb-0 fw-bold">+{{ new_clients }} <span class="text-muted fw-normal">this month</span></p>
                                 </div>
                             </div>
                         </div>
@@ -347,7 +348,6 @@
             <div class="row g-4 mb-4">
                 <div class="col-12 col-lg-4">
                     <div class="card h-100 attendance-gradient border-0 shadow-lg">
-                        <!-- Background Particles -->
                         <div class="particle p-1"></div>
                         <div class="particle p-2"></div>
                         <div class="particle p-3"></div>
@@ -358,31 +358,23 @@
                             {% if attendance and attendance.clock_in and not attendance.clock_out %}
                                 <div class="mb-3">
                                     <h1 class="display-5 fw-bold mb-0" id="liveTimer">00:00:00</h1>
-                                    <p class="small text-muted mb-4">Clocked in
-                                        at {{ attendance.clock_in|date:"h:i A" }}</p>
+                                    <p class="small text-muted mb-4">Clocked in at {{ attendance.clock_in|date:"h:i A" }}</p>
                                 </div>
                                 {% if attendance.location_name %}
-                                    <p class="small mb-4"><i
-                                            class="bi bi-geo-alt me-1"></i> {{ attendance.location_name|truncatechars:40 }}
-                                    </p>
+                                    <p class="small mb-4"><i class="bi bi-geo-alt me-1"></i> {{ attendance.location_name|truncatechars:40 }}</p>
                                 {% endif %}
-                                <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm"
-                                        data-bs-toggle="modal" data-bs-target="#clockOutModal">
+                                <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#clockOutModal">
                                     <i class="bi bi-box-arrow-right me-1"></i> Clock Out
                                 </button>
                             {% elif attendance and attendance.clock_out %}
-                                <div class="stat-icon bg-white text-success mx-auto mb-3" style="font-size: 2rem;"><i
-                                        class="bi bi-check2-circle"></i></div>
+                                <div class="stat-icon bg-white text-success mx-auto mb-3" style="font-size: 2rem;"><i class="bi bi-check2-circle"></i></div>
                                 <h4 class="fw-bold mb-1">Shift Completed</h4>
                                 <p class="text-muted mb-4">Total Time: {{ attendance.formatted_duration }}</p>
-                                <a href="{% url 'attendance_logs' %}"
-                                   class="btn btn-outline-light w-100 rounded-pill py-2">View Logs</a>
+                                <a href="{% url 'attendance_logs' %}" class="btn btn-outline-light w-100 rounded-pill py-2">View Logs</a>
                             {% else %}
-                                <div class="stat-icon bg-white bg-opacity-25 mx-auto mb-3" style="font-size: 2rem;"><i
-                                        class="bi bi-clock-history"></i></div>
+                                <div class="stat-icon bg-white bg-opacity-25 mx-auto mb-3" style="font-size: 2rem;"><i class="bi bi-clock-history"></i></div>
                                 <h4 class="fw-bold mb-4">Ready to Start?</h4>
-                                <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm"
-                                        data-bs-toggle="modal" data-bs-target="#clockInModal">
+                                <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#clockInModal">
                                     <i class="bi bi-box-arrow-in-right me-1"></i> Clock In Now
                                 </button>
                             {% endif %}
@@ -409,7 +401,7 @@
                 </div>
             </div>
 
-            <!-- Row 3: Action Required & Leaderboard -->
+            <!-- Row 3: Action Required -->
             <div class="row g-4 mb-4" id="actions-section">
                 <div class="col-12 col-xl-8">
                     <div class="card h-100">
@@ -422,29 +414,22 @@
                                 {% for item in my_actionable_items %}
                                     <div class="list-group-item px-0 py-3 border-bottom d-flex align-items-center justify-content-between">
                                         <div class="d-flex align-items-center">
-                                            <div class="stat-icon bg-amber-light text-warning me-3"
-                                                 style="width:40px; height:40px; font-size:1rem;">
+                                            <div class="stat-icon bg-amber-light text-warning me-3" style="width:40px; height:40px; font-size:1rem;">
                                                 <i class="bi bi-journal-check"></i>
                                             </div>
                                             <div>
                                                 <h6 class="mb-0 fw-bold">{{ item.task.task_title }}</h6>
                                                 <p class="mb-0 small text-muted">
-                                                    <span class="fw-bold text-indigo">{{ item.status_context }}</span>
-                                                    &bull; {{ item.task.client.client_name }}
+                                                    <span class="fw-bold text-indigo">{{ item.status_context }}</span> &bull; {{ item.task.client.client_name }}
                                                 </p>
-                                                <small class="text-danger fw-bold mt-1 d-block"><i
-                                                        class="bi bi-clock me-1"></i>Due {{ item.task.due_date|date:"M d" }}
-                                                </small>
+                                                <small class="text-danger fw-bold mt-1 d-block"><i class="bi bi-clock me-1"></i>Due {{ item.task.due_date|date:"M d" }}</small>
                                             </div>
                                         </div>
-                                        <a href="{% url 'task_detail' item.task.id %}"
-                                           class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">Start
-                                            Step</a>
+                                        <a href="{% url 'task_detail' item.task.id %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">Start Step</a>
                                     </div>
                                 {% empty %}
                                     <div class="text-center py-5">
-                                        <img src="https://cdn-icons-png.flaticon.com/512/4436/4436481.png" width="80"
-                                             class="mb-3 opacity-25" alt="Empty">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/4436/4436481.png" width="80" class="mb-3 opacity-25" alt="Empty">
                                         <h6 class="text-muted fw-bold">Great work! You're all caught up.</h6>
                                     </div>
                                 {% endfor %}
@@ -461,8 +446,7 @@
                                 {% for solver in top_solvers %}
                                     <div class="d-flex align-items-center justify-content-between mb-4">
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-item border-0 me-3"
-                                                 style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
+                                            <div class="avatar-item border-0 me-3" style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
                                                 {{ solver.first_name|slice:":1"|upper }}
                                             </div>
                                             <div>
@@ -478,174 +462,48 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Row 4: Recent Activity -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Recent Activity <span>| Latest 6 Tasks</span></h5>
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead>
-                                    <tr>
-                                        <th>Task Details</th>
-                                        <th>Client</th>
-                                        <th>Team Assigned</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for task in recent_tasks %}
-                                        <tr>
-                                            <td>
-                                                <div class="fw-bold">{{ task.task_title }}</div>
-                                                <small class="text-muted">{{ task.service_type }}</small>
-                                            </td>
-                                            <td>{{ task.client.client_name }}</td>
-                                            <td>
-                                                <div class="avatar-stack">
-                                                    {% for u in task.assignees.all|slice:":3" %}
-                                                        <div class="avatar-item"
-                                                             title="{{ u.username }}">{{ u.first_name|slice:":1"|upper }}</div>
-                                                    {% endfor %}
-                                                    {% if task.assignees.count > 3 %}
-                                                        <div class="avatar-item bg-light text-dark">
-                                                            +{{ task.assignees.count|add:"-3" }}</div>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                            <td>
-                                                {% if task.status == 'Completed' %}
-                                                    <span class="badge badge-soft-success rounded-pill px-3">Completed</span>
-                                                {% elif task.status == 'Review' %}
-                                                    <span class="badge badge-soft-warning rounded-pill px-3">Review</span>
-                                                {% else %}
-                                                    <span class="badge bg-light text-dark border rounded-pill px-3">{{ task.status }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td><a href="{% url 'task_detail' task.id %}"
-                                                   class="btn btn-light btn-sm rounded-circle shadow-sm"><i
-                                                    class="bi bi-eye"></i></a></td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Row 5: Due Tasks Module -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-md-flex justify-content-between align-items-center mb-4 gap-3">
-                                <div class="d-flex align-items-center">
-                                    <h5 class="card-title mb-0 me-3">Due Tasks Timeline</h5>
-                                    <span class="badge bg-indigo-light text-primary rounded-pill px-3 py-2"
-                                          id="rangeBadge">
-                                        {{ due_range|title }} Tasks
-                                    </span>
-                                </div>
-                                <div class="dropdown">
-                                    <button class="btn btn-white border rounded-pill dropdown-toggle px-4 fw-bold shadow-sm"
-                                            type="button" data-bs-toggle="dropdown">
-                                        <i class="bi bi-filter me-1"></i> Filter Range
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2 rounded-4">
-                                        <li><a class="dropdown-item rounded-3" href="?due_range=overdue">Overdue</a>
-                                        </li>
-                                        <li><a class="dropdown-item rounded-3" href="?due_range=today">Due Today</a>
-                                        </li>
-                                        <li><a class="dropdown-item rounded-3" href="?due_range=tomorrow">Tomorrow</a>
-                                        </li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li><a class="dropdown-item rounded-3" href="?due_range=7days">Next 7 Days</a>
-                                        </li>
-                                        <li><a class="dropdown-item rounded-3" href="?due_range=30days">Next 30 Days</a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle">
-                                    <thead>
-                                    <tr>
-                                        <th>Task Name</th>
-                                        <th>Service</th>
-                                        <th>Client</th>
-                                        <th>Deadline</th>
-                                        <th>Priority</th>
-                                        <th>Status</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="dueTasksBody">
-                                    {% for task in due_tasks %}
-                                        <tr>
-                                            <td class="fw-bold"><a href="{% url 'task_detail' task.id %}"
-                                                                   class="text-decoration-none text-dark">{{ task.task_title|truncatechars:35 }}</a>
-                                            </td>
-                                            <td>{{ task.get_service_type_display }}</td>
-                                            <td>{{ task.client.client_name }}</td>
-                                            <td>
-                                                    <span class="{% if task.due_date < today %}text-danger fw-bold{% elif task.due_date == today %}text-warning fw-bold{% else %}text-muted{% endif %}">
-                                                        {{ task.due_date|date:"M d, Y" }}
-                                                    </span>
-                                            </td>
-                                            <td>
-                                                    <span class="badge {% if task.priority == 'High' %}bg-danger{% elif task.priority == 'Medium' %}bg-warning{% else %}bg-info{% endif %} rounded-pill px-2">
-                                                        {{ task.priority }}
-                                                    </span>
-                                            </td>
-                                            <td><span class="badge bg-light text-dark border">{{ task.status }}</span>
-                                            </td>
-                                        </tr>
-                                    {% empty %}
-                                        <tr>
-                                            <td colspan="6" class="text-center py-5 text-muted">No tasks found for this
-                                                time range.
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </section>
     </main>
 
-    <!-- Attendance Modals -->
+    <!-- Enhanced Attendance Modals -->
     <div class="modal fade" id="clockInModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg rounded-4">
-                <form method="post" action="{% url 'clock_in' %}">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <form method="post" action="{% url 'clock_in' %}" id="clockInForm">
                     {% csrf_token %}
                     <input type="hidden" name="lat" id="clockin-lat">
                     <input type="hidden" name="long" id="clockin-long">
                     <input type="hidden" name="location_name" id="clockin-location">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title fw-bold">Clock In</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+                    <div class="modal-header bg-primary text-white border-0">
+                        <h5 class="modal-title fw-bold">Workday Clock In</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body text-center">
-                        <p class="text-muted mb-3"><i class="bi bi-calendar-check me-2"></i> {{ today|date:"l, d M Y" }}
-                        </p>
-                        <div id="clockInMap" class="rounded-4 mb-3 border" style="height: 250px;"></div>
-                        <p class="small text-muted">Location will be verified automatically.</p>
+
+                    <div class="modal-body p-4 text-center">
+                        <div class="d-flex align-items-center justify-content-center mb-4">
+                            <div class="stat-icon bg-indigo-light me-3"><i class="bi bi-geo-alt"></i></div>
+                            <div class="text-start">
+                                <h6 class="mb-0 fw-bold text-dark">{{ today|date:"l, d M Y" }}</h6>
+                                <small class="text-muted" id="clockInStatus">Accessing GPS...</small>
+                            </div>
+                        </div>
+
+                        <div id="clockInMap" class="rounded-4 mb-3 border map-loader" style="height: 250px;">
+                            <div class="spinner-border text-primary mb-2" role="status"></div>
+                            <span class="small">Identifying your location...</span>
+                        </div>
+
+                        <div id="locationErrorMessage" class="alert alert-danger d-none small">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Location access is required to clock in. Please enable GPS and refresh.
+                        </div>
                     </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow">Clock In Now
+
+                    <div class="modal-footer border-0 bg-light p-3">
+                        <button type="button" class="btn btn-link text-secondary text-decoration-none fw-bold" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow" id="btnClockInSubmit" disabled>
+                            Clock In
                         </button>
                     </div>
                 </form>
@@ -655,39 +513,50 @@
 
     <div class="modal fade" id="clockOutModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow-lg rounded-4">
-                <form method="post" action="{% url 'clock_out' %}">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <form method="post" action="{% url 'clock_out' %}" id="clockOutForm">
                     {% csrf_token %}
                     <input type="hidden" name="lat" id="clockout-lat">
                     <input type="hidden" name="long" id="clockout-long">
                     <input type="hidden" name="location_name" id="clockout-location">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title fw-bold">Ready to clock out?</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+                    <div class="modal-header bg-danger text-white border-0">
+                        <h5 class="modal-title fw-bold">End Shift</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
+
+                    <div class="modal-body p-4">
                         <div class="row g-4 align-items-center">
-                            <div class="col-md-6 text-center border-end">
-                                <h6 class="text-muted">Session Duration</h6>
-                                <h1 class="fw-bold text-primary mb-3" id="modalTimer">00:00:00</h1>
-                                <p class="text-muted small">In: {{ attendance.clock_in|date:"h:i A" }}</p>
+                            <div class="col-md-5 text-center border-end py-3">
+                                <h6 class="text-uppercase small fw-bold text-muted mb-2">Shift Duration</h6>
+                                <h1 class="fw-bold text-danger mb-1" id="modalTimer">00:00:00</h1>
+                                <p class="text-muted small">Started at {{ attendance.clock_in|date:"h:i A" }}</p>
+                                <div class="badge bg-light text-dark border p-2 mt-2" id="clockOutStatus">
+                                    <i class="bi bi-info-circle me-1"></i> Checking location...
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <div id="clockOutMap" class="rounded-4 border" style="height: 200px;"></div>
+                            <div class="col-md-7">
+                                <div id="clockOutMap" class="rounded-4 border map-loader" style="height: 220px;">
+                                    <div class="spinner-border text-danger mb-2" role="status"></div>
+                                    <span class="small">Verifying exit point...</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer border-0">
-                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Stay
+
+                    <div class="modal-footer border-0 bg-light p-3">
+                        <button type="button" class="btn btn-link text-secondary text-decoration-none fw-bold" data-bs-dismiss="modal">Resume Work</button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-5 fw-bold shadow" id="btnClockOutSubmit" disabled>
+                            Clock Out Now
                         </button>
-                        <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold shadow">Clock Out</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Initialization Scripts -->
+    <!-- Scripts -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{% static 'js/location-module.js' %}"></script>
@@ -696,59 +565,37 @@
         document.addEventListener('DOMContentLoaded', () => {
             initCharts();
             initAttendance();
-
-            // Tooltips
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
         });
 
         function initCharts() {
             // Task Aging Chart
             const agingChart = echarts.init(document.getElementById('agingChart'));
             agingChart.setOption({
-                tooltip: {trigger: 'item'},
+                tooltip: { trigger: 'item' },
                 series: [{
                     type: 'pie',
                     radius: ['60%', '85%'],
                     avoidLabelOverlap: false,
-                    itemStyle: {borderRadius: 10, borderColor: '#fff', borderWidth: 2},
-                    label: {show: false},
+                    itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+                    label: { show: false },
                     data: [
-                        {
-                            value: {{ aging_data|get_item:'0-7 Days'|default:0 }},
-                            name: 'Fresh (0-7d)',
-                            itemStyle: {color: '#10b981'}
-                        },
-                        {
-                            value: {{ aging_data|get_item:'8-15 Days'|default:0 }},
-                            name: 'Active (8-15d)',
-                            itemStyle: {color: '#6366f1'}
-                        },
-                        {
-                            value: {{ aging_data|get_item:'15-30 Days'|default:0 }},
-                            name: 'Stale (15-30d)',
-                            itemStyle: {color: '#f59e0b'}
-                        },
-                        {
-                            value: {{ aging_data|get_item:'30+ Days'|default:0 }},
-                            name: 'Critical (30+d)',
-                            itemStyle: {color: '#ef4444'}
-                        }
+                        { value: {{ aging_data|get_item:'0-7 Days'|default:0 }}, name: 'Fresh (0-7d)', itemStyle: { color: '#10b981' } },
+                        { value: {{ aging_data|get_item:'8-15 Days'|default:0 }}, name: 'Active (8-15d)', itemStyle: { color: '#6366f1' } },
+                        { value: {{ aging_data|get_item:'15-30 Days'|default:0 }}, name: 'Stale (15-30d)', itemStyle: { color: '#f59e0b' } },
+                        { value: {{ aging_data|get_item:'30+ Days'|default:0 }}, name: 'Critical (30+d)', itemStyle: { color: '#ef4444' } }
                     ]
                 }]
             });
 
-            // Client Distribution
+            // Client Distribution Chart
             const clientChart = echarts.init(document.getElementById('clientTypeChart'));
             clientChart.setOption({
-                tooltip: {trigger: 'item'},
+                tooltip: { trigger: 'item' },
                 series: [{
                     type: 'pie',
                     radius: '65%',
                     center: ['50%', '50%'],
-                    label: {show: false},
+                    label: { show: false },
                     data: {{ client_distribution_chart_data|safe|default:"[]" }}
                 }]
             });
@@ -762,30 +609,62 @@
         function initAttendance() {
             let inMap, outMap;
 
-            // Clock In Map Initialization
+            // Handle Clock In
             document.getElementById('clockInModal')?.addEventListener('shown.bs.modal', () => {
+                const submitBtn = document.getElementById('btnClockInSubmit');
+                const statusText = document.getElementById('clockInStatus');
+                const errorBox = document.getElementById('locationErrorMessage');
+
+                // Reset State
+                submitBtn.disabled = true;
+                errorBox.classList.add('d-none');
+                statusText.innerText = "Finding your location...";
+
                 LocationModule.loadLocation("clockin-lat", "clockin-long", "clockin-location", (success) => {
                     if (success) {
                         const lat = document.getElementById('clockin-lat').value;
                         const lng = document.getElementById('clockin-long').value;
+
+                        statusText.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> Location Verified</span>';
+                        submitBtn.disabled = false;
+
+                        const mapEl = document.getElementById('clockInMap');
+                        mapEl.innerHTML = ''; // Clear loader
                         if (inMap) inMap.remove();
                         inMap = L.map('clockInMap').setView([lat, lng], 16);
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(inMap);
-                        L.marker([lat, lng]).addTo(inMap).bindPopup("Current Location").openPopup();
+                        L.marker([lat, lng]).addTo(inMap).bindPopup("Clock-in Point").openPopup();
+                    } else {
+                        statusText.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle-fill"></i> Location Failed</span>';
+                        errorBox.classList.remove('d-none');
                     }
                 });
             });
 
-            // Clock Out Map & Details
+            // Handle Clock Out
             document.getElementById('clockOutModal')?.addEventListener('shown.bs.modal', () => {
+                const submitBtn = document.getElementById('btnClockOutSubmit');
+                const statusText = document.getElementById('clockOutStatus');
+
+                submitBtn.disabled = true;
+                statusText.innerHTML = '<div class="spinner-border spinner-border-sm me-1"></div> Locating...';
+
                 LocationModule.loadLocation("clockout-lat", "clockout-long", "clockout-location", (success) => {
                     if (success) {
                         const lat = document.getElementById('clockout-lat').value;
                         const lng = document.getElementById('clockout-long').value;
+
+                        statusText.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> Ready to finish</span>';
+                        submitBtn.disabled = false;
+
+                        const mapEl = document.getElementById('clockOutMap');
+                        mapEl.innerHTML = '';
                         if (outMap) outMap.remove();
                         outMap = L.map('clockOutMap').setView([lat, lng], 16);
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(outMap);
                         L.marker([lat, lng]).addTo(outMap);
+                    } else {
+                        statusText.innerHTML = '<span class="text-danger">Location Error</span>';
                     }
                 });
             });
