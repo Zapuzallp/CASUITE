@@ -100,6 +100,19 @@
             border-bottom: 2px solid #4154f1;
         }
 
+        /* Hide scrollbar for horizontal scrolling tabs */
+        .mobile-scroll-tabs {
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .mobile-scroll-tabs::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+
         /* Mobile responsive tables */
         @media (max-width: 768px) {
             .table-responsive {
@@ -246,7 +259,8 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body pt-3">
 
-                    <ul class="nav nav-tabs nav-tabs-bordered w-100 mb-4" style="flex-wrap: nowrap; overflow-x: auto;">
+                    <!-- Updated Tab Navigation with hidden scrollbar class -->
+                    <ul class="nav nav-tabs nav-tabs-bordered w-100 mb-4 mobile-scroll-tabs">
                         <li class="nav-item">
                             <button class="nav-link active fw-bold" data-bs-toggle="tab"
                                     data-bs-target="#profile-overview" style="white-space: nowrap;">
