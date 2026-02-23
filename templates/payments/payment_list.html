@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block body %}
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Payments</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+        <li class="breadcrumb-item active">Payments</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+
+        <!-- ACCORDION FILTER SECTION -->
+        <div class="accordion mb-4" id="paymentFilterAccordion">
+            <div class="accordion-item border-0 shadow-sm">
+                <h2 class="accordion-header">
+                    <button class="accordion-button {% if not has_filters %}collapsed{% endif %} bg-white text-primary fw-bold"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#paymentFilter"
+                    aria-expanded="{% if has_filters %}true{% else %}false{% endif %}">
+                        <i class="bi bi-funnel-fill me-2"></i> Filter Payments
+                    </button>
+                </h2>
+
+                <div class="accordion-collapse collapse {% if has_filters %}show{% endif %}" id="paymentFilter">
+                    <div class="accordion-body bg-light border rounded-3 p-3">
+                        <form method="get">
+                            <div class="row g-3">
+                                <! -- SEARCH -->
+                                <div class="col-md-4">
+                                    <label class="form-label small text-secondary fw-semibold">Search</label>
+                                    <input class="form-control" name="q" placeholder="Invoice ID or Client name" type="text" value="{{ q }}">
+                                </div>
+                                <!-- PAYMENT STATUS -->
+                                <div class="col-md-3">
+                                    <label class="form-label small text-secondary fw-semibold">Payment Status</label>
+                                    <select class="form-select" name="payment_status">
+                                        <option value="">All</option>
+                                        <option value="PAID" {% if payment_status == "PAID" %}selected{% endif %}>Paid</option>
+                                        <option value="PENDING" {% if payment_status == "PENDING" %}selected{% endif %}>Pending</option>
+                                        <option value="CANCELED" {% if payment_status == "CANCELED" %}selected{% endif %}>Canceled</option>
+                                    </select>
+                                </div>
+                                <!-- APPROVAL STATUS -->
+                                <div class="col-md-3">
+                                    <label class="form-label small text-secondary fw-semibold">Approval Status</label>
+                                    <select class="form-select" name="approval_status">
+                                        <option value="">All</option>
+                                        <option value="APPROVED" {% if approval_status == "APPROVED" %}selected{% endif %}>Approved</option>
+                                        <option value="PENDING" {% if approval_status == "PENDING" %}selected{% endif %}>Pending</option>
+                                        <option value="REJECTED" {% if approval_status == "REJECTED" %}selected{% endif %}>Rejected</option>
+                                    </select>
+                                </div>
+                                <!-- CLIENT FILTER -->
+                                <div class="col-md-4">
+                                    <label class="form-label small text-secondary fw-semibold">Client</label>
+                                    <select class="form-select" name="client_id" id="clientFilter">
+                                        <option value="">All clients</option>
+                                        {% for client in clients %}
+                                        <option value="{{ client.id }}" {% if client_id|stringformat:"s" == client.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ client.client_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <!-- PAYMENT DATE RANGE -->
+                                <div class="col-md-6">
+                                    <label class="form-label small text-secondary fw-semibold">Payment Date</label>
+                                    <div class="input-group">
+                                        <input type="date" class="form-control" name="date_from" value="{{ date_from }}">
+                                        <span class="input-group-text">to</span>
+                                        <input type="date" class="form-control" name="date_to" value="{{ date_to }}">
+                                    </div>
+                                </div>
+                                <!-- ACTION BUTTONS -->
+                                <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                                    <button class="btn btn-primary px-4" type="submit"><i class="bi bi-search me-1"></i> Apply</button>
+                                    <a class="btn btn-outline-secondary px-4" href="{% url 'payment_list' %}"><i class="bi bi-x-circle me-1"></i> Clear</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center my-3">
+                    <div>
+                        <h5 class="card-title m-0">Payments</h5>
+                        <small class="text-muted">
+                            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ paginator.count }} payments
+                        </small>
+                    </div>
+                    <button class="btn btn-primary btn-sm" data-bs-target="#selectInvoiceModal" data-bs-toggle="modal">
+                        <i class="bi bi-plus-circle me-1"></i> Collect Payment
+                    </button>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-info-circle me-1"></i> {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST" action="{% url 'bulk_payment_action' %}" id="bulkForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" id="bulkActionInput">
+                  {% if show_bulk_actions %}
+                    <div class="d-flex align-items-center mb-3 p-2 bg-light rounded gap-2">
+                        <span class="fw-bold me-2">Bulk Actions:</span>
+
+                        <button type="button" class="btn btn-success btn-sm" onclick="triggerBulkConfirm('approve')">
+                            <i class="bi bi-check-all me-1"></i> Approve Selected
+                        </button>
+
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="triggerBulkConfirm('reject')">
+                            <i class="bi bi-x-circle me-1"></i> Reject Selected
+                        </button>
+                    </div>
+                  {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    {% if show_bulk_actions %}
+                                    <th scope="col" style="width: 40px;">
+                                        <input type="checkbox" class="form-check-input" id="selectAll">
+                                    </th>
+                                    {% endif %}
+                                    <th>SN</th>
+                                    <th>Invoice</th>
+                                    <th>Client</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if payments %}
+                                    {% for payment in payments %}
+                                    <tr>
+                                        {% if show_bulk_actions %}
+                                        <td>
+                                            {% if payment.approval_status == 'PENDING' %}
+                                                <input type="checkbox" name="payment_ids" value="{{ payment.id }}" class="form-check-input payment-checkbox">
+                                            {% else %}
+                                                <input type="checkbox" disabled class="form-check-input" title="Already processed">
+                                            {% endif %}
+                                        </td>
+                                        {% endif %}
+                                        <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+
+                                        <td><a href="{% url 'payment_detail' payment.id %}"><strong>#{{ payment.invoice.id }}</strong></a></td>
+
+                                        <td>{{ payment.invoice.client.client_name }}</td>
+
+                                        <td>₹{{ payment.amount|intcomma }}</td>
+
+                                        <td>{{ payment.get_payment_method_display }}</td>
+
+                                        <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+
+                                        <td>
+                                            {% if payment.approval_status == 'REJECTED' %}
+                                                <span class="badge bg-danger">Rejected</span>
+                                            {% elif payment.payment_status == 'CANCELED' %}
+                                                <span class="badge bg-secondary">Canceled</span>
+                                            {% elif payment.approval_status == 'APPROVED' %}
+                                                <span class="badge bg-success">Approved</span>
+                                            {% else %}
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            <a class="btn btn-sm btn-outline-primary" href="{% url 'payment_detail' payment.id %}" title="View Details">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr><td colspan="9" class="text-center text-muted">No payments found.</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+                {% if is_paginated %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-end">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; Previous</a>
+                        </li>
+                        {% endif %}
+                        <li class="page-item active">
+                            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next &raquo;</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= SELECT INVOICE MODAL ================= -->
+<div class="modal fade" id="selectInvoiceModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Select Invoice to Collect Payment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label text-muted small">Search by invoice ID or Client Name</label>
+        <select id="invoicePicker" class="form-select" style="width:100%">
+          <option></option>
+          {% for inv in invoices %}
+            <option value="{{ inv.id }}">#{{ inv.id }} — {{ inv.client.client_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="btnProceedCollect" class="btn btn-primary" disabled>Proceed</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= BULK ACTION MODAL ================= -->
+<div class="modal fade" id="bulkActionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header" id="bulkActionHeader">
+          <h5 class="modal-title fw-bold" id="bulkModalTitle">Confirm Action</h5>
+          <button type="button" class="btn-close" id="bulkModalClose" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p id="bulkModalMessage">Are you sure?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="btnConfirmBulkAction">Yes, Continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="modal fade" id="noSelectionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title fw-bold">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i> No Selection
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center py-4">
+          <p class="fs-6 text-secondary mb-0">Please select at least one payment to perform this action.</p>
+        </div>
+        <div class="modal-footer border-0 justify-content-center pb-4">
+          <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">OK, Got it</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* ---------- Invoice search ---------- */
+    $('#invoicePicker').select2({
+        theme: 'bootstrap-5',
+        dropdownParent: $('#selectInvoiceModal'),
+        placeholder: 'Search invoice or client',
+        allowClear: true,
+        width: '100%'
+    });
+
+    /* -----------client filter --------*/
+    $('#clientFilter').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Select client',
+        allowClear: true,
+        width: '100%'
+    });
+
+
+    // Invoice Picker Proceed Logic
+    $('#invoicePicker').on('change', function () {
+        document.getElementById('btnProceedCollect').disabled = !this.value;
+    });
+
+    document.getElementById('btnProceedCollect').onclick = function () {
+        const id = $('#invoicePicker').val();
+        if (id) window.location.href = `/payment/${id}/collect/`;
+    };
+
+    // "Select All" Checkbox Logic
+    const selectAll = document.getElementById('selectAll');
+    if(selectAll){
+        selectAll.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.payment-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+    }
+});
+
+// Trigger Bulk Confirmation Modal
+function triggerBulkConfirm(actionType) {
+    // Count checked boxes
+    const checkboxes = document.querySelectorAll('.payment-checkbox:checked');
+    const count = checkboxes.length;
+
+    if (count === 0) {
+        // Show Bootstrap modal instead of alert
+        const noSelModal = new bootstrap.Modal(document.getElementById('noSelectionModal'));
+        noSelModal.show();
+        return;
+    }
+
+    // Set Modal Content
+    const header = document.getElementById('bulkActionHeader');
+    const closeBtn = document.getElementById('bulkModalClose');
+    const title = document.getElementById('bulkModalTitle');
+    const msg = document.getElementById('bulkModalMessage');
+    const confirmBtn = document.getElementById('btnConfirmBulkAction');
+    const formInput = document.getElementById('bulkActionInput');
+    const modalEl = document.getElementById('bulkActionModal');
+
+    // Store action in hidden input
+    formInput.value = actionType;
+
+    header.className = 'modal-header';
+    closeBtn.className = 'btn-close';
+
+    if (actionType === 'approve') {
+        header.className = 'modal-header bg-success text-white';
+        closeBtn.className = 'btn-close btn-close-white';
+        title.innerText = "Approve Payments";
+        msg.innerHTML = `Are you sure you want to <strong>APPROVE</strong> ${count} selected payment(s)?`;
+        confirmBtn.className = "btn btn-success px-4 text-white";
+        confirmBtn.innerText = "Yes, Approve";
+    } else {
+        header.className = 'modal-header bg-danger text-white';
+        closeBtn.className = 'btn-close btn-close-white';
+        title.innerText = "Reject Payments";
+        msg.innerHTML = `Are you sure you want to <strong>REJECT</strong> ${count} selected payment(s)? <br><small class='text-danger'>This will mark them as Canceled.</small>`;
+        confirmBtn.className = "btn btn-danger px-4 text-white";
+        confirmBtn.innerText = "Yes, Reject";
+    }
+
+    // Show Modal
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+
+    // Handle "Yes" click
+    confirmBtn.onclick = function() {
+        document.getElementById('bulkForm').submit();
+    };
+}
+</script>
+{% endblock body %}

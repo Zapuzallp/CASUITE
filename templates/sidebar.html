@@ -1,12 +1,321 @@
+{% load sidebar_tags %}
+<style>
+    /* Compact White Sidebar Styles */
+    .sidebar {
+        background: #ffffff;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+        border-right: 1px solid #e9ecef;
+    }
+
+    .sidebar-nav {
+        padding: 0.5rem 0;
+    }
+
+    .sidebar-nav .nav-item {
+        margin-bottom: 0.25rem;
+    }
+
+    .sidebar-nav .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1.25rem;
+        color: #6c757d;
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        border-left: 3px solid transparent;
+        margin: 0.1rem 0.75rem;
+        border-radius: 8px;
+    }
+
+    .sidebar-nav .nav-link i {
+        font-size: 1.1rem;
+        margin-right: 0.75rem;
+        transition: all 0.2s ease;
+        color: #6c757d;
+    }
+
+    .sidebar-nav .nav-link:hover {
+        background: #f8f9fa;
+        color: #667eea;
+        transform: translateX(3px);
+        border-left-color: #667eea;
+    }
+
+    .sidebar-nav .nav-link:hover i {
+        color: #667eea;
+    }
+
+    .sidebar-nav .nav-link.active {
+        background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+        color: #667eea;
+        border-left-color: #667eea;
+        font-weight: 600;
+    }
+
+    .sidebar-nav .nav-link.active i {
+        color: #667eea;
+    }
+
+    /* Sidebar Header */
+    .sidebar-header {
+        padding: 1rem 1.25rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        margin-bottom: 0.5rem;
+    }
+
+    .sidebar-header h6 {
+        color: #495057;
+        font-weight: 700;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.75rem;
+    }
+
+    /* Nav Section Headers */
+    .nav-heading {
+        color: #adb5bd;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.75rem 1.25rem 0.25rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Badge for notifications */
+    .nav-badge {
+        background: #dc3545;
+        color: white;
+        padding: 0.15rem 0.4rem;
+        border-radius: 12px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        margin-left: auto;
+    }
+
+    /* Scrollbar */
+    .sidebar-nav::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-track {
+        background: #f8f9fa;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-thumb {
+        background: #dee2e6;
+        border-radius: 10px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-thumb:hover {
+        background: #adb5bd;
+    }
+
+    /* Submenu styles */
+    .nav-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.25s ease;
+        background: #f8f9fa;
+        border-radius: 6px;
+        margin: 0 0.75rem;
+    }
+
+    .nav-content.show {
+        max-height: 400px;
+    }
+
+    .nav-content .nav-link {
+        padding: 0.6rem 1rem 0.6rem 3rem;
+        font-size: 0.875rem;
+    }
+
+    /* Dropdown arrow */
+    .nav-link.has-dropdown::after {
+        content: '\F282';
+        font-family: 'bootstrap-icons';
+        margin-left: auto;
+        transition: transform 0.2s ease;
+        font-size: 0.75rem;
+    }
+
+    .nav-link.has-dropdown.collapsed::after {
+        transform: rotate(-90deg);
+    }
+</style>
+
 <aside id="sidebar" class="sidebar">
-
     <ul class="sidebar-nav" id="sidebar-nav">
-
         <li class="nav-item">
-            <a class="nav-link" href={% url "dashboard" %}>
-                <i class="bi bi-grid"></i>
+            <a class="nav-link" href="{% url 'dashboard' %}">
+                <i class="bi bi-speedometer2"></i>
                 <span>Dashboard</span>
             </a>
         </li>
+
+        <li class="nav-heading">Client Management</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'clients' %}">
+                <i class="bi bi-people"></i>
+                <span>All Clients</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'onboard_client' %}">
+                <i class="bi bi-person-plus"></i>
+                <span>Onboard New Client</span>
+            </a>
+        </li>
+
+        <li class="nav-heading">Lead Management</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'lead_list' %}">
+                <i class="bi bi-funnel"></i>
+                <span>All Leads</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'add_lead' %}">
+                <i class="bi bi-plus-circle"></i>
+                <span>Add New Lead</span>
+            </a>
+        </li>
+
+        <li class="nav-heading">Operations</li>
+
+        {% get_sidebar_counts as sidebar_counts %}
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'task_list' %}">
+                <i class="bi bi-list-check"></i>
+                <span>All Tasks</span>
+                {% if sidebar_counts.pending_tasks %}
+                    <span class="nav-badge">{{ sidebar_counts.pending_tasks }}</span>
+                {% endif %}
+            </a>
+        </li>
+
+
+        <li class="nav-heading">Documents</li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Document Requests</span>
+                {% if sidebar_counts.pending_documents %}
+                    <span class="nav-badge">{{ sidebar_counts.pending_documents }}</span>
+                {% endif %}
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-cloud-upload"></i>
+                <span>Recent Uploads</span>
+            </a>
+        </li>
+
+        {% if request.user.is_superuser %}
+        <li class="nav-heading">Attendance Report</li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin_attendance_report' %}">
+                <i class="bi bi-person-check"></i>
+                <span>Attendance Report</span>
+            </a>
+        </li>
+        {% endif %}
+
+
+
+        <li class="nav-heading ">Accounts</li>
+        <li class="nav-item" >
+            <a class="nav-link"  href="{% url 'invoice_list' %}"">
+                <i class="bi bi-view-list" ></i> <span>All Invoices</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'list_services' %}">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>List Services</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'payment_list' %}">
+                <i class="bi bi-currency-rupee"></i>
+                <span>List Payments</span>
+            </a>
+        <li class="nav-heading">HR</li>
+
+
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'leave-apply' %}">
+                <i class="bi bi-calendar-check"></i>
+                <span>Apply Leave</span>
+            </a>
+        </li>
+
+        {% if request.user.employee.role == "BRANCH_MANAGER" or request.user.employee.role == "ADMIN" or request.user.is_superuser %}
+        <li class="nav-item">
+        <a class="nav-link " href="{% url 'manage-leaves' %}">
+            <i class="bi bi-clipboard-check"></i>
+            <span>Manage Leaves</span>
+        {% if total_pending > 0 %}
+        <span class="badge bg-danger rounded-pill">{{ total_pending }}</span>
+        {% endif %}
+        </a>
+        </li>
+        {% endif %}
+
+
+        <li class="nav-heading">System</li>
+
+         <li class="nav-item">
+            <a class="nav-link" href="{% url 'chat_base' %}">
+                <i class="fa-regular fa-comment-dots"></i>
+                <span>Messages</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'logout' %}">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+        </li>
     </ul>
-</aside><!-- End Sidebar-->
+</aside>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.sidebar-nav .nav-link:not(.has-dropdown)');
+
+        navLinks.forEach(link => {
+            // Check if href matches current path (handling trailing slashes)
+            let href = link.getAttribute('href');
+            if (href && href !== '#') {
+                if (currentPath === href || currentPath.startsWith(href) && href !== '/') {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                }
+            }
+        });
+    });
+</script>

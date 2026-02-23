@@ -1,0 +1,77 @@
+<form method="post" enctype="multipart/form-data" class="row g-3" id="businessStructureDetailsForm">
+    {% csrf_token %}
+    <input type="hidden" name="business_structure" value="HUF">
+
+    <h6 class="card-title mb-3">HUF (Hindu Undivided Family) Details <small class="text-muted">(<span class="text-danger">*</span> indicates required field)</small></h6>
+
+    <div class="col-md-6">
+        <label for="{{ form.huf_name.id_for_label }}" class="form-label">HUF Name <span class="text-danger">*</span></label>
+        {{ form.huf_name }}
+        <div class="invalid-feedback" id="huf_name_error"></div>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.pan_huf.id_for_label }}" class="form-label">HUF PAN Number <span class="text-danger">*</span></label>
+        {{ form.pan_huf }}
+        <div class="invalid-feedback" id="pan_huf_error"></div>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.date_of_creation.id_for_label }}" class="form-label">Date of Creation <span class="text-danger">*</span></label>
+        {{ form.date_of_creation }}
+        <div class="invalid-feedback" id="date_of_creation_error"></div>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.karta_name.id_for_label }}" class="form-label">Karta Name <span class="text-danger">*</span></label>
+        {{ form.karta_name }}
+        <div class="invalid-feedback" id="karta_name_error"></div>
+        {% if not form.karta_name.field.queryset.exists %}
+            <div class="text-warning small">No individual clients available. Please create an individual client first.</div>
+        {% endif %}
+        <small class="form-text text-muted">Select Karta from existing individual clients</small>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.number_of_coparceners.id_for_label }}" class="form-label">Number of Coparceners <span class="text-danger">*</span></label>
+        {{ form.number_of_coparceners }}
+        <div class="invalid-feedback" id="number_of_coparceners_error"></div>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.number_of_members.id_for_label }}" class="form-label">Number of Members <span class="text-danger">*</span></label>
+        {{ form.number_of_members }}
+        <div class="invalid-feedback" id="number_of_members_error"></div>
+    </div>
+
+    <div class="col-12">
+        <label for="{{ form.residential_address.id_for_label }}" class="form-label">Residential Address <span class="text-danger">*</span></label>
+        {{ form.residential_address }}
+        <div class="invalid-feedback" id="residential_address_error"></div>
+    </div>
+
+    <div class="col-12">
+        <label for="{{ form.business_activity.id_for_label }}" class="form-label">Business Activity <span class="text-danger">*</span></label>
+        {{ form.business_activity }}
+        <div class="invalid-feedback" id="business_activity_error"></div>
+    </div>
+
+    <div class="col-12">
+        <label for="{{ form.bank_account_details.id_for_label }}" class="form-label">Bank Account Details (JSON)</label>
+        {{ form.bank_account_details }}
+        <div class="invalid-feedback" id="bank_account_details_error"></div>
+        <small class="form-text text-muted">Enter bank details in JSON format: {"bank_name": "", "account_number": "", "ifsc_code": ""}</small>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.deed_of_declaration_file.id_for_label }}" class="form-label">Deed of Declaration File</label>
+        {{ form.deed_of_declaration_file }}
+        <div class="invalid-feedback" id="deed_of_declaration_file_error"></div>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.remarks.id_for_label }}" class="form-label">Remarks</label>
+        {{ form.remarks }}
+        <div class="invalid-feedback" id="remarks_error"></div>
+    </div>
+</form>

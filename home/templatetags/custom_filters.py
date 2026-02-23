@@ -10,3 +10,7 @@ def timestamp_to_date(value):
         return datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
     except ValueError:
         return value
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)

@@ -1,0 +1,2 @@
+class ClientListView:
+    pass

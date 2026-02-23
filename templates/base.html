@@ -11,6 +11,10 @@
     <meta content="" name="keywords">
 
 
+    <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
+
+    <link href="{% static 'assets/css/searchbar.css' %}" rel="stylesheet">
+
     <!-- Favicons -->
     <link href={% static "assets/img/favicon.ico" %}rel="icon">
     <link href={% static "assets/img/apple-touch-icon.png" %} rel="apple-touch-icon">
@@ -21,6 +25,10 @@
           rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Select2 Bootstrap 5 theme (optional but recommended) -->
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <!-- Vendor CSS Files -->
     <link href={% static "assets/vendor/bootstrap/css/bootstrap.min.css" %} rel="stylesheet">
     <link href={% static "assets/vendor/bootstrap-icons/bootstrap-icons.css" %} rel="stylesheet">
@@ -29,10 +37,11 @@
     <link href={% static "assets/vendor/quill/quill.bubble.css" %}rel="stylesheet">
     <link href={% static "assets/vendor/remixicon/remixicon.css" %}rel="stylesheet">
     <link href={% static "assets/vendor/simple-datatables/style.css" %} rel="stylesheet">
-    <link href="https://cdn.datatables.net/2.0.7/css/dataTables.dataTables.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/responsive/3.0.2/css/responsive.dataTables.css" rel="stylesheet">
+    <link href={% static "assets/css/client_onboarding.css" %} rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
      crossorigin=""/>
@@ -42,9 +51,10 @@
 
     <!-- Template Main CSS File -->
     <link href={% static "assets/css/style.css" %} rel="stylesheet">
-
+    <style>
+    .text-danger { color: #dc3545; }
+    </style>
 </head>
-
 <body>
 
 {% include 'header.html' %}
@@ -69,6 +79,10 @@
 
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i
         class="bi bi-arrow-up-short"></i></a>
+
+{#<script src="{% static 'assets/js/main.js' %}"></script>#}
+<script src="{% static 'assets/js/searchbar.js' %}"></script>
+
 <!-- Vendor JS Files -->
 <script src={% static "assets/vendor/apexcharts/apexcharts.min.js" %}></script>
 <script src={% static "assets/vendor/bootstrap/js/bootstrap.bundle.min.js" %}></script>
@@ -78,23 +92,88 @@
 <script src={% static "assets/vendor/simple-datatables/simple-datatables.js" %}></script>
 <script src={% static "assets/vendor/tinymce/tinymce.min.js" %}></script>
 <script src={% static "assets/vendor/php-email-form/validate.js" %}></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script src="https://cdn.datatables.net/2.0.7/js/dataTables.js" type="text/javascript"></script>
-<script src="https://cdn.datatables.net/responsive/3.0.2/js/dataTables.responsive.js" type="text/javascript"></script>
-<script src="https://cdn.datatables.net/responsive/3.0.2/js/responsive.dataTables.js" type="text/javascript"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
 <!-- Template Main JS File -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src={% static "assets/js/main.js" %}></script>
 <script>
-    new DataTable('#responsive-table', {
-        responsive: true
+
+    $(document).ready(function () {
+        const datatableClasses = [
+            '.datatable1',
+            '.datatable-export',
+        ];
+
+        datatableClasses.forEach(selector => {
+
+            $(selector).each(function () {
+
+                if ($.fn.DataTable.isDataTable(this)) return;
+
+                $(this).DataTable({
+                    responsive: true,
+                    processing: true,
+
+                    pageLength: 10,
+                    lengthMenu: [
+                        [5, 10, 20, 50, 70, 100, 500, 1000, -1],
+                        [5, 10, 20, 50, 70, 100, 500, 1000, "All"]
+                    ],
+
+                    dom: '<"dt-top"fB>rt<"dt-bottom"lip>',
+
+                    buttons: [
+                        {
+                            extend: 'csv',
+                            text: '<i class="bi bi-file-earmark-spreadsheet"></i>',
+                            className: 'btn btn-xs btn-outline-primary dt-btn'
+                        },
+                        {
+                            extend: 'excel',
+                            text: '<i class="bi bi-file-excel"></i>',
+                            className: 'btn btn-xs btn-outline-success dt-btn'
+                        },
+                        {
+                            extend: 'print',
+                            text: '<i class="bi bi-printer"></i>',
+                            className: 'btn btn-xs btn-outline-secondary dt-btn'
+                        }
+                    ],
+
+                    order: []
+                });
+
+            });
+
+        });
+
     });
+</script>
+
+<script>
     $('.js-example-basic-single').select2(
         {
             dropdownParent: $("#siteVisitModal")
         })
+     $('#clientSelector').select2(
+        {
+            dropdownParent: $("#selectClientModal")
+        })
+
 </script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </body>
 
 </html>

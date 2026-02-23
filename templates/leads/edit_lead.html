@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<main id="main" class="main">
+
+    <div class="pagetitle">
+        <h1>{{ page_title }}</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'lead_list' %}">Leads</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'lead_detail' lead.id %}">{{ lead.lead_name }}</a></li>
+                <li class="breadcrumb-item active">Edit</li>
+            </ol>
+        </nav>
+    </div>
+
+    {% if messages %}
+        <div class="container-fluid p-0">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-info-circle me-1"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+
+    <section class="section">
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Edit Lead Information</h5>
+
+                        <form method="post" class="row g-3">
+                            {% csrf_token %}
+
+                            <!-- Lead Name -->
+                            <div class="col-md-6">
+                                <label for="{{ form.lead_name.id_for_label }}" class="form-label">
+                                    Lead Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.lead_name }}
+                                {% if form.lead_name.errors %}
+                                    <div class="text-danger small">{{ form.lead_name.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Display / business name of the lead</div>
+                            </div>
+
+                            <!-- Full Name -->
+                            <div class="col-md-6">
+                                <label for="{{ form.full_name.id_for_label }}" class="form-label">
+                                    Full Name <span class="text-danger">*</span>
+                                </label>
+                                {{ form.full_name }}
+                                {% if form.full_name.errors %}
+                                    <div class="text-danger small">{{ form.full_name.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Name of person/entity</div>
+                            </div>
+
+                            <!-- Phone Number -->
+                            <div class="col-md-6">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                                    Phone Number <span class="text-danger">*</span>
+                                </label>
+                                {{ form.phone_number }}
+                                {% if form.phone_number.errors %}
+                                    <div class="text-danger small">{{ form.phone_number.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">
+                                    Email
+                                </label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Requirements -->
+                            <div class="col-12">
+                                <label for="{{ form.requirements.id_for_label }}" class="form-label">
+                                    Requirements <span class="text-danger">*</span>
+                                </label>
+                                {{ form.requirements }}
+                                {% if form.requirements.errors %}
+                                    <div class="text-danger small">{{ form.requirements.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Complete requirement details provided by lead</div>
+                            </div>
+
+                            <!-- Lead Value -->
+                            <div class="col-md-6">
+                                <label for="{{ form.lead_value.id_for_label }}" class="form-label">
+                                    Lead Value (₹) <span class="text-danger">*</span>
+                                </label>
+                                {{ form.lead_value }}
+                                {% if form.lead_value.errors %}
+                                    <div class="text-danger small">{{ form.lead_value.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Expected business value</div>
+                            </div>
+
+                            <!-- Expected Closure Date -->
+                            <div class="col-md-6">
+                                <label for="{{ form.expected_closure_date.id_for_label }}" class="form-label">
+                                    Expected Closure Date <span class="text-danger">*</span>
+                                </label>
+                                {{ form.expected_closure_date }}
+                                {% if form.expected_closure_date.errors %}
+                                    <div class="text-danger small">{{ form.expected_closure_date.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="col-12">
+                                <hr>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i> Update Lead
+                                </button>
+                                <a href="{% url 'lead_detail' lead.id %}" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle me-1"></i> Cancel
+                                </a>
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</main>
+{% endblock body %}

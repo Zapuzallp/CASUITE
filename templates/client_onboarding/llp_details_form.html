@@ -1,0 +1,73 @@
+<form method="post" enctype="multipart/form-data" class="row g-3" id="businessStructureDetailsForm">
+    {% csrf_token %}
+    <input type="hidden" name="business_structure" value="{{ business_structure }}">
+
+    <h6 class="card-title mb-3">LLP (Limited Liability Partnership) Details <small class="text-muted">(<span class="text-danger">*</span> indicates required field)</small></h6>
+
+    <div class="col-md-6">
+        <label for="{{ form.llp_name.id_for_label }}" class="form-label">LLP Name <span class="text-danger">*</span></label>
+        {{ form.llp_name }}
+        <div class="invalid-feedback" id="llp_name_error"></div>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.llp_registration_no.id_for_label }}" class="form-label">LLP Registration Number <span class="text-danger">*</span></label>
+        {{ form.llp_registration_no }}
+        <div class="invalid-feedback" id="llp_registration_no_error"></div>
+    </div>
+
+    <div class="col-12">
+        <label for="{{ form.registered_office_address_llp.id_for_label }}" class="form-label">Registered Office Address <span class="text-danger">*</span></label>
+        {{ form.registered_office_address_llp }}
+        <div class="invalid-feedback" id="registered_office_address_llp_error"></div>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.designated_partners.id_for_label }}" class="form-label">Designated Partners <span class="text-danger">*</span></label>
+        {{ form.designated_partners }}
+        <div class="invalid-feedback" id="designated_partners_error"></div>
+        <small class="form-text text-muted">Select designated partners from existing clients with DIN numbers</small>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.paid_up_capital_llp.id_for_label }}" class="form-label">Paid-up Capital (₹) <span class="text-danger">*</span></label>
+        {{ form.paid_up_capital_llp }}
+        <div class="invalid-feedback" id="paid_up_capital_llp_error"></div>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.date_of_registration_llp.id_for_label }}" class="form-label">Date of Registration <span class="text-danger">*</span></label>
+        {{ form.date_of_registration_llp }}
+        <div class="invalid-feedback" id="date_of_registration_llp_error"></div>
+    </div>
+
+    <div class="col-md-6">
+        <label for="{{ form.llp_agreement_file.id_for_label }}" class="form-label">LLP Agreement File</label>
+        {{ form.llp_agreement_file }}
+        <div class="file-upload-feedback mt-1" style="display: none;">
+            <small class="text-success"><i class="bi bi-check-circle"></i> File selected</small>
+        </div>
+        <div class="invalid-feedback" id="llp_agreement_file_error"></div>
+        <small class="form-text text-muted">Upload LLP agreement document (PDF, DOC, DOCX, JPG, PNG - max 10MB)</small>
+    </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // File upload feedback
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const feedback = this.closest('.col-md-6').querySelector('.file-upload-feedback');
+            if (this.files.length > 0) {
+                feedback.style.display = 'block';
+                // Show file name
+                const fileName = this.files[0].name;
+                feedback.innerHTML = `<small class="text-success"><i class="bi bi-check-circle"></i> ${fileName}</small>`;
+            } else {
+                feedback.style.display = 'none';
+            }
+        });
+    }
+});
+</script>

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+<main id="main" class="main" xmlns:opt.id>
+
+        {% if messages %}
+            <div class="container mt-3">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="container mt-4">
+            <!-- Dynamic Title based on View (Add vs Edit) -->
+            <h2 class="mb-4 text-primary fw-bold">{{ page_title|default:"Onboard New Client" }}</h2>
+
+            <form method="post" enctype="multipart/form-data" id="onboardingForm" novalidate>
+                {% csrf_token %}
+
+                <!-- BASIC INFORMATION CARD -->
+                <div class="card mb-4 shadow-sm border-0">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <span>Basic Information</span>
+                        {% if client_form.instance.pk %}
+                             <span class="badge bg-light text-primary small">File No: {{ client_form.instance.file_number|default:"Generating..." }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row" id="clientFieldsContainer">
+                            {% for field in client_form %}
+                                <div class="col-md-6 mb-3 field-wrapper client-field-wrapper"
+                                     data-field-name="{{ field.name }}">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold"
+                                           id="label_{{ field.name }}">
+                                        {{ field.label }}
+                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors.0 }}</div>
+                                    {% endif %}
+                                    {% if field.help_text %}
+                                        <div class="form-text small text-muted">{{ field.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BUSINESS PROFILE CARD (Dynamic Visibility) -->
+                <div class="card mb-4 shadow-sm border-0" id="businessProfileSection">
+                    <div class="card-header bg-secondary text-white">
+                        <span id="profileHeader">Entity Details</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row" id="profileFieldsContainer">
+                            {% for field in profile_form %}
+                                <div class="col-md-6 mb-3 field-wrapper profile-field-wrapper"
+                                     data-field-name="{{ field.name }}">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold"
+                                           id="label_{{ field.name }}">
+                                        {{ field.label }}
+                                    </label>
+                                    {% if field.name == "key_persons" %}
+                                <select name="{{ field.name }}"
+                                        id="{{ field.id_for_label }}"
+                                        class="form-control select2"
+                                        multiple>
+                                    {% for opt in field.field.queryset %}
+                                    <option value="{{ opt.id }}"
+                                        {% if opt.id|stringformat:"s" in field.value %}
+                                            selected
+                                        {% endif %}>
+                                        {{ opt }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                {{ field }}
+                            {% endif %}
+                                    {% if field.errors %}
+                                        <div class="text-danger small">{{ field.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'clients' %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-success btn-lg px-5">{{ btn_text|default:"Complete Onboarding" }}</button>
+                </div>
+                
+            </form>
+        </div>
+    </main>
+
+    {{ structure_config|json_script:"structure-config-data" }}
+
+    <script src="{% static 'assets/js/client_onboarding.js' %}"></script>
+
+{% endblock %}

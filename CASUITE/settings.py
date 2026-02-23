@@ -16,11 +16,15 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-i%cb2hzh_ab!ecqqf)g4z)*x^l2qqfnd=d4eo^y3huioo83d1k'
 
+
+# Encryption key for portal credentials (generate with: Fernet.generate_key())
+ENCRYPTION_KEY = b'8fHQqZ8vN5YJ0KxP7LZxQJ9vN5YJ0KxP7LZxQJ9vN5Y='
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
-# CSRF_TRUSTED_ORIGINS = ["*"]
+ALLOWED_HOSTS = ["mondaltax.zapuza.in",'localhost', '*']
+CSRF_TRUSTED_ORIGINS = ["https://mondaltax.zapuza.in"]
 
 # Application definition
 
@@ -31,13 +35,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'home',
     'ckeditor',
     'import_export',
     'crispy_forms',
     'crispy_bootstrap5',
     "rangefilter",
-    'django_admin_listfilter_dropdown'
+    'django_admin_listfilter_dropdown',
+    'django_apscheduler',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -45,11 +51,11 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware'
 ]
@@ -67,6 +73,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'home.context_processors.notifications_context',
+                'home.context_processors.header_data',
+                'home.customViews.attendance_context.attendance_context',
             ],
         },
     },
@@ -77,10 +86,20 @@ WSGI_APPLICATION = 'CASUITE.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': '3306',
     }
 }
 
@@ -116,8 +135,8 @@ USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# STATIC_ROOT = os.path.join(BASE_DIR, "static")
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
