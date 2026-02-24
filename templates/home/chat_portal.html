@@ -267,9 +267,9 @@
                         </span>
                         <span style="font-size: 10px; color: #94a3b8;">{{ msg.timestamp|date:"H:i" }}</span>
                     </div>
-                    {% if msg.content %}
+                    {% if msg.body_decrypted %}
                     <div class="bubble" id = "bubble-id">
-                        {{ msg.content|safe }}
+                        {{ msg.body_decrypted|safe }}
 
                     </div>
                     
@@ -284,6 +284,7 @@
                 <p class="text-center text-muted" style="margin-top: 50px;">No messages yet.</p>
                 {% endfor %}
             </div>
+           
 
 
    <div>
@@ -293,7 +294,7 @@
             <form method="POST" >
                 {% csrf_token %}
         
-                {{ form.content }}
+                {{ form.content}}
 
                 <div class="footer-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
                     <div style="display: flex; gap: 15px; align-items: center;">

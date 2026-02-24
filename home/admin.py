@@ -982,10 +982,13 @@ class PaymentAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
+    
     list_display = ('sender', 'receiver', 'status', 'timestamp')
     list_filter = ('status', 'timestamp')
     search_fields = ('content', 'sender__username', 'receiver__username')
     ordering = ('-timestamp',)
+    readonly_fields = ('content',)
+
 
 
 @admin.register(Lead)
