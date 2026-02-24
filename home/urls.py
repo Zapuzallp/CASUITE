@@ -47,6 +47,7 @@ urlpatterns = [
     # GST Management
     path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
     path('gst/<int:gst_id>/edit/', clientView.edit_gst_details_view, name='edit_gst_details'),
+    path('gst/<int:gst_id>/delete/', clientView.delete_gst_details_view, name='delete_gst_details'),
 
     # Client Management
     path('clients/', clientOnboardingView.ClientView.as_view(), name='clients'),
