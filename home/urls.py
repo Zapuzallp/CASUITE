@@ -3,7 +3,7 @@ from django.urls import path
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView,profileView,credentialsView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -47,11 +47,16 @@ urlpatterns = [
     # GST Management
     path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
     path('gst/<int:gst_id>/edit/', clientView.edit_gst_details_view, name='edit_gst_details'),
+    path('gst/<int:gst_id>/delete/', clientView.delete_gst_details_view, name='delete_gst_details'),
 
     # Client Management
     path('clients/', clientOnboardingView.ClientView.as_view(), name='clients'),
     path('client/<int:client_id>/edit/', clientOnboardingView.edit_client_view, name='edit_client'),
     path('onboard/', clientOnboardingView.onboard_client_view, name='onboard_client'),
+
+    # Client Export
+    path('clients/export/', clientExportView.client_export_select_columns, name='client_export_select_columns'),
+    path('clients/export/generate/', clientExportView.client_export_generate, name='client_export_generate'),
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),

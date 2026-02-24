@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
@@ -268,3 +269,19 @@ def edit_gst_details_view(request, gst_id):
         form = GSTDetailsForm(instance=gst_instance)
 
     return render(request, 'client/edit_gst_form.html', {'form': form, 'client': gst_instance.client})
+
+@login_required
+def delete_gst_details_view(request, gst_id):
+    gst_instance = get_object_or_404(GSTDetails, id=gst_id)
+    client_id = gst_instance.client.id
+
+    # Permission Check
+    if not (request.user.is_superuser or request.user == gst_instance.client.assigned_ca):
+        return redirect('client_details', client_id=client_id)
+
+    if request.method == "POST":
+        gst_instance.delete()
+        messages.success(request, "GST details deleted successfully.")
+        return redirect('client_details', client_id=client_id)
+
+    return redirect('client_details', client_id=client_id)
