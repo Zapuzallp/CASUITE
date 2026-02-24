@@ -7,6 +7,3 @@ class HomeConfig(AppConfig):
 
     def ready(self):
         import home.signals
-        # starting the scheduler
-        from .scheduler.start_scheduler import start_scheduler
-        start_scheduler()
