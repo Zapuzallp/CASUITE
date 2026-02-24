@@ -3,16 +3,12 @@ from django.urls import path
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView,profileView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView,profileView,credentialsView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
     AttendanceLogsView,
-)
-from home.customViews.mobileAttendanceView import (
-    mobile_login_view, mobile_logout_view, mobile_attendance_view,
-    mobile_apply_leave, mobile_clock_in, mobile_clock_out, mobile_logs_view, mobile_leave_logs_view
 )
 from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
@@ -91,20 +87,11 @@ urlpatterns = [
     # delete service
     path('services/delete/<int:service_id>/', delete_service, name='delete_service'),
     # manage_leaves
-    path('manage-leaves/', leave_views.manage_leaves, name='manage-leaves'),
+    path('manage-leaves/', leave_views.ManageLeavesView.as_view(), name='manage-leaves'),
     # chat message
     path('chat/', messageView.chat_view, name='chat_base'),
     path('chat/<int:user_id>/', messageView.chat_view, name='chat_with_user'),
 
-    # Mobile Attendance - Independent System
-    path('mobile/', mobile_login_view, name='mobile_login'),
-    path('mobile/logout/', mobile_logout_view, name='mobile_logout'),
-    path('mobile/attendance/', mobile_attendance_view, name='mobile_attendance'),
-    path('mobile/logs/', mobile_logs_view, name='mobile_logs'),
-    path('mobile/leave-logs/', mobile_leave_logs_view, name='mobile_leave_logs'),
-    path('mobile/apply-leave/', mobile_apply_leave, name='mobile_apply_leave'),
-    path('mobile/clock-in/', mobile_clock_in, name='mobile_clock_in'),
-    path('mobile/clock-out/', mobile_clock_out, name='mobile_clock_out'),
     # Payments
     path('payments/', payment_list, name='payment_list'),
     path('payment/<int:invoice_id>/collect/', payment_collect, name='payment_collect'),
@@ -139,6 +126,10 @@ urlpatterns = [
     path('invoices/bulk-status-update/', invoiceView.invoice_bulk_status_update, name="invoice_bulk_status_update"),
     #profile url
     path('upload-profile-pic/', profileView.upload_profile_pic, name='upload_profile_pic'),
+    # Portal Credentials
+    path('client/<int:client_id>/credentials/add/', credentialsView.add_portal_credential,name='add_portal_credential'),
+    path('credentials/<int:credential_id>/view/', credentialsView.view_portal_credential,name='view_portal_credential'),
+    path('credentials/<int:credential_id>/delete/', credentialsView.delete_portal_credential,name='delete_portal_credential'),
 
 
 ]

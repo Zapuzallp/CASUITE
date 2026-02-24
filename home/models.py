@@ -1149,7 +1149,7 @@ class LeadCallLog(models.Model):
                                        related_name='calls_received_from_leads',
                                        help_text="Employee who received the call (NULL if Employee called Lead)")
 
-    call_duration = models.DurationField(help_text="Duration of the call")
+    call_date = models.DateField(help_text="Date when the call/discussion happened", default=timezone.now)
     description = models.TextField(help_text="Discussion summary and notes")
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1190,3 +1190,94 @@ class LeadCallLog(models.Model):
             raise ValidationError("At least one of 'called_by_user' or 'called_to_user' must be set.")
         if self.called_by_user is not None and self.called_to_user is not None:
             raise ValidationError("Only one of 'called_by_user' or 'called_to_user' should be set, not both.")
+
+
+from cryptography.fernet import Fernet
+from django.conf import settings
+import base64
+
+
+# Encryption utility functions
+def get_encryption_key():
+    """Get or generate encryption key"""
+    key = getattr(settings, 'ENCRYPTION_KEY', None)
+    if not key:
+        # Generate a key if not in settings (for development)
+        key = Fernet.generate_key()
+    if isinstance(key, str):
+        key = key.encode()
+    return key
+
+
+def encrypt_password(plain_password):
+    """Encrypt password using Fernet symmetric encryption"""
+    if not plain_password:
+        return ''
+    f = Fernet(get_encryption_key())
+    encrypted = f.encrypt(plain_password.encode())
+    return base64.urlsafe_b64encode(encrypted).decode()
+
+
+def decrypt_password(encrypted_password):
+    """Decrypt password"""
+    if not encrypted_password:
+        return ''
+    try:
+        f = Fernet(get_encryption_key())
+        decoded = base64.urlsafe_b64decode(encrypted_password.encode())
+        decrypted = f.decrypt(decoded)
+        return decrypted.decode()
+    except Exception:
+        return '[Decryption Error]'
+
+
+class Dropdown(models.Model):
+    """Generic dropdown model for reusable dropdown configurations"""
+    TYPE_CHOICES = [
+        ('password', 'Password/Credential Portal'),
+    ]
+
+    label = models.CharField(max_length=100, help_text="Display name (e.g., GST, ITR)")
+    value = models.CharField(max_length=100, help_text="Internal value (e.g., gst, itr)")
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES, help_text="Usage category")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['label']
+        unique_together = ['value', 'type']
+
+    def __str__(self):
+        return f"{self.label} ({self.type})"
+
+
+class ClientPortalCredentials(models.Model):
+    """Store encrypted portal credentials per client"""
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='portal_credentials')
+    dropdown = models.ForeignKey(Dropdown, on_delete=models.PROTECT,
+                                 limit_choices_to={'type': 'password', 'is_active': True})
+    portal_url = models.URLField(max_length=500)
+    username = models.CharField(max_length=255)
+    password = models.TextField(help_text="Stored encrypted")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Client Portal Credential"
+        verbose_name_plural = "Client Portal Credentials"
+        ordering = ['-created_at']
+        unique_together = ['client', 'dropdown']
+
+    def __str__(self):
+        return f"{self.client.client_name} - {self.dropdown.label}"
+
+    def save(self, *args, **kwargs):
+        # Encrypt password before saving if it's not already encrypted
+        if self.password and not self.password.startswith('Z0ZC'):  # Simple check to avoid double encryption
+            self.password = encrypt_password(self.password)
+        super().save(*args, **kwargs)
+
+    def get_decrypted_password(self):
+        """Decrypt and return password"""
+        return decrypt_password(self.password)
+

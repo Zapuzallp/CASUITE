@@ -6,8 +6,9 @@ from django.contrib.auth.models import User
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
-    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes,Message, Invoice, InvoiceItem, GSTDetails
-     # Added GSTDetails to imports
+    ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes, Message, Invoice,
+    InvoiceItem, GSTDetails
+    # Added GSTDetails to imports
 )
 from home.models import Leave
 from django.core.exceptions import ValidationError
@@ -255,7 +256,8 @@ class TaskForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Task
         # CHANGED: 'assigned_to' -> 'assignees'
-        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description','recurrence_period','consultancy_type']
+        fields = ['service_type', 'task_title', 'due_date', 'priority', 'assignees', 'description', 'recurrence_period',
+                  'consultancy_type']
         widgets = {
             'task_title': forms.TextInput(attrs={'placeholder': 'Auto-generated if left blank'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
@@ -309,7 +311,8 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
         self.fields['total_turnover'].widget.attrs.update({'placeholder': '0.00'})
         self.fields['tax_payable'].widget.attrs.update({'placeholder': '0.00'})
 
-#Leave form
+
+# Leave form
 class LeaveForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Leave
@@ -330,17 +333,16 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
                 if value == "" or value is None:
 
                     updated_choices.append(
-                        (value, label) )
+                        (value, label))
                 else:
                     remaining = leave_summary.get(value, {}).get("remaining", 0)
                     if remaining == 0:
                         display_text = f"{label} (-)"
                     else:
-                            display_text = f"{label} ({remaining})"
-                            updated_choices.append((value, display_text))
+                        display_text = f"{label} ({remaining})"
+                        updated_choices.append((value, display_text))
 
             self.fields["leave_type"].choices = updated_choices
-
 
     def clean(self):
         """Validate dates"""
@@ -364,24 +366,26 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
 
         return cleaned_data
 
-#Message form
+
+# Message form
 class MessageForm(forms.ModelForm):
     class Meta:
         model = Message
         fields = ['content', 'status']
         widgets = {
             'content': forms.Textarea(attrs={
-                'id': 'summernote', # Required for JS initialization
+                'id': 'summernote',  # Required for JS initialization
                 'class': 'form-control',
             }),
             'status': forms.Select(attrs={'class': 'form-control', 'style': 'width: auto; display: inline-block;'}),
         }
 
-#Invoice Form
+
+# Invoice Form
 class InvoiceForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Invoice
-        fields = ['client', 'services', 'invoice_date', 'due_date','subject']
+        fields = ['client', 'services', 'invoice_date', 'due_date', 'subject']
         widgets = {
             'invoice_date': forms.DateInput(attrs={'type': 'date'}),
             'due_date': forms.DateInput(attrs={'type': 'date'}),
@@ -393,7 +397,7 @@ class InvoiceForm(BootstrapFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        #Default:no tasks
+        # Default:no tasks
         self.fields['services'].queryset = Task.objects.none()
 
         if 'client' in self.data:
@@ -424,7 +428,7 @@ class InvoiceForm(BootstrapFormMixin, forms.ModelForm):
 class InvoiceItemForm(forms.ModelForm):
     class Meta:
         model = InvoiceItem
-        fields = ['product', 'unit_cost', 'discount', 'gst_percentage',]
+        fields = ['product', 'unit_cost', 'discount', 'gst_percentage', ]
         widgets = {
             'product': forms.Select(attrs={'class': 'form-select'}),
             'unit_cost': forms.NumberInput(attrs={'class': "form-control"}),
@@ -446,6 +450,7 @@ class PaymentForm(forms.ModelForm):
             'payment_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'transaction_id': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
     def clean_amount(self):
         amt = self.cleaned_data.get('amount')
         if amt is None:
@@ -463,6 +468,7 @@ class PaymentForm(forms.ModelForm):
         if payment_date > today:
             raise forms.ValidationError("Payment date cannot be in the future.")
         return payment_date
+
 
 class PaymentCollectForm(PaymentForm):
     invoice = forms.ModelChoiceField(
@@ -501,6 +507,8 @@ class PaymentCollectForm(PaymentForm):
             self.add_error('amount', 'Amount cannot be greater than remaining balance.')
 
         return cleaned_data
+
+
 # ---------------------------------------------------------
 # 3. GST Details Form (NEW)
 # ---------------------------------------------------------
@@ -596,3 +604,77 @@ class LeadForm(BootstrapFormMixin, forms.ModelForm):
             raise forms.ValidationError('Lead value cannot be negative.')
 
         return value
+
+
+# ---------------------------------------------------------
+# 5. Client Portal Credentials Form
+# ---------------------------------------------------------
+from home.models import ClientPortalCredentials, Dropdown
+
+
+class ClientPortalCredentialsForm(BootstrapFormMixin, forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter client portal password'
+        }),
+        help_text="Password will be encrypted before storage",
+        required=True
+    )
+
+    class Meta:
+        model = ClientPortalCredentials
+        fields = ['dropdown', 'portal_url', 'username', 'password']
+        widgets = {
+            'dropdown': forms.Select(attrs={'class': 'form-select'}),
+            'portal_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://example.com'
+            }),
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter client username for this portal'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.client = kwargs.pop('client', None)
+        super().__init__(*args, **kwargs)
+        # Only show active password-type dropdowns
+        self.fields['dropdown'].queryset = Dropdown.objects.filter(
+            type='password',
+            is_active=True
+        )
+        self.fields['dropdown'].label = "Portal Type"
+
+        # Ensure fields start blank (no initial values)
+        if not self.instance.pk:
+            self.fields['username'].initial = ''
+            self.fields['password'].initial = ''
+
+        # If editing existing credential, show masked password
+        if self.instance and self.instance.pk:
+            self.fields['password'].required = False
+            self.fields['password'].help_text = "Leave blank to keep current password"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        dropdown = cleaned_data.get('dropdown')
+
+        # Check for duplicate portal type for this client
+        if self.client and dropdown:
+            # Exclude current instance if editing
+            existing = ClientPortalCredentials.objects.filter(
+                client=self.client,
+                dropdown=dropdown
+            )
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+
+            if existing.exists():
+                raise forms.ValidationError(
+                    f"A credential for '{dropdown.label}' already exists for this client. "
+                    f"Please update the existing credential or choose a different portal type."
+                )
+
+        return cleaned_data
