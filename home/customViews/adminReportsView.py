@@ -238,17 +238,95 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request):
-        # Handle bulk status update
+        action_type = request.POST.get('action_type')
         selected_records = request.POST.getlist('selected_records')
-        new_status = request.POST.get('bulk_status')
 
-        if selected_records and new_status:
-            updated_count = Attendance.objects.filter(
-                id__in=selected_records
-            ).update(status=new_status)
+        if not selected_records:
+            messages.error(request, 'Please select records.')
+            return redirect(request.get_full_path())
 
-            messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
+        if action_type == 'clock_out_shift':
+            # Handle clock out with shift time
+            from django.utils import timezone
+            from datetime import datetime
+            from home.models import EmployeeShift, Shift
+            from django.db.models import Q
+
+            success_count = 0
+            error_count = 0
+            errors = []
+
+            for record_id in selected_records:
+                try:
+                    attendance = Attendance.objects.get(id=record_id)
+
+                    # Get employee shift for the date
+                    employee_shift = EmployeeShift.objects.filter(
+                        user=attendance.user,
+                        valid_from__lte=attendance.date,
+                    ).filter(
+                        Q(valid_to__isnull=True) | Q(valid_to__gte=attendance.date)
+                    ).first()
+
+                    if employee_shift:
+                        shift_end_time = employee_shift.shift.shift_end_time
+                    else:
+                        # Get default shift
+                        default_shift = Shift.objects.filter(is_default=True).first()
+                        if not default_shift:
+                            errors.append(f"{attendance.user.username} ({attendance.date}): No shift assigned and no default shift configured")
+                            error_count += 1
+                            continue
+                        shift_end_time = default_shift.shift_end_time
+
+                    # Set clock_out to shift end time
+                    clock_out_datetime = timezone.make_aware(
+                        datetime.combine(attendance.date, shift_end_time)
+                    )
+
+                    # Handle night shifts
+                    if attendance.clock_in and clock_out_datetime < attendance.clock_in:
+                        clock_out_datetime += timedelta(days=1)
+
+                    attendance.clock_out = clock_out_datetime
+
+                    # Append remark
+                    new_remark = "Auto out (shift time)"
+
+                    if attendance.remark:
+                        attendance.remark = f"{attendance.remark} | {new_remark}"
+                    else:
+                        attendance.remark = new_remark
+
+                    attendance._skip_auto_status = True
+                    attendance.save()
+                    success_count += 1
+
+                except Attendance.DoesNotExist:
+                    errors.append(f"Record ID {record_id}: Not found")
+                    error_count += 1
+                except Exception as e:
+                    errors.append(f"Record ID {record_id}: {str(e)}")
+                    error_count += 1
+
+            if success_count > 0:
+                messages.success(request, f"Successfully updated {success_count} attendance record(s)")
+            if error_count > 0:
+                messages.error(request, f"Failed to update {error_count} record(s)")
+                for error in errors[:5]:  # Show first 5 errors
+                    messages.warning(request, error)
+
+        elif action_type == 'status':
+            # Handle bulk status update
+            new_status = request.POST.get('bulk_status')
+            if new_status:
+                updated_count = Attendance.objects.filter(
+                    id__in=selected_records
+                ).update(status=new_status)
+                messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
+            else:
+                messages.error(request, 'Please select a status to update.')
         else:
-            messages.error(request, 'Please select records and status to update.')
+            messages.error(request, 'Invalid action type.')
 
         return redirect(request.get_full_path())

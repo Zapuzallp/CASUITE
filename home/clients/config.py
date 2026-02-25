@@ -242,7 +242,7 @@ TASK_CONFIG = {
     # --------------------------------------------------------------------------
     'ITR Filing': {
         'default_due_days': 120,
-        'workflow_steps': ['Phone Call', 'Documents collection in progress', 'Documents collection complete', 'Manual', 'Account Ready', 'Form Fill up & Submit','EVC', 'Documents ready & billing', 'Delivered'],
+        'workflow_steps': ['Phone Call', 'Documents collection in progress', 'Documents collection complete', 'Manual', 'Account Ready', 'Account Verification','Form Fill up & Submit','EVC', 'Documents ready & billing', 'Delivered'],
         'fields': {
             'include': ['pan_number', 'assessment_year', 'gross_total_income', 'tax_payable', 'refund_amount',
                         'ack_number', 'computation_file'],

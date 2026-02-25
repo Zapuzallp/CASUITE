@@ -27,19 +27,6 @@ def generate_file_number(office_location):
 
 
 # -------------------------------------------------------------------
-# Helper: Check if string is a GST number
-# -------------------------------------------------------------------
-def is_gst_number(query):
-    """
-    Check if the query string matches GST number format.
-    GST number format: 15 characters - 2 digits state code + 10 digits PAN + 1 digit entity + 2 digits state + Z + 4 digits
-    """
-    import re
-    gst_pattern = r'^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}Z[A-Z\d]{1}\d{4}$'
-    return bool(re.match(gst_pattern, query.upper()))
-
-
-# -------------------------------------------------------------------
 # View 1: Onboard New Client (Create)
 # -------------------------------------------------------------------
 @login_required
@@ -200,92 +187,9 @@ class ClientView(LoginRequiredMixin, ListView):
     paginate_by = 50
 
     def get_queryset(self):
-        user = self.request.user
-        # 1. Start with the Base Queryset (Optimized) & Apply Role-Based Logic
-        # Limit the queryset to only those clients the current user
-        # is permitted to view (role-based & assignment-based access)
-        qs = get_accessible_clients(user)
-
-        # 2. Extract GET parameters for UI Filters
-        search_query = self.request.GET.get('q')
-        filter_status = self.request.GET.get('status')
-        filter_type = self.request.GET.get('client_type')
-        filter_structure = self.request.GET.get('business_structure')
-        filter_office = self.request.GET.get('office')
-        filter_service = self.request.GET.get('service_type')
-        filter_assigned_to = self.request.GET.get('assigned_to')
-        filter_custom_view = self.request.GET.get('custom_view')
-
-        # 3. Apply UI Filters on top of Role-Based Queryset
-        if search_query:
-            # Check if search query is a GST number pattern
-            if is_gst_number(search_query):
-                # Search in GSTDetails for this GST number
-                qs = qs.filter(gst_details__gst_number__icontains=search_query).distinct()
-            else:
-                # Regular text search
-                qs = qs.filter(
-                    Q(client_name__icontains=search_query) |
-                    Q(pan_no__icontains=search_query) |
-                    Q(file_number__icontains=search_query) |
-                    Q(primary_contact_name__icontains=search_query)
-                )
-        # if search_query:
-        #     # Check if search query is a GST number pattern
-        #     if (search_query):
-        #         # Search in GSTDetails for this GST number
-        #         qs = qs.filter(gst_details__gst_number__icontains=search_query).distinct()
-
-        # 3. Apply UI Filters on top of Role-Based Queryset
-        if search_query:
-            qs = qs.filter(
-                Q(client_name__icontains=search_query) |
-                Q(pan_no__icontains=search_query) |
-                Q(file_number__icontains=search_query) |
-                Q(primary_contact_name__icontains=search_query)
-            )
-
-        if filter_status:
-            qs = qs.filter(status=filter_status)
-
-        if filter_type:
-            qs = qs.filter(client_type=filter_type)
-
-        if filter_structure:
-            qs = qs.filter(business_structure=filter_structure)
-
-        if filter_office:
-            # Note: If a Branch Manager tries to filter by an office ID
-            # that is not their own, this will simply return empty, which is secure.
-            qs = qs.filter(office_location_id=filter_office)
-
-        if filter_service:
-            # Filters clients who have *at least one* task of this service type
-            qs = qs.filter(tasks__service_type=filter_service).distinct()
-
-        if filter_assigned_to:
-            qs = qs.filter(assigned_ca_id=filter_assigned_to)
-
-        # Apply Custom View Filter
-        if filter_custom_view:
-            if filter_custom_view == 'aadhaar_mobile_linked':
-                # Filter clients with both Aadhaar and phone number present and non-empty
-                qs = qs.filter(
-                    aadhar__isnull=False,
-                    phone_number__isnull=False
-                ).exclude(
-                    aadhar=''
-                ).exclude(
-                    phone_number=''
-                )
-            elif filter_custom_view == 'gst_enabled':
-                # Filter clients who have at least one GST number
-                qs = qs.filter(gst_details__isnull=False).distinct()
-            elif filter_custom_view == 'director_din_valid':
-                # Filter clients with valid DIN numbers (not null and not empty)
-                qs = qs.filter(din_no__isnull=False).exclude(din_no='')
-
-        return qs.order_by('-created_at')
+        # Use centralized filtering logic (shared with export)
+        from home.customViews.clientExportView import get_filtered_clients
+        return get_filtered_clients(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
