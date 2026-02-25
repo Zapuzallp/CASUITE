@@ -5,83 +5,20 @@ from django.contrib.auth.models import User
 from datetime import datetime, date, timedelta
 import calendar
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 
-from home.models import Attendance, OfficeDetails, Leave, Employee
+from home.models import Attendance, OfficeDetails, Leave
 
 
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "admin_reports/attendance_report.html"
 
+    # Only Superadmin
     def test_func(self):
-        """
-        Access Control:
-        - Superuser: Full access
-        - Admin: Full access
-        - Partner: Full access
-        - Branch Manager: Access only to their branch employees
-        - Staff: No access (403 Forbidden)
-        """
-        user = self.request.user
-
-        # Superuser has full access
-        if user.is_superuser:
-            return True
-
-        # Check if user has employee profile
-        try:
-            employee = user.employee
-            # Admin and Partner have full access
-            if employee.role in ['ADMIN', 'PARTNER']:
-                return True
-            # Branch Manager has limited access (handled in get method)
-            elif employee.role == 'BRANCH_MANAGER':
-                return True
-            # Staff has no access
-            else:
-                return False
-        except Employee.DoesNotExist:
-            return False
+        return self.request.user.is_superuser
 
     def get(self, request):
-        user = request.user
-
-        # Determine access level and filter employees accordingly
-        if user.is_superuser:
-            # Superuser sees all employees
-            employees = User.objects.filter(is_active=True, is_staff=True)
-            offices = OfficeDetails.objects.all()
-            can_update_status = True
-        else:
-            try:
-                employee = user.employee
-
-                if employee.role in ['ADMIN', 'PARTNER']:
-                    # Admin and Partner see all employees
-                    employees = User.objects.filter(is_active=True, is_staff=True)
-                    offices = OfficeDetails.objects.all()
-                    can_update_status = True
-
-                elif employee.role == 'BRANCH_MANAGER':
-                    # Branch Manager sees only employees from their branch
-                    if employee.office_location:
-                        employees = User.objects.filter(
-                            is_active=True,
-                            is_staff=True,
-                            employee__office_location=employee.office_location
-                        )
-                        offices = OfficeDetails.objects.filter(id=employee.office_location.id)
-                        can_update_status = True
-                    else:
-                        # Branch Manager without office location sees no one
-                        employees = User.objects.none()
-                        offices = OfficeDetails.objects.none()
-                        can_update_status = False
-                else:
-                    # Staff should not reach here due to test_func, but handle it
-                    raise PermissionDenied("You do not have permission to access this page.")
-            except Employee.DoesNotExist:
-                raise PermissionDenied("You do not have permission to access this page.")
+        employees = User.objects.filter(is_active=True, is_staff=True)
+        offices = OfficeDetails.objects.all()
 
         months = [
             (1, "January"), (2, "February"), (3, "March"),
@@ -122,7 +59,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             except (ValueError, TypeError):
                 # If office_id is not a number, try filtering by office name
                 records = records.filter(user__employee__office_location__office_name=office_id)
-
+            
         if status_filter:
             records = records.filter(status=status_filter)
 
@@ -149,14 +86,14 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             for emp in employees:
                 if employee_id and str(emp.id) != employee_id:
                     continue
-
+                
                 # Filter by office if specified
                 if office_id:
                     try:
                         employee_profile = emp.employee
                         if not employee_profile.office_location:
                             continue
-
+                        
                         try:
                             office_id_int = int(office_id)
                             if employee_profile.office_location.id != office_id_int:
@@ -166,22 +103,22 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                                 continue
                     except Exception:
                         continue
-
+                
                 # Get employee's shift to check days_off
                 from home.models import EmployeeShift
                 from django.db.models import Q
-
+                
                 # Get shift valid for the month being viewed
                 month_start = date(year_int, month_int, 1)
                 month_end = date(year_int, month_int, days_in_month)
-
+                
                 employee_shift = EmployeeShift.objects.filter(
                     user=emp,
                     valid_from__lte=month_end
                 ).filter(
                     Q(valid_to__isnull=True) | Q(valid_to__gte=month_start)
                 ).first()
-
+                
                 days_off_list = []
                 if employee_shift and employee_shift.shift.days_off:
                     days_off_str = employee_shift.shift.days_off
@@ -194,33 +131,33 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                 else:
                     # Default: Saturday and Sunday if no shift assigned
                     days_off_list = [5, 6]  # Sat=5, Sun=6
-
+                    
                 daily_status = []
                 total_present = 0
                 total_days_till_today = 0
                 total_week_offs = 0
                 total_leaves = 0
-
+                
                 # Only count days up to today if viewing current month
                 today = date.today()
                 max_day = days_in_month
                 if year_int == today.year and month_int == today.month:
                     max_day = today.day
-
+                
                 for day in calendar_days:
                     current_date = date(year_int, month_int, day)
-
+                    
                     # Only process days up to today for current month
                     if day <= max_day:
                         total_days_till_today += 1
-
+                    
                     # Check if it's a day off according to shift
                     if current_date.weekday() in days_off_list:
                         daily_status.append('sunday')
                         if day <= max_day:
                             total_week_offs += 1
                         continue
-
+                    
                     # Check for approved leave
                     try:
                         leave = Leave.objects.filter(
@@ -229,7 +166,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             start_date__lte=current_date,
                             end_date__gte=current_date
                         ).first()
-
+                        
                         if leave:
                             daily_status.append('leave')
                             if day <= max_day:
@@ -237,14 +174,14 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             continue
                     except Exception:
                         pass
-
+                    
                     # Check attendance
                     try:
                         attendance = Attendance.objects.get(
                             user=emp,
                             date=current_date
                         )
-
+                        
                         if attendance.status == 'rejected':
                             daily_status.append('absent')
                         elif attendance.status in ['approved', 'full_day']:
@@ -259,7 +196,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             daily_status.append('pending')
                     except Attendance.DoesNotExist:
                         daily_status.append('absent')
-
+                
                 # Calculate absent: Total days till today - (present + week offs + leaves)
                 total_absent = total_days_till_today - (total_present + total_week_offs + total_leaves)
                 total_absent = max(0, total_absent)  # Ensure non-negative
@@ -296,63 +233,100 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             "status_choices": status_choices,
             "today": today.isoformat(),
             "employee_id": employee_id,
-            "can_update_status": can_update_status,
         }
 
         return render(request, self.template_name, context)
 
     def post(self, request):
-        """
-        Handle bulk status update
-        Only Superuser, Admin, Partner, and Branch Manager can update status
-        Branch Manager can only update records for their branch employees
-        """
-        user = request.user
+        action_type = request.POST.get('action_type')
+        selected_records = request.POST.getlist('selected_records')
 
-        # Check permission to update
-        can_update = False
-        branch_office_id = None
-
-        if user.is_superuser:
-            can_update = True
-        else:
-            try:
-                employee = user.employee
-                if employee.role in ['ADMIN', 'PARTNER']:
-                    can_update = True
-                elif employee.role == 'BRANCH_MANAGER':
-                    can_update = True
-                    if employee.office_location:
-                        branch_office_id = employee.office_location.id
-            except Employee.DoesNotExist:
-                pass
-
-        if not can_update:
-            messages.error(request, 'You do not have permission to update attendance records.')
+        if not selected_records:
+            messages.error(request, 'Please select records.')
             return redirect(request.get_full_path())
 
-        # Handle bulk status update
-        selected_records = request.POST.getlist('selected_records')
-        new_status = request.POST.get('bulk_status')
+        if action_type == 'clock_out_shift':
+            # Handle clock out with shift time
+            from django.utils import timezone
+            from datetime import datetime
+            from home.models import EmployeeShift, Shift
+            from django.db.models import Q
 
-        if selected_records and new_status:
-            # Filter records based on role
-            records_query = Attendance.objects.filter(id__in=selected_records)
+            success_count = 0
+            error_count = 0
+            errors = []
 
-            # If Branch Manager, only update records for their branch
-            if branch_office_id:
-                records_query = records_query.filter(
-                    user__employee__office_location_id=branch_office_id
-                )
+            for record_id in selected_records:
+                try:
+                    attendance = Attendance.objects.get(id=record_id)
 
-            updated_count = records_query.update(status=new_status)
+                    # Get employee shift for the date
+                    employee_shift = EmployeeShift.objects.filter(
+                        user=attendance.user,
+                        valid_from__lte=attendance.date,
+                    ).filter(
+                        Q(valid_to__isnull=True) | Q(valid_to__gte=attendance.date)
+                    ).first()
 
-            if updated_count > 0:
+                    if employee_shift:
+                        shift_end_time = employee_shift.shift.shift_end_time
+                    else:
+                        # Get default shift
+                        default_shift = Shift.objects.filter(is_default=True).first()
+                        if not default_shift:
+                            errors.append(f"{attendance.user.username} ({attendance.date}): No shift assigned and no default shift configured")
+                            error_count += 1
+                            continue
+                        shift_end_time = default_shift.shift_end_time
+
+                    # Set clock_out to shift end time
+                    clock_out_datetime = timezone.make_aware(
+                        datetime.combine(attendance.date, shift_end_time)
+                    )
+
+                    # Handle night shifts
+                    if attendance.clock_in and clock_out_datetime < attendance.clock_in:
+                        clock_out_datetime += timedelta(days=1)
+
+                    attendance.clock_out = clock_out_datetime
+
+                    # Append remark
+                    new_remark = "Auto out (shift time)"
+
+                    if attendance.remark:
+                        attendance.remark = f"{attendance.remark} | {new_remark}"
+                    else:
+                        attendance.remark = new_remark
+
+                    attendance._skip_auto_status = True
+                    attendance.save()
+                    success_count += 1
+
+                except Attendance.DoesNotExist:
+                    errors.append(f"Record ID {record_id}: Not found")
+                    error_count += 1
+                except Exception as e:
+                    errors.append(f"Record ID {record_id}: {str(e)}")
+                    error_count += 1
+
+            if success_count > 0:
+                messages.success(request, f"Successfully updated {success_count} attendance record(s)")
+            if error_count > 0:
+                messages.error(request, f"Failed to update {error_count} record(s)")
+                for error in errors[:5]:  # Show first 5 errors
+                    messages.warning(request, error)
+
+        elif action_type == 'status':
+            # Handle bulk status update
+            new_status = request.POST.get('bulk_status')
+            if new_status:
+                updated_count = Attendance.objects.filter(
+                    id__in=selected_records
+                ).update(status=new_status)
                 messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
             else:
-                messages.warning(request,
-                                 'No records were updated. You may not have permission to update the selected records.')
+                messages.error(request, 'Please select a status to update.')
         else:
-            messages.error(request, 'Please select records and status to update.')
+            messages.error(request, 'Invalid action type.')
 
         return redirect(request.get_full_path())

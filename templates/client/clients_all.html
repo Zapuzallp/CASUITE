@@ -178,9 +178,14 @@
                                     <small class="text-muted">Showing {{ clients|length }} result(s)</small>
                                 {% endif %}
                             </div>
-                            <a href="{% url 'onboard_client' %}" class="btn btn-primary btn-sm">
-                                <i class="bi bi-plus-circle me-1"></i> Add New Client
-                            </a>
+                            <div>
+                                <a href="{% url 'client_export_select_columns' %}?{{ request.GET.urlencode }}" class="btn btn-success btn-sm me-2">
+                                    <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+                                </a>
+                                <a href="{% url 'onboard_client' %}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i> Add New Client
+                                </a>
+                            </div>
                         </div>
 
                         <table class="table table-borderless table-hover align-middle" id="clientsTable">

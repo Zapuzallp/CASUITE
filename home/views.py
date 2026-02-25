@@ -1,29 +1,25 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
-from django.views import View
-from django.views.generic import ListView
-from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
+from datetime import timedelta
 
-from .models import (Client,ClientUserEntitle )
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
+from django.db.models import Count, Sum, Q
+from django.db.models import OuterRef, Subquery
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.generic import TemplateView
+
+from home.clients.client_access import get_accessible_clients
+# Import your models
+from home.models import Client
+from home.models import Task, TaskAssignmentStatus
 
 
 # RequestedDocument, DocumentMaster, ClientDocumentUpload, DocumentRequest)
 # from .forms import ClientForm, CompanyDetailsForm, LLPDetailsForm, OPCDetailsForm, Section8CompanyDetailsForm, \
 #     HUFDetailsForm
 # from datetime import datetime
-
-from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Sum, Q
-from django.utils import timezone
-from home.clients.client_access import get_accessible_clients
-from datetime import timedelta
-
-# Import your models
-from home.models import Client
-from home.models import Task, TaskAssignmentStatus
 
 
 class HomeView(LoginRequiredMixin, TemplateView):
@@ -53,7 +49,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
             total=Count('id'),
             completed=Count('id', filter=Q(status='Completed')),
             # Active working states
-            pending=Count('id', filter=Q(status__in=['Pending', 'In Progress', 'Data Collection'])),
+            pending=Count('id', filter=~Q(status__in=['GSTR Submit', 'Delivered', 'Completed'])),
             # Approval queue
             review=Count('id', filter=Q(status='Review')),
             # Overdue logic
@@ -104,10 +100,16 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # 5. USER SPECIFIC ACTIONS (Clickable)
         # =========================================================
         # "My Action Items" - Specific steps waiting for the logged-in user
+        first_incomplete_order = TaskAssignmentStatus.objects.filter(
+            task=OuterRef('task_id'),
+            is_completed=False
+        ).order_by('order').values('order')[:1]
+
+        # Now filter steps for the current user that match that specific 'first' order
         my_actionable_items = TaskAssignmentStatus.objects.filter(
             user=user,
             is_completed=False,
-            task__status__in=['Pending', 'In Progress', 'Review']  # Only active workflows
+            order=Subquery(first_incomplete_order)
         ).select_related('task', 'task__client').order_by('task__due_date')
 
         my_actions_count = my_actionable_items.count()
@@ -131,9 +133,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
         due_tasks_qs = all_tasks.exclude(status='Completed')
 
         # Apply date range filter
-        if due_range == 'overdue':
-            due_tasks_qs = due_tasks_qs.filter(due_date__lt=today)
-        elif due_range == 'today':
+        due_tasks_qs = due_tasks_qs.filter(due_date__lt=today)
+        if due_range == 'today':
             due_tasks_qs = due_tasks_qs.filter(due_date=today)
         elif due_range == 'tomorrow':
             due_tasks_qs = due_tasks_qs.filter(due_date=today + timedelta(days=1))
@@ -261,8 +262,7 @@ def client_search(request):
 # AJAX VIEW FOR DUE TASKS FILTERING
 # =========================================================
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-from django.template.loader import render_to_string
+
 
 @login_required
 def due_tasks_ajax(request):

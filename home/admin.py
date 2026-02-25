@@ -890,7 +890,8 @@ class NotificationAdmin(admin.ModelAdmin):
 @admin.register(Shift)
 class ShiftAdmin(admin.ModelAdmin):
     list_display = ('shift_name', 'shift_start_time',
-                    'shift_end_time', 'maximum_allowed_duration', 'days_off')
+                    'shift_end_time', 'maximum_allowed_duration', 'days_off', 'is_default')
+    list_editable = ('is_default',)
 
 
 @admin.register(EmployeeShift)
@@ -982,10 +983,13 @@ class PaymentAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
+    
     list_display = ('sender', 'receiver', 'status', 'timestamp')
     list_filter = ('status', 'timestamp')
     search_fields = ('content', 'sender__username', 'receiver__username')
     ordering = ('-timestamp',)
+    readonly_fields = ('content',)
+
 
 
 @admin.register(Lead)

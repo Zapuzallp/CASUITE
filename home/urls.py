@@ -3,16 +3,12 @@ from django.urls import path
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView,profileView,credentialsView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
     AttendanceLogsView,
-)
-from home.customViews.mobileAttendanceView import (
-    mobile_login_view, mobile_logout_view, mobile_attendance_view,
-    mobile_apply_leave, mobile_clock_in, mobile_clock_out, mobile_logs_view, mobile_leave_logs_view
 )
 from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
@@ -51,11 +47,16 @@ urlpatterns = [
     # GST Management
     path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
     path('gst/<int:gst_id>/edit/', clientView.edit_gst_details_view, name='edit_gst_details'),
+    path('gst/<int:gst_id>/delete/', clientView.delete_gst_details_view, name='delete_gst_details'),
 
     # Client Management
     path('clients/', clientOnboardingView.ClientView.as_view(), name='clients'),
     path('client/<int:client_id>/edit/', clientOnboardingView.edit_client_view, name='edit_client'),
     path('onboard/', clientOnboardingView.onboard_client_view, name='onboard_client'),
+
+    # Client Export
+    path('clients/export/', clientExportView.client_export_select_columns, name='client_export_select_columns'),
+    path('clients/export/generate/', clientExportView.client_export_generate, name='client_export_generate'),
     path('tasks/', taskView.task_list_view, name='task_list'),
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
@@ -91,20 +92,11 @@ urlpatterns = [
     # delete service
     path('services/delete/<int:service_id>/', delete_service, name='delete_service'),
     # manage_leaves
-    path('manage-leaves/', leave_views.manage_leaves, name='manage-leaves'),
+    path('manage-leaves/', leave_views.ManageLeavesView.as_view(), name='manage-leaves'),
     # chat message
     path('chat/', messageView.chat_view, name='chat_base'),
     path('chat/<int:user_id>/', messageView.chat_view, name='chat_with_user'),
 
-    # Mobile Attendance - Independent System
-    path('mobile/', mobile_login_view, name='mobile_login'),
-    path('mobile/logout/', mobile_logout_view, name='mobile_logout'),
-    path('mobile/attendance/', mobile_attendance_view, name='mobile_attendance'),
-    path('mobile/logs/', mobile_logs_view, name='mobile_logs'),
-    path('mobile/leave-logs/', mobile_leave_logs_view, name='mobile_leave_logs'),
-    path('mobile/apply-leave/', mobile_apply_leave, name='mobile_apply_leave'),
-    path('mobile/clock-in/', mobile_clock_in, name='mobile_clock_in'),
-    path('mobile/clock-out/', mobile_clock_out, name='mobile_clock_out'),
     # Payments
     path('payments/', payment_list, name='payment_list'),
     path('payment/<int:invoice_id>/collect/', payment_collect, name='payment_collect'),

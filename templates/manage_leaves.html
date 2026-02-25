@@ -1,299 +1,327 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
+
 {% block body %}
-<style>
-  .table thead th {
-        font-size: 13px;
-        color: #444;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .table tbody td {
-        font-size: 14px;
-    }
-    .table{
-        text-align: center;
-    }
-    .table-light{
-        background:linear-gradient(#FFFFFF, #F8F9FA, #F8F9FA,#F1F9FD);
-    }
-    .collapsed {
-        color: #0d6efd;
-        font-weight: 700;
-        box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .125);
-    }
-    .accordion-button:not(.collapsed) {
-        color: #0d6efd;
-        font-weight: 700;
-        box-shadow: none;
-        border-color: rgba(0, 0, 0, .125);
-        background-color:white;
-    }
-    .accordion-body{
-        background-color: #F8F9FA;
-    }
-    
-   
-</style>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #7c3aed;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --bg-body: #f8fafc;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
 
-<main id="main" class="main">
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
+        }
 
-    <div class="pagetitle">
-    <h1>Manage Leave Requests</h1>
-    <nav>
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-            <li class="breadcrumb-item active">Manage Leaves</li>
-        </ol>
-    </nav>
-    </div>
+        .main-content {
+            padding: 1.5rem;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
 
-<br>
-<!--Filter for leaves-->
-<div class="accordion" id="clientFilterAccordion">
-     <div class="accordion-item">
-    <h2 class="accordion-header">
-      <button class="accordion-button collapsed"type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-        <i class="bi bi-funnel-fill me-2"></i>Filter Leave
-      </button>
-    </h2>
-    <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
-      <div class="accordion-body">
-                        
-                        <div style = "display:flex;gap:2px; width:50%;">
-                        <div class="col-md-6 mb-3">
-                        <label class="form-label">Start date</label>
-                        <input type="date" name="start_date" class="form-control" required="" id="startSearch">
-                        
-                        </div>
-                        <div class="col-md-6 mb-3"style = "margin-left:1rem;">
-                        <label class="form-label">End date</label>
-                        <input type="date" name="end_date" class="form-control" required="" id="endSearch">
-                        
-                        </div>
-                           
-                     <div class="col-md-5" style = "margin-left:3px;">
-                                            <label class="form-label small fw-bold text-secondary">
-                                                    All Employees
-                                            </label>
-                                            <select id = "eachuser"  class="form-select">
-                                                <option  id = "all employees">All Employees</option>
-                                                {% for employee in employees %}
-                                                 <option  value = "{{employee.user.first_name}} {{employee.user.last_name}}" > {{employee.user.first_name}} {{employee.user.last_name}}</option>   
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                         
+        /* Header Styling */
+        .pagetitle h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.025em; }
+        .breadcrumb-item { font-size: 0.85rem; font-weight: 500; }
 
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 1.25rem;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
+            background: #ffffff;
+            margin-bottom: 1.5rem;
+        }
 
-                         
-                        </div>
-                        <br>
-                        <div class="col-md-6 d-flex align-items-start">
-                                            <button type="submit"  id = "btn-apply" class="btn btn-primary me-2">
-                                                <i class="bi bi-search"></i> Apply Filters
-                                            </button>
-                                            <a href="/manage-leaves/" class="btn btn-secondary">
-                                                <i class="bi bi-x-circle"></i> Clear
-                          </a>
-                        </div>
-                    </div>
-                </div>
-              
+        .card-body { padding: 1.5rem; }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 1.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Filter Section Styles */
+        .filter-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+        }
+
+        .form-label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .form-control, .form-select {
+            border-radius: 0.75rem;
+            border-color: #e2e8f0;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Tables */
+        .table thead th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: none;
+            padding: 1rem;
+            text-align: center;
+        }
+        .table tbody td { padding: 1.2rem 1rem; border-bottom: 1px solid #f1f5f9; text-align: center; vertical-align: middle; }
+
+        /* Status & Type Badges */
+        .badge-soft-success { background: #dcfce7; color: #15803d; }
+        .badge-soft-warning { background: #fef3c7; color: #92400e; }
+        .badge-soft-danger { background: #fee2e2; color: #b91c1c; }
+        .badge-soft-primary { background: #e0e7ff; color: #4338ca; }
+        .badge-soft-info { background: #e0f2fe; color: #0369a1; }
+
+        /* Action Buttons */
+        .btn-group-pill { border-radius: 50px; overflow: hidden; }
+        .btn-action { padding: 0.4rem 1rem; font-weight: 600; font-size: 0.8rem; }
+
+        @media (max-width: 768px) {
+            .main-content { padding: 1rem; }
+            .pagetitle .d-flex { flex-direction: column; align-items: flex-start !important; gap: 1rem; }
+            .filter-inputs { flex-direction: column; }
+        }
+    </style>
+
+    <!-- External Assets -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <main id="main" class="main-content">
+        <!-- Header -->
+        <div class="pagetitle d-md-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Manage Leave Requests</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active">Manage Leaves</li>
+                    </ol>
+                </nav>
             </div>
-            
+            <div class="header-actions">
+                <div class="bg-white border rounded-pill px-3 py-2 d-flex align-items-center shadow-sm">
+                    <i class="bi bi-person-check me-2 text-primary"></i>
+                    <span class="small fw-bold">Admin Portal</span>
+                </div>
+            </div>
         </div>
 
-<!--End of filter -->
+        <!-- Filter Panel -->
+        <div class="card filter-card mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-funnel-fill me-2"></i>Filter Requests</h5>
+                <div class="row g-3">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="startSearch">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="endSearch">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Employee</label>
+                        <select id="eachuser" class="form-select">
+                            <option value="All Employees">All Employees</option>
+                            {% for employee in employees %}
+                                <option value="{{ employee.user.first_name }} {{ employee.user.last_name }}">
+                                    {{ employee.user.first_name }} {{ employee.user.last_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3 d-flex align-items-end gap-2">
+                        <button id="btn-apply" class="btn btn-primary rounded-pill px-4 fw-bold flex-grow-1">
+                            <i class="bi bi-search me-1"></i> Apply
+                        </button>
+                        <a href="/manage-leaves/" class="btn btn-light rounded-pill px-3 border">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<br>
-<!--Section-->   
-<section class="section">
+        <!-- Request Table -->
+        <section class="section">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Employee</th>
+                                    <th>Type</th>
+                                    <th>Dates</th>
+                                    <th>Days</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for leave in all_leaves %}
+                                    <tr data-status="{{ leave.status }}">
+                                        <td class="text-muted small">#{{ leave.id }}</td>
+                                        <td class="fw-bold Name text-primary">{{ leave.user.first_name }} {{ leave.user.last_name }} ({{ leave.user.username }})</td>
+                                        <td>
+                                            {% with type=leave.get_leave_type_display %}
+                                                <span class="badge rounded-pill px-3
+                                                    {% if type == 'Casual Leave' %}badge-soft-info
+                                                    {% elif type == 'Sick Leave' %}badge-soft-warning
+                                                    {% else %}badge-soft-primary{% endif %}">
+                                                    {{ type }}
+                                                </span>
+                                            {% endwith %}
+                                        </td>
+                                        <td class="small">
+                                            <div class="start fw-bold">{{ leave.start_date|date:"d M Y" }}</div>
+                                            <div class="end text-muted">to {{ leave.end_date|date:"d M Y" }}</div>
+                                        </td>
+                                        <td><span class="fw-bold">{{ leave.total_days }}</span></td>
+                                        <td class="text-start small" style="max-width: 200px;">{{ leave.reason|truncatechars:40 }}</td>
+                                        <td>
+                                            {% if leave.status == 'pending' %}
+                                                <span class="badge badge-soft-warning rounded-pill px-3">Pending</span>
+                                            {% elif leave.status == 'approved' %}
+                                                <span class="badge badge-soft-success rounded-pill px-3">Approved</span>
+                                            {% else %}
+                                                <span class="badge badge-soft-danger rounded-pill px-3">Rejected</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if leave.status == 'pending' %}
+                                                <form method="post" class="leave-form">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="leave_id" value="{{ leave.id }}">
+                                                    <input type="hidden" name="status">
+                                                    <div class="btn-group btn-group-pill border shadow-sm">
+                                                        <button type="button" class="btn btn-white text-success btn-action swal-approve border-end">
+                                                            <i class="bi bi-check-circle-fill"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-white text-danger btn-action swal-reject">
+                                                            <i class="bi bi-x-circle-fill"></i>
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            {% else %}
+                                                <span class="text-muted small">—</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="8" class="text-center py-5 text-muted">No leave requests found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 
-<div class="card overflow-auto shadow-sm">
-<div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // APPROVE Logic
+            document.querySelectorAll('.swal-approve').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const form = this.closest('form');
+                    form.querySelector('input[name="status"]').value = 'approved';
 
-<div class="table-responsive">
-<table class="table table-borderless table-hover align-middle">
-<thead class = "table-light">
-<tr>
-    <th scope="col">ID</th>
-    <th scope="col">Employee</th>
-    <th scope="col">Type</th>
-    <th scope="col">Start</th>
-    <th scope="col">End</th>
-    <th scope="col">Days</th>
-    <th scope="col">Reason</th>
-    <th scope="col">Actions</th>
-</tr>
-</thead>
-
-<tbody>
-{% for leave in all_leaves %}
-<tr data-status="{{ leave.status }}">
-
-<td >{{ leave.id }}</td>
-<td class="fw-bold Name" style = "color:#4154f1;"> {{ leave.user.first_name}} {{leave.user.last_name}}</td>
-<td><h6 class = "badge  border
-     {% if leave.get_leave_type_display == 'Casual Leave' %}bg-info
-     {% elif leave.get_leave_type_display == 'Sick Leave' %}bg-warning text-white
-     {% else %} bg-white text-dark
-     {% endif%}" style = "margin-top:8px;">
-    {{ leave.get_leave_type_display }}</h6>
-</td>
-<td class = "start">{{ leave.start_date }}</td>
-<td class = "end">{{ leave.end_date }}</td>
-<td>{{ leave.total_days }}</td>
-<td>{{ leave.reason|truncatechars:30 }}</td>
-
-<td>
-{% if leave.status == 'pending' %}
-
-<div class="d-flex flex-column gap-1">
-
-<form method="post" class="leave-form w-100">
-{% csrf_token %}
-<input type="hidden" name="leave_id" value="{{ leave.id }}">
-<input type="hidden" name="status">
-
-<button type="button"
-            class="btn btn-success swal-approve"style = "position:relative; right:12px;">
-        Approve
-    </button>
-
-    <button type="button"
-            class="btn btn-danger swal-reject"style="width:85.2px;">
-                Reject
-    </button>
-
-</form>
-
-</div>
-
-{% else %}
-<span class="badge {% if leave.status == 'approved' %}bg-success{% else %}bg-danger{% endif %} p-2"
-      style="border-radius:20px; min-width:80px;">
-    {{ leave.status|title }}
-</span>
-{% endif %}
-</td>
-</tr>
-{% empty %}
-<tr>
-<td colspan="8" class="text-center text-muted">
-No leave requests found
-</td>
-</tr>
-{% endfor %}
-</tbody>
-
-</table>
-</div>
-
-</div>
-</div>
-
-</section>
-</main>
-
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    // APPROVE
-    document.querySelectorAll('.swal-approve').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const form = this.closest('form');
-            form.querySelector('input[name="status"]').value = 'approved';
-
-            Swal.fire({
-                title: 'Approve Leave?',
-                text: 'Are you sure you want to approve this leave request?',
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, Approve'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
+                    Swal.fire({
+                        title: 'Approve Leave?',
+                        text: 'This employee will be marked as on-leave for the selected dates.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#10b981',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Yes, Approve'
+                    }).then((result) => {
+                        if (result.isConfirmed) form.submit();
+                    });
+                });
             });
-        });
-    });
 
-    // REJECT
-    document.querySelectorAll('.swal-reject').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const form = this.closest('form');
-            form.querySelector('input[name="status"]').value = 'rejected';
+            // REJECT Logic
+            document.querySelectorAll('.swal-reject').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const form = this.closest('form');
+                    form.querySelector('input[name="status"]').value = 'rejected';
 
-            Swal.fire({
-                title: 'Reject Leave?',
-                text: 'This action cannot be undone.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, Reject'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
+                    Swal.fire({
+                        title: 'Reject Leave?',
+                        text: 'This action will notify the employee and cannot be undone.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#ef4444',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Yes, Reject'
+                    }).then((result) => {
+                        if (result.isConfirmed) form.submit();
+                    });
+                });
             });
+
+            // Filtering Table Logic
+            const applyFilterBtn = document.getElementById("btn-apply");
+            if (applyFilterBtn) {
+                applyFilterBtn.addEventListener("click", function() {
+                    const from = document.getElementById('startSearch').value;
+                    const to = document.getElementById('endSearch').value;
+                    const user = document.getElementById('eachuser').value.trim();
+                    const rows = document.querySelectorAll('tbody tr');
+
+                    rows.forEach(row => {
+                        let show = true;
+
+                        // User Filter
+                        if (user && user !== "All Employees") {
+                            const name = row.querySelector('.Name')?.innerText.trim();
+                            if (name !== user) show = false;
+                        }
+
+                        // Date Range Filter
+                        if (from && to) {
+                            const startText = row.querySelector('.start')?.innerText;
+                            const endText = row.querySelector('.end')?.innerText;
+
+                            const startDate = new Date(startText);
+                            const endDate = new Date(endText);
+                            const fromDate = new Date(from);
+                            const toDate = new Date(to);
+
+                            startDate.setHours(0,0,0,0);
+                            endDate.setHours(0,0,0,0);
+                            fromDate.setHours(0,0,0,0);
+                            toDate.setHours(0,0,0,0);
+
+                            if (startDate > toDate || endDate < fromDate) {
+                                show = false;
+                            }
+                        }
+
+                        row.style.display = show ? 'table-row' : 'none';
+                    });
+                });
+            }
         });
-    });
-
-});
-// filtertable function    
-let apply_filter = document.getElementById("btn-apply");
-apply_filter.addEventListener("click", function filterTable(){
-    function normalizeDate(d) {
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-    const from = document.getElementById('startSearch').value;
-    const to   = document.getElementById('endSearch').value;
-    const user = document.getElementById('eachuser').value.trim();
-
-    const rows = document.querySelectorAll('tbody tr');
-
-    rows.forEach(row => {
-        let show = true; 
-
-    
-        if (user && user !== "All Employees") {
-            const name = row.querySelector('.Name')?.innerText.trim();
-            if (name !== user) {
-                show = false;
-            }
-        }
-
-        if (from && to) {
-            const startText = row.querySelector('.start')?.innerText;
-            const endText   = row.querySelector('.end')?.innerText;
-
-            const startDate = normalizeDate(new Date(startText));
-            const endDate   = normalizeDate(new Date(endText));
-            const fromDate  = normalizeDate(new Date(from));
-            const toDate    = normalizeDate(new Date(to));
-            
-            if (
-                startDate > toDate ||
-                endDate < fromDate ||
-                fromDate > toDate
-            ) {
-                show = false;
-            }
-        }
-
-        row.style.display = show ? 'table-row' : 'none';
-    });
-})
-
-
-</script>
-
-{% endblock %}
+    </script>
+{% endblock body %}

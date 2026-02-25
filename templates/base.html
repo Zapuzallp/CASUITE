@@ -10,170 +10,345 @@
     <meta content="" name="description">
     <meta content="" name="keywords">
 
-
     <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
-
     <link href="{% static 'assets/css/searchbar.css' %}" rel="stylesheet">
 
     <!-- Favicons -->
-    <link href={% static "assets/img/favicon.ico" %}rel="icon">
-    <link href={% static "assets/img/apple-touch-icon.png" %} rel="apple-touch-icon">
+    <link href="{% static 'assets/img/favicon.ico' %}" rel="icon">
+    <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
 
     <!-- Google Fonts -->
     <link href="https://fonts.gstatic.com" rel="preconnect">
-    <link href="https://fonts.googleapis.com/css?family=Open+San:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
-          rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
 
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <!-- Select2 Bootstrap 5 theme (optional but recommended) -->
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <!-- Vendor CSS Files -->
-    <link href={% static "assets/vendor/bootstrap/css/bootstrap.min.css" %} rel="stylesheet">
-    <link href={% static "assets/vendor/bootstrap-icons/bootstrap-icons.css" %} rel="stylesheet">
-    <link href={% static "assets/vendor/boxicons/css/boxicons.min.css" %}rel="stylesheet">
-    <link href={% static "assets/vendor/quill/quill.snow.css" %} rel="stylesheet">
-    <link href={% static "assets/vendor/quill/quill.bubble.css" %}rel="stylesheet">
-    <link href={% static "assets/vendor/remixicon/remixicon.css" %}rel="stylesheet">
-    <link href={% static "assets/vendor/simple-datatables/style.css" %} rel="stylesheet">
-    <link href={% static "assets/css/client_onboarding.css" %} rel="stylesheet">
+    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/boxicons/css/boxicons.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/quill/quill.snow.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/quill/quill.bubble.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/remixicon/remixicon.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/vendor/simple-datatables/style.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/client_onboarding.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
-     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-    <!-- Template Main CSS File -->
-    <link href={% static "assets/css/style.css" %} rel="stylesheet">
     <style>
-    .text-danger { color: #dc3545; }
+        /* --- GLOBAL TYPOGRAPHY SYSTEM (MNC STANDARDS) --- */
+        :root {
+            --primary-font: 'Poppins', sans-serif;
+            --secondary-font: 'Open Sans', sans-serif;
+            --nav-font: 'Nunito', sans-serif;
+
+            --base-size: 14px;
+            --h1-size: 28px;
+            --h2-size: 24px;
+            --h3-size: 20px;
+            --h4-size: 18px;
+            --h5-size: 16px;
+            --h6-size: 14px;
+            --small-size: 12px;
+        }
+
+        /* Force Global Font Override */
+        html, body {
+            font-family: var(--secondary-font) !important;
+            font-size: var(--base-size) !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            color: #444444;
+        }
+
+        h1, h2, h3, h4, h5, h6, .pagetitle h1 {
+            font-family: var(--primary-font) !important;
+            font-weight: 600 !important;
+            color: #012970 !important;
+        }
+
+        h1 { font-size: var(--h1-size) !important; }
+        h2 { font-size: var(--h2-size) !important; }
+        h3 { font-size: var(--h3-size) !important; }
+        h4 { font-size: var(--h4-size) !important; }
+        h5 { font-size: var(--h5-size) !important; }
+        h6 { font-size: var(--h6-size) !important; }
+
+        /* Sidebar & Navigation Override */
+        .sidebar-nav, .nav-link, .nav-item, .navbar {
+            font-family: var(--nav-font) !important;
+        }
+
+        /* DataTables & Form Global Size */
+        table, .table, thead, tbody, tfoot, tr, th, td,
+        input, select, textarea, button, .form-control, .select2-container {
+            font-size: var(--base-size) !important;
+            font-family: var(--secondary-font) !important;
+        }
+
+        small, .text-small, .breadcrumb {
+            font-size: var(--small-size) !important;
+        }
+
+        .text-danger { color: #dc3545; }
+
+        /* --- PRELOADER UI (REVERTED TO HIGH TRANSPARENCY ELEGANCE) --- */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Semi-transparent radial gradient for visibility of dashboard */
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.35) 0%, rgba(244, 247, 255, 0.45) 100%);
+            /* Subtle blur so underlying content is visible but soft */
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 999999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: opacity 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .loader-content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-wrapper {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        .logo-wrapper img {
+            width: 60px;
+            height: auto;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
+        }
+
+        .circular-loader {
+            width: 160px;
+            height: 160px;
+            transform: rotate(-90deg);
+        }
+
+        .loader-bg {
+            fill: none;
+            stroke: rgba(0, 107, 255, 0.12);
+            stroke-width: 6;
+        }
+
+        .loader-progress {
+            fill: none;
+            stroke: #006bff;
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 440;
+            stroke-dashoffset: 440;
+            transition: stroke-dashoffset 0.4s ease-out;
+            filter: drop-shadow(0 0 8px rgba(0, 107, 255, 0.4));
+        }
+
+        .percentage-label {
+            position: absolute;
+            bottom: -50px;
+            font-family: var(--primary-font) !important;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #006bff;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 3px rgba(255,255,255,0.9);
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        body.loading {
+            overflow: hidden !important;
+            height: 100vh;
+        }
     </style>
 </head>
-<body>
 
-{% include 'header.html' %}
-{% include 'sidebar.html' %}
+<body class="loading">
 
+    <!-- Preloader Overlay -->
+    <div id="preloader">
+        <canvas id="particle-canvas"></canvas>
+        <div class="loader-content">
+            <div class="logo-wrapper">
+                <img src="{% static 'assets/img/logo.png' %}" alt="Zapuza Logo">
+            </div>
 
-{% block body %}
-{% endblock body %}
-<!-- ======= Footer ======= -->
-<footer id="footer" class="footer">
-    <div class="copyright">
-        &copy; Copyright <strong><span>Zapuza</span></strong>. All Rights Reserved
+            <svg class="circular-loader" viewBox="0 0 160 160">
+                <circle class="loader-bg" cx="80" cy="80" r="70"></circle>
+                <circle id="progress-circle" class="loader-progress" cx="80" cy="80" r="70"></circle>
+            </svg>
+
+            <div id="percentage-text" class="percentage-label">0%</div>
+        </div>
     </div>
-    <div class="credits">
-        <!-- All the links in the footer should remain intact. -->
-        <!-- You can delete the links only if you purchased the pro version. -->
-        <!-- Licensing information: https://bootstrapmade.com/license/ -->
-        <!-- Purchase the pro version with working PHP/AJAX contact form: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/ -->
-        {#        Designed by <a href="https://zapuza.com/">Nice Admin</a>#}
-    </div>
-</footer><!-- End Footer -->
 
-<a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i
-        class="bi bi-arrow-up-short"></i></a>
+    {% include 'header.html' %}
+    {% include 'sidebar.html' %}
 
-{#<script src="{% static 'assets/js/main.js' %}"></script>#}
-<script src="{% static 'assets/js/searchbar.js' %}"></script>
+    {% block body %}
+    {% endblock body %}
 
-<!-- Vendor JS Files -->
-<script src={% static "assets/vendor/apexcharts/apexcharts.min.js" %}></script>
-<script src={% static "assets/vendor/bootstrap/js/bootstrap.bundle.min.js" %}></script>
-<script src={% static "assets/vendor/chart.js/chart.umd.js" %}></script>
-<script src={% static "assets/vendor/echarts/echarts.min.js" %}></script>
-<script src={% static "assets/vendor/quill/quill.js" %}></script>
-<script src={% static "assets/vendor/simple-datatables/simple-datatables.js" %}></script>
-<script src={% static "assets/vendor/tinymce/tinymce.min.js" %}></script>
-<script src={% static "assets/vendor/php-email-form/validate.js" %}></script>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <footer id="footer" class="footer">
+        <div class="copyright">
+            &copy; Copyright <strong><span>Zapuza</span></strong>. All Rights Reserved
+        </div>
+    </footer>
 
-<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <a href="#" class="back-to-top d-flex align-items-center justify-content-center">
+        <i class="bi bi-arrow-up-short"></i>
+    </a>
 
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+    <!-- Standard Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <!-- PRELOADER ENGINE -->
+    <script>
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 40;
 
-<!-- Template Main JS File -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src={% static "assets/js/main.js" %}></script>
-<script>
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
 
-    $(document).ready(function () {
-        const datatableClasses = [
-            '.datatable1',
-            '.datatable-export',
-        ];
+        class Particle {
+            constructor() {
+                this.init();
+            }
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(0, 107, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
 
-        datatableClasses.forEach(selector => {
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
 
-            $(selector).each(function () {
-
-                if ($.fn.DataTable.isDataTable(this)) return;
-
-                $(this).DataTable({
-                    responsive: true,
-                    processing: true,
-
-                    pageLength: 10,
-                    lengthMenu: [
-                        [5, 10, 20, 50, 70, 100, 500, 1000, -1],
-                        [5, 10, 20, 50, 70, 100, 500, 1000, "All"]
-                    ],
-
-                    dom: '<"dt-top"fB>rt<"dt-bottom"lip>',
-
-                    buttons: [
-                        {
-                            extend: 'csv',
-                            text: '<i class="bi bi-file-earmark-spreadsheet"></i>',
-                            className: 'btn btn-xs btn-outline-primary dt-btn'
-                        },
-                        {
-                            extend: 'excel',
-                            text: '<i class="bi bi-file-excel"></i>',
-                            className: 'btn btn-xs btn-outline-success dt-btn'
-                        },
-                        {
-                            extend: 'print',
-                            text: '<i class="bi bi-printer"></i>',
-                            className: 'btn btn-xs btn-outline-secondary dt-btn'
-                        }
-                    ],
-
-                    order: []
-                });
-
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
             });
+            requestAnimationFrame(animateParticles);
+        }
 
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        initParticles();
+        animateParticles();
+
+        (function() {
+            const progressCircle = document.getElementById('progress-circle');
+            const percentageText = document.getElementById('percentage-text');
+            const circumference = 2 * Math.PI * 70;
+            let currentPercent = 0;
+
+            function updateProgress(percent) {
+                const offset = circumference - (percent / 100 * circumference);
+                progressCircle.style.strokeDashoffset = offset;
+                percentageText.innerText = Math.floor(percent) + '%';
+            }
+
+            const loadingInterval = setInterval(() => {
+                if (currentPercent < 92) {
+                    currentPercent += (Math.random() * 5);
+                    if (currentPercent > 92) currentPercent = 92;
+                    updateProgress(currentPercent);
+                }
+            }, 200);
+
+            window.addEventListener('load', () => {
+                clearInterval(loadingInterval);
+                updateProgress(100);
+
+                setTimeout(() => {
+                    const preloader = document.getElementById('preloader');
+                    preloader.style.opacity = '0';
+                    document.body.classList.remove('loading');
+
+                    setTimeout(() => {
+                        preloader.remove();
+                    }, 800);
+                }, 500);
+            });
+        })();
+    </script>
+
+    <!-- App Logic Scripts -->
+    <script>
+        $(document).ready(function () {
+            const datatableClasses = ['.datatable1', '.datatable-export'];
+            datatableClasses.forEach(selector => {
+                $(selector).each(function () {
+                    if ($.fn.DataTable.isDataTable(this)) return;
+                    $(this).DataTable({
+                        responsive: true,
+                        processing: true,
+                        dom: '<"dt-top"fB>rt<"dt-bottom"lip>',
+                        buttons: ['csv', 'excel', 'print']
+                    });
+                });
+            });
         });
-
-    });
-</script>
-
-<script>
-    $('.js-example-basic-single').select2(
-        {
-            dropdownParent: $("#siteVisitModal")
-        })
-     $('#clientSelector').select2(
-        {
-            dropdownParent: $("#selectClientModal")
-        })
-
-</script>
-<!-- Select2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    </script>
 </body>
-
 </html>
