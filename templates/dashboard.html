@@ -576,17 +576,28 @@
                                                 <!-- Team Avatars -->
                                                 <td>
                                                     {% with task.assignees.all as assignees %}
-                                                        <div class="avatar-stack"
-                                                             data-bs-toggle="tooltip"
-                                                             data-bs-title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
-                                                            {% for user in assignees|slice:":3" %}
-                                                                <div class="avatar-item">
-                                                                    {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
-                                                                </div>
-                                                            {% empty %}
-                                                                <span class="text-muted small fst-italic">Unassigned</span>
-                                                            {% endfor %}
-                                                        </div>
+                                                        {% if assignees %}
+                                                            <div class="avatar-stack"
+                                                                 data-bs-toggle="tooltip"
+                                                                 data-bs-placement="top"
+                                                                 data-bs-title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+
+                                                                {% for user in assignees|slice:":3" %}
+                                                                    <div class="avatar-item">
+                                                                        {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+                                                                    </div>
+                                                                {% endfor %}
+
+                                                                {% if assignees.count > 3 %}
+                                                                    <div class="avatar-item bg-light text-dark border">
+                                                                        +{{ assignees.count|add:"-3" }}
+                                                                    </div>
+                                                                {% endif %}
+
+                                                            </div>
+                                                        {% else %}
+                                                            <span class="text-muted small fst-italic">Unassigned</span>
+                                                        {% endif %}
                                                     {% endwith %}
                                                 </td>
 
@@ -842,5 +853,12 @@
                 updateTimers();
             {% endif %}
         }
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                new bootstrap.Tooltip(el);
+            });
+        });
     </script>
 {% endblock body %}
