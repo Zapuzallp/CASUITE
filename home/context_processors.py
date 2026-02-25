@@ -40,8 +40,11 @@ def header_data(request):
             id__in=latest_message_ids
         ).order_by('-timestamp')
         
-  
-
+        for h in header_messages:
+            try:
+                h.content = fernet.decrypt(h.content.encode()).decode()
+            except Exception:
+                raise Exception  
 
         return {
             "header_messages": header_messages
