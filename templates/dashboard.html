@@ -238,6 +238,43 @@
             color: #64748b;
         }
 
+        /* Modern Table Styling */
+        .modern-table thead th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #64748b;
+            background: #f8fafc;
+            border: none;
+        }
+
+        .modern-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .modern-table tbody tr:hover {
+            background-color: #f9fafb;
+            transform: scale(1.002);
+        }
+
+        .modern-table td {
+            border-bottom: 1px solid #f1f5f9;
+            padding: 1rem;
+        }
+
+        /* Soft Badge Variants */
+        .bg-danger-subtle {
+            background-color: #fee2e2;
+        }
+
+        .bg-warning-subtle {
+            background-color: #fef3c7;
+        }
+
+        .bg-success-subtle {
+            background-color: #dcfce7;
+        }
+
         @media (max-width: 768px) {
             .main-content { padding: 1rem; }
             .pagetitle .d-flex {
@@ -459,84 +496,123 @@
                                 {% endfor %}
                             </div>
 
-                            <table class="table table-hover align-middle">
-                                <thead class="table-light">
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th>Title</th>
-                                    <th>Client</th>
-                                    <th>Service</th>
-                                    <th>Due Date</th>
-                                    <th>Team</th>
-                                    <th>Status</th>
-                                </tr>
-                                </thead>
-                                <tbody id="due-tasks-tbody">
-                                {% if due_tasks %}
-                                    {% for task in due_tasks %}
-                                        <tr>
-                                            <td>{{ forloop.counter }}</td>
-                                            <td class="fw-bold"><a href="{% url 'task_detail' task.id %}">
-                                                {{ task.task_title|truncatechars:30}}</a>
-                                            </td>
-                                            <td>{{ task.client.client_name|default:"-" }}</td>
-                                            <td>{{ task.get_service_type_display|default:"-" }}</td>
-                                            <td>
-                                                {% if task.due_date %}
-                                                    <span
-                                                            class="{% if task.due_date < today %}text-danger{% elif task.due_date == today %}text-warning{% else %}text-success{% endif %}">
-                                            {{ task.due_date|date:"M d, Y" }}
-                                        </span>
-                                                {% else %}-{% endif %}
-                                            </td>
-                                             <td>
-                                            {% with task.assignees.all as assignees %}
-                                                <div class="d-flex align-items-center"
-                                                     data-bs-toggle="tooltip"
-                                                     data-bs-placement="top"
-                                                     data-bs-title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
 
-                                                    {% for user in assignees|slice:":3" %}
-                                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
-                                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};">
-                                                            {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
-                                                        </div>
-                                                    {% empty %}
-                                                        <span class="text-muted small fst-italic">Unassigned</span>
-                                                    {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                                                    {% if assignees.count > 3 %}
-                                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
-                                                             style="width: 28px; height: 28px; font-size: 10px;">
-                                                            +{{ assignees.count|add:"-3" }}
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                            {% endwith %}
-                                        </td>
+            <!-- Row 4: Due Tasks -->
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card h-100">
+                        <div class="card-body">
 
-                                        <td>
-                                        <span class="badge rounded-pill
-                                                {% if task.status == 'Completed' %}bg-success
-                                                {% elif task.status == 'Review' %}bg-warning text-dark
-                                                {% else %}bg-light text-dark border{% endif %}">
-                                            {{ task.status }}
-                                        </span>
-                                        </td>
+                            <!-- Header -->
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="card-title mb-0">Due Tasks <span>| Upcoming & Overdue</span></h5>
+                                <a href="{% url 'task_list' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
+                                    View All
+                                </a>
+                            </div>
 
-
-                                        </tr>
-                                    {% endfor %}
-                                {% else %}
+                            <!-- Responsive Table -->
+                            <div class="table-responsive">
+                                <table class="table align-middle modern-table mb-0">
+                                    <thead>
                                     <tr>
-                                        <td colspan="8" class="text-center text-muted py-4">No tasks found for the
-                                            selected
-                                            due range.
-                                        </td>
+                                        <th>#</th>
+                                        <th>Title</th>
+                                        <th>Client</th>
+                                        <th>Service</th>
+                                        <th>Due</th>
+                                        <th>Team</th>
+                                        <th>Status</th>
                                     </tr>
-                                {% endif %}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                    {% if due_tasks %}
+                                        {% for task in due_tasks %}
+                                            <tr>
+                                                <td class="text-muted small">{{ forloop.counter }}</td>
+
+                                                <td>
+                                                    <a href="{% url 'task_detail' task.id %}" class="fw-bold text-decoration-none text-dark">
+                                                        {{ task.task_title|truncatechars:30 }}
+                                                    </a>
+                                                </td>
+
+                                                <td class="text-muted">
+                                                    {{ task.client.client_name|default:"-" }}
+                                                </td>
+
+                                                <td>
+                                                    <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                                                        {{ task.get_service_type_display|default:"-" }}
+                                                    </span>
+                                                </td>
+
+                                                <!-- Due Date Styling -->
+                                                <td>
+                                                    {% if task.due_date %}
+                                                        {% if task.due_date < today %}
+                                                            <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2">
+                                                                Overdue · {{ task.due_date|date:"M d" }}
+                                                            </span>
+                                                        {% elif task.due_date == today %}
+                                                            <span class="badge rounded-pill bg-warning-subtle text-warning px-3 py-2">
+                                                                Today
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="badge rounded-pill bg-success-subtle text-success px-3 py-2">
+                                                                {{ task.due_date|date:"M d" }}
+                                                            </span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-muted small">-</span>
+                                                    {% endif %}
+                                                </td>
+
+                                                <!-- Team Avatars -->
+                                                <td>
+                                                    {% with task.assignees.all as assignees %}
+                                                        <div class="avatar-stack"
+                                                             data-bs-toggle="tooltip"
+                                                             data-bs-title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                            {% for user in assignees|slice:":3" %}
+                                                                <div class="avatar-item">
+                                                                    {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+                                                                </div>
+                                                            {% empty %}
+                                                                <span class="text-muted small fst-italic">Unassigned</span>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endwith %}
+                                                </td>
+
+                                                <!-- Status Badge -->
+                                                <td>
+                                                    <span class="badge rounded-pill px-3 py-2
+                                                        {% if task.status == 'Completed' %}bg-emerald-light text-success
+                                                        {% elif task.status == 'In Progress' %}bg-indigo-light text-primary
+                                                        {% elif task.status == 'Review' %}bg-amber-light text-warning
+                                                        {% else %}bg-light text-dark border{% endif %}">
+                                                        {{ task.status }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-5">
+                                                No due tasks found.
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+
                         </div>
                     </div>
                 </div>
