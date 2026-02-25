@@ -66,16 +66,18 @@ class Shift(models.Model):
 
 
 class EmployeeShift(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='employee_shifts')
+    user = models.ManyToManyField(User,related_name='employee_shift')
     shift = models.ForeignKey(
         Shift, on_delete=models.CASCADE, related_name='assigned_employees')
     # Optional: Track this assignment validity
-    valid_from = models.DateField(auto_now_add=True)
+    valid_from = models.DateField(default=timezone.now)
     valid_to = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.user.get_username()} assigned to {self.shift.shift_name}"
+        users = ", ".join(
+        self.user.values_list("username", flat=True)
+        )
+        return f"{users} → {self.shift.shift_name}"
 
 
 STATE_CHOICES = (
