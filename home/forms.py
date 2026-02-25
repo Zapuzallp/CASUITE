@@ -307,9 +307,18 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        client = kwargs.pop('client', None)
         super().__init__(*args, **kwargs)
         self.fields['total_turnover'].widget.attrs.update({'placeholder': '0.00'})
         self.fields['tax_payable'].widget.attrs.update({'placeholder': '0.00'})
+
+        # Filter GST details by client
+        if client:
+            from home.models import GSTDetails
+            self.fields['gstin_number'].queryset = GSTDetails.objects.filter(client=client)
+            # Customize the label to show GST number and state
+            self.fields['gstin_number'].label_from_instance = lambda \
+                obj: f"{obj.gst_number} - {obj.get_state_display()}"
 
 
 # Leave form
@@ -396,6 +405,9 @@ class InvoiceForm(BootstrapFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Customize client field display to show: Client Name || PAN || Status
+        self.fields['client'].label_from_instance = lambda obj: f"{obj.client_name} || {obj.pan_no} || {obj.status}"
 
         # Default:no tasks
         self.fields['services'].queryset = Task.objects.none()

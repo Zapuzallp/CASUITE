@@ -306,11 +306,13 @@
                                                class="btn btn-sm btn-outline-secondary" title="View Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <!-- Edit Client -->
+                                            <!-- Edit Client - Hidden for Partners -->
+                                            {% if not is_partner %}
                                             <a href="{% url 'edit_client' client.id %}"
                                                class="btn btn-sm btn-outline-primary" title="Edit Client">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
