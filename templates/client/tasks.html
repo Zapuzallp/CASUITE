@@ -228,11 +228,11 @@
                                                 <!-- Badge -->
                                                 {% if task.status != 'Completed' %}
                                                     {% if task.due_date < today %}
-                                                    <span class="badge bg-danger ms-1 align-self-center small">Overdue</span>
+                                                    <span class="badge bg-danger align-self-center small">Overdue</span>
                                                     {% elif task.due_date == today %}
-                                                    <span class="badge bg-warning ms-1 align-self-center small">Today</span>
+                                                    <span class="badge bg-warning align-self-center small">Today</span>
                                                     {% elif task.due_date == tomorrow %}
-                                                    <span class="badge bg-info ms-1 align-self-center small">Tomorrow</span>
+                                                    <span class="badge bg-info align-self-center small">Tomorrow</span>
                                                     {% endif %}
                                                {% endif %}
                                                 </div>
