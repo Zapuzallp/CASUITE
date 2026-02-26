@@ -3,11 +3,10 @@ from django.contrib.auth.models import User
 from django.db.models import Q, Value, CharField
 from django.db.models.functions import Concat, Coalesce
 from django.shortcuts import render, get_object_or_404, redirect
-
 from home.models import Message
 from home.forms import MessageForm
-
-
+from django.conf import settings 
+from cryptography.fernet import Fernet 
 @login_required
 def chat_view(request, user_id=None,):
     '''Calculated recent users,target users,
@@ -74,28 +73,41 @@ def chat_view(request, user_id=None,):
     target_user = None
     messages = None
     form = MessageForm()
-
     if user_id is not None:
         target_user = get_object_or_404(User, id=user_id)
-        
+
         messages = Message.objects.filter(
             Q(sender=request.user, receiver=target_user) |
-            Q(sender=target_user, receiver=request.user)
+            Q(sender=target_user, receiver=request.user),
         ).order_by('timestamp')
+
+       
+
+
         
-        # Added filtering for notifications
+
+
+        #filtering for notifications
         Message.objects.filter(
             sender=target_user,
             receiver=request.user,
             is_seen=False
         ).update(is_seen=True)
         
-        
+        f = Fernet(settings.ENCRYPTION_KEY)
        
         if request.method == 'POST':
             form = MessageForm(request.POST)
+
             if form.is_valid():
                 msg = form.save(commit=False)
+                message_original = form.cleaned_data['content']
+                message_bytes = message_original.encode('utf-8')
+                message_encrypted = f.encrypt(message_bytes)
+                message_decoded = message_encrypted.decode('utf-8')
+                msg.content = message_decoded
+
+
                 msg.sender = request.user
                 msg.receiver = target_user
                 msg.status = 'draft' if 'save_draft' in request.POST else 'sent'
@@ -124,6 +136,7 @@ def chat_view(request, user_id=None,):
             'messages': messages,
             'form': form,
             'user_id':user_id,
+            
             
         }
     )

@@ -25,7 +25,7 @@
 {% endblock %}
 
 {% block body %}
-<main id="main" class="main">
+<main id="main" class="main p-2 p-md-3">
     <div class="pagetitle">
         <h1>All Tasks</h1>
         <nav>
@@ -108,21 +108,22 @@
                                                 {% endfor %}
                                             </select>
                                         </div>
-                                                <!-- Consultancy Type -->
+
+                                        <!-- Consultancy Type -->
                                         <div class="col-md-3" id="consultancyFilterWrapper" style="display: none;">
-                                                <label class="form-label small fw-bold text-secondary">
-                                                    Consultancy Type
-                                                </label>
-                                        <select name="consultancy_type" id="consultancyFilter"
+                                            <label class="form-label small fw-bold text-secondary">
+                                                Consultancy Type
+                                            </label>
+                                            <select name="consultancy_type" id="consultancyFilter"
                                                     class="form-select js-consultancy-select">
-                                            <option value="">All Consultancy Types</option>
-                                                    {% for code, name in consultancy_type_choices %}
-                                            <option value="{{ code }}"
-                                            {% if request.GET.consultancy_type == code %}selected{% endif %}>
-                                                {{ name }}
-                                            </option>
-                                            {% endfor %}
-                                        </select>
+                                                <option value="">All Consultancy Types</option>
+                                                {% for code, name in consultancy_type_choices %}
+                                                    <option value="{{ code }}"
+                                                        {% if request.GET.consultancy_type == code %}selected{% endif %}>
+                                                        {{ name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
                                         </div>
 
                                         <!-- Invoice Status -->
@@ -167,108 +168,113 @@
                             </button>
                         </div>
 
-                        <table class="table table-hover datatable align-middle">
-                            <thead class="table-light">
-                            <tr>
-                                <th scope="col">#</th>
-                                <th>Title</th>
-                                <th>Client</th>
-                                <th>Service</th>
-                                <th>Due Date</th>
-                                <th>Team</th>
-                                <th>Status</th>
-                                <th>Invoice Status</th>
-                                <th>Action</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for task in tasks %}
-                                <tr>
-                                    <td>
-                                        {% if is_paginated %}
-                                            {{ page_obj.start_index|add:forloop.counter0 }}
-                                        {% else %}
-                                            {{ forloop.counter }}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'task_detail' task.id %}"
-                                           class="fw-bold text-primary text-decoration-none">
-                                            {{ task.task_title }}
-                                        </a>
-                                        {% if task.priority == 'High' %}
-                                            <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">HIGH</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'client_details' task.client.id %}"
-                                           class="text-dark text-decoration-none">
-                                            {{ task.client.client_name }}
-                                        </a>
-                                        <div class="small text-muted" style="font-size: 11px;">
-                                            {{ task.client.file_number|default:"" }}
-                                        </div>
-                                    </td>
-                                    <td><span class="badge bg-light text-dark border">{{ task.service_type }}</span>
-                                        <div class="small text-muted" style="font-size: 11px;">
-                                            {{ task.consultancy_type|default:"" }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="{% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
-                                            {{ task.due_date|date:"M d, Y" }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            {% for user in task.assignees.all|slice:":3" %}
-                                                <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
-                                                     style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};"
-                                                     title="{{ user.get_full_name|default:user.username }}">
-                                                    {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
-                                                </div>
-                                            {% empty %}
-                                                <span class="text-muted small fst-italic">Unassigned</span>
-                                            {% endfor %}
-                                            {% if task.assignees.count > 3 %}
-                                                <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
-                                                     style="width: 28px; height: 28px; font-size: 10px; z-index: 0;">
-                                                    +{{ task.assignees.count|add:"-3" }}
-                                                </div>
+                        <!-- Table Responsive Wrapper to ensure scrolling on mobile -->
+                        <div class="table-responsive">
+                            <table class="table table-hover datatable align-middle">
+                                <thead class="table-light text-nowrap">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th>Title</th>
+                                        <th>Client</th>
+                                        <th>Service</th>
+                                        <th>Due Date</th>
+                                        <th>Team</th>
+                                        <th>Status</th>
+                                        <th>Invoice Status</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for task in tasks %}
+                                    <tr>
+                                        <td>
+                                            {% if is_paginated %}
+                                                {{ page_obj.start_index|add:forloop.counter0 }}
+                                            {% else %}
+                                                {{ forloop.counter }}
                                             {% endif %}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge {% if task.status == 'Completed' %}bg-success{% elif task.status == 'Pending' %}bg-warning text-dark{% elif task.status == 'Cancelled' %}bg-danger{% else %}bg-light text-dark border{% endif %}">
-                                            {{ task.status }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if task.tagged_invoices.exists %}
-                                            <span class="badge bg-success">
-                                                <i class="bi bi-check-circle me-1"></i>Invoiced
+                                        </td>
+                                        <td class="text-nowrap">
+                                            <a href="{% url 'task_detail' task.id %}"
+                                               class="fw-bold text-primary text-decoration-none">
+                                                {{ task.task_title }}
+                                            </a>
+                                            {% if task.priority == 'High' %}
+                                                <span class="badge bg-danger ms-1" style="font-size: 0.6rem;">HIGH</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'client_details' task.client.id %}"
+                                               class="text-dark text-decoration-none fw-semibold">
+                                                {{ task.client.client_name }}
+                                            </a>
+                                            <div class="small text-muted" style="font-size: 11px;">
+                                                {{ task.client.file_number|default:"" }}
+                                            </div>
+                                        </td>
+                                        <td class="text-nowrap">
+                                            <span class="badge bg-light text-dark border">{{ task.service_type }}</span>
+                                            <div class="small text-muted" style="font-size: 11px;">
+                                                {{ task.consultancy_type|default:"" }}
+                                            </div>
+                                        </td>
+                                        <td class="text-nowrap">
+                                            <span class="{% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
+                                                {{ task.due_date|date:"M d, Y" }}
                                             </span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">
-                                                <i class="bi bi-x-circle me-1"></i>Not Invoiced
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% for user in task.assignees.all|slice:":3" %}
+                                                    <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                         style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};"
+                                                         title="{{ user.get_full_name|default:user.username }}">
+                                                        {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+                                                    </div>
+                                                {% empty %}
+                                                    <span class="text-muted small fst-italic">Unassigned</span>
+                                                {% endfor %}
+                                                {% if task.assignees.count > 3 %}
+                                                    <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                         style="width: 28px; height: 28px; font-size: 10px; z-index: 0;">
+                                                        +{{ task.assignees.count|add:"-3" }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="text-nowrap">
+                                            <span class="badge {% if task.status == 'Completed' %}bg-success{% elif task.status == 'Pending' %}bg-warning text-dark{% elif task.status == 'Cancelled' %}bg-danger{% else %}bg-light text-dark border{% endif %}">
+                                                {{ task.status }}
                                             </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'task_detail' task.id %}"
-                                           class="btn btn-sm btn-outline-primary"><i
-                                                class="bi bi-eye"></i></a>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="9" class="text-center py-4 text-muted">
-                                        No tasks found. Use the 'Add New Task' button to create one.
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
+                                        </td>
+                                        <td class="text-nowrap">
+                                            {% if task.tagged_invoices.exists %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i>Invoiced
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="bi bi-x-circle me-1"></i>Not Invoiced
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{% url 'task_detail' task.id %}"
+                                               class="btn btn-sm btn-outline-primary">
+                                               <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="9" class="text-center py-4 text-muted">
+                                            No tasks found. Use the 'Add New Task' button to create one.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -314,11 +320,11 @@
 
 </main>
 
-    <!-- jQuery (Required for Select2) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- jQuery (Required for Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-    <script src="{%static 'assets/js/tasks.js'%}"></script>
+<script src="{% static 'assets/js/tasks.js' %}"></script>
 
 {% endblock body %}

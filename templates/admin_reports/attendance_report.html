@@ -242,14 +242,17 @@
                                 {% endif %}
 
                                 <!-- Bulk Update Controls -->
-                                <select id="bulkStatus" class="form-select form-select-sm" style="width: auto;">
-                                    <option value="">Select Status</option>
+                                <select id="bulkAction" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="">Select Action</option>
+                                    <option disabled style="font-weight: bold;">── Update ──</option>
                                     {% for value, label in status_choices %}
-                                        <option value="{{ value }}">{{ label }}</option>
+                                        <option value="status_{{ value }}">  {{ label }}</option>
                                     {% endfor %}
+                                    <option disabled style="font-weight: bold;">── Clock Out ──</option>
+                                    <option value="clock_out_shift">  Clock Out with Shift Time</option>
                                 </select>
-                                <button type="button" class="btn btn-sm btn-warning" onclick="bulkUpdateStatus()">
-                                    <i class="bi bi-arrow-repeat"></i> Update Selected
+                                <button type="button" class="btn btn-sm btn-warning" onclick="executeBulkAction()">
+                                    <i class="bi bi-arrow-repeat"></i> Execute
                                 </button>
                             </div>
                         </div>
@@ -257,6 +260,7 @@
                         <form id="bulkUpdateForm" method="post">
                             {% csrf_token %}
                             <input type="hidden" name="bulk_status" id="hiddenBulkStatus">
+                            <input type="hidden" name="action_type" id="hiddenActionType">
 
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped" id="attendanceTable">
@@ -765,32 +769,42 @@ document.getElementById('selectAll').addEventListener('change', function() {
     });
 });
 
-// Bulk update function
-function bulkUpdateStatus() {
+// Execute bulk action
+function executeBulkAction() {
     const selectedRecords = document.querySelectorAll('.record-checkbox:checked');
-    const bulkStatus = document.getElementById('bulkStatus').value;
+    const bulkAction = document.getElementById('bulkAction').value;
 
     if (selectedRecords.length === 0) {
         alert('Please select at least one record.');
         return;
     }
 
-    if (!bulkStatus) {
-        alert('Please select a status.');
+    if (!bulkAction) {
+        alert('Please select an action.');
         return;
     }
 
-    // Show confirmation modal
-    const statusText = bulkStatus.charAt(0).toUpperCase() + bulkStatus.slice(1);
-    document.getElementById('confirmMessage').textContent =
-        `Are you sure you want to update ${selectedRecords.length} record(s) to ${statusText}?`;
+    let actionType, statusValue;
+    
+    if (bulkAction.startsWith('status_')) {
+        actionType = 'status';
+        statusValue = bulkAction.replace('status_', '');
+        const statusText = statusValue.charAt(0).toUpperCase() + statusValue.slice(1).replace('_', ' ');
+        document.getElementById('confirmMessage').textContent =
+            `Are you sure you want to update ${selectedRecords.length} record(s) to ${statusText}?`;
+    } else if (bulkAction === 'clock_out_shift') {
+        actionType = 'clock_out_shift';
+        statusValue = '';
+        document.getElementById('confirmMessage').textContent =
+            `Are you sure you want to set clock-out time to shift time for ${selectedRecords.length} record(s)?`;
+    }
 
     const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
     modal.show();
 
-    // Handle confirmation
     document.getElementById('confirmUpdate').onclick = function() {
-        document.getElementById('hiddenBulkStatus').value = bulkStatus;
+        document.getElementById('hiddenBulkStatus').value = statusValue;
+        document.getElementById('hiddenActionType').value = actionType;
         document.getElementById('bulkUpdateForm').submit();
     };
 }
