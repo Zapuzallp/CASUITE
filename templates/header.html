@@ -1,6 +1,11 @@
 {% load static %}
 {% load humanize %}
-
+<style>
+    .note-editor.note-frame.fullscreen .note-editing-area {
+    height: 50rem; 
+    background-color: white;
+}
+</style>
 
 
 <header id = "header" class="header fixed-top d-flex align-items-center" >
@@ -159,7 +164,7 @@
                 </a><!--End Messages Icon-->
             
                 <ul class="dropdown-menu  dropdown-menu-end dropdown-menu-arrow  messages max-vw-50  " style="max-height: 300px; overflow-y: auto; overflow-x:auto; ">
-                    <li class="dropdown-header">
+                    <li class="dropdown-header" >
                         You have {{header_messages|length}} new messages
                         <a href="{% url 'chat_base' %}"><span class="badge rounded-pill bg-primary p-2 ms-2 ">View all</span></a>
                     </li>
@@ -168,23 +173,27 @@
                     {% if not m.is_seen %}
 
                     <li>
-                        <hr class="dropdown-divider ">
+                        <hr class="dropdown-divider " style = "margin-bottom: 10px; margin-top: 3px;">
                     </li>
 
-                    <li class="message-item"  style = "max-width: 250px; margin-left:15px; background-size: cover;">
+                    <li class="message-item"  style = "max-width: 250px; margin-left:15px; background-size: cover; padding: 0;">
 
                     <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start" >
 
                         <!-- IMAGE WRAPPER -->
                             <div class="position-relative" >
                             {% if m.sender.employee.profile_pic %}
-                            <img src="{{m.sender.employee.profile_pic.url}}"class="rounded-circle" width = "35" height= "35">
+                            
+                            <img src="{{m.sender.employee.profile_pic.url}}"class="rounded-circle ms-3 me-3 mt-2" width = "35" height= "35" >
                             {% else %}
-                            <img src="#"class="rounded-circle" width = "35" height= "35">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white flex-shrink-0 ms-3 me-3 mt-2" 
+                        style="width: 35px; height: 35px; font-weight: bold; font-size: 14px; ">
+                        {{ m.sender.employee.user.first_name|slice:':1'|upper }}
+                         </div>
                             {% endif %}
 
                             <!-- BLUE DOT -->
-                            <span class="position-absolute top-0 start-56 translate-middle bg-primary border border-light rounded-circle "
+                            <span class="position-absolute top-0 start-0 translate-middle bg-primary border border-light rounded-circle "
                                 style="width: 10px; height: 10px;">
                             </span>
                         </div>
@@ -197,7 +206,7 @@
                             
                             {% else %}
                             {% autoescape off %}
-                            <p class = "message-text fw-bold text-dark">{{m.content|striptags|truncatechars:70}}</p>
+                            <p class = "message-text fw-bold text-dark text-break " >{{m.content|striptags|truncatechars:70}}</p>
                             {% endautoescape %}
 
                             {% endif %}
@@ -211,10 +220,7 @@
                     {% endif %}
                     {% endfor %}
 
-                    <li class="dropdown-footer">
-                        <a href="#">Show all messages</a>
-                    </li>
-
+                 <!--removed the footer show all messages -->
                  </ul><!--End Messages Dropdown Items --> 
 
             </li>

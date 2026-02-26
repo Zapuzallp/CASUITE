@@ -220,10 +220,23 @@
     </div>
             <div class="user-list">
                 {% for user in active_users %}
+                
+
                 <a href="{% url 'chat_with_user' user.id %}" class="user-item {% if target_user.id == user.id %}active{% endif %}">
+                    {% if user.employee.profile_pic %}
+
                     <div style="width: 35px; height: 35px; background: #cbd5e1; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                        {{ user.display_name|slice:":1"|upper }}
+                        <img src = "{{user.employee.profile_pic.url}}" style="border-radius: 50%; height:100%; width:100%;">
+
                     </div>
+                    {% else %}
+
+                    <div style="width: 35px; height: 35px; background: #cbd5e1; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                        {{user.display_name |slice:":1"| upper }}
+
+                    </div>
+
+                    {% endif %}
                         <div class="user-info">
                         <span class="name">{{ user.first_name}} {{user.last_name}}</span>
                         
@@ -397,7 +410,7 @@ document.getElementById("userSearch").addEventListener("keyup", function () {
                     ['style', ['bold', 'italic', 'underline', 'clear']],
                     ['para', ['ul', 'ol', 'paragraph']],
                     ['insert', ['link', 'picture']],
-                    ['view', ['codeview']]
+                    ['view', ['codeview','fullscreen']]
                 ],
                 
                 callbacks : { onPaste:function (e) {
@@ -405,6 +418,8 @@ document.getElementById("userSearch").addEventListener("keyup", function () {
                     e.preventDefault();
                     $(this).summernote('insertText', bufferText);
                 },
+            
+
                 
                 
         }
