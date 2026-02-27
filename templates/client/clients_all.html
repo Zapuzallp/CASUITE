@@ -187,10 +187,31 @@
                                 </a>
                             </div>
                         </div>
+                    <form method="post" action="{% url 'bulk_update_client_status' %}" id="bulkStatusForm">
+                        {% csrf_token %}
+
+                        <div class="d-flex gap-2 align-items-center mb-3 justify-content-end">
+                            <select id="bulkActionClients" class="form-select form-select-sm" style="width:auto;">
+                                <option value="">Select Action</option>
+                                <option disabled>── Update Status ──</option>
+                                {% for code, name in status_choices %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+
+                            <button type="button" class="btn btn-sm btn-warning" onclick="executeClientBulkAction()">
+                                <i class="bi bi-arrow-repeat"></i> Execute
+                            </button>
+
+                        </div>
 
                         <table class="table table-borderless table-hover align-middle" id="clientsTable">
                             <thead class="table-light">
                             <tr>
+
+                                <th scope="col">
+                                    <input type="checkbox" onclick="toggleSelectAll(this)">
+                                </th>
                                 <th scope="col">#</th>
                                 <th scope="col">Client Name / ID</th>
                                 <th scope="col">Primary Contact</th>
@@ -204,6 +225,9 @@
                             <tbody>
                             {% for client in clients %}
                                 <tr {% if client.assigned_ca == request.user %}class="table-light"{% endif %}>
+                                    <td>
+                                        <input type="checkbox" name="client_ids" value="{{ client.id }}" class="client-checkbox">
+                                    </td>
                                     <th scope="row">
                                         {% if is_paginated %}
                                             {{ page_obj.start_index|add:forloop.counter0 }}
@@ -326,7 +350,7 @@
                             {% endfor %}
                             </tbody>
                         </table>
-
+                    </form>
                         <!-- PAGINATION CONTROLS -->
                         {% if is_paginated %}
                             <nav aria-label="Page navigation" class="mt-4">
@@ -452,5 +476,68 @@
             window.open(url, '_blank');
         }
     </script>
+
+    <script>
+
+        function toggleSelectAll(source) {
+            let checkboxes = document.querySelectorAll('.client-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+    </script>
+
+    <script>
+        function executeClientBulkAction() {
+            const selectedClients = document.querySelectorAll('.client-checkbox:checked');
+            const selectedAction = document.getElementById('bulkActionClients').value;
+
+            if (selectedClients.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Clients Selected',
+                    text: 'Please select at least one client.'
+                });
+                return;
+            }
+
+            if (!selectedAction) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Action Selected',
+                    text: 'Please select a status.'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Type CONFIRM to proceed',
+                html: `
+                    <p>You are about to update <b>${selectedClients.length}</b> client(s).</p>
+                    <input type="text" id="confirmInput" class="swal2-input" placeholder="Type CONFIRM">
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Execute',
+                preConfirm: () => {
+                    const value = document.getElementById('confirmInput').value;
+                    if (value !== 'CONFIRM') {
+                        Swal.showValidationMessage('You must type CONFIRM exactly.');
+                        return false;
+                    }
+                    return true;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Set hidden input dynamically
+                    let hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'new_status';
+                    hiddenInput.value = selectedAction;
+                    document.getElementById('bulkStatusForm').appendChild(hiddenInput);
+
+                    document.getElementById('bulkStatusForm').submit();
+                }
+            });
+        }
+        </script>
 
 {% endblock body %}
