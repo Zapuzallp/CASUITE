@@ -387,6 +387,36 @@ h6 {
   /* Search Bar */
 }
 
+/* Mobile responsive header */
+@media (max-width: 768px) {
+  .header {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  .header .d-flex {
+    flex-wrap: nowrap;
+  }
+  
+  .header .logo span {
+    font-size: 18px;
+  }
+  
+  .header .toggle-sidebar-btn {
+    font-size: 26px;
+    padding-left: 5px;
+    margin-right: 10px;
+  }
+  
+  .header-nav {
+    display: flex;
+  }
+  
+  .header-nav ul {
+    align-items: center;
+  }
+}
+
 .header .toggle-sidebar-btn {
   font-size: 32px;
   padding-left: 10px;
@@ -471,6 +501,32 @@ h6 {
   color: #012970;
   margin-right: 25px;
   position: relative;
+}
+
+/* Mobile responsive - ensure notification and profile are visible */
+@media (max-width: 768px) {
+  .header-nav .nav-icon {
+    margin-right: 10px;
+    font-size: 18px;
+  }
+  
+  .header-nav .nav-item {
+    display: inline-block !important;
+  }
+  
+  .header-nav ul {
+    gap: 0;
+  }
+  
+  /* Hide search bar on mobile to make room for icons */
+  .header .search-bar {
+    display: none !important;
+  }
+  
+  /* Show mobile search toggle instead */
+  .search-bar-toggle {
+    display: block !important;
+  }
 }
 
 .header-nav .nav-profile {
@@ -1311,6 +1367,18 @@ h6 {
     object-fit:cover;
     border:2px solid #e5e7eb;
     cursor:pointer;
+}
+
+/* Mobile responsive for profile */
+@media (max-width: 768px) {
+  .linkedin-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .linkedin-profile {
+    display: inline-block !important;
+  }
 }
 
 /* Dropdown card */
