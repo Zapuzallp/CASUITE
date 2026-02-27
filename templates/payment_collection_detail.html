@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block body %}
+
+<style>
+.profile-header-card {
+    border: none;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0px 0 30px rgba(1, 41, 112, 0.08);
+    padding: 20px;
+}
+
+.profile-avatar {
+    width: 70px;
+    height: 70px;
+    font-size: 1.8rem;
+    background: linear-gradient(45deg, #4154f1, #2eca6a);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sticky-client-card {
+    position: sticky;
+    top: 70px;
+    z-index: 1020;
+    background: white;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 1;
+}
+</style>
+
+<main id="main" class="main">
+
+  <div class="pagetitle">
+    <h1>Payment Details</h1>
+  </div>
+
+  <section class="section">
+
+    <!-- ================= FILTER CARD ================= -->
+    <div class="accordion mb-4" id="paymentDetailFilterAccordion">
+      <div class="accordion-item border-0 shadow-sm">
+
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed bg-white text-primary fw-bold"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapsePaymentDetailFilter">
+            <i class="bi bi-funnel-fill me-2"></i>
+            Filter Payments
+          </button>
+        </h2>
+
+        <div id="collapsePaymentDetailFilter"
+             class="accordion-collapse collapse"
+             data-bs-parent="#paymentDetailFilterAccordion">
+
+          <div class="accordion-body bg-light">
+
+            <form method="get">
+              <div class="row g-3">
+
+                <!-- Search -->
+                <div class="col-12 col-md-3">
+                  <label class="form-label small fw-bold text-secondary">
+                    Search
+                  </label>
+                  <input type="text"
+                         name="search"
+                         class="form-control w-100"
+                         placeholder="Ref ID / Transaction ID"
+                         value="{{ search }}">
+                </div>
+
+                <!-- From Date -->
+                <div class="col-12 col-md-3">
+                  <label class="form-label small fw-bold text-secondary">
+                    From Date
+                  </label>
+                  <input type="date"
+                         name="start_date"
+                         class="form-control w-100"
+                         value="{{ start_date }}">
+                </div>
+
+                <!-- To Date -->
+                <div class="col-12 col-md-3">
+                  <label class="form-label small fw-bold text-secondary">
+                    To Date
+                  </label>
+                  <input type="date"
+                         name="end_date"
+                         class="form-control w-100"
+                         value="{{ end_date }}">
+                </div>
+
+                <!-- Buttons -->
+                <div class="col-12 col-md-3 d-flex align-items-end">
+                  <div class="d-grid gap-2 w-100 d-md-flex">
+                    <button type="submit" class="btn btn-primary w-100">
+                      <i class="bi bi-search me-1"></i> Apply
+                    </button>
+
+                    <a href="{% url 'payment_collection_detail' client.id %}"
+                       class="btn btn-outline-secondary w-100">
+                      <i class="bi bi-arrow-clockwise me-1"></i> Reset
+                    </a>
+                  </div>
+                </div>
+
+              </div>
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= CLIENT PROFILE CARD ================= -->
+    <div class="profile-header-card sticky-client-card
+                d-flex flex-column flex-md-row
+                align-items-start align-items-md-center
+                justify-content-between mb-4 gap-3">
+
+      <div class="d-flex align-items-center flex-wrap">
+
+        <div class="profile-avatar me-3">
+          {{ client.client_name|slice:":1"|upper }}
+        </div>
+
+        <div>
+          <h2 class="mb-1 text-primary fw-bold fs-4">
+            {{ client.client_name }}
+          </h2>
+
+          <div class="d-flex flex-wrap gap-2 text-muted small">
+
+            <span class="badge bg-light text-secondary border">
+              <i class="bi bi-briefcase me-1"></i>
+              {% if client.business_structure %}
+                {{ client.business_structure }}
+              {% else %}
+                {{ client.client_type }}
+              {% endif %}
+            </span>
+
+            {% if client.email %}
+              <span>
+                <i class="bi bi-envelope me-1"></i>
+                {{ client.email }}
+              </span>
+            {% endif %}
+
+            {% if client.phone_number %}
+              <span>
+                <i class="bi bi-phone me-1"></i>
+                {{ client.phone_number }}
+              </span>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+
+      <div class="text-start text-md-end">
+        <h6 class="text-muted mb-1">Total Collection</h6>
+        <h3 class="text-success fw-bold mb-0">
+          ₹ {{ total_collection }}
+        </h3>
+      </div>
+
+    </div>
+
+    <!-- ================= TABLE CARD ================= -->
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-0">
+
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+          <table class="table table-hover table-sm datatable align-middle mb-0">
+            <thead>
+              <tr>
+                <th>SN</th>
+                <th>Date</th>
+                <th>Ref ID</th>
+                <th>Head</th>
+                <th>Credit</th>
+                <th>Debit</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in payments %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ payment.payment_date }}</td>
+                <td>{{ payment.id }}</td>
+                <td>Payment Collection</td>
+                <td class="text-success fw-bold">
+                  ₹ {{ payment.amount }}
+                </td>
+                <td class="text-danger fw-bold">
+                  ₹ 0
+                </td>
+                <td>
+                  Payment for {{ payment.invoice.client.client_name }}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-4">
+                  No records found.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+</main>
+
+{% endblock %}
