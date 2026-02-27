@@ -275,6 +275,31 @@
         </a>
         </li>
         {% endif %}
+<li class="nav-heading">Admin Reports</li>
+        <li class="nav-item">
+
+  <a class="nav-link collapsed active"
+     data-bs-target="#admin-reports-nav"
+     data-bs-toggle="collapse"
+     href="#">
+    <i class="bi bi-bar-chart"></i>
+    <span>Admin Reports</span>
+    <i class="bi bi-chevron-down ms-auto"></i>
+  </a>
+
+  <ul id="admin-reports-nav" class="nav-content collapse">
+
+    <li>
+      <a href="{% url 'payment_collection_report' %}">
+        <i class="bi bi-circle"></i>
+        <span>Payment Collection Report</span>
+      </a>
+    </li>
+
+  </ul>
+
+</li>
+
 
 
         <li class="nav-heading">System</li>

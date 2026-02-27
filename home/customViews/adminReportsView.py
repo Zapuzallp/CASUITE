@@ -5,8 +5,155 @@ from django.contrib.auth.models import User
 from datetime import datetime, date, timedelta
 import calendar
 from django.contrib import messages
-
+from django.views.generic import TemplateView
 from home.models import Attendance, OfficeDetails, Leave
+from home.models import Client, Payment
+from django.db.models import Sum, Q
+from django.shortcuts import get_object_or_404
+
+
+class PaymentCollectionReportView(LoginRequiredMixin, View):
+
+        def get_financial_year_dates(self):
+            today = date.today()
+            if today.month >= 4:
+                start = date(today.year, 4, 1)
+                end = date(today.year + 1, 3, 31)
+            else:
+                start = date(today.year - 1, 4, 1)
+                end = date(today.year, 3, 31)
+            return start, end
+
+        def get_financial_year_dates(self):
+            today = date.today()
+            if today.month >= 4:
+                start = date(today.year, 4, 1)
+                end = date(today.year + 1, 3, 31)
+            else:
+                start = date(today.year - 1, 4, 1)
+                end = date(today.year, 3, 31)
+            return start, end
+
+        def get(self, request):
+
+            clients = Client.objects.all()
+
+            fy_start, fy_end = self.get_financial_year_dates()
+
+            selected_client = request.GET.get("client", "")
+            start_date = request.GET.get("start_date")
+            end_date = request.GET.get("end_date")
+
+            if start_date:
+                start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            else:
+                start_date = fy_start
+
+            if end_date:
+                end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            else:
+                end_date = fy_end
+
+            # IMPORTANT: Only Paid Payments
+            payments = Payment.objects.filter(
+                payment_status="PAID",  # VERY IMPORTANT
+                payment_date__range=(start_date, end_date)
+            )
+
+            # Client Filter
+            if selected_client:
+                payments = payments.filter(invoice__client_id=selected_client)
+
+            # USER WISE GROUPING
+            report_data = (
+                payments
+                .values(
+                    "invoice__client__id",
+                    "invoice__client__client_name"
+                )
+                .annotate(
+                    credit=Sum("amount")
+                )
+                .order_by("-credit")
+            )
+
+            payment_details = None
+
+            if selected_client:
+                payment_details = (
+                    Payment.objects
+                    .filter(
+                        payment_status="PAID",
+                        payment_date__range=(start_date, end_date),
+                        invoice__client_id=selected_client
+                    )
+                    .select_related("invoice__client")
+                    .order_by("-payment_date")
+                )
+
+            context = {
+                "clients": clients,
+                "report_data": report_data,
+                "selected_client": selected_client,
+                "start_date": start_date,
+                "end_date": end_date,
+                "payment_details": payment_details,
+            }
+
+            return render(request, "payment_collection_report.html", context)
+
+class PaymentCollectionDetailView(LoginRequiredMixin, View):
+
+    def get(self, request, client_id):
+
+        client = get_object_or_404(Client, id=client_id)
+
+        # GET params
+        start_date = request.GET.get("start_date")
+        end_date = request.GET.get("end_date")
+        search = request.GET.get("search", "")
+
+        payments = Payment.objects.filter(
+            payment_status="PAID",
+            invoice__client_id=client_id
+        )
+
+        # Date Filter
+        if start_date and end_date:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            payments = payments.filter(
+                payment_date__range=(start_date, end_date)
+            )
+
+        # Search Filter
+        if search:
+            payments = payments.filter(
+                Q(id__icontains=search) |
+                Q(transaction_id__icontains=search)
+            )
+
+        payments = payments.order_by("-payment_date")
+
+        total_collection = payments.aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+
+        context = {
+            "client": client,
+            "payments": payments,
+            "total_collection": total_collection,
+            "start_date": start_date,
+            "end_date": end_date,
+            "search": search,
+        }
+
+        return render(
+            request,
+            "payment_collection_detail.html",
+            context
+        )
+
 
 
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -238,95 +385,17 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request):
-        action_type = request.POST.get('action_type')
+        # Handle bulk status update
         selected_records = request.POST.getlist('selected_records')
+        new_status = request.POST.get('bulk_status')
 
-        if not selected_records:
-            messages.error(request, 'Please select records.')
-            return redirect(request.get_full_path())
+        if selected_records and new_status:
+            updated_count = Attendance.objects.filter(
+                id__in=selected_records
+            ).update(status=new_status)
 
-        if action_type == 'clock_out_shift':
-            # Handle clock out with shift time
-            from django.utils import timezone
-            from datetime import datetime
-            from home.models import EmployeeShift, Shift
-            from django.db.models import Q
-
-            success_count = 0
-            error_count = 0
-            errors = []
-
-            for record_id in selected_records:
-                try:
-                    attendance = Attendance.objects.get(id=record_id)
-
-                    # Get employee shift for the date
-                    employee_shift = EmployeeShift.objects.filter(
-                        user=attendance.user,
-                        valid_from__lte=attendance.date,
-                    ).filter(
-                        Q(valid_to__isnull=True) | Q(valid_to__gte=attendance.date)
-                    ).first()
-
-                    if employee_shift:
-                        shift_end_time = employee_shift.shift.shift_end_time
-                    else:
-                        # Get default shift
-                        default_shift = Shift.objects.filter(is_default=True).first()
-                        if not default_shift:
-                            errors.append(f"{attendance.user.username} ({attendance.date}): No shift assigned and no default shift configured")
-                            error_count += 1
-                            continue
-                        shift_end_time = default_shift.shift_end_time
-
-                    # Set clock_out to shift end time
-                    clock_out_datetime = timezone.make_aware(
-                        datetime.combine(attendance.date, shift_end_time)
-                    )
-
-                    # Handle night shifts
-                    if attendance.clock_in and clock_out_datetime < attendance.clock_in:
-                        clock_out_datetime += timedelta(days=1)
-
-                    attendance.clock_out = clock_out_datetime
-
-                    # Append remark
-                    new_remark = "Auto out (shift time)"
-
-                    if attendance.remark:
-                        attendance.remark = f"{attendance.remark} | {new_remark}"
-                    else:
-                        attendance.remark = new_remark
-
-                    attendance._skip_auto_status = True
-                    attendance.save()
-                    success_count += 1
-
-                except Attendance.DoesNotExist:
-                    errors.append(f"Record ID {record_id}: Not found")
-                    error_count += 1
-                except Exception as e:
-                    errors.append(f"Record ID {record_id}: {str(e)}")
-                    error_count += 1
-
-            if success_count > 0:
-                messages.success(request, f"Successfully updated {success_count} attendance record(s)")
-            if error_count > 0:
-                messages.error(request, f"Failed to update {error_count} record(s)")
-                for error in errors[:5]:  # Show first 5 errors
-                    messages.warning(request, error)
-
-        elif action_type == 'status':
-            # Handle bulk status update
-            new_status = request.POST.get('bulk_status')
-            if new_status:
-                updated_count = Attendance.objects.filter(
-                    id__in=selected_records
-                ).update(status=new_status)
-                messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
-            else:
-                messages.error(request, 'Please select a status to update.')
+            messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
         else:
-            messages.error(request, 'Invalid action type.')
+            messages.error(request, 'Please select records and status to update.')
 
         return redirect(request.get_full_path())
