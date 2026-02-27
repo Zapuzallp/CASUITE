@@ -159,6 +159,11 @@
                                 <i class="bi bi-pencil-square me-2"></i>Edit Client
                             </a>
                         </li>
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="openStatusChangeModal()">
+                                <i class="bi bi-arrow-repeat me-2"></i>Change Status
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#createRequestModal">
@@ -958,6 +963,11 @@
                 </div>
             </div>
         </div>
+
+    <form method="post" action="{% url 'update_single_client_status' client.id %}" id="clientStatusForm">
+        {% csrf_token %}
+        <input type="hidden" name="new_status" id="profileNewStatus">
+    </form>
     </main>
 
     <script>
@@ -1135,4 +1145,48 @@
             }
         });
     </script>
+
+    <!--    change status script-->
+    <script>
+        function openStatusChangeModal() {
+
+            Swal.fire({
+                title: 'Change Client Status',
+                html: `
+                    <select id="statusSelect" class="swal2-select">
+                        <option value="">Select Status</option>
+                        {% for code, name in status_choices %}
+                            <option value="{{ code }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" id="confirmInput" class="swal2-input mt-3" placeholder="Type CONFIRM">
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Update',
+                focusConfirm: false,
+                preConfirm: () => {
+                    const status = document.getElementById('statusSelect').value;
+                    const confirmText = document.getElementById('confirmInput').value;
+
+                    if (!status) {
+                        Swal.showValidationMessage('Please select a status.');
+                        return false;
+                    }
+
+                    if (confirmText !== 'CONFIRM') {
+                        Swal.showValidationMessage('You must type CONFIRM exactly.');
+                        return false;
+                    }
+
+                    return status;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('profileNewStatus').value = result.value;
+                    document.getElementById('clientStatusForm').submit();
+                }
+            });
+        }
+        </script>
 {% endblock body %}
