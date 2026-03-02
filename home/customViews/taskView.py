@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q, Max
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from datetime import timedelta,datetime
 
 from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
 from home.forms import TaskForm, TaskExtendedForm
@@ -109,6 +110,9 @@ def task_list_view(request):
     filter_consultancy_type = request.GET.get('consultancy_type')
     filter_status = request.GET.get('status')
     filter_invoice_status = request.GET.get('invoice_status')
+    filter_due = request.GET.get('due_filter')
+    due_from = request.GET.get('due_from')
+    due_to = request.GET.get('due_to')
 
     if search_query:
         tasks_qs = tasks_qs.filter(
@@ -137,6 +141,50 @@ def task_list_view(request):
         elif filter_invoice_status == 'not_invoiced':
             # Tasks that have no invoices
             tasks_qs = tasks_qs.filter(tagged_invoices__isnull=True)
+
+    # Due Filter
+    if filter_due:
+        # today = timezone.now().date()
+        # tomorrow = today + timedelta(days=1)
+        today = timezone.localdate()
+        tomorrow = today + timedelta(days=1)
+
+        if filter_due == "overdue":
+            # Overdue but NOT completed
+            tasks_qs = tasks_qs.filter(
+                due_date__lt=today,
+                due_date__isnull = False,
+            ).exclude(status="Completed")
+
+        elif filter_due == "today":
+            tasks_qs = tasks_qs.filter(
+                due_date=today
+            ).exclude(status="Completed")
+
+        elif filter_due == "tomorrow":
+            tasks_qs = tasks_qs.filter(
+                due_date=tomorrow
+            ).exclude(status="Completed")
+
+        elif filter_due == "no_due":
+            tasks_qs = tasks_qs.filter(
+                due_date__isnull=True
+            )
+
+        elif filter_due == "range" and due_from and due_to:
+            try:
+                due_from_date = datetime.strptime(due_from, "%Y-%m-%d").date()
+                due_to_date = datetime.strptime(due_to, "%Y-%m-%d").date()
+
+                if due_to_date < due_from_date:
+                    messages.error(request, "End date cannot be before start date.")
+                else:
+                    tasks_qs = tasks_qs.filter(
+                        due_date__range=[due_from_date, due_to_date]
+                    )
+
+            except ValueError:
+                messages.error(request, "Invalid date format.")
 
     context = {
         'tasks': tasks_qs.order_by('-created_at'),
@@ -454,7 +502,7 @@ def edit_task_view(request, task_id):
             task_form.save()
             extended_form.save()
             messages.success(request, "Task updated successfully.")
-            return redirect('task_detail', task_id=task.id)
+            return redirect('task_list')
     else:
         task_form = TaskForm(instance=task)
         extended_form = TaskExtendedForm(instance=task.extended_attributes)
@@ -491,5 +539,35 @@ def copy_task_view(request, task_id):
     )
 
     # messages.success(request, "Task copied successfully.")
+
+    return redirect('task_list')
+
+@login_required
+@require_POST
+def delete_task_view(request, task_id):
+    """
+    Deletes a task with permission and visibility checks.
+    """
+
+    user = request.user
+
+    # Apply same visibility logic as detail view
+    accessible_clients = get_accessible_clients(user)
+
+    task = get_object_or_404(
+        Task.objects.filter(
+            Q(client__in=accessible_clients) |
+            Q(assignees=user)
+        ).distinct(),
+        id=task_id
+    )
+
+    # Optional: Permission Check
+    if not (user.is_superuser or user == task.created_by or user.has_perm('home.delete_task')):
+        messages.error(request, "You do not have permission to delete this task.")
+        return redirect('task_list')
+
+    task.delete()
+    messages.success(request, "Task deleted successfully.")
 
     return redirect('task_list')
