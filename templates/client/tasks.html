@@ -68,19 +68,19 @@
                                         </div>
 
                                         <!-- Client Filter -->
-                                        <div class="col-md-3">
-                                            <label class="form-label small fw-bold text-secondary">Client</label>
-                                            <select name="client" class="form-select">
-                                                <option value="">All Clients</option>
-                                                {% for client in filter_clients %}
-                                                    <option value="{{ client.id }}"
-                                                            {% if request.GET.client == client.id|stringformat:"i" %}selected{% endif %}>
-                                                        {{ client.client_name }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
 
+<div class="col-md-3">
+    <label class="form-label small fw-bold text-secondary">Client</label>
+    <select name="client" id="clientFilter" class="form-select" style="width: 100%;">
+        <option value="">All Clients</option>
+        {% for client in filter_clients %}
+            <option value="{{ client.id }}"
+                    {% if request.GET.client == client.id|stringformat:"i" %}selected{% endif %}>
+                {{ client.client_name }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
                                         <!-- Service Type -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Service Type</label>
