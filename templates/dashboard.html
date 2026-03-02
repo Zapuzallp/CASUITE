@@ -497,11 +497,11 @@
                                             <td>{{ task.client.client_name }}</td>
 
                                             <td>
-                                                {% with task.assignees.all as assignees %}
-                                                <div class="d-flex align-items-center"
+                                                   {% with task.assignees.all as assignees %}
+                                               <div class="d-flex align-items-center"
                                                      data-bs-toggle="tooltip"
                                                      data-bs-placement="top"
-                                                     data-bs-title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                     title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
 
                                                     {% for user in assignees|slice:":3" %}
                                                         <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
@@ -519,7 +519,7 @@
                                                         </div>
                                                     {% endif %}
                                                 </div>
-                                                {% endwith %}
+                                            {% endwith %}
                                             </td>
 
                                             <td>
@@ -628,7 +628,7 @@
                                                         <div class="d-flex align-items-center"
                                                              data-bs-toggle="tooltip"
                                                              data-bs-placement="top"
-                                                             data-bs-title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                                             title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
 
                                                             {% for user in assignees|slice:":3" %}
                                                                 <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
@@ -930,12 +930,41 @@
                                 <td>${task.client}</td>
                                 <td>${task.service}</td>
                                 <td>${task.due_date}</td>
-                                <td>${task.assignees.join(', ')}</td>
+                                <td>
+                                    <div class="d-flex align-items-center"
+                                         data-bs-toggle="tooltip"
+                                         data-bs-placement="top"
+                                         title="${task.assignees.join(', ')}">
+                                        ${
+                                            task.assignees.length > 0
+                                            ? task.assignees.slice(0, 3).map((name, i) => `
+                                                <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                     style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: ${3 - i};">
+                                                    ${name.charAt(0).toUpperCase()}
+                                                </div>
+                                            `).join('')
+                                            : `<span class="text-muted small fst-italic">Unassigned</span>`
+                                        }
+                                        ${
+                                            task.assignees.length > 3
+                                            ? `
+                                                <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                     style="width: 28px; height: 28px; font-size: 10px;">
+                                                    +${task.assignees.length - 3}
+                                                </div>
+                                              `
+                                            : ''
+                                        }
+                                    </div>
+                                </td>
                                 <td>${task.status}</td>
-                                <td><a href="/tasks/${task.id}/" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td>
                             </tr>`;
                     });
                     tbody.innerHTML = html;
+                    // Re-initialize tooltips for new rows
+                    document.querySelectorAll('#due-tasks-tbody [data-bs-toggle="tooltip"]').forEach(el => {
+                        new bootstrap.Tooltip(el);
+                    });
                 });
         }
 
@@ -945,5 +974,13 @@
                     loadDueTasks(this.dataset.range);
                 });
             });
+    </script>
+
+      <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+            new bootstrap.Tooltip(el);
+        });
+    });
     </script>
 {% endblock body %}
