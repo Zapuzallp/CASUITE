@@ -1,5 +1,5 @@
 import json
-
+import uuid
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -30,6 +30,14 @@ def create_task_view(request, client_id):
     }
 
     if request.method == 'POST':
+        # Prevent duplicate form submission
+        token = request.POST.get("submission_token")
+        session_token = request.session.get("task_submission_token")
+
+        if not token or token != session_token:
+            messages.warning(request, "Duplicate submission detected.")
+            return redirect("task_list")
+
         task_form = TaskForm(request.POST)
         extended_form = TaskExtendedForm(request.POST, request.FILES)
 
@@ -46,6 +54,8 @@ def create_task_view(request, client_id):
                         task.task_title = f"{task.get_service_type_display()} Task"
 
                     task.save()
+                    # Prevent duplicate reuse of the same token
+                    request.session.pop('task_submission_token', None)
 
                     # Save Extended Attributes
                     extended = extended_form.save(commit=False)
@@ -61,6 +71,8 @@ def create_task_view(request, client_id):
     else:
         task_form = TaskForm()
         extended_form = TaskExtendedForm()
+        # Generate unique submission token
+        request.session['task_submission_token'] = str(uuid.uuid4())
 
     context = {
         'client': client,

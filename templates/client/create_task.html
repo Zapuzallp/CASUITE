@@ -57,6 +57,7 @@
                 <div class="card-body p-4">
                     <form method="post" enctype="multipart/form-data" id="taskForm">
                         {% csrf_token %}
+                        <input type="hidden" name="submission_token" value="{{ request.session.task_submission_token }}">
                         <h5 class="text-primary border-bottom pb-2 mb-4"><i class="bi bi-gear-fill me-2"></i>Core Info
                         </h5>
                         <div class="row g-3 mb-3">
@@ -96,7 +97,7 @@
                         </div>
 
                         <div class="d-flex justify-content-end mt-4">
-                            <button type="submit" class="btn btn-primary px-5 fw-bold">Save Task</button>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold"  id="saveTaskBtn">Save Task</button>
                         </div>
                     </form>
                 </div>
@@ -122,6 +123,9 @@
                 }
             document.getElementById('taskForm').addEventListener('submit', function () {
                 document.getElementById('hiddenDescription').value = quill.root.innerHTML;
+                    const btn = document.getElementById('saveTaskBtn');
+                    btn.disabled = true;
+                    btn.innerText = "Saving...";
             });
 
             // 2. Logic
