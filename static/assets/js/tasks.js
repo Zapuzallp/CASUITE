@@ -4,7 +4,7 @@ $(document).ready(function () {
 
     $('#clientSelector').select2({
         dropdownParent: $('#selectClientModal'),
-        placeholder: 'Client Name || PAN Number || Prospect',
+        placeholder: 'Client Name || ID || PAN/File No || Status',
         width: '100%',
         minimumInputLength: 0,
         ajax: {

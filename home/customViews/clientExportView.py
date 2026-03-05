@@ -56,12 +56,16 @@ def get_filtered_clients(request):
         if is_gst_number(search_query):
             qs = qs.filter(gst_details__gst_number__iexact=search_query).distinct()
         else:
-            qs = qs.filter(
+            search_filter = (
                 Q(client_name__icontains=search_query) |
                 Q(pan_no__icontains=search_query) |
                 Q(file_number__icontains=search_query) |
-                Q(primary_contact_name__icontains=search_query)
+                Q(primary_contact_name__icontains=search_query) |
+                Q(remarks__icontains=search_query)
             )
+            if search_query.isdigit():
+                search_filter |= Q(id=int(search_query))
+            qs = qs.filter(search_filter)
 
     if filter_status:
         qs = qs.filter(status=filter_status)
