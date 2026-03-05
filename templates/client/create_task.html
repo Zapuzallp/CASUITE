@@ -57,7 +57,6 @@
                 <div class="card-body p-4">
                     <form method="post" enctype="multipart/form-data" id="taskForm">
                         {% csrf_token %}
-                        <input type="hidden" name="submission_token" value="{{ request.session.task_submission_token }}">
                         <h5 class="text-primary border-bottom pb-2 mb-4"><i class="bi bi-gear-fill me-2"></i>Core Info
                         </h5>
                         <div class="row g-3 mb-3">
