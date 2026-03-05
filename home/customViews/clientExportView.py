@@ -24,7 +24,7 @@ def is_gst_number(query):
     """Check if the query string matches GST number format."""
     import re
     gst_pattern = r'^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}Z[A-Z\d]{1}$'
-    return bool(re.match(gst_pattern, query.upper()))
+    return bool(re.match(gst_pattern, (query or '').strip().upper()))
 
 
 # ========================================================================================
@@ -42,7 +42,7 @@ def get_filtered_clients(request):
     qs = get_accessible_clients(user)
 
     # 2. Extract GET parameters
-    search_query = request.GET.get('q')
+    search_query = (request.GET.get('q') or '').strip()
     filter_status = request.GET.get('status')
     filter_type = request.GET.get('client_type')
     filter_structure = request.GET.get('business_structure')
@@ -54,14 +54,18 @@ def get_filtered_clients(request):
     # 3. Apply filters dynamically
     if search_query:
         if is_gst_number(search_query):
-            qs = qs.filter(gst_details__gst_number__icontains=search_query).distinct()
+            qs = qs.filter(gst_details__gst_number__iexact=search_query).distinct()
         else:
-            qs = qs.filter(
+            search_filter = (
                 Q(client_name__icontains=search_query) |
                 Q(pan_no__icontains=search_query) |
                 Q(file_number__icontains=search_query) |
-                Q(primary_contact_name__icontains=search_query)
+                Q(primary_contact_name__icontains=search_query) |
+                Q(remarks__icontains=search_query)
             )
+            if search_query.isdigit():
+                search_filter |= Q(id=int(search_query))
+            qs = qs.filter(search_filter)
 
     if filter_status:
         qs = qs.filter(status=filter_status)
@@ -84,10 +88,7 @@ def get_filtered_clients(request):
     # Apply Custom View Filter
     if filter_custom_view:
         if filter_custom_view == 'aadhaar_mobile_linked':
-            qs = qs.filter(
-                aadhar__isnull=False,
-                phone_number__isnull=False
-            ).exclude(aadhar='').exclude(phone_number='')
+            qs = qs.filter(aadhar_linked_mobile=True)
         elif filter_custom_view == 'gst_enabled':
             qs = qs.filter(gst_details__isnull=False).distinct()
         elif filter_custom_view == 'director_din_valid':
