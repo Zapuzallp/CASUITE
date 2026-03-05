@@ -462,6 +462,59 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Row 4: Client Growth & Lead Performance Widgets -->
+            <div class="row g-4 mb-4">
+                <!-- Top 5 Client Onboards -->
+                <div class="col-12 col-xl-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Top Client Onboards</h5>
+                            <div class="mt-2">
+                                {% for creator in top_client_creators %}
+                                    <div class="d-flex align-items-center justify-content-between mb-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-item border-0 me-3" style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
+                                                {{ creator.first_name|slice:":1"|upper }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold">{{ creator.first_name }}</h6>
+                                                 <small class="text-muted">@{{ creator.username }}</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-success rounded-pill px-3 py-2 fw-bold">{{ creator.client_count }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top 5 Lead Generators -->
+                <div class="col-12 col-xl-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Top Lead Generators</h5>
+                            <div class="mt-2">
+                                {% for leadgen in top_lead_generators %}
+                                    <div class="d-flex align-items-center justify-content-between mb-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-item border-0 me-3" style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
+                                                {{ leadgen.first_name|slice:":1"|upper }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold">{{ leadgen.first_name }}</h6>
+                                                <small class="text-muted">@{{ leadgen.username }}</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-success rounded-pill px-3 py-2 fw-bold">{{ leadgen.lead_count }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
