@@ -10,7 +10,8 @@ from home.models import (
     DocumentRequest,
     TaskExtendedAttributes,
     Message,
-
+    Lead,
+    Payment,
 )
 
 def safe_reverse(name, args=None):
@@ -64,10 +65,10 @@ def global_search(request):
         ).distinct()[:5]
         for i in invoices:
             results.append({
-                'type': 'Payments',
+                'type': 'Invoice',
                 'title': f"Inv #{i.id}: {i.subject}",
                 'subtitle': f"Client: {i.client.client_name} | Date: {i.invoice_date.strftime('%d-%m-%Y')}",
-                'url': reverse('payment_detail', args=[i.id]),
+                'url': reverse('invoice_list'),
                 'icon': 'bi bi-file-earmark-medical'
             })
 
@@ -112,7 +113,7 @@ def global_search(request):
         doc_requests = DocumentRequest.objects.filter(
             Q(title__icontains=query) |
             Q(description__icontains=query)
-        ).distinct()
+        ).distinct()[:5]
 
         for d in doc_requests:
             results.append({
@@ -151,11 +152,43 @@ def global_search(request):
                     'icon': 'bi bi-search'
                 })
 
-        #8. Messages
+        #8 Lead
+        leads = Lead.objects.filter(
+            Q(lead_name__icontains=query) |
+            Q(full_name__icontains=query) |
+            Q(email__icontains=query) |
+            Q(phone_number__icontains=query)
+        )[:5]
+
+        for l in leads:
+            results.append({
+                'type': 'Lead',
+                'title': l.lead_name,
+                'subtitle': f"Email: {l.email} | Phone: {l.phone_number}",
+                'url': reverse('lead_detail', args=[l.id]),
+                'icon': 'bi bi-funnel'
+            })
+
+        #9. Search payments
+        payments = Payment.objects.filter(
+            Q(transaction_id__icontains=query) |
+            Q(invoice__client__client_name__icontains=query)
+        )[:5]
+
+        for p in payments:
+            results.append({
+                'type': 'Payment',
+                'title': f"Payment #{p.id}",
+                'subtitle': f"Client: {p.invoice.client.client_name} | Amount: {p.amount}",
+                'url': reverse('payment_detail', args=[p.id]),
+                'icon': 'bi bi-currency-rupee'
+            })
+
+        #10. Messages
 
         messages = Message.objects.filter(
-            Q(content__icontains=query),
-            Q(sender=request.user) | Q(receiver=request.user)
+            Q(content__icontains=query) &
+            (Q(sender=request.user) | Q(receiver=request.user))
         ).distinct()[:5]
 
         for m in messages:
@@ -168,20 +201,43 @@ def global_search(request):
                 'icon': 'bi bi-chat-left-text'
             })
 
-        MAX_RESULTS = 30
-        results = results[:MAX_RESULTS]
+        NAV_ITEMS = [
+            {'name': 'Dashboard', 'url': reverse('dashboard'), 'icon': 'bi bi-speedometer2'},
+            {'name': 'All Clients', 'url': reverse('clients'), 'icon': 'bi bi-people'},
+            {'name': 'All Tasks', 'url': reverse('task_list'), 'icon': 'bi bi-list-check'},
+            {'name': 'All Leads', 'url': reverse('lead_list'), 'icon': 'bi bi-funnel'},
+            {'name': 'All Invoices', 'url': reverse('invoice_list'), 'icon': 'bi bi-view-list'},
+            {'name': 'List Services', 'url': reverse('list_services'), 'icon': 'bi bi-file-earmark-text'},
+            {'name': 'List Payments', 'url': reverse('payment_list'), 'icon': 'bi bi-currency-rupee'},
+        ]
 
+        for item in NAV_ITEMS:
+            if query.lower() in item['name'].lower():
+                results.append({
+                    'type': 'Navigation',
+                    'title': item['name'],
+                    'subtitle': 'Quick Access',
+                    'url': item['url'],
+                    'icon': item['icon']
+                })
+
+        MAX_RESULTS = 30
         PRIORITY = {
+            'Navigation': 0,
             'Client': 1,
             'Task': 2,
             'Task (Reference)': 3,
-            'Payments': 4,
-            'Product': 5,
-            'Employee': 6,
-            'Document Request': 7,
-            'Message': 8,
+            'Lead': 4,
+            'Invoice': 5,
+            'Payment': 6,
+            'Services': 7,
+            'Employee': 8,
+            'Document Request': 9,
+            'Message': 10,
         }
 
         results.sort(key=lambda r: PRIORITY.get(r['type'], 99))
+        results = results[:MAX_RESULTS]
+
 
     return JsonResponse({'results': results})
