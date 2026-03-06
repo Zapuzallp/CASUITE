@@ -145,17 +145,22 @@
                 const selected = serviceSelect.value;
                 if (!selected || !config[selected]) {
                     extendedSection.style.display = 'none';
+                    dueDateInput.value = '';   // NEW LINE
                     return;
                 }
 
                 const rules = config[selected];
                 extendedSection.style.display = 'block';
 
-                if (!dueDateInput.value && rules.default_due_days) {
+                if (rules.default_due_days) {
                     let d = new Date();
                     d.setDate(d.getDate() + rules.default_due_days);
                     dueDateInput.value = d.toISOString().split('T')[0];
                 }
+               else {
+                    // If service has no default due days, clear the field
+                    dueDateInput.value = '';
+               }
 
                 const include = rules.fields.include || [];
                 const readonly = rules.fields.readonly || [];
