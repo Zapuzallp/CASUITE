@@ -178,6 +178,7 @@
                                 <i class="bi bi-gear-fill me-2"></i>Actions
                             </h5>
 
+                            {% if not is_partner %}
                             <div class="d-flex gap-2 flex-wrap">
                                 <!-- Update Status (Only for DRAFT) -->
                                 {% if invoice.invoice_status == 'DRAFT' and not has_payments %}
@@ -206,6 +207,12 @@
                                 </div>
                                 {% endif %}
                             </div>
+                            {% else %}
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                You have view-only access to invoices. Contact an administrator to make changes.
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -584,11 +591,13 @@
                                     </small>
                                 </div>
 
+                                {% if not is_partner %}
                                 <button class="btn btn-primary btn-sm"
                                         data-bs-toggle="modal"
                                         data-bs-target="#exampleModal">
                                     <i class="bi bi-plus-lg me-1"></i> Add Item
                                 </button>
+                                {% endif %}
                             </div>
 
                             <table class="table table-hover  align-middle" id="invoiceItemsTable">
@@ -634,12 +643,16 @@
                                         </td>
 
                                          <td>
+                                            {% if not is_partner %}
                                             <button type="button"
                                                     class="btn btn-outline-danger btn-sm"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#deleteModal{{ i.pk }}">
                                                 <i class="bi bi-trash"></i>
                                             </button>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
                                         </td>
                                     </tr>
 

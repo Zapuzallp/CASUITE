@@ -111,9 +111,11 @@
                                 <h5 class="card-title m-0">Leads Directory</h5>
                                 <small class="text-muted">Showing {{ leads|length }} result(s)</small>
                             </div>
+                            {% if not is_partner %}
                             <a href="{% url 'add_lead' %}" class="btn btn-primary btn-sm">
                                 <i class="bi bi-plus-circle me-1"></i> Add New Lead
                             </a>
+                            {% endif %}
                         </div>
 
                         <table class="table table-hover datatable align-middle">
@@ -203,8 +205,8 @@
                                                class="btn btn-sm btn-outline-secondary" title="View Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <!-- Edit Lead (only if editable) -->
-                                            {% if lead.is_editable %}
+                                            <!-- Edit Lead (only if editable and not partner) -->
+                                            {% if lead.is_editable and not is_partner %}
                                                 <a href="{% url 'edit_lead' lead.id %}"
                                                    class="btn btn-sm btn-outline-primary" title="Edit Lead">
                                                     <i class="bi bi-pencil"></i>

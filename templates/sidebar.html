@@ -165,12 +165,14 @@
             </a>
         </li>
 
+        {% if not request.user.employee.role == "PARTNER" %}
         <li class="nav-item">
             <a class="nav-link" href="{% url 'onboard_client' %}">
                 <i class="bi bi-person-plus"></i>
                 <span>Onboard New Client</span>
             </a>
         </li>
+        {% endif %}
 
         <li class="nav-heading">Lead Management</li>
 
@@ -181,12 +183,14 @@
             </a>
         </li>
 
+        {% if not request.user.employee.role == "PARTNER" %}
         <li class="nav-item">
             <a class="nav-link" href="{% url 'add_lead' %}">
                 <i class="bi bi-plus-circle"></i>
                 <span>Add New Lead</span>
             </a>
         </li>
+        {% endif %}
 
         <li class="nav-heading">Operations</li>
 
@@ -223,6 +227,14 @@
         </li>
 
         {% if request.user.is_superuser %}
+        <li class="nav-heading">Attendance Report</li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin_attendance_report' %}">
+                <i class="bi bi-person-check"></i>
+                <span>Attendance Report</span>
+            </a>
+        </li>
+        {% elif request.user.employee.role == "ADMIN" or request.user.employee.role == "PARTNER" or request.user.employee.role == "BRANCH_MANAGER" %}
         <li class="nav-heading">Attendance Report</li>
         <li class="nav-item">
             <a class="nav-link" href="{% url 'admin_attendance_report' %}">
