@@ -55,7 +55,7 @@
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Search</label>
                                             <input type="text" name="q" class="form-control"
-                                                   placeholder="Name, PAN, File No..." value="{{ request.GET.q }}">
+                                                   placeholder="Name, PAN, GST No, File No..." value="{{ request.GET.q }}">
                                         </div>
 
                                         <!-- Office Location -->
@@ -145,6 +145,27 @@
                                                         {{ name }}
                                                     </option>
                                                 {% endfor %}
+                                            </select>
+                                        </div>
+
+
+                                        <!-- Custom View -->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Custom View</label>
+                                            <select name="custom_view" class="form-select">
+                                                <option value="">All Clients</option>
+                                                <option value="aadhaar_mobile_linked"
+                                                        {% if request.GET.custom_view == 'aadhaar_mobile_linked' %}selected{% endif %}>
+                                                    Aadhar Linked With Mobile
+                                                </option>
+                                                <option value="gst_enabled"
+                                                        {% if request.GET.custom_view == 'gst_enabled' %}selected{% endif %}>
+                                                    GST Enabled Clients
+                                                </option>
+                                                <option value="director_din_valid"
+                                                        {% if request.GET.custom_view == 'director_din_valid' %}selected{% endif %}>
+                                                    Directors (DIN No Available)
+                                                </option>
                                             </select>
                                         </div>
 

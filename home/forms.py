@@ -526,6 +526,10 @@ class GSTDetailsForm(BootstrapFormMixin, forms.ModelForm):
         self.fields['gst_number'].widget.attrs.update({'placeholder': 'e.g., 29ABCDE1234F1Z5'})
 
 
+def is_gst_number():
+    return None
+
+
 # ---------------------------------------------------------
 # 4. Lead Form
 # ---------------------------------------------------------

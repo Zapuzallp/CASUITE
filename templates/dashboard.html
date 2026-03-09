@@ -238,8 +238,13 @@
             color: #64748b;
         }
 
+        /* Allow dropdown to escape card for the due tasks table */
+        #due-tasks-section .card {
+            overflow: visible !important;
+        }
+
         @media (max-width: 768px) {
-            .main-content { padding: 1rem; }
+            .main-content { padding: 1rem; }z
             .pagetitle .d-flex {
                 flex-direction: column;
                 align-items: flex-start !important;
@@ -250,6 +255,8 @@
                 justify-content: space-between;
             }
         }
+
+
     </style>
 
     <main id="main" class="main-content">
@@ -271,9 +278,7 @@
                 <i class="bi bi-calendar3 me-2 text-primary"></i>
                 <span class="small fw-bold">{{ today|date:"M d, Y" }}</span>
             </div>
-            <a href="{% url 'task_list' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
-                <i class="bi bi-plus-lg me-1"></i> New Task
-            </a>
+
         </div>
 
         <section class="section dashboard">
@@ -455,6 +460,254 @@
                                             </div>
                                         </div>
                                         <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">{{ solver.solved_count }} Steps</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Row 4: Recent Activity -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12">
+                        <div class="card recent-sales overflow-auto h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Recent Activity <span>| Global</span></h5>
+
+                                <table class="table table-borderless datatable">
+                                    <thead>
+                                        <tr>
+                                            <th>Task</th>
+                                            <th>Client</th>
+                                            <th>Team</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for task in recent_tasks %}
+                                        <tr>
+                                            <td class="fw-bold">
+                                                <a href="{% url 'task_detail' task.id %}" class="text-primary text-decoration-none">
+                                                    {{ task.task_title }}
+                                                </a>
+                                            </td>
+
+                                            <td>{{ task.client.client_name }}</td>
+
+                                            <td>
+                                                   {% with task.assignees.all as assignees %}
+                                               <div class="d-flex align-items-center"
+                                                     data-bs-toggle="tooltip"
+                                                     data-bs-placement="top"
+                                                     title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+
+                                                    {% for user in assignees|slice:":3" %}
+                                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};">
+                                                            {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+                                                        </div>
+                                                    {% empty %}
+                                                        <span class="text-muted small fst-italic">Unassigned</span>
+                                                    {% endfor %}
+
+                                                    {% if assignees.count > 3 %}
+                                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                             style="width: 28px; height: 28px; font-size: 10px;">
+                                                            +{{ assignees.count|add:"-3" }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endwith %}
+                                            </td>
+
+                                            <td>
+                                                <span class="badge rounded-pill
+                                                    {% if task.status == 'Completed' %}bg-success
+                                                    {% elif task.status == 'Review' %}bg-warning text-dark
+                                                    {% else %}bg-light text-dark border{% endif %}">
+                                                    {{ task.status }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+
+
+            <!-- Row 4: Client Growth & Lead Performance Widgets -->
+            <div class="row g-4 mb-4">
+                <!-- Top 5 Client Onboards -->
+                <div class="col-12 col-xl-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Top Client Onboards</h5>
+                            <div class="mt-2">
+                                {% for creator in top_client_creators %}
+                                    <div class="d-flex align-items-center justify-content-between mb-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-item border-0 me-3" style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
+                                                {{ creator.first_name|slice:":1"|upper }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold">{{ creator.first_name }}</h6>
+                                                 <small class="text-muted">@{{ creator.username }}</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-success rounded-pill px-3 py-2 fw-bold">{{ creator.client_count }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- DUE TASKS MODULE -->
+                <div class="row g-4 mb-4" id="due-tasks-section">
+                    <div class="col-12">
+                        <div class="card h-100">
+                            <div class="card-body" id="due-tasks-content">
+
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <h5 class="card-title m-0">
+                                            Due Tasks
+                                            <span id="due-tasks-count" class="text-muted fw-normal">
+                                                | {{ due_tasks|length }} Items
+                                            </span>
+                                        </h5>
+
+                                        <span id="due-range-badge"
+                                              class="badge rounded-pill px-3 py-2"
+                                              style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.75rem; font-weight: 500;">
+                                            <i class="bi bi-calendar-event me-1"></i>
+                                            {% if due_range == 'overdue' %}Overdue Tasks
+                                            {% elif due_range == 'today' %}Due Today
+                                            {% elif due_range == 'tomorrow' %}Due Tomorrow
+                                            {% elif due_range == '5days' %}Due in 5 Days
+                                            {% elif due_range == '10days' %}Due in 10 Days
+                                            {% elif due_range == '15days' %}Due in 15 Days
+                                            {% elif due_range == '30days' %}Due in 30 Days
+                                            {% else %}Overdue Tasks{% endif %}
+                                        </span>
+                                    </div>
+
+                                    <div class="due-range-dropdown dropdown">
+                                        <button class="dropdown-toggle" type="button"
+                                                id="dueRangeDropdownBtn"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false">
+                                            <i class="bi bi-funnel me-1"></i>
+                                            Over Due
+                                        </button>
+
+                                        <ul class="dropdown-menu dropdown-menu-end"
+                                            aria-labelledby="dueRangeDropdownBtn">
+                                            <li><button class="dropdown-item" type="button" data-range="overdue">Over Due</button></li>
+                                            <li><button class="dropdown-item" type="button" data-range="today">Due Today</button></li>
+                                            <li><button class="dropdown-item" type="button" data-range="tomorrow">Due Tomorrow</button></li>
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <li><button class="dropdown-item" type="button" data-range="5days">Due in 5 Days</button></li>
+                                            <li><button class="dropdown-item" type="button" data-range="10days">Due in 10 Days</button></li>
+                                            <li><button class="dropdown-item" type="button" data-range="15days">Due in 15 Days</button></li>
+                                            <li><button class="dropdown-item" type="button" data-range="30days">Due in 30 Days</button></li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Title</th>
+                                            <th>Client</th>
+                                            <th>Service</th>
+                                            <th>Due Date</th>
+                                            <th>Team</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody id="due-tasks-tbody">
+                                        {% if due_tasks %}
+                                            {% for task in due_tasks %}
+                                                <tr>
+                                                    <td>{{ forloop.counter }}</td>
+                                                    <td class="fw-bold">
+                                                        <a class="text-primary text-decoration-none" href="{% url 'task_detail' task.id %}">
+                                                            {{ task.task_title|truncatechars:30 }}
+                                                        </a>
+                                                    </td>
+                                                    <td>{{ task.client.client_name|default:"-" }}</td>
+                                                    <td>{{ task.get_service_type_display|default:"-" }}</td>
+                                                    <td>
+                                                        {% if task.due_date %}
+                                                            {{ task.due_date|date:"M d, Y" }}
+                                                        {% else %}-{% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% with task.assignees.all as assignees %}
+                                                        <div class="d-flex align-items-center"
+                                                             data-bs-toggle="tooltip"
+                                                             data-bs-placement="top"
+                                                             title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+
+                                                            {% for user in assignees|slice:":3" %}
+                                                                <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                                     style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};">
+                                                                    {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+                                                                </div>
+                                                            {% empty %}
+                                                                <span class="text-muted small fst-italic">Unassigned</span>
+                                                            {% endfor %}
+
+                                                            {% if assignees.count > 3 %}
+                                                                <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                                     style="width: 28px; height: 28px; font-size: 10px;">
+                                                                    +{{ assignees.count|add:"-3" }}
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                        {% endwith %}
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge rounded-pill
+                                                            {% if task.status == 'Completed' %}bg-success
+                                                            {% elif task.status == 'Review' %}bg-warning text-dark
+                                                            {% else %}bg-light text-dark border{% endif %}">
+                                                            {{ task.status }}
+                                                        </span>
+                                                    </td>
+
+                                                </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="8" class="text-center text-muted py-4">
+                                                    No tasks found for the selected due range.
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+
+                <!-- Top 5 Lead Generators -->
+                <div class="col-12 col-xl-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Top Lead Generators</h5>
+                            <div class="mt-2">
+                                {% for leadgen in top_lead_generators %}
+                                    <div class="d-flex align-items-center justify-content-between mb-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-item border-0 me-3" style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
+                                                {{ leadgen.first_name|slice:":1"|upper }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold">{{ leadgen.first_name }}</h6>
+                                                <small class="text-muted">@{{ leadgen.username }}</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-success rounded-pill px-3 py-2 fw-bold">{{ leadgen.lead_count }}</span>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -687,5 +940,89 @@
                 updateTimers();
             {% endif %}
         }
+
+    // Due Tasks AJAX Filter
+        function loadDueTasks(selectedRange) {
+            fetch(`/api/due-tasks/?due_range=${selectedRange}`)
+                .then(response => response.json())
+                .then(data => {
+
+                    const badge = document.getElementById('due-range-badge');
+                    if (badge) {
+                        badge.innerHTML = '<i class="bi bi-calendar-event me-1"></i>' + data.range_label;
+                    }
+
+                    const countSpan = document.getElementById('due-tasks-count');
+                    if (countSpan) countSpan.textContent = `| ${data.count} Items`;
+
+                    const tbody = document.getElementById('due-tasks-tbody');
+                    if (!tbody) return;
+
+                    if (data.tasks.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">No tasks found.</td></tr>`;
+                        return;
+                    }
+
+                    let html = '';
+                    data.tasks.forEach((task, index) => {
+                        html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><a href="/tasks/${task.id}/">${task.title}</a></td>
+                                <td>${task.client}</td>
+                                <td>${task.service}</td>
+                                <td>${task.due_date}</td>
+                                <td>
+                                    <div class="d-flex align-items-center"
+                                         data-bs-toggle="tooltip"
+                                         data-bs-placement="top"
+                                         title="${task.assignees.join(', ')}">
+                                        ${
+                                            task.assignees.length > 0
+                                            ? task.assignees.slice(0, 3).map((name, i) => `
+                                                <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                     style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: ${3 - i};">
+                                                    ${name.charAt(0).toUpperCase()}
+                                                </div>
+                                            `).join('')
+                                            : `<span class="text-muted small fst-italic">Unassigned</span>`
+                                        }
+                                        ${
+                                            task.assignees.length > 3
+                                            ? `
+                                                <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                     style="width: 28px; height: 28px; font-size: 10px;">
+                                                    +${task.assignees.length - 3}
+                                                </div>
+                                              `
+                                            : ''
+                                        }
+                                    </div>
+                                </td>
+                                <td>${task.status}</td>
+                            </tr>`;
+                    });
+                    tbody.innerHTML = html;
+                    // Re-initialize tooltips for new rows
+                    document.querySelectorAll('#due-tasks-tbody [data-bs-toggle="tooltip"]').forEach(el => {
+                        new bootstrap.Tooltip(el);
+                    });
+                });
+        }
+
+        document.querySelectorAll('.due-range-dropdown .dropdown-item[data-range]')
+            .forEach(item => {
+                item.addEventListener('click', function () {
+                    loadDueTasks(this.dataset.range);
+                });
+            });
+    </script>
+
+      <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+            new bootstrap.Tooltip(el);
+        });
+    });
     </script>
 {% endblock body %}

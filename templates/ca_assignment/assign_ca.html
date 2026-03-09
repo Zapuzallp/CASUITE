@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block body %}
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>{{ page_title }}</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Data Management</li>
+            <li class="breadcrumb-item active">Assign / Update CA</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Alert Container -->
+<div id="alertContainer"></div>
+
+<section class="section">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <ul class="nav nav-tabs mt-3" id="caAssignmentTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="manual-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#manual" type="button" role="tab">
+                                <i class="bi bi-hand-index"></i> Manual Assignment
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="import-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#import" type="button" role="tab">
+                                <i class="bi bi-file-earmark-excel"></i> Excel / CSV Import
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content pt-3" id="caAssignmentTabsContent">
+                        <!-- Manual Assignment Tab -->
+                        <div class="tab-pane fade show active" id="manual" role="tabpanel">
+                            <form id="manualAssignForm">
+                                {% csrf_token %}
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Select Clients <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="clientSelect" name="client_ids" multiple required style="width: 100%;">
+                                            <option></option>
+                                        </select>
+                                        <small class="text-muted">Type at least 2 characters to search</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Select CA <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="caSelect" name="ca_id" required style="width: 100%;">
+                                            <option></option>
+                                        </select>
+                                        <small class="text-muted">Type at least 2 characters to search</small>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-check-circle"></i> Assign CA
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Import Tab -->
+                        <div class="tab-pane fade" id="import" role="tabpanel">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Instructions:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Download the demo template to see the required format</li>
+                                    <li>Fill in: Client Name, PAN No, Employee Name</li>
+                                    <li>PAN No is used to match clients in the system</li>
+                                    <li>Employee Name should match the employee's full name</li>
+                                </ul>
+                            </div>
+
+                            <div class="mb-3">
+                                <a href="{% url 'download_ca_template' %}" class="btn btn-success">
+                                    <i class="bi bi-download"></i> Download Demo Sheet
+                                </a>
+                            </div>
+
+                            <form id="importForm" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="row mb-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label">Upload Excel / CSV File <span class="text-danger">*</span></label>
+                                        <input type="file" class="form-control" id="fileInput" name="file" 
+                                               accept=".xlsx,.xls,.csv" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-upload"></i> Upload & Process
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="card mt-3" id="summaryCard" style="display: none;">
+                <div class="card-body">
+                    <h5 class="card-title">Processing Summary</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="alert alert-primary">
+                                <strong>Total Processed:</strong> <span id="totalProcessed">0</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="alert alert-success">
+                                <strong>Newly Assigned:</strong> <span id="assignedCount">0</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="alert alert-info">
+                                <strong>Updated:</strong> <span id="updatedCount">0</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="alert alert-warning">
+                                <strong>Skipped:</strong> <span id="skippedCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skipped Records Table -->
+                    <div id="skippedSection" style="display: none;">
+                        <h6 class="mt-3">Skipped Records</h6>
+                        <div class="mb-2">
+                            <button class="btn btn-sm btn-outline-primary" id="copySkippedBtn">
+                                <i class="bi bi-clipboard"></i> Copy All
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" id="exportSkippedBtn">
+                                <i class="bi bi-file-earmark-excel"></i> Export as CSV
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered" id="skippedTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>PAN No</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="skippedTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .select2-container {
+        width: 100% !important;
+    }
+    .select2-container--default .select2-selection--multiple {
+        min-height: 38px;
+    }
+</style>
+
+<script>
+// Wait for jQuery and Select2 to be available
+(function initWhenReady() {
+    if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
+        console.log('Waiting for jQuery and Select2...');
+        setTimeout(initWhenReady, 100);
+        return;
+    }
+    
+    console.log('jQuery and Select2 loaded, initializing...');
+    
+    jQuery(document).ready(function($) {
+    console.log('CA Assignment page loaded - DOM ready');
+    console.log('Client select element:', $('#clientSelect').length);
+    console.log('CA select element:', $('#caSelect').length);
+    
+    // Helper function to show alerts
+    function showAlert(message, type = 'success') {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        $('#alertContainer').html(alertHtml);
+        $('html, body').animate({ scrollTop: 0 }, 300);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(function() {
+            $('#alertContainer .alert').fadeOut();
+        }, 5000);
+    }
+
+    // Initialize Select2 for client search
+    console.log('Initializing client select2...');
+    try {
+        $('#clientSelect').select2({
+            placeholder: 'Type to search clients...',
+            allowClear: true,
+            width: '100%',
+            ajax: {
+                url: '{% url "search_clients_ajax" %}',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    console.log('Client search params:', params);
+                    return {
+                        q: params.term || ''
+                    };
+                },
+                processResults: function(data) {
+                    console.log('Client search results:', data);
+                    return {
+                        results: data
+                    };
+                },
+                error: function(xhr, status, error) {
+                    console.error('Client search error:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
+                },
+                cache: true
+            },
+            minimumInputLength: 2
+        });
+        console.log('Client select2 initialized successfully');
+    } catch(e) {
+        console.error('Error initializing client select2:', e);
+    }
+
+    // Initialize Select2 for CA search
+    console.log('Initializing CA select2...');
+    try {
+        $('#caSelect').select2({
+            placeholder: 'Type to search employees...',
+            allowClear: true,
+            width: '100%',
+            ajax: {
+                url: '{% url "search_employees_ajax" %}',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    console.log('Employee search params:', params);
+                    return {
+                        q: params.term || ''
+                    };
+                },
+                processResults: function(data) {
+                    console.log('Employee search results:', data);
+                    return {
+                        results: data
+                    };
+                },
+                error: function(xhr, status, error) {
+                    console.error('Employee search error:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
+                },
+                cache: true
+            },
+            minimumInputLength: 2
+        });
+        console.log('CA select2 initialized successfully');
+    } catch(e) {
+        console.error('Error initializing CA select2:', e);
+    }
+
+    // Manual assignment form submission
+    $('#manualAssignForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const clientIds = $('#clientSelect').val();
+        const caId = $('#caSelect').val();
+        
+        if (!clientIds || clientIds.length === 0 || !caId) {
+            showAlert('Please select both clients and CA', 'warning');
+            return;
+        }
+
+        // Show loading state
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalText = submitBtn.html();
+        submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Processing...');
+
+        $.ajax({
+            url: '{% url "manual_assign_ca" %}',
+            method: 'POST',
+            data: {
+                client_ids: clientIds,
+                ca_id: caId,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+                submitBtn.prop('disabled', false).html(originalText);
+                if (response.success) {
+                    showAlert(`Successfully processed ${response.total} client(s): ${response.assigned} newly assigned, ${response.updated} updated`, 'success');
+                    showSummary(response.total, response.assigned, response.updated, 0, []);
+                    $('#manualAssignForm')[0].reset();
+                    $('#clientSelect').val(null).trigger('change');
+                    $('#caSelect').val(null).trigger('change');
+                } else {
+                    showAlert(response.message, 'danger');
+                }
+            },
+            error: function(xhr) {
+                submitBtn.prop('disabled', false).html(originalText);
+                const errorMsg = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+                showAlert(errorMsg, 'danger');
+            }
+        });
+    });
+
+    // Import form submission
+    $('#importForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const fileInput = $('#fileInput')[0];
+        
+        if (!fileInput.files.length) {
+            showAlert('Please select a file to upload', 'warning');
+            return;
+        }
+
+        // Show loading state
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalText = submitBtn.html();
+        submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Processing...');
+        
+        $.ajax({
+            url: '{% url "bulk_import_ca" %}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                submitBtn.prop('disabled', false).html(originalText);
+                if (response.success) {
+                    const msg = `Successfully processed ${response.total_rows} row(s): ${response.assigned} newly assigned, ${response.updated} updated${response.skipped > 0 ? ', ' + response.skipped + ' skipped' : ''}`;
+                    showAlert(msg, response.skipped > 0 ? 'warning' : 'success');
+                    showSummary(
+                        response.total_rows,
+                        response.assigned,
+                        response.updated,
+                        response.skipped,
+                        response.skipped_rows
+                    );
+                    $('#importForm')[0].reset();
+                } else {
+                    showAlert(response.message, 'danger');
+                }
+            },
+            error: function(xhr) {
+                submitBtn.prop('disabled', false).html(originalText);
+                const errorMsg = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+                showAlert(errorMsg, 'danger');
+            }
+        });
+    });
+
+    // Show summary function
+    function showSummary(total, assigned, updated, skipped, skippedRows) {
+        $('#totalProcessed').text(total);
+        $('#assignedCount').text(assigned);
+        $('#updatedCount').text(updated);
+        $('#skippedCount').text(skipped);
+        
+        if (skipped > 0 && skippedRows.length > 0) {
+            $('#skippedTableBody').empty();
+            skippedRows.forEach(function(row) {
+                $('#skippedTableBody').append(
+                    '<tr>' +
+                    '<td>' + row.client_name + '</td>' +
+                    '<td>' + row.pan_no + '</td>' +
+                    '<td>' + row.reason + '</td>' +
+                    '</tr>'
+                );
+            });
+            $('#skippedSection').show();
+            window.skippedRowsData = skippedRows;
+        } else {
+            $('#skippedSection').hide();
+        }
+        
+        $('#summaryCard').show();
+        $('html, body').animate({
+            scrollTop: $('#summaryCard').offset().top - 100
+        }, 500);
+    }
+
+    // Copy skipped records
+    $('#copySkippedBtn').on('click', function() {
+        let text = 'Client Name\tPAN No\tReason\n';
+        window.skippedRowsData.forEach(function(row) {
+            text += row.client_name + '\t' + row.pan_no + '\t' + row.reason + '\n';
+        });
+        
+        navigator.clipboard.writeText(text).then(function() {
+            showAlert('Copied to clipboard!', 'success');
+        }).catch(function() {
+            showAlert('Failed to copy to clipboard', 'danger');
+        });
+    });
+
+    // Export skipped records as CSV
+    $('#exportSkippedBtn').on('click', function() {
+        let csv = 'Client Name,PAN No,Reason\n';
+        window.skippedRowsData.forEach(function(row) {
+            csv += '"' + row.client_name + '","' + row.pan_no + '","' + row.reason + '"\n';
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'skipped_records.csv';
+        a.click();
+    });
+    }); // End of jQuery ready
+})(); // End of initWhenReady
+</script>
+</main>
+{% endblock %}

@@ -26,6 +26,24 @@ def notifications_context(request):
 
 # header_data for notification messages
 def header_data(request):
+    """
+    Retrieves and decrypts the latest unseen messages for the authenticated user.
+
+    This function fetches the most recent notification from each unique sender, 
+    decrypts the content using Fernet encryption, and returns them for use 
+    in the header notification dropdown.
+
+    Args:
+        request: The Django HttpRequest object.
+
+    Returns:
+        dict: A dictionary containing 'header_messages' (QuerySet of Message objects).
+              Returns an empty dict inside the key if the user is not authenticated.
+
+    Raises:
+        Exception: If the decryption process fails for any message.
+    
+    """
     fernet = Fernet(settings.ENCRYPTION_KEY)
     if request.user.is_authenticated:
         latest_message_ids = Message.objects.filter(
@@ -40,8 +58,11 @@ def header_data(request):
             id__in=latest_message_ids
         ).order_by('-timestamp')
         
-  
-
+        for h in header_messages:
+            try:
+                h.content = fernet.decrypt(h.content.encode()).decode()
+            except Exception:
+                raise Exception  
 
         return {
             "header_messages": header_messages
