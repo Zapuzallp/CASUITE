@@ -199,6 +199,315 @@
     font-size: 15.2px;
 }
 
+
+/* -------- GLOBAL RESET -------- */
+
+.mobile-back-btn {
+    display: none !important;
+}
+
+
+/* -------- MOBILE VIEW -------- */
+
+@media (max-width: 768px) {
+
+    /* Lock whole screen */
+    html, body {
+        height: 100% !important;
+        overflow: hidden !important;
+        position: fixed;
+        width: 100%;
+    }
+
+    #main {
+        padding: 0 !important;
+        margin: 0 !important;
+        height: 100vh !important;
+        display: flex !important;
+        flex-direction: column;
+    }
+
+
+    /* -------- MAIN MODULE -------- */
+
+    .message-module {
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+
+    /* -------- USER SIDEBAR -------- */
+
+    .user-sidebar {
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column;
+    }
+
+    .user-list {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        height: 100%;
+    }
+
+
+    /* -------- CHAT COLUMN -------- */
+
+    .chat-main-column {
+        display: none !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        width: 100% !important;
+        overflow: hidden;
+    }
+
+    .message-module.is-chat-active .user-sidebar {
+        display: none !important;
+    }
+
+    .message-module.is-chat-active .chat-main-column {
+        display: flex !important;
+    }
+
+
+    /* -------- CHAT HEADER -------- */
+
+    .chat-header {
+        flex-shrink: 0;
+        background: white;
+        padding: 12px 15px !important;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .chat-header h5 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+
+    /* -------- MESSAGE AREA -------- */
+
+    .message-list-container {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        min-height: 0;
+        padding: 15px !important;
+
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        background: #f5f5f5;
+    }
+
+
+    /* -------- CHAT BUBBLES -------- */
+
+    .chat-bubble {
+        max-width: 75%;
+        padding: 10px 14px;
+        border-radius: 14px;
+        font-size: 14px;
+        line-height: 1.5;
+        word-wrap: break-word;
+    }
+
+
+    /* Sent message */
+
+    .chat-bubble.sent {
+        align-self: flex-end;
+        background: #1f8ecf;   /* same blue as your UI */
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+
+
+    /* Received message */
+
+    .chat-bubble.received {
+        align-self: flex-start;
+        background: white;
+        color: #333;
+        border-bottom-left-radius: 4px;
+        border: 1px solid #e2e2e2;
+    }
+
+
+    /* -------- MESSAGE TIME -------- */
+
+    .message-time {
+        font-size: 11px;
+        color: #777;
+        margin-top: 4px;
+        text-align: right;
+    }
+
+
+    /* -------- DATE SEPARATOR -------- */
+
+    .chat-date {
+        align-self: center;
+        background: #e9ecef;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #666;
+    }
+
+
+    /* -------- INPUT AREA -------- */
+
+    .full-width-editor {
+        flex-shrink: 0 !important;
+        background: white;
+        border-top: 1px solid #ddd;
+        padding: 8px 10px !important;
+        padding-bottom: 20px !important;
+    }
+
+
+    /* Hide summernote toolbar */
+
+    .note-toolbar {
+        display: none !important;
+    }
+
+
+    /* Input style */
+
+    .note-editor.note-frame {
+        border-radius: 20px !important;
+        border: 1px solid #ccc !important;
+        overflow: hidden;
+    }
+
+    .note-editable {
+        height: 40px !important;
+        padding: 10px 15px !important;
+        background: #fff;
+    }
+
+
+    /* Back button */
+
+    .mobile-back-btn {
+        display: inline-block !important;
+    }
+
+/* Footer container */
+.message-footer{
+    padding:10px;
+    background:#f8f9fa;
+    border-top:1px solid #ddd;
+}
+
+/* Textarea */
+.message-input{
+    width:100%;
+    min-height:40px;
+    max-height:80px;
+    border:1px solid #dcdcdc;
+    border-radius:8px;
+    padding:6px 10px;
+    font-size:14px;
+    resize:none;
+    margin-bottom:8px;
+}
+
+/* Footer actions row */
+.footer-actions{
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding-bottom: 40px;
+}
+
+/* Dropdown */
+.footer-actions select{
+    height:34px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    padding:0 8px;
+    font-size:14px;
+}
+
+/* Button group */
+.mobile-button-wrapper{
+    display:flex;
+    gap:6px;
+    justify-content:flex-end;
+}
+
+/* Buttons */
+.mobile-button-wrapper button{
+    height:34px;
+    padding:0 14px;
+    border-radius:6px;
+    font-size:14px;
+    line-height:1;
+     white-space: nowrap;
+}
+.mobile-button-wrapper button:nth-child(2){
+    white-space: nowrap;
+    min-width: 95px;
+     margin-left: -6px;
+}
+
+/* Send button fix */
+.mobile-button-wrapper .btn-primary{
+    min-width:70px;
+}
+
+.mobile-button-wrapper{
+    display:flex;
+    gap:0px;
+    justify-content:flex-end;
+}
+/* Move dropdown slightly up */
+   .footer-actions > div:first-child {
+    position: relative;
+    top: -5px; /* moves the dropdown up without affecting buttons */
+
+    }
+    /* Move the buttons slightly downward */
+    .footer-actions .mobile-button-wrapper {
+    position: relative;
+    top: -5px; /* adjust value as needed */
+    }
+    /* Removes the status bar area entirely */
+    .note-statusbar {
+    display: none !important;
+    }
+
+    /* Optional: Removes the resizing functionality */
+    .note-editor.note-frame .note-editing-area {
+    margin-bottom: 0 !important;
+}
+
+/* Style for the container */
+.status-wrapper select {
+    padding-right: 30px; /* Make space for the icon */
+    background-image: url('data:image/svg+xml;utf8,<svg fill="black" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 5px center;
+}
+
+}
 </style>
 
 <main id="main" class="main">
@@ -210,7 +519,7 @@
         </nav>
     </div>
 
-    <div class="message-module">
+    <div class="message-module {% if target_user %}is-chat-active{% endif %}">
         <aside class="user-sidebar">
            <div style="padding: 15px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; z-index: 10;">
 
@@ -251,6 +560,7 @@
 
         <section class="chat-main-column">
             <div class="chat-header">
+               <a href="{% url 'chat_base' %}" class="mobile-back-btn">← </a>
                 {% if target_user %}
                     {% if target_user.first_name or target_user.last_name %}
                         {{ target_user.first_name }} {{ target_user.last_name }}
@@ -313,13 +623,13 @@
                     <div style="display: flex; gap: 15px; align-items: center;">
                         {{ form.status }}
                     </div>
-                    <div>
+                    <div class="mobile-button-wrapper">
                         <button type="submit" name="save_draft" class="btn btn-default btn-sm" id = "save-draft">
                             Save Draft
                         </button>
                         <button type="submit" class="btn btn-primary btn-sm"
                             style="background-color: #337ab7; border: none; padding: 8px 25px;" id = "send-message">
-                            Send Message
+                            Send
                         </button>
                     </div>
                 </div>
@@ -468,5 +778,17 @@ send_btn.addEventListener('click', (e) => {
 
     
 </script>
+function scrollToBottom() {
+    var chatWindow = document.getElementById('chat-window');
+    if (chatWindow) {
+        chatWindow.scrollTo({
+            top: chatWindow.scrollHeight,
+            behavior: 'smooth' // Adds a nice sliding animation
+        });
+    }
+}
+
+// Run it immediately on page load
+scrollToBottom();
 
 {% endblock body %}
