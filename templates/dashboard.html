@@ -177,8 +177,12 @@
         }
 
         @keyframes floatParticle {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(20px, -20px) scale(1.1); }
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                transform: translate(20px, -20px) scale(1.1);
+            }
         }
 
         /* Tables & Lists */
@@ -244,12 +248,17 @@
         }
 
         @media (max-width: 768px) {
-            .main-content { padding: 1rem; }z
+            .main-content {
+                padding: 1rem;
+            }
+
+            z
             .pagetitle .d-flex {
                 flex-direction: column;
                 align-items: flex-start !important;
                 gap: 1rem;
             }
+
             .header-actions {
                 width: 100%;
                 justify-content: space-between;
@@ -293,7 +302,8 @@
                                 <div class="stat-icon bg-indigo-light"><i class="bi bi-list-task"></i></div>
                                 <div class="ms-3">
                                     <h3 class="mb-0 fw-bold">{{ pending_tasks }}</h3>
-                                    <p class="text-success small mb-0 fw-bold">{{ my_actions_count }} <span class="text-muted fw-normal">pending for me</span></p>
+                                    <p class="text-success small mb-0 fw-bold">{{ my_actions_count }} <span
+                                            class="text-muted fw-normal">pending for me</span></p>
                                 </div>
                             </div>
                         </div>
@@ -309,7 +319,8 @@
                                 <div class="stat-icon bg-emerald-light"><i class="bi bi-currency-rupee"></i></div>
                                 <div class="ms-3">
                                     <h3 class="mb-0 fw-bold">₹{{ total_paid|floatformat:0 }}</h3>
-                                    <p class="text-danger small mb-0 fw-bold">₹{{ total_billed|floatformat:0 }} <span class="text-muted fw-normal">unpaid</span></p>
+                                    <p class="text-danger small mb-0 fw-bold">₹{{ total_billed|floatformat:0 }} <span
+                                            class="text-muted fw-normal">unpaid</span></p>
                                 </div>
                             </div>
                         </div>
@@ -325,7 +336,8 @@
                                 <div class="stat-icon bg-amber-light"><i class="bi bi-people"></i></div>
                                 <div class="ms-3">
                                     <h3 class="mb-0 fw-bold">{{ total_clients }}</h3>
-                                    <p class="text-success small mb-0 fw-bold">+{{ new_clients }} <span class="text-muted fw-normal">this month</span></p>
+                                    <p class="text-success small mb-0 fw-bold">+{{ new_clients }} <span
+                                            class="text-muted fw-normal">this month</span></p>
                                 </div>
                             </div>
                         </div>
@@ -363,23 +375,31 @@
                             {% if attendance and attendance.clock_in and not attendance.clock_out %}
                                 <div class="mb-3">
                                     <h1 class="display-5 fw-bold mb-0" id="liveTimer">00:00:00</h1>
-                                    <p class="small text-muted mb-4">Clocked in at {{ attendance.clock_in|date:"h:i A" }}</p>
+                                    <p class="small text-muted mb-4">Clocked in
+                                        at {{ attendance.clock_in|date:"h:i A" }}</p>
                                 </div>
                                 {% if attendance.location_name %}
-                                    <p class="small mb-4"><i class="bi bi-geo-alt me-1"></i> {{ attendance.location_name|truncatechars:40 }}</p>
+                                    <p class="small mb-4"><i
+                                            class="bi bi-geo-alt me-1"></i> {{ attendance.location_name|truncatechars:40 }}
+                                    </p>
                                 {% endif %}
-                                <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#clockOutModal">
+                                <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm"
+                                        data-bs-toggle="modal" data-bs-target="#clockOutModal">
                                     <i class="bi bi-box-arrow-right me-1"></i> Clock Out
                                 </button>
                             {% elif attendance and attendance.clock_out %}
-                                <div class="stat-icon bg-white text-success mx-auto mb-3" style="font-size: 2rem;"><i class="bi bi-check2-circle"></i></div>
+                                <div class="stat-icon bg-white text-success mx-auto mb-3" style="font-size: 2rem;"><i
+                                        class="bi bi-check2-circle"></i></div>
                                 <h4 class="fw-bold mb-1">Shift Completed</h4>
                                 <p class="text-muted mb-4">Total Time: {{ attendance.formatted_duration }}</p>
-                                <a href="{% url 'attendance_logs' %}" class="btn btn-outline-light w-100 rounded-pill py-2">View Logs</a>
+                                <a href="{% url 'attendance_logs' %}"
+                                   class="btn btn-outline-light w-100 rounded-pill py-2">View Logs</a>
                             {% else %}
-                                <div class="stat-icon bg-white bg-opacity-25 mx-auto mb-3" style="font-size: 2rem;"><i class="bi bi-clock-history"></i></div>
+                                <div class="stat-icon bg-white bg-opacity-25 mx-auto mb-3" style="font-size: 2rem;"><i
+                                        class="bi bi-clock-history"></i></div>
                                 <h4 class="fw-bold mb-4">Ready to Start?</h4>
-                                <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#clockInModal">
+                                <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm"
+                                        data-bs-toggle="modal" data-bs-target="#clockInModal">
                                     <i class="bi bi-box-arrow-in-right me-1"></i> Clock In Now
                                 </button>
                             {% endif %}
@@ -419,22 +439,29 @@
                                 {% for item in my_actionable_items %}
                                     <div class="list-group-item px-0 py-3 border-bottom d-flex align-items-center justify-content-between">
                                         <div class="d-flex align-items-center">
-                                            <div class="stat-icon bg-amber-light text-warning me-3" style="width:40px; height:40px; font-size:1rem;">
+                                            <div class="stat-icon bg-amber-light text-warning me-3"
+                                                 style="width:40px; height:40px; font-size:1rem;">
                                                 <i class="bi bi-journal-check"></i>
                                             </div>
                                             <div>
                                                 <h6 class="mb-0 fw-bold">{{ item.task.task_title }}</h6>
                                                 <p class="mb-0 small text-muted">
-                                                    <span class="fw-bold text-indigo">{{ item.status_context }}</span> &bull; {{ item.task.client.client_name }}
+                                                    <span class="fw-bold text-indigo">{{ item.status_context }}</span>
+                                                    &bull; {{ item.task.client.client_name }}
                                                 </p>
-                                                <small class="text-danger fw-bold mt-1 d-block"><i class="bi bi-clock me-1"></i>Due {{ item.task.due_date|date:"M d" }}</small>
+                                                <small class="text-danger fw-bold mt-1 d-block"><i
+                                                        class="bi bi-clock me-1"></i>Due {{ item.task.due_date|date:"M d" }}
+                                                </small>
                                             </div>
                                         </div>
-                                        <a href="{% url 'task_detail' item.task.id %}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">Start Step</a>
+                                        <a href="{% url 'task_detail' item.task.id %}"
+                                           class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">Start
+                                            Step</a>
                                     </div>
                                 {% empty %}
                                     <div class="text-center py-5">
-                                        <img src="https://cdn-icons-png.flaticon.com/512/4436/4436481.png" width="80" class="mb-3 opacity-25" alt="Empty">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/4436/4436481.png" width="80"
+                                             class="mb-3 opacity-25" alt="Empty">
                                         <h6 class="text-muted fw-bold">Great work! You're all caught up.</h6>
                                     </div>
                                 {% endfor %}
@@ -451,7 +478,8 @@
                                 {% for solver in top_solvers %}
                                     <div class="d-flex align-items-center justify-content-between mb-4">
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-item border-0 me-3" style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
+                                            <div class="avatar-item border-0 me-3"
+                                                 style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
                                                 {{ solver.first_name|slice:":1"|upper }}
                                             </div>
                                             <div>
@@ -467,250 +495,161 @@
                     </div>
                 </div>
             </div>
-            <!-- Row 4: Recent Activity -->
-                <div class="row g-4 mb-4">
-                    <div class="col-12">
-                        <div class="card recent-sales overflow-auto h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">Recent Activity <span>| Global</span></h5>
-
-                                <table class="table table-borderless datatable">
-                                    <thead>
-                                        <tr>
-                                            <th>Task</th>
-                                            <th>Client</th>
-                                            <th>Team</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for task in recent_tasks %}
-                                        <tr>
-                                            <td class="fw-bold">
-                                                <a href="{% url 'task_detail' task.id %}" class="text-primary text-decoration-none">
-                                                    {{ task.task_title }}
-                                                </a>
-                                            </td>
-
-                                            <td>{{ task.client.client_name }}</td>
-
-                                            <td>
-                                                   {% with task.assignees.all as assignees %}
-                                               <div class="d-flex align-items-center"
-                                                     data-bs-toggle="tooltip"
-                                                     data-bs-placement="top"
-                                                     title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
-
-                                                    {% for user in assignees|slice:":3" %}
-                                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
-                                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};">
-                                                            {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
-                                                        </div>
-                                                    {% empty %}
-                                                        <span class="text-muted small fst-italic">Unassigned</span>
-                                                    {% endfor %}
-
-                                                    {% if assignees.count > 3 %}
-                                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
-                                                             style="width: 28px; height: 28px; font-size: 10px;">
-                                                            +{{ assignees.count|add:"-3" }}
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                            {% endwith %}
-                                            </td>
-
-                                            <td>
-                                                <span class="badge rounded-pill
-                                                    {% if task.status == 'Completed' %}bg-success
-                                                    {% elif task.status == 'Review' %}bg-warning text-dark
-                                                    {% else %}bg-light text-dark border{% endif %}">
-                                                    {{ task.status }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-
-
-            <!-- Row 4: Client Growth & Lead Performance Widgets -->
             <div class="row g-4 mb-4">
-                <!-- Top 5 Client Onboards -->
-                <div class="col-12 col-xl-4">
+                <div class="col-12">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">Top Client Onboards</h5>
-                            <div class="mt-2">
-                                {% for creator in top_client_creators %}
-                                    <div class="d-flex align-items-center justify-content-between mb-4">
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-item border-0 me-3" style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
-                                                {{ creator.first_name|slice:":1"|upper }}
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0 fw-bold">{{ creator.first_name }}</h6>
-                                                 <small class="text-muted">@{{ creator.username }}</small>
-                                            </div>
-                                        </div>
-                                        <span class="badge bg-success rounded-pill px-3 py-2 fw-bold">{{ creator.client_count }}</span>
-                                    </div>
-                                {% endfor %}
+                            <h5 class="card-title">Recent Activity <span>| Global</span></h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover datatable">
+                                    <thead>
+                                    <tr>
+                                        <th>Task</th>
+                                        <th>Client</th>
+                                        <th>Team</th>
+                                        <th>Status</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for task in recent_tasks %}
+                                        <tr>
+                                            <td class="fw-bold"><a href="{% url 'task_detail' task.id %}"
+                                                                   class="text-primary text-decoration-none">{{ task.task_title }}</a>
+                                            </td>
+                                            <td>{{ task.client.client_name }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center" style="margin-left: 10px;">
+                                                    {% for user in task.assignees.all|slice:":3" %}
+                                                        <div class="avatar-item"
+                                                             style="margin-left: -10px;">{{ user.first_name|slice:":1"|upper }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            </td>
+                                            <td><span
+                                                    class="badge rounded-pill {% if task.status == 'Completed' %}bg-success{% else %}bg-light text-dark border{% endif %}">{{ task.status }}</span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-            <!-- DUE TASKS MODULE -->
-                <div class="row g-4 mb-4" id="due-tasks-section">
-                    <div class="col-12">
-                        <div class="card h-100">
-                            <div class="card-body" id="due-tasks-content">
-
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <h5 class="card-title m-0">
-                                            Due Tasks
-                                            <span id="due-tasks-count" class="text-muted fw-normal">
-                                                | {{ due_tasks|length }} Items
-                                            </span>
-                                        </h5>
-
-                                        <span id="due-range-badge"
-                                              class="badge rounded-pill px-3 py-2"
-                                              style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.75rem; font-weight: 500;">
-                                            <i class="bi bi-calendar-event me-1"></i>
-                                            {% if due_range == 'overdue' %}Overdue Tasks
-                                            {% elif due_range == 'today' %}Due Today
-                                            {% elif due_range == 'tomorrow' %}Due Tomorrow
-                                            {% elif due_range == '5days' %}Due in 5 Days
-                                            {% elif due_range == '10days' %}Due in 10 Days
-                                            {% elif due_range == '15days' %}Due in 15 Days
-                                            {% elif due_range == '30days' %}Due in 30 Days
-                                            {% else %}Overdue Tasks{% endif %}
-                                        </span>
-                                    </div>
-
-                                    <div class="due-range-dropdown dropdown">
-                                        <button class="dropdown-toggle" type="button"
-                                                id="dueRangeDropdownBtn"
-                                                data-bs-toggle="dropdown"
-                                                aria-expanded="false">
-                                            <i class="bi bi-funnel me-1"></i>
-                                            Over Due
-                                        </button>
-
-                                        <ul class="dropdown-menu dropdown-menu-end"
-                                            aria-labelledby="dueRangeDropdownBtn">
-                                            <li><button class="dropdown-item" type="button" data-range="overdue">Over Due</button></li>
-                                            <li><button class="dropdown-item" type="button" data-range="today">Due Today</button></li>
-                                            <li><button class="dropdown-item" type="button" data-range="tomorrow">Due Tomorrow</button></li>
-                                            <li><hr class="dropdown-divider my-1"></li>
-                                            <li><button class="dropdown-item" type="button" data-range="5days">Due in 5 Days</button></li>
-                                            <li><button class="dropdown-item" type="button" data-range="10days">Due in 10 Days</button></li>
-                                            <li><button class="dropdown-item" type="button" data-range="15days">Due in 15 Days</button></li>
-                                            <li><button class="dropdown-item" type="button" data-range="30days">Due in 30 Days</button></li>
-                                        </ul>
-                                    </div>
+            <div class="row g-4 mb-4" id="due-tasks-section">
+                <div class="col-12">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="d-flex align-items-center gap-3">
+                                    <h5 class="card-title m-0">Due Tasks <span id="due-tasks-count"
+                                                                               class="text-muted fw-normal">| {{ due_tasks|length }} Items</span>
+                                    </h5>
+                                    <span id="due-range-badge" class="badge rounded-pill px-3 py-2"
+                                          style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
+                                            class="bi bi-calendar-event me-1"></i> Overdue Tasks</span>
                                 </div>
-
+                                <div class="due-range-dropdown dropdown">
+                                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"><i
+                                            class="bi bi-funnel me-1"></i> Filter Range
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <button class="dropdown-item" type="button" data-range="overdue">Over Due
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item" type="button" data-range="today">Due Today
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item" type="button" data-range="tomorrow">Due
+                                                Tomorrow
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item" type="button" data-range="7days">Next 7 Days
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
                                 <table class="table table-hover align-middle">
                                     <thead class="table-light">
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Title</th>
-                                            <th>Client</th>
-                                            <th>Service</th>
-                                            <th>Due Date</th>
-                                            <th>Team</th>
-                                            <th>Status</th>
-                                        </tr>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Title</th>
+                                        <th>Client</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                    </tr>
                                     </thead>
-
                                     <tbody id="due-tasks-tbody">
-                                        {% if due_tasks %}
-                                            {% for task in due_tasks %}
-                                                <tr>
-                                                    <td>{{ forloop.counter }}</td>
-                                                    <td class="fw-bold">
-                                                        <a class="text-primary text-decoration-none" href="{% url 'task_detail' task.id %}">
-                                                            {{ task.task_title|truncatechars:30 }}
-                                                        </a>
-                                                    </td>
-                                                    <td>{{ task.client.client_name|default:"-" }}</td>
-                                                    <td>{{ task.get_service_type_display|default:"-" }}</td>
-                                                    <td>
-                                                        {% if task.due_date %}
-                                                            {{ task.due_date|date:"M d, Y" }}
-                                                        {% else %}-{% endif %}
-                                                    </td>
-                                                    <td>
-                                                        {% with task.assignees.all as assignees %}
-                                                        <div class="d-flex align-items-center"
-                                                             data-bs-toggle="tooltip"
-                                                             data-bs-placement="top"
-                                                             title="{% for u in assignees %}{{ u.get_full_name|default:u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}">
-
-                                                            {% for user in assignees|slice:":3" %}
-                                                                <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
-                                                                     style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};">
-                                                                    {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
-                                                                </div>
-                                                            {% empty %}
-                                                                <span class="text-muted small fst-italic">Unassigned</span>
-                                                            {% endfor %}
-
-                                                            {% if assignees.count > 3 %}
-                                                                <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
-                                                                     style="width: 28px; height: 28px; font-size: 10px;">
-                                                                    +{{ assignees.count|add:"-3" }}
-                                                                </div>
-                                                            {% endif %}
-                                                        </div>
-                                                        {% endwith %}
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge rounded-pill
-                                                            {% if task.status == 'Completed' %}bg-success
-                                                            {% elif task.status == 'Review' %}bg-warning text-dark
-                                                            {% else %}bg-light text-dark border{% endif %}">
-                                                            {{ task.status }}
-                                                        </span>
-                                                    </td>
-
-                                                </tr>
-                                            {% endfor %}
-                                        {% else %}
-                                            <tr>
-                                                <td colspan="8" class="text-center text-muted py-4">
-                                                    No tasks found for the selected due range.
-                                                </td>
-                                            </tr>
-                                        {% endif %}
+                                    {% for task in due_tasks %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td class="fw-bold"><a
+                                                    href="{% url 'task_detail' task.id %}">{{ task.task_title }}</a>
+                                            </td>
+                                            <td>{{ task.client.client_name }}</td>
+                                            <td>{{ task.due_date|date:"M d, Y" }}</td>
+                                            <td><span
+                                                    class="badge bg-light text-dark border rounded-pill">{{ task.status }}</span>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted">No tasks found.</td>
+                                        </tr>
+                                    {% endfor %}
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Top 5 Lead Generators -->
-                <div class="col-12 col-xl-4">
+            <div class="row g-4">
+                <div class="col-12 col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Top Client Onboards</h5>
+                            {% for creator in top_client_creators %}
+                                <div class="d-flex align-items-center justify-content-between mb-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-item me-3"
+                                             style="background: #f1f5f9; color: #6366f1;">{{ creator.first_name|slice:":1"|upper }}</div>
+                                        <div><h6 class="mb-0 fw-bold">{{ creator.first_name }}</h6><small
+                                                class="text-muted">@{{ creator.username }}</small></div>
+                                    </div>
+                                    <span class="badge bg-success rounded-pill px-3 py-2 fw-bold">{{ creator.client_count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">Top Lead Generators</h5>
-                            <div class="mt-2">
-                                {% for leadgen in top_lead_generators %}
-                                    <div class="d-flex align-items-center justify-content-between mb-4">
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-item border-0 me-3" style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
-                                                {{ leadgen.first_name|slice:":1"|upper }}
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0 fw-bold">{{ leadgen.first_name }}</h6>
-                                                <small class="text-muted">@{{ leadgen.username }}</small>
-                                            </div>
-                                        </div>
-                                        <span class="badge bg-success rounded-pill px-3 py-2 fw-bold">{{ leadgen.lead_count }}</span>
+                            {% for leadgen in top_lead_generators %}
+                                <div class="d-flex align-items-center justify-content-between mb-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-item me-3"
+                                             style="background: #f1f5f9; color: #6366f1;">{{ leadgen.first_name|slice:":1"|upper }}</div>
+                                        <div><h6 class="mb-0 fw-bold">{{ leadgen.first_name }}</h6><small
+                                                class="text-muted">@{{ leadgen.username }}</small></div>
                                     </div>
-                                {% endfor %}
-                            </div>
+                                    <span class="badge bg-primary rounded-pill px-3 py-2 fw-bold">{{ leadgen.lead_count }}</span>
+                                </div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
@@ -754,8 +693,11 @@
                     </div>
 
                     <div class="modal-footer border-0 bg-light p-3">
-                        <button type="button" class="btn btn-link text-secondary text-decoration-none fw-bold" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow" id="btnClockInSubmit" disabled>
+                        <button type="button" class="btn btn-link text-secondary text-decoration-none fw-bold"
+                                data-bs-dismiss="modal">Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow"
+                                id="btnClockInSubmit" disabled>
                             Clock In
                         </button>
                     </div>
@@ -798,8 +740,11 @@
                     </div>
 
                     <div class="modal-footer border-0 bg-light p-3">
-                        <button type="button" class="btn btn-link text-secondary text-decoration-none fw-bold" data-bs-dismiss="modal">Resume Work</button>
-                        <button type="submit" class="btn btn-danger rounded-pill px-5 fw-bold shadow" id="btnClockOutSubmit" disabled>
+                        <button type="button" class="btn btn-link text-secondary text-decoration-none fw-bold"
+                                data-bs-dismiss="modal">Resume Work
+                        </button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-5 fw-bold shadow"
+                                id="btnClockOutSubmit" disabled>
                             Clock Out Now
                         </button>
                     </div>
@@ -809,7 +754,7 @@
     </div>
 
     <!-- Scripts -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{% static 'js/location-module.js' %}"></script>
@@ -824,18 +769,34 @@
             // Task Aging Chart
             const agingChart = echarts.init(document.getElementById('agingChart'));
             agingChart.setOption({
-                tooltip: { trigger: 'item' },
+                tooltip: {trigger: 'item'},
                 series: [{
                     type: 'pie',
                     radius: ['60%', '85%'],
                     avoidLabelOverlap: false,
-                    itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
-                    label: { show: false },
+                    itemStyle: {borderRadius: 10, borderColor: '#fff', borderWidth: 2},
+                    label: {show: false},
                     data: [
-                        { value: {{ aging_data|get_item:'0-7 Days'|default:0 }}, name: 'Fresh (0-7d)', itemStyle: { color: '#10b981' } },
-                        { value: {{ aging_data|get_item:'8-15 Days'|default:0 }}, name: 'Active (8-15d)', itemStyle: { color: '#6366f1' } },
-                        { value: {{ aging_data|get_item:'15-30 Days'|default:0 }}, name: 'Stale (15-30d)', itemStyle: { color: '#f59e0b' } },
-                        { value: {{ aging_data|get_item:'30+ Days'|default:0 }}, name: 'Critical (30+d)', itemStyle: { color: '#ef4444' } }
+                        {
+                            value: {{ aging_data|get_item:'0-7 Days'|default:0 }},
+                            name: 'Fresh (0-7d)',
+                            itemStyle: {color: '#10b981'}
+                        },
+                        {
+                            value: {{ aging_data|get_item:'8-15 Days'|default:0 }},
+                            name: 'Active (8-15d)',
+                            itemStyle: {color: '#6366f1'}
+                        },
+                        {
+                            value: {{ aging_data|get_item:'15-30 Days'|default:0 }},
+                            name: 'Stale (15-30d)',
+                            itemStyle: {color: '#f59e0b'}
+                        },
+                        {
+                            value: {{ aging_data|get_item:'30+ Days'|default:0 }},
+                            name: 'Critical (30+d)',
+                            itemStyle: {color: '#ef4444'}
+                        }
                     ]
                 }]
             });
@@ -843,12 +804,12 @@
             // Client Distribution Chart
             const clientChart = echarts.init(document.getElementById('clientTypeChart'));
             clientChart.setOption({
-                tooltip: { trigger: 'item' },
+                tooltip: {trigger: 'item'},
                 series: [{
                     type: 'pie',
                     radius: '65%',
                     center: ['50%', '50%'],
-                    label: { show: false },
+                    label: {show: false},
                     data: {{ client_distribution_chart_data|safe|default:"[]" }}
                 }]
             });
@@ -941,7 +902,7 @@
             {% endif %}
         }
 
-    // Due Tasks AJAX Filter
+        // Due Tasks AJAX Filter
         function loadDueTasks(selectedRange) {
             fetch(`/api/due-tasks/?due_range=${selectedRange}`)
                 .then(response => response.json())
@@ -978,25 +939,25 @@
                                          data-bs-placement="top"
                                          title="${task.assignees.join(', ')}">
                                         ${
-                                            task.assignees.length > 0
-                                            ? task.assignees.slice(0, 3).map((name, i) => `
+                            task.assignees.length > 0
+                                ? task.assignees.slice(0, 3).map((name, i) => `
                                                 <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
                                                      style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: ${3 - i};">
                                                     ${name.charAt(0).toUpperCase()}
                                                 </div>
                                             `).join('')
-                                            : `<span class="text-muted small fst-italic">Unassigned</span>`
-                                        }
+                                : `<span class="text-muted small fst-italic">Unassigned</span>`
+                        }
                                         ${
-                                            task.assignees.length > 3
-                                            ? `
+                            task.assignees.length > 3
+                                ? `
                                                 <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
                                                      style="width: 28px; height: 28px; font-size: 10px;">
                                                     +${task.assignees.length - 3}
                                                 </div>
                                               `
-                                            : ''
-                                        }
+                                : ''
+                        }
                                     </div>
                                 </td>
                                 <td>${task.status}</td>
@@ -1018,11 +979,11 @@
             });
     </script>
 
-      <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-            new bootstrap.Tooltip(el);
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                new bootstrap.Tooltip(el);
+            });
         });
-    });
     </script>
 {% endblock body %}
