@@ -89,8 +89,77 @@ STRUCTURE_CONFIG = {
         }
     },
 
+# --------------------------------------------------------------------------
+# 4. PUBLIC LIMITED COMPANY
+# --------------------------------------------------------------------------
+'Public Ltd': {
+    'client': {
+        'include': [],
+        'exclude': ['aadhar'],
+        'readonly': ['client_type']
+    },
+    'profile': {
+        'include': [
+            'registration_number',
+            'date_of_incorporation',
+            'authorised_capital',
+            'paid_up_capital',
+            'number_of_directors',
+            'number_of_shareholders',
+            'key_persons',
+            'constitution_document_1',
+            'constitution_document_2',
+            'registered_office_address'
+        ],
+        'exclude': [],
+        'readonly': []
+    },
+    'labels': {
+        'client_name': 'Company Name',
+        'registration_number': 'CIN',
+        'constitution_document_1': 'Certificate of Incorporation',
+        'constitution_document_2': 'MOA / AOA'
+    },
+    'validation': {
+        'registration_number': {
+            'regex': r'^[LUu]{1}[\d]{5}[A-Z]{2}[\d]{4}[A-Z]{3}[\d]{6}$',
+            'message': 'Invalid CIN format. Example: U12345MH2023PLC123456'
+        }
+    }
+},
+
+# --------------------------------------------------------------------------
+# 5. ONE PERSON COMPANY (OPC)
+# --------------------------------------------------------------------------
+'OPC': {
+    'client': {
+        'include': [],
+        'exclude': ['aadhar'],
+        'readonly': ['client_type']
+    },
+    'profile': {
+        'include': [
+            'registration_number',
+            'date_of_incorporation',
+            'authorised_capital',
+            'paid_up_capital',
+            'opc_nominee_name',
+            'key_persons',
+            'constitution_document_1',
+            'registered_office_address'
+        ],
+        'exclude': [],
+        'readonly': []
+    },
+    'labels': {
+        'client_name': 'Company Name',
+        'registration_number': 'CIN',
+        'opc_nominee_name': 'Nominee Name',
+        'constitution_document_1': 'Certificate of Incorporation'
+    }
+},
     # --------------------------------------------------------------------------
-    # 4. LIMITED LIABILITY PARTNERSHIP (LLP)
+    # 6. LIMITED LIABILITY PARTNERSHIP (LLP)
     # --------------------------------------------------------------------------
     'LLP': {
         'client': {
@@ -119,7 +188,7 @@ STRUCTURE_CONFIG = {
     },
 
     # --------------------------------------------------------------------------
-    # 5. SECTION 8 COMPANY (With Conditional Logic)
+    # 7. SECTION 8 COMPANY (With Conditional Logic)
     # --------------------------------------------------------------------------
     'Section 8': {
         'client': {
@@ -150,7 +219,7 @@ STRUCTURE_CONFIG = {
     },
 
     # --------------------------------------------------------------------------
-    # 6. HUF (Hindu Undivided Family)
+    # 8. HUF (Hindu Undivided Family)
     # --------------------------------------------------------------------------
     'HUF': {
         'client': {
