@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q, Max
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-
+from datetime import timedelta
 from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
 from home.forms import TaskForm, TaskExtendedForm
 from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
@@ -143,6 +143,7 @@ def task_list_view(request):
         'clients': clients_qs.order_by('client_name'),  # For the "Add Task" modal
         'filter_clients': clients_qs.order_by('client_name'),  # For the Filter dropdown
         'today': timezone.now().date(),
+        'tomorrow': timezone.now().date() + timedelta(days=1),
         'service_type_choices': Task.SERVICE_TYPE_CHOICES,
         # 'consultancy_type_choices': Task.CONSULTANCY_TYPE_CHOICES,
         'consultancy_type_choices': sorted(
