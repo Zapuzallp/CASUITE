@@ -34,16 +34,22 @@
 <!--        </div>-->
 <!--    </div>-->
 
-    <div class="search-bar position-relative">
-        <form class="search-form d-flex align-items-center" onsubmit="return false;">
-            <input type="text" id="global-search-input" name="query" placeholder="Search" title="Enter search keyword" autocomplete="off">
-            <button type="submit" title="Search"><i class="bi bi-search"></i></button>
-        </form>
 
-        <div id="search-results-container" class="search-results-dropdown shadow-lg d-none">
-            <div id="results-list"></div>
-        </div>
+
+
+<!-- <div class="search-bar position-relative">
+    <form class="search-form d-flex align-items-center" onsubmit="return false;">
+        <input type="text" id="global-search-input" name="query" placeholder="Search" title="Enter search keyword" autocomplete="off">
+        <button type="submit" title="Search"><i class="bi bi-search"></i></button>
+    </form>
+
+    <div id="search-results-container" class="search-results-dropdown shadow-lg d-none">
+        <div id="results-list"></div>
     </div>
+</div>--> 
+
+
+
 
     <nav class="header-nav ms-auto">
         <ul class="d-flex align-items-center">
@@ -64,13 +70,13 @@
                         {{ unread_count }}
                     </span>
                     {% endif %}
-                </a>      <!-- End Notification Icon -->
+                </a>   <!-- End Notification Icon-->
 
 
-                <ul class="dropdown-menu dropdown-menu-end notifications-dropdown">
+                 <ul class="dropdown-menu dropdown-menu-end notifications-dropdown"> 
 
-                    <!-- HEADER -->
-                    <li class="dropdown-header d-flex justify-content-between align-items-center">
+                     <!--HEADER -->
+                     <li class="dropdown-header d-flex justify-content-between align-items-center">
                         <span>
                             You have {{ unread_count }} new notifications
                         </span>
@@ -83,7 +89,7 @@
 
                     <li>
                         <hr class="dropdown-divider">
-                    </li>
+                    </li> 
 
                     <!-- NOTIFICATIONS -->
 
@@ -151,7 +157,7 @@
 
             <li class="nav-item dropdown">
 
-                <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
+                <a class="nav-link nav-icon " href="#" data-bs-toggle="dropdown">
                     <i class="bi bi-chat-left-text"></i>
                     {% if header_messages%}
                     <span class="badge bg-success badge-number">{{header_messages|length}}</span>
@@ -173,7 +179,7 @@
 
                     <li class="message-item"  style = "max-width: 250px; margin-left:15px; background-size: cover;">
 
-                    <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start" >
+                    <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start mb-3 " >
 
                         <!-- IMAGE WRAPPER -->
                             <div class="position-relative" >
@@ -191,7 +197,7 @@
                         
                         <!-- MESSAGE CONTENT -->
                         <div>
-                            <h4>{{m.sender.first_name}} {{m.sender.last_name}}</h4>
+                            <h4 class = "text-break">{{m.sender.first_name}} {{m.sender.last_name}}</h4>
                             {% if '<img' in m.content %}
                             <p class = "text-truncate  fw-bold text-dark"> Sent an image..</p>
                             
