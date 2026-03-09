@@ -13,37 +13,23 @@
         <i class="bi bi-list toggle-sidebar-btn"></i>
     </div><!-- End Logo -->
 
-<!--    <div class="search-bar">-->
-<!--        <form class="search-form d-flex align-items-center" method="POST" action="#">-->
-<!--            <input type="text" name="query" placeholder="Search" title="Enter search keyword">-->
-<!--            <button type="submit" title="Search"><i class="bi bi-search"></i></button>-->
-<!--        </form>-->
-<!--    </div>&lt;!&ndash; End Search Bar &ndash;&gt;-->
 
-<!--    <div class="search-bar position-relative">-->
-<!--        <form class="search-form d-flex align-items-center" onsubmit="return false;">-->
-<!--            <input type="text" id="global-search-input" name="query" placeholder="Search" title="Enter search keyword" autocomplete="off">-->
-<!--            <button type="submit" title="Search"><i class="bi bi-search"></i></button>-->
-<!--        </form>-->
 
-<!--        <div id="search-results-container" class="search-results-dropdown shadow-lg d-none">-->
-<!--            <div class="results-content">-->
-<!--                <div id="search-status" class="p-3 text-muted small">Type 4+ characters to search...</div>-->
-<!--                <div id="results-list"></div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
 
-    <div class="search-bar position-relative">
-        <form class="search-form d-flex align-items-center" onsubmit="return false;">
-            <input type="text" id="global-search-input" name="query" placeholder="Search" title="Enter search keyword" autocomplete="off">
-            <button type="submit" title="Search"><i class="bi bi-search"></i></button>
-        </form>
 
-        <div id="search-results-container" class="search-results-dropdown shadow-lg d-none">
-            <div id="results-list"></div>
-        </div>
+<div class="search-bar position-relative">
+    <form class="search-form d-flex align-items-center" onsubmit="return false;">
+        <input type="text" id="global-search-input" name="query" placeholder="Search" title="Enter search keyword" autocomplete="off">
+        <button type="submit" title="Search"><i class="bi bi-search"></i></button>
+    </form>
+
+    <div id="search-results-container" class="search-results-dropdown shadow-lg d-none">
+        <div id="results-list"></div>
     </div>
+</div>
+
+
+
 
     <nav class="header-nav ms-auto">
         <ul class="d-flex align-items-center">
@@ -64,13 +50,13 @@
                         {{ unread_count }}
                     </span>
                     {% endif %}
-                </a>      <!-- End Notification Icon -->
+                </a>   <!-- End Notification Icon-->
 
 
-                <ul class="dropdown-menu dropdown-menu-end notifications-dropdown">
+                 <ul class="dropdown-menu dropdown-menu-end notifications-dropdown"> 
 
-                    <!-- HEADER -->
-                    <li class="dropdown-header d-flex justify-content-between align-items-center">
+                     <!--HEADER -->
+                     <li class="dropdown-header d-flex justify-content-between align-items-center">
                         <span>
                             You have {{ unread_count }} new notifications
                         </span>
@@ -83,7 +69,7 @@
 
                     <li>
                         <hr class="dropdown-divider">
-                    </li>
+                    </li> 
 
                     <!-- NOTIFICATIONS -->
 
@@ -151,19 +137,19 @@
 
             <li class="nav-item dropdown">
 
-                <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
+                <a class="nav-link nav-icon " href="#" data-bs-toggle="dropdown">
                     <i class="bi bi-chat-left-text"></i>
                     {% if header_messages%}
                     <span class="badge bg-success badge-number">{{header_messages|length}}</span>
                     {% endif %}
                 </a><!--End Messages Icon-->
-            
+
                 <ul class="dropdown-menu  dropdown-menu-end dropdown-menu-arrow  messages max-vw-50  " style="max-height: 300px; overflow-y: auto; overflow-x:auto; ">
                     <li class="dropdown-header">
                         You have {{header_messages|length}} new messages
                         <a href="{% url 'chat_base' %}"><span class="badge rounded-pill bg-primary p-2 ms-2 ">View all</span></a>
                     </li>
-                    
+
                     {% for m in header_messages %}
                     {% if not m.is_seen %}
 
@@ -173,7 +159,7 @@
 
                     <li class="message-item"  style = "max-width: 250px; margin-left:15px; background-size: cover;">
 
-                    <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start" >
+                    <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start mb-3 " >
 
                         <!-- IMAGE WRAPPER -->
                             <div class="position-relative" >
@@ -188,13 +174,13 @@
                                 style="width: 10px; height: 10px;">
                             </span>
                         </div>
-                        
+
                         <!-- MESSAGE CONTENT -->
                         <div>
-                            <h4>{{m.sender.first_name}} {{m.sender.last_name}}</h4>
+                            <h4 class = "text-break">{{m.sender.first_name}} {{m.sender.last_name}}</h4>
                             {% if '<img' in m.content %}
                             <p class = "text-truncate  fw-bold text-dark"> Sent an image..</p>
-                            
+
                             {% else %}
                             {% autoescape off %}
                             <p class = "message-text fw-bold text-dark">{{m.content|striptags|truncatechars:70}}</p>
@@ -207,7 +193,7 @@
 
                     </a>
                     </li>
-                  
+
                     {% endif %}
                     {% endfor %}
 
@@ -215,7 +201,7 @@
                         <a href="#">Show all messages</a>
                     </li>
 
-                 </ul><!--End Messages Dropdown Items --> 
+                 </ul><!--End Messages Dropdown Items -->
 
             </li>
 
@@ -352,6 +338,3 @@ document.addEventListener("DOMContentLoaded", function(){
 
 });
 </script>
-
-
-
