@@ -358,6 +358,9 @@ TASK_CONFIG = {
     # --------------------------------------------------------------------------
     'Consultancy': {
         'workflow_steps': ['Documents_Received', 'Ready', 'Billing', 'Delivered'],
+        'fields': {
+            'include': []
+        },
         # NEW 👇
         'ui_controls': {
             'show_consultancy_type': True
