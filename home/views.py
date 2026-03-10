@@ -245,16 +245,26 @@ def get_client_dashboard_data(user, today):
 def client_search(request):
     q = request.GET.get('q', '').strip()
 
-    clients = Client.objects.filter(
-        Q(client_name__icontains=q) |
-        Q(pan_no__icontains=q)
-    )[:20]
+    clients = get_accessible_clients(request.user)
+    if q:
+        search_filter = (
+            Q(client_name__icontains=q) |
+            Q(pan_no__icontains=q) |
+            Q(file_number__icontains=q) |
+            Q(remarks__icontains=q)
+        )
+        if q.isdigit():
+            search_filter |= Q(id=int(q))
+        clients = clients.filter(search_filter)
+    clients = clients.order_by('client_name')[:20]
 
     data = []
     for c in clients:
+        id_context = f"ID: {c.id}"
+        file_context = c.file_number or c.pan_no
         data.append({
             "id": c.id,
-            "text": f"{c.client_name} || {c.pan_no} || {c.status}"
+            "text": f"{c.client_name} || {id_context} || {file_context} || {c.status}"
         })
     return JsonResponse(data, safe=False)
 
