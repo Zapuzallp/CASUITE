@@ -141,7 +141,7 @@
                         <select id="eachuser" class="form-select">
                             <option value="All Employees">All Employees</option>
                             {% for employee in employees %}
-                                <option value="{{ employee.user.first_name }} {{ employee.user.last_name }}">
+                                <option value="{{ employee.user.first_name }} {{ employee.user.last_name }} ({{employee.user.username}})">
                                     {{ employee.user.first_name }} {{ employee.user.last_name }}
                                 </option>
                             {% endfor %}
@@ -181,7 +181,7 @@
                                 {% for leave in all_leaves %}
                                     <tr data-status="{{ leave.status }}">
                                         <td class="text-muted small">#{{ leave.id }}</td>
-                                        <td class="fw-bold Name text-primary">{{ leave.user.first_name }} {{ leave.user.last_name }} ({{ leave.user.username }})</td>
+                                        <td class="fw-bold Name text-primary">{{ leave.user.first_name }} {{ leave.user.last_name }} ({{leave.user.username}})</td>
                                         <td>
                                             {% with type=leave.get_leave_type_display %}
                                                 <span class="badge rounded-pill px-3
@@ -197,7 +197,7 @@
                                             <div class="end text-muted">to {{ leave.end_date|date:"d M Y" }}</div>
                                         </td>
                                         <td><span class="fw-bold">{{ leave.total_days }}</span></td>
-                                        <td class="text-start small" style="max-width: 200px;">{{ leave.reason|truncatechars:40 }}</td>
+                                        <td class="text-start small mw-100" style="max-width: 200px;">{{ leave.reason|truncatechars:40 }}</td>
                                         <td>
                                             {% if leave.status == 'pending' %}
                                                 <span class="badge badge-soft-warning rounded-pill px-3">Pending</span>
@@ -283,18 +283,57 @@
             // Filtering Table Logic
             const applyFilterBtn = document.getElementById("btn-apply");
             if (applyFilterBtn) {
-                applyFilterBtn.addEventListener("click", function() {
+                applyFilterBtn.addEventListener("click", function(e) {
                     const from = document.getElementById('startSearch').value;
                     const to = document.getElementById('endSearch').value;
-                    const user = document.getElementById('eachuser').value.trim();
+                    const user = document.getElementById('eachuser').value.split(" ").join("");
                     const rows = document.querySelectorAll('tbody tr');
+                    
+                    // Case 1
+                    if (from && !to && (user || user == "AllEmployees")) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Missing End Date',
+                                text: 'Please select an end date to complete the range.',
+                                confirmButtonColor: '#4f46e5',
+                            });
+                            return; 
+                    }
+                    
+                    // Case 2
+                    if (to && !from && (user || user == "AllEmployees")) {
+                            Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Missing Start Date',
+                                    text: 'Please select a start date to complete the range.',
+                                    confirmButtonColor: '#4f46e5',
+                                });
+                                return; 
+                    }
+                    
+                    //Case 3
+                    if (from && to) {
+                            const fromDate = new Date(from);
+                            const toDate = new Date(to);
+                            if (toDate < fromDate && (user|| user =="AllEmployees")) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Invalid Date Range',
+                                    text: 'End date cannot be earlier than the start date.',
+                                    confirmButtonColor: '#4f46e5',
+                                });
+                                return; 
+                            }
+                    }
 
                     rows.forEach(row => {
                         let show = true;
 
                         // User Filter
-                        if (user && user !== "All Employees") {
-                            const name = row.querySelector('.Name')?.innerText.trim();
+                        if (user && user !== "AllEmployees") {
+                            const name = row.querySelector('.Name').innerText.split(" ").join("");
+                            
+                           
                             if (name !== user) show = false;
                         }
 
@@ -312,10 +351,11 @@
                             endDate.setHours(0,0,0,0);
                             fromDate.setHours(0,0,0,0);
                             toDate.setHours(0,0,0,0);
-
+                            
                             if (startDate > toDate || endDate < fromDate) {
                                 show = false;
                             }
+
                         }
 
                         row.style.display = show ? 'table-row' : 'none';
