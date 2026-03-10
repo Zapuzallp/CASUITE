@@ -102,6 +102,8 @@ def onboard_client_view(request):
             except Exception as e:
                 messages.error(request, f"Error saving client: {e}")
         else:
+            print("CLIENT FORM ERRORS:", client_form.errors)
+            print("PROFILE FORM ERRORS:", profile_form.errors)
             messages.error(request, "Please correct the errors below.")
     else:
         # Prefill form with lead data if available
