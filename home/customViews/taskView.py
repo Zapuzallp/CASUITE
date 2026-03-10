@@ -19,6 +19,11 @@ from home.tasks.task_copy import copy_task
 
 @login_required
 def create_task_view(request, client_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to create tasks.')
+        return redirect('task_list')
+
     client = get_object_or_404(Client, id=client_id)
 
     # 1. Prepare Client Data for Auto-Population
@@ -29,7 +34,7 @@ def create_task_view(request, client_id):
         'din_no': client.din_no,
     }
 
-    # 2. Prepare GST Details for dropdown
+    # 2. Prepare GST Details for dropdown (no auto-filling)
     gst_details_list = []
     for gst in client.gst_details.all():
         gst_details_list.append({
@@ -41,7 +46,7 @@ def create_task_view(request, client_id):
 
     if request.method == 'POST':
         task_form = TaskForm(request.POST)
-        extended_form = TaskExtendedForm(request.POST, request.FILES, client=client)
+        extended_form = TaskExtendedForm(request.POST, request.FILES)
 
         if task_form.is_valid() and extended_form.is_valid():
             try:
@@ -70,7 +75,7 @@ def create_task_view(request, client_id):
             messages.error(request, "Please check the form for errors.")
     else:
         task_form = TaskForm()
-        extended_form = TaskExtendedForm(client=client)
+        extended_form = TaskExtendedForm()
 
     context = {
         'client': client,
@@ -479,7 +484,7 @@ def edit_task_view(request, task_id):
         # 'gst_number': client.gst_details.first().gst_number if ...
     }
 
-    # 3. Prepare GST Details for dropdown
+    # 3. Prepare GST Details for dropdown (no auto-filling)
     gst_details_list = []
     for gst in client.gst_details.all():
         gst_details_list.append({
@@ -494,7 +499,7 @@ def edit_task_view(request, task_id):
 
     if request.method == 'POST':
         task_form = TaskForm(request.POST, instance=task)
-        extended_form = TaskExtendedForm(request.POST, request.FILES, instance=task.extended_attributes, client=client)
+        extended_form = TaskExtendedForm(request.POST, request.FILES, instance=task.extended_attributes)
 
         if task_form.is_valid() and extended_form.is_valid():
             task_form.save()
@@ -503,7 +508,7 @@ def edit_task_view(request, task_id):
             return redirect('task_detail', task_id=task.id)
     else:
         task_form = TaskForm(instance=task)
-        extended_form = TaskExtendedForm(instance=task.extended_attributes, client=client)
+        extended_form = TaskExtendedForm(instance=task.extended_attributes)
 
     context = {
         'task': task,
