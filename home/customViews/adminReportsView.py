@@ -40,7 +40,7 @@ class PaymentCollectionReportView(LoginRequiredMixin, View):
 
             fy_start, fy_end = self.get_financial_year_dates()
 
-            selected_client = request.GET.get("client", "")
+            client_name = request.GET.get("client_name", "")
             start_date = request.GET.get("start_date")
             end_date = request.GET.get("end_date")
 
@@ -61,8 +61,10 @@ class PaymentCollectionReportView(LoginRequiredMixin, View):
             )
 
             # Client Filter
-            if selected_client:
-                payments = payments.filter(invoice__client_id=selected_client)
+            if client_name:
+                payments = payments.filter(
+                    invoice__client__client_name__icontains=client_name
+                )
 
             # USER WISE GROUPING
             report_data = (
@@ -79,13 +81,13 @@ class PaymentCollectionReportView(LoginRequiredMixin, View):
 
             payment_details = None
 
-            if selected_client:
+            if client_name:
                 payment_details = (
                     Payment.objects
                     .filter(
                         payment_status="PAID",
                         payment_date__range=(start_date, end_date),
-                        invoice__client_id=selected_client
+                        invoice__client__client_name__icontains=client_name
                     )
                     .select_related("invoice__client")
                     .order_by("-payment_date")
@@ -94,10 +96,10 @@ class PaymentCollectionReportView(LoginRequiredMixin, View):
             context = {
                 "clients": clients,
                 "report_data": report_data,
-                "selected_client": selected_client,
                 "start_date": start_date,
                 "end_date": end_date,
                 "payment_details": payment_details,
+                "client_name": client_name,
             }
 
             return render(request, "payment_collection_report.html", context)
@@ -119,12 +121,13 @@ class PaymentCollectionDetailView(LoginRequiredMixin, View):
         )
 
         # Date Filter
-        if start_date and end_date:
+        if start_date:
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            payments = payments.filter(payment_date__gte=start_date)
+
+        if end_date:
             end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
-            payments = payments.filter(
-                payment_date__range=(start_date, end_date)
-            )
+            payments = payments.filter(payment_date__lte=end_date)
 
         # Search Filter
         if search:

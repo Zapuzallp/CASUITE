@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block body %}
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <main id="main" class="main">
 
   <div class="pagetitle">
@@ -44,15 +47,15 @@
                   <label class="form-label small fw-bold text-secondary">
                     Employees
                   </label>
-                  <select name="client" class="form-select w-100">
-                    <option value="">All Employees</option>
-                    {% for client in clients %}
-                      <option value="{{ client.id }}"
-                        {% if selected_client == client.id|stringformat:"s" %}selected{% endif %}>
-                        {{ client.client_name }}
-                      </option>
-                    {% endfor %}
-                  </select>
+                <select name="client" class="form-select client-select">
+    <option value="">All Employees</option>
+    {% for client in clients %}
+        <option value="{{ client.id }}"
+        {% if selected_client == client.id|stringformat:"s" %}selected{% endif %}>
+            {{ client.client_name }}
+        </option>
+    {% endfor %}
+</select>
                 </div>
 
                 <!-- From Date -->
@@ -80,7 +83,7 @@
                 <!-- Buttons -->
                 <div class="col-12 col-md-3 d-flex align-items-end">
                   <div class="d-grid gap-2 w-100 d-md-flex">
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-primary w-100 apply-filter-btn">
                       <i class="bi bi-search me-1"></i> Apply
                     </button>
                     <a href="{% url 'payment_collection_report' %}"
@@ -181,6 +184,36 @@
     {% endif %}
 
   </section>
+  <script>
+    $(document).ready(function () {
+    $('.client-select').select2({
+        theme: 'bootstrap-5',
+        placeholder: "All Employees",
+        allowClear: true,
+        width: '100%'
+    });
+});
+  </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const startDate = document.querySelector("input[name='start_date']");
+    const endDate = document.querySelector("input[name='end_date']");
+
+    startDate.addEventListener("change", function () {
+
+        if (startDate.value) {
+            endDate.min = startDate.value;
+        }
+
+        if (endDate.value && endDate.value < startDate.value) {
+            endDate.value = "";
+        }
+
+    });
+
+});
+</script>
 </main>
 
 {% endblock %}
