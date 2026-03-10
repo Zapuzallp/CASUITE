@@ -158,23 +158,7 @@
         });
     })();
 
-    <!-- App Logic Scripts -->
-    <script>
-        $(document).ready(function () {
-            const datatableClasses = ['.datatable1', '.datatable-export'];
-            datatableClasses.forEach(selector => {
-                $(selector).each(function () {
-                    if ($.fn.DataTable.isDataTable(this)) return;
-                    $(this).DataTable({
-                        responsive: true,
-                        processing: true,
-                        dom: '<"dt-top"fB>rt<"dt-bottom"lip>',
-                        buttons: ['csv', 'excel', 'print']
-                    });
-                });
-            });
-        });
-    </script>
+</script>
 
 <script>
     $(document).ready(function () {
@@ -194,7 +178,7 @@
 </script>
 
    <!--    SCRIPT FOR THE SWEETALERT-->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script src="{% static 'assets/js/main.js' %}"></script>
 <script src="{% static 'assets/js/searchbar.js' %}"></script>
