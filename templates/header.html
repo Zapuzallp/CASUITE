@@ -108,25 +108,27 @@
 
                     {% for m in header_messages %}
                     {% if not m.is_seen %}
-                    <li><hr class="dropdown-divider"></li>
+                    <li><hr class="dropdown-divider mb-3"></li>
                     <li class="message-item p-2">
-                        <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start text-decoration-none">
+                        <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start text-decoration-none mb-3 ">
                             <div class="position-relative">
                                 {% if m.sender.employee.profile_pic %}
-                                <img src="{{ m.sender.employee.profile_pic.url }}" class="rounded-circle" width="35" height="35">
+                                <img src="{{ m.sender.employee.profile_pic.url }}" class="rounded-circle ms-2 me-2" width="35" height="35">
                                 {% else %}
-                                <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white" style="width: 35px; height: 35px; font-weight: bold; font-size: 14px;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white ms-2 me-2" style="width: 35px; height: 35px; font-weight: bold; font-size: 14px;">
                                     {{ m.sender.first_name|slice:':1'|upper }}
                                 </div>
                                 {% endif %}
                                 <span class="position-absolute top-0 start-0 translate-middle bg-primary border border-light rounded-circle" style="width: 10px; height: 10px;"></span>
                             </div>
                             <div>
-                                <h4 class="text-dark m-0" style="font-size: 14px;">{{ m.sender.first_name }} {{ m.sender.last_name }}</h4>
+                                <h4 class="text-dark m-0 text-break" style="font-size: 14px;">{{ m.sender.first_name }} {{ m.sender.last_name }}</h4>
                                 {% if '<img' in m.content %}
                                 <p class="small text-muted mb-0">Sent an image..</p>
                                 {% else %}
-                                <p class="small text-muted mb-0 text-truncate" style="max-width: 180px;">{{ m.content|striptags }}</p>
+                                {% autoescape off %}
+                                <p class="small text-muted mb-0  text-break " style="max-width: 180px;">{{ m.content|striptags|truncatechars:80}}</p>
+                                {% endautoescape %}
                                 {% endif %}
                                 <small class="text-muted">{{ m.timestamp|timesince }} ago</small>
                             </div>
@@ -135,10 +137,6 @@
                     {% endif %}
                     {% endfor %}
 
-                    <li><hr class="dropdown-divider"></li>
-                    <li class="dropdown-footer text-center">
-                        <a href="{% url 'chat_base' %}">Show all messages</a>
-                    </li>
                 </ul>
             </li>
 

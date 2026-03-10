@@ -179,6 +179,7 @@ class ClientForm(BootstrapFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['office_location'].required = True
+        self.fields['trade_name'].required = False
 
     def clean(self):
         cleaned_data = super().clean()
@@ -536,7 +537,7 @@ class LeadForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Lead
         fields = [
-            'lead_name', 'full_name', 'email', 'phone_number',
+            'lead_name', 'trade_name','full_name', 'email', 'phone_number',
             'requirements', 'lead_value', 'expected_closure_date'
         ]
         widgets = {
@@ -544,6 +545,11 @@ class LeadForm(BootstrapFormMixin, forms.ModelForm):
                 'placeholder': 'e.g., ABC Traders',
                 'required': 'required'
             }),
+            'trade_name': forms.TextInput(attrs={
+                'placeholder': 'e.g., Name of Business',
+
+            })
+            ,
             'full_name': forms.TextInput(attrs={
                 'placeholder': 'e.g., Rajesh Kumar',
                 'required': 'required'
@@ -577,6 +583,7 @@ class LeadForm(BootstrapFormMixin, forms.ModelForm):
         # Set required fields
         self.fields['lead_name'].required = True
         self.fields['full_name'].required = True
+        self.fields['trade_name'].required = False
         self.fields['phone_number'].required = True
         self.fields['requirements'].required = True
         self.fields['email'].required = False

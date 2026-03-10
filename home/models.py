@@ -172,6 +172,10 @@ class Client(models.Model):
         ('HUF', 'Hindu Undivided Family'),
         ('Partnership', 'Partnership Firm'),
     ]
+    CA_ASSIGNED_CHOICES = [
+        ('Yes','Yes'),
+        ('No','No'),
+    ]
 
     STATUS_CHOICES = [
         ('Prospect', 'Prospect'),
@@ -186,6 +190,7 @@ class Client(models.Model):
 
     # --- Basic Identity ---
     client_name = models.CharField(max_length=255, help_text="Name of Individual or Entity")
+    trade_name = models.CharField(max_length = 255, null=True, help_text = "Name of Business")
     primary_contact_name = models.CharField(max_length=255, help_text="Name of the person to contact")
 
     # --- Identifiers ---
@@ -1097,6 +1102,7 @@ class Lead(models.Model):
 
     # Core Fields
     lead_name = models.CharField(max_length=255, help_text="Display / business name of the lead")
+    trade_name = models.CharField(max_length=255, null=True, help_text="Name of Business")
     full_name = models.CharField(max_length=255, help_text="Name of person/entity (used as Client Name on conversion)")
     email = models.EmailField(blank=True, null=True)
     phone_number = models.CharField(max_length=20)

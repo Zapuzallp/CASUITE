@@ -50,6 +50,18 @@
                                 <div class="form-text">Display / business name of the lead</div>
                             </div>
 
+                             <!-- Trade Name -->
+                            <div class="col-md-6">
+                                <label for="{{ form.trade_name.id_for_label}}" class="form-label">
+                                    Trade Name 
+                                </label>
+                                {{ form.trade_name }}
+                                {% if form.trade_name.errors %}
+                                    <div class="text-danger small">{{ form.trade_name.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Display / Trade name of the lead</div>
+                            </div>
+
                             <!-- Full Name -->
                             <div class="col-md-6">
                                 <label for="{{ form.full_name.id_for_label }}" class="form-label">

@@ -54,6 +54,7 @@ def onboard_client_view(request):
             # Prefill data from lead
             initial_client_data = {
                 'client_name': lead.lead_name,
+                'trade_name':lead.trade_name,
                 'primary_contact_name': lead.full_name,
                 'email': lead.email,
                 'phone_number': lead.phone_number,
@@ -200,7 +201,7 @@ class ClientView(LoginRequiredMixin, ListView):
         context['client_type_choices'] = Client.CLIENT_TYPE_CHOICES
         context['business_structure_choices'] = Client.BUSINESS_STRUCTURE_CHOICES
         context['status_choices'] = Client.STATUS_CHOICES
-
+        context['CA_assigned_choices'] = Client.CA_ASSIGNED_CHOICES
         # Office Filter Context:
         context['offices'] = OfficeDetails.objects.all()
 

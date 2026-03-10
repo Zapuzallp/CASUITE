@@ -50,6 +50,7 @@ def get_filtered_clients(request):
     filter_service = request.GET.get('service_type')
     filter_assigned_to = request.GET.get('assigned_to')
     filter_custom_view = request.GET.get('custom_view')
+    filter_assigned_ca = request.GET.get('CA_assigned')
 
     # 3. Apply filters dynamically
     if search_query:
@@ -60,12 +61,17 @@ def get_filtered_clients(request):
                 Q(client_name__icontains=search_query) |
                 Q(pan_no__icontains=search_query) |
                 Q(file_number__icontains=search_query) |
-                Q(primary_contact_name__icontains=search_query)
+                Q(primary_contact_name__icontains=search_query)|
+                Q(trade_name__icontains = search_query)
             )
 
     if filter_status:
         qs = qs.filter(status=filter_status)
-
+    if filter_assigned_ca:
+        if filter_assigned_ca == 'Yes':
+            qs = qs.filter(assigned_ca__isnull=False)
+        elif filter_assigned_ca == 'No':
+            qs = qs.filter(assigned_ca__isnull=True)
     if filter_type:
         qs = qs.filter(client_type=filter_type)
 
@@ -108,6 +114,11 @@ CLIENT_FIELDS = {
         'label': 'Client Name',
         'group': 'client',
         'accessor': lambda c: c.client_name
+    },
+    'trade_name': {
+        'label': 'Trade Name',
+        'group': 'client',
+        'accessor': lambda c: c.trade_name 
     },
     'primary_contact_name': {
         'label': 'Primary Contact Name',

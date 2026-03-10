@@ -55,7 +55,7 @@
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Search</label>
                                             <input type="text" name="q" class="form-control"
-                                                   placeholder="Name, PAN, GST No, File No..." value="{{ request.GET.q }}">
+                                                   placeholder="Name, PAN, GST No, File No,Trade Name ..." value="{{ request.GET.q }}">
                                         </div>
 
                                         <!-- Office Location -->
@@ -94,7 +94,7 @@
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Task / Service
                                                 Type</label>
-                                            <select name="service_type" class="form-select border-primary bg-white">
+                                            <select name="service_type" class="form-select  bg-white">
                                                 <option value="">All Services</option>
                                                 {% for code, name in service_type_choices %}
                                                     <option value="{{ code }}"
@@ -166,6 +166,20 @@
                                                         {% if request.GET.custom_view == 'director_din_valid' %}selected{% endif %}>
                                                     Directors (DIN No Available)
                                                 </option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!--CA Assigned -->
+                                         <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">CA Assigned</label>
+                                            <select name="CA_assigned" class="form-select">
+                                                <option value="">All Choices</option>
+                                                {% for code, name in CA_assigned_choices %}
+                                                    <option value="{{ code }}"
+                                                            {% if request.GET.CA_assigned == code %}selected{% endif %}>
+                                                        {{ name }}
+                                                    </option>
+                                                {% endfor %}
                                             </select>
                                         </div>
 
