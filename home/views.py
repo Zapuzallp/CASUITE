@@ -13,7 +13,7 @@ from django.views.generic import TemplateView
 from home.clients.client_access import get_accessible_clients
 # Import your models
 from home.models import Client
-from home.models import Task, TaskAssignmentStatus
+from home.models import Task, TaskAssignmentStatus, Leave, Payment
 
 
 # RequestedDocument, DocumentMaster, ClientDocumentUpload, DocumentRequest)
@@ -158,7 +158,25 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # 10. Lead Performance - Top 5 Lead Generators
         # =========================================================
         top_lead_generators = User.objects.annotate(lead_count=Count('leads_created')).order_by('-lead_count')[:5]
+        # =========================================================
+        # 11. Employees On Leave Today
+        # =========================================================
+        employees_on_leave_today = (
+            Leave.objects
+            .filter(start_date__lte=today, end_date__gte=today, status="approved")
+            .select_related("employee", "employee__user")
+        )
 
+        # =========================================================
+        # 12. Top Collection Leaders
+        # =========================================================
+        top_collectors = (
+            Payment.objects
+            .filter(payment_status="PAID")
+            .values("created_by__id", "created_by__username", "created_by__employee__profile_pic")
+            .annotate(total_collection=Sum("amount"))
+            .order_by("-total_collection")[:5]
+        )
         # =========================================================
         # CONTEXT PACKAGING
         # =========================================================
@@ -197,6 +215,9 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
             #clients
             'client_distribution_chart_data': client_data['client_distribution_chart_data'],
+
+            'employees_on_leave_today': employees_on_leave_today,
+            'top_collectors': top_collectors,
         })
 
         return context
