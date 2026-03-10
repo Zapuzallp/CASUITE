@@ -191,6 +191,7 @@ def task_list_view(request):
         'clients': clients_qs.order_by('client_name'),  # For the "Add Task" modal
         'filter_clients': clients_qs.order_by('client_name'),  # For the Filter dropdown
         'today': timezone.now().date(),
+        'tomorrow': timezone.now().date() + timedelta(days=1),
         'service_type_choices': Task.SERVICE_TYPE_CHOICES,
         # 'consultancy_type_choices': Task.CONSULTANCY_TYPE_CHOICES,
         'consultancy_type_choices': sorted(
