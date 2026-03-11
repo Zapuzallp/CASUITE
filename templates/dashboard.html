@@ -265,6 +265,10 @@
             }
         }
 
+        .leave-scroll{
+    max-height: 340px;
+    overflow-y: auto;
+        }
 
     </style>
 
@@ -502,6 +506,7 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">Employees On Leave <span>| Today</span></h5>
+                            <div class="leave-scroll">
                             <ul class="list-group list-group-flush">
                                 {% for leave in employees_on_leave_today %}
 
@@ -533,6 +538,7 @@
                                 </li>
                                 {% endfor %}
                             </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
