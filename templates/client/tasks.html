@@ -162,10 +162,12 @@
                                 <small class="text-muted">Showing {{ tasks|length }} task(s)</small>
                             </div>
 
+                            {% if not is_partner %}
                             <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
                                     data-bs-target="#selectClientModal">
                                 <i class="bi bi-plus-lg me-1"></i> Add New Task
                             </button>
+                            {% endif %}
                         </div>
 
                         <!-- Table Responsive Wrapper to ensure scrolling on mobile -->

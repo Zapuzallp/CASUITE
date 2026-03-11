@@ -68,6 +68,11 @@ class InvoiceListCreateView(LoginRequiredMixin, FormMixin, ListView):
         else:
             context['form'] = self.get_form()
 
+        # Check if user is a partner (view-only access)
+        is_partner = False
+        if hasattr(self.request.user, 'employee'):
+            is_partner = self.request.user.employee.role == 'PARTNER'
+
         # Add invoice data for template
         payment_status_filter = self.request.GET.get('payment_status', '').strip()
         due_status_filter = self.request.GET.get('due_status', '').strip()
@@ -149,10 +154,16 @@ class InvoiceListCreateView(LoginRequiredMixin, FormMixin, ListView):
             'date_to': self.request.GET.get('date_to', ''),
             'search': self.request.GET.get('search', ''),
         }
+        context['is_partner'] = is_partner
 
         return context
 
     def post(self, request, *args, **kwargs):
+        # Check if user is a partner - deny access
+        if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+            messages.error(request, 'You do not have permission to create invoices.')
+            return redirect(self.success_url)
+
         form = self.get_form()
 
         if form.is_valid():
@@ -188,6 +199,10 @@ def load_tasks(request):
 
 @login_required
 def add_invoice_item_ajax(request, pk):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        return JsonResponse({'error': 'You do not have permission to add invoice items.'}, status=403)
+
     invoice = Invoice.objects.get(pk=pk)
 
     if request.method == 'POST':
@@ -211,6 +226,11 @@ def add_invoice_item_ajax(request, pk):
 
 @login_required
 def invoice_item_delete(request, item_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        return JsonResponse({'success': False, 'error': 'You do not have permission to delete invoice items.'},
+                            status=403)
+
     if request.method == "POST":
         item = InvoiceItem.objects.get(pk=item_id)
         item.delete()
@@ -221,6 +241,11 @@ def invoice_item_delete(request, item_id):
 
 @login_required
 def approve_invoice(request, invoice_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to approve invoices.')
+        return redirect('invoice_details', invoice_id)
+
     invoice = Invoice.objects.get(pk=invoice_id)
 
     invoice.services.filter(invoice_status="DRAFT").update(invoice_status="INVOICED")
@@ -233,6 +258,11 @@ def change_invoice_status(request, invoice_id):
     Change invoice status between DRAFT and OPEN.
     Status is locked once payment is received.
     """
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to change invoice status.')
+        return redirect('invoice_details', invoice_id)
+
     if request.method == 'POST':
         invoice = Invoice.objects.get(pk=invoice_id)
 
@@ -353,6 +383,11 @@ def invoice_details(request, invoice_id):
 
     item_form = InvoiceItemForm()
 
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(request.user, 'employee'):
+        is_partner = request.user.employee.role == 'PARTNER'
+
     return render(request, 'invoice_details.html', {
         'invoice': invoice,
         'item_form': item_form,
@@ -366,6 +401,7 @@ def invoice_details(request, invoice_id):
         'payment_status_display': payment_status_display,
         'balance': balance,
         'total_paid': total_paid,
+        'is_partner': is_partner,
     })
 
 
@@ -375,6 +411,11 @@ def invoice_bulk_status_update(request):
     Bulk update invoice statuses from the invoice list table.
     Only updates invoices that are DRAFT or OPEN and have no payments.
     """
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to update invoice statuses.')
+        return redirect('invoice_list')
+
     if request.method == 'POST':
         updated_count = 0
         locked_count = 0

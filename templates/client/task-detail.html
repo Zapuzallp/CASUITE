@@ -71,6 +71,7 @@
                 <li class="breadcrumb-item active">{{ task.task_title }}</li>
             </ol>
         </nav>
+        {% if not is_partner %}
         <div class="d-flex gap-2">
             <a href="{% url 'edit_task' task.id %}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-pencil me-1"></i> Edit</a>
@@ -79,6 +80,7 @@
                 Copy Task
             </button>
         </div>
+        {% endif %}
         <div class="modal fade" id="copyTaskModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -129,9 +131,11 @@
                 <small class="text-muted"><i class="bi bi-building"></i> {{ task.client.client_name }}</small>
             </div>
 
+            {% if not is_partner %}
             <button class="btn btn-outline-primary btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#sequenceModal">
                 <i class="bi bi-diagram-3-fill me-1"></i> Manage Sequence
             </button>
+            {% endif %}
         </div>
 
         <div class="row g-2 text-center mt-4">
@@ -177,7 +181,7 @@
                                     <i class="bi bi-shield-lock"></i> Admin Override Mode
                                 </div><br>
                             {% endif %}
-                            
+
                             <button type="submit" class="btn btn-success btn-lg shadow fw-bold px-5">
                                 <i class="bi bi-check-circle-fill me-2"></i> Mark as Done
                             </button>
@@ -253,7 +257,7 @@
                             </form>
                             {% for c in comments %}
                                 <div class="mb-2 pb-2 border-bottom small">
-                                    <strong>{{ c.author.first_name }}</strong> 
+                                    <strong>{{ c.author.first_name }}</strong>
                                     <span class="text-muted float-end" style="font-size:0.7rem;">{{ c.created_at|timesince }} ago</span>
                                     <div class="text-dark mt-1">{{ c.text }}</div>
                                 </div>
@@ -316,7 +320,9 @@
             <div class="card shadow-sm border-0 mb-3">
                 <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
                     <small class="fw-bold text-uppercase text-muted">Documents</small>
+                    {% if not is_partner %}
                     <button class="btn btn-xs btn-outline-primary p-0 px-2 small" data-bs-toggle="modal" data-bs-target="#uploadTaskDocModal">+ Add</button>
+                    {% endif %}
                 </div>
                 <div class="list-group list-group-flush">
                     {% for doc in documents %}
@@ -334,12 +340,14 @@
                     {% endfor %}
                 </div>
             </div>
-            
+
             <!-- FINANCIALS -->
             <div class="card shadow-sm border-0 bg-light position-relative">
+                {% if not is_partner %}
                 <button class="btn btn-sm btn-link position-absolute top-0 end-0 m-1 text-secondary p-0" data-bs-toggle="modal" data-bs-target="#financialModal">
                     <i class="bi bi-pencil-square"></i>
                 </button>
+                {% endif %}
                 <div class="card-body p-3 text-center">
                     <small class="text-uppercase text-muted fw-bold">Fee Info</small>
                     <h4 class="fw-bold text-dark m-0">₹{{ task.agreed_fee|floatformat:0 }}</h4>
