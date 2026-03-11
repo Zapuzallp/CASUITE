@@ -150,6 +150,16 @@ class HomeView(LoginRequiredMixin, TemplateView):
         due_tasks = due_tasks_qs.select_related('client').prefetch_related('assignees').order_by('due_date')[:20]
 
         # =========================================================
+        # 9. Client Growth - Top 5 Client Creators/Onboards
+        # =========================================================
+        top_client_creators = User.objects.annotate(client_count=Count('clients_created')).order_by('-client_count')[:5]
+
+        # =========================================================
+        # 10. Lead Performance - Top 5 Lead Generators
+        # =========================================================
+        top_lead_generators = User.objects.annotate(lead_count=Count('leads_created')).order_by('-lead_count')[:5]
+
+        # =========================================================
         # CONTEXT PACKAGING
         # =========================================================
         context.update({
@@ -178,6 +188,8 @@ class HomeView(LoginRequiredMixin, TemplateView):
             'my_actionable_items': my_actionable_items[:6],  # Show top 6
             'my_actions_count': my_actions_count,
             'recent_tasks': recent_tasks,
+            'top_client_creators': top_client_creators,
+            'top_lead_generators': top_lead_generators,
 
             # Due Tasks Module
             'due_tasks': due_tasks,

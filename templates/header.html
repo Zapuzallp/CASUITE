@@ -1,9 +1,24 @@
 {% load static %}
 {% load humanize %}
 
+<style>
+    .note-editor.note-frame.fullscreen .note-editing-area {
+        height: 50rem;
+        background-color: white;
+    }
+    /* Ensure the search results don't push the header height */
+    .search-bar { position: relative; }
+    .search-results-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: white;
+    }
+</style>
 
-
-<header id = "header" class="header fixed-top d-flex align-items-center" >
+<header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
         <a href="{% url 'dashboard' %}" class="logo d-flex align-items-center">
@@ -11,35 +26,13 @@
             <span class="d-none d-lg-block">CA Suite 2.0</span>
         </a>
         <i class="bi bi-list toggle-sidebar-btn"></i>
-    </div><!-- End Logo -->
+    </div>
 
-<!--    <div class="search-bar">-->
-<!--        <form class="search-form d-flex align-items-center" method="POST" action="#">-->
-<!--            <input type="text" name="query" placeholder="Search" title="Enter search keyword">-->
-<!--            <button type="submit" title="Search"><i class="bi bi-search"></i></button>-->
-<!--        </form>-->
-<!--    </div>&lt;!&ndash; End Search Bar &ndash;&gt;-->
-
-<!--    <div class="search-bar position-relative">-->
-<!--        <form class="search-form d-flex align-items-center" onsubmit="return false;">-->
-<!--            <input type="text" id="global-search-input" name="query" placeholder="Search" title="Enter search keyword" autocomplete="off">-->
-<!--            <button type="submit" title="Search"><i class="bi bi-search"></i></button>-->
-<!--        </form>-->
-
-<!--        <div id="search-results-container" class="search-results-dropdown shadow-lg d-none">-->
-<!--            <div class="results-content">-->
-<!--                <div id="search-status" class="p-3 text-muted small">Type 4+ characters to search...</div>-->
-<!--                <div id="results-list"></div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-
-    <div class="search-bar position-relative">
+    <div class="search-bar">
         <form class="search-form d-flex align-items-center" onsubmit="return false;">
             <input type="text" id="global-search-input" name="query" placeholder="Search" title="Enter search keyword" autocomplete="off">
             <button type="submit" title="Search"><i class="bi bi-search"></i></button>
         </form>
-
         <div id="search-results-container" class="search-results-dropdown shadow-lg d-none">
             <div id="results-list"></div>
         </div>
@@ -49,309 +42,137 @@
         <ul class="d-flex align-items-center">
 
             <li class="nav-item d-block d-lg-none">
-                <a class="nav-link nav-icon search-bar-toggle " href="#">
+                <a class="nav-link nav-icon search-bar-toggle" href="#">
                     <i class="bi bi-search"></i>
                 </a>
-            </li><!-- End Search Icon-->
+            </li>
 
             <li class="nav-item dropdown">
-
                 <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
                     <i class="bi bi-bell"></i>
-
                     {% if unread_count > 0 %}
-                    <span class="badge bg-primary badge-number">
-                        {{ unread_count }}
-                    </span>
+                    <span class="badge bg-primary badge-number">{{ unread_count }}</span>
                     {% endif %}
-                </a>      <!-- End Notification Icon -->
-
+                </a>
 
                 <ul class="dropdown-menu dropdown-menu-end notifications-dropdown">
-
-                    <!-- HEADER -->
                     <li class="dropdown-header d-flex justify-content-between align-items-center">
-                        <span>
-                            You have {{ unread_count }} new notifications
-                        </span>
-                        <a href="{% url 'read_all_notifications' %}"
-                           class="btn btn-sm btn-primary rounded-pill">
-                            Read all
-                        </a>
-
+                        <span>You have {{ unread_count }} new notifications</span>
+                        <a href="{% url 'read_all_notifications' %}" class="btn btn-sm btn-primary rounded-pill">Read all</a>
                     </li>
-
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
-
-                    <!-- NOTIFICATIONS -->
+                    <li><hr class="dropdown-divider"></li>
 
                     {% for n in notifications %}
                     <li class="notification-item d-flex">
-
-                        <a href="{% url 'view_notification' n.id %}"
-                           class="d-flex w-100 text-decoration-none text-dark">
-
+                        <a href="{% url 'view_notification' n.id %}" class="d-flex w-100 text-decoration-none text-dark">
                             <div class="me-3">
-                                <span class="icon-circle
-                                {% if n.tag == 'success' %} border-success text-success
-                                {% elif n.tag == 'warning' %} border-warning text-warning
-                                {% elif n.tag == 'error' %} border-danger text-danger
-                                {% else %} border-primary text-primary
-                                {% endif %}
-                                ">
-
-                                    {% if n.tag == "success" %}
-                                        <i class="bi bi-check-circle text-success"></i>
-                                    {% elif n.tag == "warning" %}
-                                        <i class="bi bi-exclamation-triangle text-warning"></i>
-                                    {% elif n.tag == "error" %}
-                                        <i class="bi bi-x-circle text-danger"></i>
-                                    {% else %}
-                                        <i class="bi bi-info-circle text-primary"></i>
+                                <span class="icon-circle {% if n.tag == 'success' %} border-success text-success {% elif n.tag == 'warning' %} border-warning text-warning {% elif n.tag == 'error' %} border-danger text-danger {% else %} border-primary text-primary {% endif %}">
+                                    {% if n.tag == "success" %}<i class="bi bi-check-circle text-success"></i>
+                                    {% elif n.tag == "warning" %}<i class="bi bi-exclamation-triangle text-warning"></i>
+                                    {% elif n.tag == "error" %}<i class="bi bi-x-circle text-danger"></i>
+                                    {% else %}<i class="bi bi-info-circle text-primary"></i>
                                     {% endif %}
                                 </span>
                             </div>
-
                             <div>
-                                <h6 class="mb-1 {% if not n.is_read %}fw-bold{% endif %}">
-                                    {{ n.title }}
-                                </h6>
+                                <h6 class="mb-1 {% if not n.is_read %}fw-bold{% endif %}">{{ n.title }}</h6>
                                 <p class="mb-1 small text-muted">{{ n.message }}</p>
                                 <small class="text-muted">{{ n.created_at|timesince }} ago</small>
-
                             </div>
-
                         </a>
-
                     </li>
                     {% empty %}
-                    <li class="text-center text-muted p-3">
-                        No notifications
-                    </li>
+                    <li class="text-center text-muted p-3">No notifications</li>
                     {% endfor %}
 
-
-                    <!-- FOOTER -->
+                    <li><hr class="dropdown-divider"></li>
                     <li class="dropdown-footer text-center">
-
-                        <a href="{% url 'all_notifications' %}">
-                            Show all notifications
-                        </a>
-
+                        <a href="{% url 'all_notifications' %}">Show all notifications</a>
                     </li>
-
-
                 </ul>
             </li>
-            <!-- End Notification Dropdown Items -->
-
-            </li><!-- End Notification Nav -->
 
             <li class="nav-item dropdown">
-
                 <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
                     <i class="bi bi-chat-left-text"></i>
-                    {% if header_messages%}
-                    <span class="badge bg-success badge-number">{{header_messages|length}}</span>
+                    {% if header_messages %}
+                    <span class="badge bg-success badge-number">{{ header_messages|length }}</span>
                     {% endif %}
-                </a><!--End Messages Icon-->
-            
-                <ul class="dropdown-menu  dropdown-menu-end dropdown-menu-arrow  messages max-vw-50  " style="max-height: 300px; overflow-y: auto; overflow-x:auto; ">
+                </a>
+
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow messages" style="max-height: 300px; overflow-y: auto; max-width: 300px;">
                     <li class="dropdown-header">
-                        You have {{header_messages|length}} new messages
-                        <a href="{% url 'chat_base' %}"><span class="badge rounded-pill bg-primary p-2 ms-2 ">View all</span></a>
+                        You have {{ header_messages|length }} new messages
+                        <a href="{% url 'chat_base' %}"><span class="badge rounded-pill bg-primary p-2 ms-2">View all</span></a>
                     </li>
-                    
+
                     {% for m in header_messages %}
                     {% if not m.is_seen %}
-
-                    <li>
-                        <hr class="dropdown-divider ">
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="message-item p-2">
+                        <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start text-decoration-none">
+                            <div class="position-relative">
+                                {% if m.sender.employee.profile_pic %}
+                                <img src="{{ m.sender.employee.profile_pic.url }}" class="rounded-circle" width="35" height="35">
+                                {% else %}
+                                <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white" style="width: 35px; height: 35px; font-weight: bold; font-size: 14px;">
+                                    {{ m.sender.first_name|slice:':1'|upper }}
+                                </div>
+                                {% endif %}
+                                <span class="position-absolute top-0 start-0 translate-middle bg-primary border border-light rounded-circle" style="width: 10px; height: 10px;"></span>
+                            </div>
+                            <div>
+                                <h4 class="text-dark m-0" style="font-size: 14px;">{{ m.sender.first_name }} {{ m.sender.last_name }}</h4>
+                                {% if '<img' in m.content %}
+                                <p class="small text-muted mb-0">Sent an image..</p>
+                                {% else %}
+                                <p class="small text-muted mb-0 text-truncate" style="max-width: 180px;">{{ m.content|striptags }}</p>
+                                {% endif %}
+                                <small class="text-muted">{{ m.timestamp|timesince }} ago</small>
+                            </div>
+                        </a>
                     </li>
-
-                    <li class="message-item"  style = "max-width: 250px; margin-left:15px; background-size: cover;">
-
-                    <a href="{% url 'chat_with_user' m.sender.id %}" class="d-flex gap-3 align-items-start" >
-
-                        <!-- IMAGE WRAPPER -->
-                            <div class="position-relative" >
-                            {% if m.sender.employee.profile_pic %}
-                            <img src="{{m.sender.employee.profile_pic.url}}"class="rounded-circle" width = "35" height= "35">
-                            {% else %}
-                            <img src="#"class="rounded-circle" width = "35" height= "35">
-                            {% endif %}
-
-                            <!-- BLUE DOT -->
-                            <span class="position-absolute top-0 start-56 translate-middle bg-primary border border-light rounded-circle "
-                                style="width: 10px; height: 10px;">
-                            </span>
-                        </div>
-                        
-                        <!-- MESSAGE CONTENT -->
-                        <div>
-                            <h4>{{m.sender.first_name}} {{m.sender.last_name}}</h4>
-                            {% if '<img' in m.content %}
-                            <p class = "text-truncate  fw-bold text-dark"> Sent an image..</p>
-                            
-                            {% else %}
-                            {% autoescape off %}
-                            <p class = "message-text fw-bold text-dark">{{m.content|striptags|truncatechars:70}}</p>
-                            {% endautoescape %}
-
-                            {% endif %}
-                            <p class="small">{{m.timestamp|timesince}} ago</p>
-                        </div>
-
-
-                    </a>
-                    </li>
-                  
                     {% endif %}
                     {% endfor %}
 
-                    <li class="dropdown-footer">
-                        <a href="#">Show all messages</a>
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="dropdown-footer text-center">
+                        <a href="{% url 'chat_base' %}">Show all messages</a>
                     </li>
-
-                 </ul><!--End Messages Dropdown Items --> 
-
+                </ul>
             </li>
 
-<li class="nav-item dropdown pe-3 linkedin-profile">
+            <li class="nav-item dropdown pe-3">
+                <form id="dropdownProfileForm" method="POST" enctype="multipart/form-data" action="{% url 'upload_profile_pic' %}" style="display:none;">
+                    {% csrf_token %}
+                    <input type="file" name="profile_pic" id="dropdownProfileInput" accept="image/*">
+                </form>
 
-<form id="dropdownProfileForm" method="POST" enctype="multipart/form-data"
-      action="{% url 'upload_profile_pic' %}" style="display:none;">
-    {% csrf_token %}
-    <input type="file" name="profile_pic" id="dropdownProfileInput" accept="image/*">
-</form>
+                <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
+                    {% if user.is_staff and user.employee.profile_pic %}
+                        <img src="{{ user.employee.profile_pic.url }}" alt="Profile" class="rounded-circle" width="35" height="35">
+                    {% else %}
+                        <img src="{% static 'assets/img/profile-img.jpg' %}" alt="Profile" class="rounded-circle" width="35" height="35">
+                    {% endif %}
+                </a>
 
-    <!-- Profile Icon -->
-    <a class="nav-link d-flex align-items-center p-0" href="#" data-bs-toggle="dropdown">
-        {% if user.is_staff and user.employee.profile_pic %}
-            <img src="{{ user.employee.profile_pic.url }}" class="linkedin-avatar">
-        {% else %}
-            <img src="{% static 'assets/img/profile-img.jpg' %}" class="linkedin-avatar">
-        {% endif %}
-    </a>
-
-
-    <!-- Dropdown -->
-    <ul class="dropdown-menu dropdown-menu-end linkedin-dropdown">
-
-        <!-- Header -->
-        <li class="linkedin-header">
-            <div class="linkedin-header-row">
-                {% if user.is_staff and user.employee.profile_pic %}
-                   <img src="{{ user.employee.profile_pic.url }}"
-     class="linkedin-avatar-lg"
-     id="dropdownProfileClick"
-     style="cursor:pointer;">
-
-                {% else %}
-                    <img src="{% static 'assets/img/profile-img.jpg' %}"
-     class="linkedin-avatar-lg"
-     id="dropdownProfileClick"
-     style="cursor:pointer;">
-
-                {% endif %}
-
-                <div class="linkedin-user-info">
-                    <div class="linkedin-name">
-                        {{ user.get_full_name|default:user.username }}
-                    </div>
-
-                    <div class="linkedin-role">
-                        {% if user.is_staff %}
-                            {{ user.employee.designation }}
-                        {% else %}
-                            Client
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-
-        </li>
-
-        <li class="linkedin-divider"></li>
-
-        <!-- Menu -->
-        <li>
-            <a class="linkedin-item" href="#">
-                <i class="bi bi-person"></i>
-                My Profile
-            </a>
-        </li>
-
-        <li>
-            <a class="linkedin-item" href="#">
-                <i class="bi bi-gear"></i>
-                Account Settings
-            </a>
-        </li>
-
-        {% if user.is_staff %}
-        <li>
-            <a class="linkedin-item" href="/admin">
-                <i class="bi bi-shield-lock"></i>
-                Admin Panel
-            </a>
-        </li>
-        <li>
-                         <a class="linkedin-item" href="{% url 'password_change' %}">
-                            <i class="bi bi-key"></i>
-                             <span>Reset Password</span>
-                         </a>
-        </li>
-        {% endif %}
-
-        <li class="linkedin-divider"></li>
-
-        <li>
-            <a class="linkedin-item logout" href="/accounts/logout/">
-                <i class="bi bi-box-arrow-right"></i>
-                Sign Out
-            </a>
-        </li>
-
-    </ul>
-</li>
-
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
+                    <li class="dropdown-header text-start">
+                        <h6>{{ user.get_full_name|default:user.username }}</h6>
+                        <span>{% if user.is_staff %}{{ user.employee.designation }}{% else %}Client{% endif %}</span>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item d-flex align-items-center" href="#"><i class="bi bi-person"></i><span>My Profile</span></a></li>
+                    <li><a class="dropdown-item d-flex align-items-center" href="#"><i class="bi bi-gear"></i><span>Account Settings</span></a></li>
+                    {% if user.is_staff %}
+                    <li><a class="dropdown-item d-flex align-items-center" href="/admin"><i class="bi bi-shield-lock"></i><span>Admin Panel</span></a></li>
+                    <li><a class="dropdown-item d-flex align-items-center" href="{% url 'password_change' %}"><i class="bi bi-key"></i><span>Reset Password</span></a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item d-flex align-items-center" href="/accounts/logout/"><i class="bi bi-box-arrow-right"></i><span>Sign Out</span></a></li>
+                </ul>
+            </li>
 
         </ul>
-    </nav><!-- End Icons Navigation -->
-
+    </nav>
 </header>
-<script>
-document.addEventListener("DOMContentLoaded", function(){
-
-    const dropdownIcon = document.getElementById("dropdownProfileClick");
-    const fileInput = document.getElementById("dropdownProfileInput");
-    const form = document.getElementById("dropdownProfileForm");
-
-    if(!dropdownIcon || !fileInput || !form){
-        console.log("❌ Dropdown upload elements missing");
-        return;
-    }
-
-    dropdownIcon.addEventListener("click", function(e){
-        e.preventDefault();
-        e.stopPropagation();  // stop dropdown close
-        console.log("✅ Second profile icon clicked");
-        fileInput.click();
-    });
-
-    fileInput.addEventListener("change", function(){
-        if(this.files.length > 0){
-            console.log("✅ File selected from dropdown icon");
-            form.submit();
-        }
-    });
-
-});
-</script>
-
-
-
