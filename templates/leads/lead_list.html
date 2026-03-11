@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block body %}
+
 <main id="main" class="main">
 
     <div class="pagetitle">
@@ -75,7 +76,7 @@
                                         <!-- Assigned To -->
                                         <div class="col-md-4">
                                             <label class="form-label small fw-bold text-secondary">Assigned To</label>
-                                            <select name="assigned_to" class="form-select">
+                                            <select name="assigned_to" id="assignedUserDropdown" class="form-select">
                                                 <option value="">All Users</option>
                                                 {% for user in assigned_users %}
                                                     <option value="{{ user.id }}"
@@ -249,6 +250,22 @@
         font-size: 14px;
         vertical-align: middle;
     }
+
 </style>
+<script>
+$(document).ready(function(){
+
+    // ASSIGNED TO DROPDOWN SEARCH
+
+    $('#assignedUserDropdown').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'Search user...',
+        minimumResultsForSearch: 0,
+        allowClear: true
+    });
+
+});
+</script>
 
 {% endblock body %}
