@@ -265,6 +265,10 @@
             }
         }
 
+        .leave-scroll{
+    max-height: 340px;
+    overflow-y: auto;
+        }
 
     </style>
 
@@ -489,6 +493,93 @@
                                         </div>
                                         <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">{{ solver.solved_count }} Steps</span>
                                     </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employees On Leave and Top Collectors -->
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-xl-8">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Employees On Leave <span>| Today</span></h5>
+                            <div class="leave-scroll">
+                            <ul class="list-group list-group-flush">
+                                {% for leave in employees_on_leave_today %}
+
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            {% if leave.employee.profile_pic %}
+                                                <img src="{{ leave.employee.profile_pic.url }}" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;">
+                                            {% else %}
+                                            <div class="avatar-item" style="width:45px;height:45px;">
+                                            {{ leave.employee.user.username|slice:":1"|upper }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <strong>{{ leave.employee.user.get_full_name|default:leave.employee.user.username }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ leave.get_leave_type_display }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-warning text-dark">
+                                        {{ leave.total_days }} Days
+                                    </span>
+                                </li>
+
+                                {% empty %}
+                                <li class="list-group-item text-muted text-center">
+                                     All Employees Available Today
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-xl-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                Top Collections <span>| Employees</span>
+                            </h5>
+                            <div class="mt-2">
+                                {% for user in top_collectors %}
+                                <div class="d-flex align-items-center justify-content-between mb-4">
+                                    <div class="d-flex align-items-center">
+                                        <!-- Avatar -->
+                                        <div class="me-3">
+                                            {% if user.created_by__employee__profile_pic %}
+                                            <img src="/media/{{ user.created_by__employee__profile_pic }}" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;">
+                                            {% else %}
+                                            <div class="avatar-item" style="width:45px;height:45px;">
+                                                {{ user.created_by__username|slice:":1"|upper }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Employee Name -->
+                                        <div>
+                                        <h6 class="mb-0 fw-bold">
+                                            {{ user.created_by__username }}
+                                        </h6>
+                                        <small class="text-muted">
+                                            Rank #{{ forloop.counter }}
+                                        </small>
+                                        </div>
+                                    </div>
+                                        <!-- Amount -->
+                                        <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">
+                                            ₹{{ user.total_collection|floatformat:0 }}
+                                        </span>
+                                </div>
+                                {% empty %}
+                                    <P class="text-muted">No collections yet</P>
                                 {% endfor %}
                             </div>
                         </div>
