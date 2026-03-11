@@ -1684,3 +1684,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
      // END POSTAL CODE LOGIC
 })
+// ===== assigned ca searchbar =====
+setTimeout(function() {
+    const caField = document.getElementById('id_assigned_ca');
+    if (caField) {
+        // Destroy any existing instance
+        try { $(caField).select2('destroy'); } catch(e) {}
+
+        // Initialize fresh with search
+        $(caField).select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Search CA...',
+            minimumResultsForSearch: 0
+        });
+        console.log('CA search enabled');
+    }
+}, 1000);
