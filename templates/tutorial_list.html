@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block body %}
+
+<main id="main" class="main">
+
+    <div class="pagetitle">
+        <h1>Tutorials</h1>
+    </div>
+
+    <section class="section">
+
+        <div class="row">
+
+            {% for tutorial in tutorials %}
+
+            <div class="col-lg-4 col-md-6">
+
+                <div class="card tutorial-card">
+
+                    {% if tutorial.custom_thumbnail %}
+                        <img src="{{ tutorial.custom_thumbnail.url }}" class="card-img-top tutorial-thumb">
+
+                    {% elif tutorial.video_id %}
+                        <img src="https://img.youtube.com/vi/{{ tutorial.video_id }}/hqdefault.jpg" class="card-img-top tutorial-thumb">
+
+                    {% else %}
+                        <div class="bg-dark text-white d-flex align-items-center justify-content-center tutorial-thumb">
+                            <i class="bi bi-youtube" style="font-size: 3rem; color: #ff0000;"></i>
+                        </div>
+                    {% endif %}
+
+                    <div class="card-body mt-3">
+
+                        <h5 class="card-title p-0 m-0 mb-2">
+                            {{ tutorial.title }}
+                        </h5>
+
+                        <p class="card-text small text-muted">
+                            {{ tutorial.description|truncatewords:20 }}
+                        </p>
+
+                        <button
+                            class="btn btn-primary btn-sm mt-2"
+                            onclick="playVideo('{{ tutorial.video_url }}')">
+
+                            <i class="bi bi-play-circle"></i> Watch Tutorial
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% empty %}
+
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No tutorials available yet.
+                </div>
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+        <hr class="mt-4">
+
+        <div id="video-player" class="mt-3"></div>
+
+    </section>
+
+</main>
+
+
+<style>
+
+.tutorial-card {
+    border: none;
+    border-radius: 12px;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.tutorial-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.tutorial-thumb {
+    height: 200px;
+    width: 100%;
+    object-fit: cover;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+</style>
+
+
+<script>
+
+function playVideo(url) {
+
+    let html = "";
+
+    if (url.includes("youtube") || url.includes("youtu.be")) {
+
+        let id = "";
+
+        // Extract ID robustly
+        if (url.includes("watch?v=")) {
+            id = url.split("watch?v=")[1].split("&")[0];
+        }
+        else if (url.includes("youtu.be/")) {
+            id = url.split("youtu.be/")[1].split("?")[0];
+        }
+
+        // ERROR 153 FIX: Added referrerpolicy attribute
+        html = `
+        <div class="ratio ratio-16x9 shadow-lg rounded overflow-hidden">
+            <iframe
+                src="https://www.youtube.com/embed/${id}?autoplay=1"
+                frameborder="0"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+        `;
+
+    }
+    else if (url.includes("drive.google.com")) {
+
+        let id = url.split("/d/")[1].split("/")[0];
+
+        html = `
+        <div class="ratio ratio-16x9 shadow-lg rounded overflow-hidden">
+            <iframe
+                src="https://drive.google.com/file/d/${id}/preview"
+                frameborder="0"
+                allowfullscreen>
+            </iframe>
+        </div>
+        `;
+
+    }
+
+    document.getElementById("video-player").innerHTML = html;
+
+    window.scrollTo({
+        top: document.getElementById("video-player").offsetTop - 80,
+        behavior: "smooth"
+    });
+
+}
+
+</script>
+
+{% endblock %}
