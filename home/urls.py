@@ -5,6 +5,7 @@ from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
     leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView
 from home.customViews import resetPassword
+from home.customViews import tutorialView
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
@@ -143,5 +144,8 @@ urlpatterns = [
     path('data-management/manual-assign/', caAssignmentView.manual_assign_ca, name='manual_assign_ca'),
     path('data-management/bulk-import/', caAssignmentView.bulk_import_ca, name='bulk_import_ca'),
     path('data-management/download-template/', caAssignmentView.download_demo_template, name='download_ca_template'),
+
+    #Tutorials
+    path("tutorials/", tutorialView.tutorial_list, name="tutorial_list"),
 
 ]

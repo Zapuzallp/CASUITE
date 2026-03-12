@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q
+import re
 # -------------------------
 # Client Base Table
 # -------------------------
@@ -1291,4 +1292,40 @@ class ClientPortalCredentials(models.Model):
     def get_decrypted_password(self):
         """Decrypt and return password"""
         return decrypt_password(self.password)
+
+#     ----------- TUTORIALS MODEL--- ------- -- -
+
+class Tutorial(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    video_url = models.URLField()
+    video_id = models.CharField(max_length=255, blank=True, null=True)
+    custom_thumbnail = models.ImageField(upload_to='tutorial_thumbnails/', blank=True, null=True)
+    category = models.CharField(max_length=100, default="General")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        self.video_id = self.extract_video_id_from_url(self.video_url)
+        super().save(*args, **kwargs)
+
+    def extract_video_id_from_url(self, url):
+
+        youtube_match = re.search(
+            r'(https?://(?:www\.)?youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]{11})',
+            url
+        )
+        if youtube_match:
+            return youtube_match.group(2)
+
+        drive_match = re.search(
+            r'https://drive\.google\.com/file/d/([a-zA-Z0-9_-]+)',
+            url
+        )
+        if drive_match:
+            return drive_match.group(1)
+
+        return None
 
