@@ -85,10 +85,18 @@ def get_filtered_clients(request):
     if filter_custom_view:
         if filter_custom_view == 'aadhaar_mobile_linked':
             qs = qs.filter(aadhar_linked_mobile=True)
+        elif filter_custom_view == 'aadhaar_mobile_not_linked':
+            qs = qs.filter(aadhar_linked_mobile=False)
         elif filter_custom_view == 'gst_enabled':
             qs = qs.filter(gst_details__isnull=False).distinct()
+        elif filter_custom_view == 'gst_not_enabled':
+            qs = qs.filter(gst_details__isnull=True)
         elif filter_custom_view == 'director_din_valid':
             qs = qs.filter(din_no__isnull=False).exclude(din_no='')
+        elif filter_custom_view == 'director_din_not_valid':
+            qs = qs.filter(Q(din_no__isnull=True) | Q(din_no=''))
+        elif filter_custom_view == 'not_assigned_ca':
+            qs = qs.filter(assigned_ca__isnull=True)
 
     return qs.order_by('-created_at')
 
