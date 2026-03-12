@@ -7,11 +7,21 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
     <title>Dashboard - CA Suite 2.0</title>
+    <meta content="" name="description">
+    <meta content="" name="keywords">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/searchbar.css' %}" rel="stylesheet">
 
+    <!-- Favicons -->
+    <link href="{% static 'assets/img/favicon.ico' %}" rel="icon">
+    <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+
+    <!-- Vendor CSS Files -->
     <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
     <link href="{% static 'assets/vendor/boxicons/css/boxicons.min.css' %}" rel="stylesheet">
@@ -19,17 +29,13 @@
     <link href="{% static 'assets/vendor/quill/quill.bubble.css' %}" rel="stylesheet">
     <link href="{% static 'assets/vendor/remixicon/remixicon.css' %}" rel="stylesheet">
     <link href="{% static 'assets/vendor/simple-datatables/style.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/client_onboarding.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<<<<<<< CASUITE_124
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<!-- ASSIGNED TO (all leads page )DROPDOWN SEARCH -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <style>
         /* --- GLOBAL TYPOGRAPHY SYSTEM (MNC STANDARDS) --- */
@@ -47,158 +53,302 @@
             --h6-size: 14px;
             --small-size: 12px;
         }
-=======
->>>>>>> develop
 
-    <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
-    <link href="{% static 'assets/css/searchbar.css' %}" rel="stylesheet">
-    <link href="{% static 'assets/css/client_onboarding.css' %}" rel="stylesheet">
+        /* Force Global Font Override */
+        html, body {
+            font-family: var(--secondary-font) !important;
+            font-size: var(--base-size) !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            color: #444444;
+        }
 
-    <link href="{% static 'assets/css/typography-custom.css' %}" rel="stylesheet">
+        h1, h2, h3, h4, h5, h6, .pagetitle h1 {
+            font-family: var(--primary-font) !important;
+            font-weight: 600 !important;
+            color: #012970 !important;
+        }
 
-    <link href="{% static 'assets/img/favicon.ico' %}" rel="icon">
-    <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+        h1 { font-size: var(--h1-size) !important; }
+        h2 { font-size: var(--h2-size) !important; }
+        h3 { font-size: var(--h3-size) !important; }
+        h4 { font-size: var(--h4-size) !important; }
+        h5 { font-size: var(--h5-size) !important; }
+        h6 { font-size: var(--h6-size) !important; }
+
+        /* Sidebar & Navigation Override */
+        .sidebar-nav, .nav-link, .nav-item, .navbar {
+            font-family: var(--nav-font) !important;
+        }
+
+        /* DataTables & Form Global Size */
+        table, .table, thead, tbody, tfoot, tr, th, td,
+        input, select, textarea, button, .form-control, .select2-container {
+            font-size: var(--base-size) !important;
+            font-family: var(--secondary-font) !important;
+        }
+
+        small, .text-small, .breadcrumb {
+            font-size: var(--small-size) !important;
+        }
+
+        .text-danger { color: #dc3545; }
+
+        /* --- PRELOADER UI (REVERTED TO HIGH TRANSPARENCY ELEGANCE) --- */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Semi-transparent radial gradient for visibility of dashboard */
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.35) 0%, rgba(244, 247, 255, 0.45) 100%);
+            /* Subtle blur so underlying content is visible but soft */
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 999999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: opacity 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+        }
+
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .loader-content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-wrapper {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        .logo-wrapper img {
+            width: 60px;
+            height: auto;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
+        }
+
+        .circular-loader {
+            width: 160px;
+            height: 160px;
+            transform: rotate(-90deg);
+        }
+
+        .loader-bg {
+            fill: none;
+            stroke: rgba(0, 107, 255, 0.12);
+            stroke-width: 6;
+        }
+
+        .loader-progress {
+            fill: none;
+            stroke: #006bff;
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 440;
+            stroke-dashoffset: 440;
+            transition: stroke-dashoffset 0.4s ease-out;
+            filter: drop-shadow(0 0 8px rgba(0, 107, 255, 0.4));
+        }
+
+        .percentage-label {
+            position: absolute;
+            bottom: -50px;
+            font-family: var(--primary-font) !important;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #006bff;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 3px rgba(255,255,255,0.9);
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        body.loading {
+            overflow: hidden !important;
+            height: 100vh;
+        }
+    </style>
 </head>
 
 <body class="loading">
 
-<div id="preloader">
-    <canvas id="particle-canvas"></canvas>
-    <div class="loader-content">
-        <div class="logo-wrapper">
-            <img src="{% static 'assets/img/logo.png' %}" alt="Zapuza Logo">
+    <!-- Preloader Overlay -->
+    <div id="preloader">
+        <canvas id="particle-canvas"></canvas>
+        <div class="loader-content">
+            <div class="logo-wrapper">
+                <img src="{% static 'assets/img/logo.png' %}" alt="Zapuza Logo">
+            </div>
+
+            <svg class="circular-loader" viewBox="0 0 160 160">
+                <circle class="loader-bg" cx="80" cy="80" r="70"></circle>
+                <circle id="progress-circle" class="loader-progress" cx="80" cy="80" r="70"></circle>
+            </svg>
+
+            <div id="percentage-text" class="percentage-label">0%</div>
         </div>
-        <svg class="circular-loader" viewBox="0 0 160 160">
-            <circle class="loader-bg" cx="80" cy="80" r="70"></circle>
-            <circle id="progress-circle" class="loader-progress" cx="80" cy="80" r="70"></circle>
-        </svg>
-        <div id="percentage-text" class="percentage-label">0%</div>
     </div>
-</div>
 
-{% include 'header.html' %}
-{% include 'sidebar.html' %}
+    {% include 'header.html' %}
+    {% include 'sidebar.html' %}
 
-{% block body %}
-{% endblock body %}
+    {% block body %}
+    {% endblock body %}
 
-<footer id="footer" class="footer">
-    <div class="copyright">
-        &copy; Copyright <strong><span>Zapuza</span></strong>. All Rights Reserved
-    </div>
-</footer>
+    <footer id="footer" class="footer">
+        <div class="copyright">
+            &copy; Copyright <strong><span>Zapuza</span></strong>. All Rights Reserved
+        </div>
+    </footer>
 
-<a href="#" class="back-to-top d-flex align-items-center justify-content-center">
-    <i class="bi bi-arrow-up-short"></i>
-</a>
+    <a href="#" class="back-to-top d-flex align-items-center justify-content-center">
+        <i class="bi bi-arrow-up-short"></i>
+    </a>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Standard Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<script>
-    // Particle and Preloader Logic
-    const canvas = document.getElementById('particle-canvas');
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    const particleCount = 40;
+    <!-- PRELOADER ENGINE -->
+    <script>
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 40;
 
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-
-    class Particle {
-        constructor() { this.init(); }
-        init() {
-            this.x = Math.random() * canvas.width;
-            this.y = Math.random() * canvas.height;
-            this.size = Math.random() * 3 + 1;
-            this.speedX = Math.random() * 1 - 0.5;
-            this.speedY = Math.random() * 1 - 0.5;
-            this.opacity = Math.random() * 0.5 + 0.1;
-        }
-        update() {
-            this.x += this.speedX;
-            this.y += this.speedY;
-            if (this.x > canvas.width) this.x = 0;
-            if (this.x < 0) this.x = canvas.width;
-            if (this.y > canvas.height) this.y = 0;
-            if (this.y < 0) this.y = canvas.height;
-        }
-        draw() {
-            ctx.fillStyle = `rgba(0, 107, 255, ${this.opacity})`;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-
-    function initParticles() {
-        particles = [];
-        for (let i = 0; i < particleCount; i++) { particles.push(new Particle()); }
-    }
-
-    function animateParticles() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => { p.update(); p.draw(); });
-        requestAnimationFrame(animateParticles);
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    initParticles();
-    animateParticles();
-
-    (function () {
-        const progressCircle = document.getElementById('progress-circle');
-        const percentageText = document.getElementById('percentage-text');
-        const circumference = 2 * Math.PI * 70;
-        let currentPercent = 0;
-
-        function updateProgress(percent) {
-            const offset = circumference - (percent / 100 * circumference);
-            progressCircle.style.strokeDashoffset = offset;
-            percentageText.innerText = Math.floor(percent) + '%';
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
 
-        const loadingInterval = setInterval(() => {
-            if (currentPercent < 92) {
-                currentPercent += (Math.random() * 5);
-                if (currentPercent > 92) currentPercent = 92;
-                updateProgress(currentPercent);
+        class Particle {
+            constructor() {
+                this.init();
             }
-        }, 200);
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(0, 107, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
 
-        window.addEventListener('load', () => {
-            clearInterval(loadingInterval);
-            updateProgress(100);
-            setTimeout(() => {
-                const preloader = document.getElementById('preloader');
-                preloader.style.opacity = '0';
-                document.body.classList.remove('loading');
-                setTimeout(() => { preloader.remove(); }, 800);
-            }, 500);
-        });
-    })();
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
 
-    $(document).ready(function () {
-        const datatableClasses = ['.datatable1', '.datatable-export'];
-        datatableClasses.forEach(selector => {
-            $(selector).each(function () {
-                if ($.fn.DataTable.isDataTable(this)) return;
-                $(this).DataTable({
-                    responsive: true,
-                    processing: true,
-                    dom: '<"dt-top"fB>rt<"dt-bottom"lip>',
-                    buttons: ['csv', 'excel', 'print']
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        initParticles();
+        animateParticles();
+
+        (function() {
+            const progressCircle = document.getElementById('progress-circle');
+            const percentageText = document.getElementById('percentage-text');
+            const circumference = 2 * Math.PI * 70;
+            let currentPercent = 0;
+
+            function updateProgress(percent) {
+                const offset = circumference - (percent / 100 * circumference);
+                progressCircle.style.strokeDashoffset = offset;
+                percentageText.innerText = Math.floor(percent) + '%';
+            }
+
+            const loadingInterval = setInterval(() => {
+                if (currentPercent < 92) {
+                    currentPercent += (Math.random() * 5);
+                    if (currentPercent > 92) currentPercent = 92;
+                    updateProgress(currentPercent);
+                }
+            }, 200);
+
+            window.addEventListener('load', () => {
+                clearInterval(loadingInterval);
+                updateProgress(100);
+
+                setTimeout(() => {
+                    const preloader = document.getElementById('preloader');
+                    preloader.style.opacity = '0';
+                    document.body.classList.remove('loading');
+
+                    setTimeout(() => {
+                        preloader.remove();
+                    }, 800);
+                }, 500);
+            });
+        })();
+    </script>
+
+    <!-- App Logic Scripts -->
+    <script>
+        $(document).ready(function () {
+            const datatableClasses = ['.datatable1', '.datatable-export'];
+            datatableClasses.forEach(selector => {
+                $(selector).each(function () {
+                    if ($.fn.DataTable.isDataTable(this)) return;
+                    $(this).DataTable({
+                        responsive: true,
+                        processing: true,
+                        dom: '<"dt-top"fB>rt<"dt-bottom"lip>',
+                        buttons: ['csv', 'excel', 'print']
+                    });
                 });
             });
         });
-    });
-</script>
-<script src="{% static 'assets/js/main.js' %}"></script>
-<script src="{% static 'assets/js/searchbar.js' %}"></script>
+    </script>
 </body>
 </html>
