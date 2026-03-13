@@ -247,6 +247,41 @@
             overflow: visible !important;
         }
 
+        /* DataTable styling for due tasks */
+        #due-tasks-table {
+            width: 100% !important;
+        }
+
+        #due-tasks-table_wrapper .dataTables_filter {
+            float: right;
+            margin-bottom: 1rem;
+        }
+
+        #due-tasks-table_wrapper .dataTables_length {
+            float: left;
+            margin-bottom: 1rem;
+        }
+
+        #due-tasks-table_wrapper .dataTables_info {
+            float: left;
+            margin-top: 1rem;
+        }
+
+        #due-tasks-table_wrapper .dataTables_paginate {
+            float: right;
+            margin-top: 1rem;
+        }
+
+        /* Fix dropdown positioning */
+        .due-range-dropdown {
+            position: relative;
+            z-index: 1050;
+        }
+
+        .due-range-dropdown .dropdown-menu {
+            z-index: 1051;
+        }
+
         @media (max-width: 768px) {
             .main-content {
                 padding: 1rem;
@@ -542,7 +577,7 @@
                 <div class="col-12">
                     <div class="card h-100">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
                                 <div class="d-flex align-items-center gap-3">
                                     <h5 class="card-title m-0">Due Tasks <span id="due-tasks-count"
                                                                                class="text-muted fw-normal">| {{ due_tasks|length }} Items</span>
@@ -551,7 +586,7 @@
                                           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
                                             class="bi bi-calendar-event me-1"></i> Overdue Tasks</span>
                                 </div>
-                                <div class="due-range-dropdown dropdown">
+                                <div class="due-range-dropdown dropdown mt-2 mt-md-0">
                                     <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"><i
                                             class="bi bi-funnel me-1"></i> Filter Range
                                     </button>
@@ -565,8 +600,7 @@
                                             </button>
                                         </li>
                                         <li>
-                                            <button class="dropdown-item" type="button" data-range="tomorrow">Due
-                                                Tomorrow
+                                            <button class="dropdown-item" type="button" data-range="tomorrow">Due Tomorrow
                                             </button>
                                         </li>
                                         <li>
@@ -580,13 +614,15 @@
                                 </div>
                             </div>
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle">
+                                <table id="due-tasks-table" class="table table-hover align-middle" >
                                     <thead class="table-light">
                                     <tr>
                                         <th>#</th>
                                         <th>Title</th>
                                         <th>Client</th>
+                                        <th>Service</th>
                                         <th>Due Date</th>
+                                        <th>Assignees</th>
                                         <th>Status</th>
                                     </tr>
                                     </thead>
@@ -598,14 +634,35 @@
                                                     href="{% url 'task_detail' task.id %}">{{ task.task_title }}</a>
                                             </td>
                                             <td>{{ task.client.client_name }}</td>
+                                            <td>{{ task.service_type|default:"N/A" }}</td>
                                             <td>{{ task.due_date|date:"M d, Y" }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% for assignee in task.assignees.all|slice:":3" %}
+                                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.counter }};"
+                                                             data-bs-toggle="tooltip" title="{{ assignee.get_full_name|default:assignee.username }}">
+                                                            {{ assignee.first_name|slice:":1"|upper|default:assignee.username|slice:":1"|upper }}
+                                                        </div>
+                                                    {% empty %}
+                                                        <span class="text-muted small fst-italic">Unassigned</span>
+                                                    {% endfor %}
+                                                    {% if task.assignees.count > 3 %}
+                                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                             style="width: 28px; height: 28px; font-size: 10px;"
+                                                             data-bs-toggle="tooltip" title="{{ task.assignees.count }} assignees total">
+                                                            +{{ task.assignees.count|add:"-3" }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
                                             <td><span
                                                     class="badge bg-light text-dark border rounded-pill">{{ task.status }}</span>
                                             </td>
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="5" class="text-center py-4 text-muted">No tasks found.</td>
+                                            <td colspan="7" class="text-center py-4 text-muted">No tasks found.</td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>
@@ -754,8 +811,12 @@
     </div>
 
     <!-- Scripts -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{% static 'js/location-module.js' %}"></script>
 
@@ -763,7 +824,35 @@
         document.addEventListener('DOMContentLoaded', () => {
             initCharts();
             initAttendance();
+            initDueTasksTable();
         });
+
+        function initDueTasksTable() {
+            // Initialize DataTable for due tasks
+            if ($.fn.DataTable && document.getElementById('due-tasks-table')) {
+                $('#due-tasks-table').DataTable({
+                    responsive: true,
+                    pageLength: 10,
+                    lengthMenu: [[5, 10, 25, 50], [5, 10, 25, 50]],
+                    order: [[4, 'asc']], // Sort by due date
+                    columnDefs: [
+                        { orderable: false, targets: [0, 5] }, // Disable sorting for # and Assignees columns
+                        { searchable: false, targets: [0] } // Disable search for # column
+                    ],
+                    language: {
+                        search: "Search tasks:",
+                        lengthMenu: "Show _MENU_ tasks",
+                        info: "Showing _START_ to _END_ of _TOTAL_ tasks",
+                        paginate: {
+                            first: "First",
+                            last: "Last",
+                            next: "Next",
+                            previous: "Previous"
+                        }
+                    }
+                });
+            }
+        }
 
         function initCharts() {
             // Task Aging Chart
@@ -903,6 +992,13 @@
         }
 
         // Due Tasks AJAX Filter
+        function titleCase(str) {
+            return str
+                .toLowerCase()
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+            }
         function loadDueTasks(selectedRange) {
             fetch(`/api/due-tasks/?due_range=${selectedRange}`)
                 .then(response => response.json())
@@ -916,11 +1012,16 @@
                     const countSpan = document.getElementById('due-tasks-count');
                     if (countSpan) countSpan.textContent = `| ${data.count} Items`;
 
+                    // Destroy existing DataTable if it exists
+                    if ($.fn.DataTable && $.fn.DataTable.isDataTable('#due-tasks-table')) {
+                        $('#due-tasks-table').DataTable().destroy();
+                    }
+
                     const tbody = document.getElementById('due-tasks-tbody');
                     if (!tbody) return;
 
                     if (data.tasks.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">No tasks found.</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">No tasks found.</td></tr>`;
                         return;
                     }
 
@@ -929,30 +1030,29 @@
                         html += `
                             <tr>
                                 <td>${index + 1}</td>
-                                <td><a href="/tasks/${task.id}/">${task.title}</a></td>
+                                <td class="fw-bold"><a href="/tasks/${task.id}/">${titleCase(task.title)}</a></td>
                                 <td>${task.client}</td>
-                                <td>${task.service}</td>
+                                <td>${task.service || 'N/A'}</td>
                                 <td>${task.due_date}</td>
                                 <td>
-                                    <div class="d-flex align-items-center"
-                                         data-bs-toggle="tooltip"
-                                         data-bs-placement="top"
-                                         title="${task.assignees.join(', ')}">
+                                    <div class="d-flex align-items-center">
                                         ${
-                            task.assignees.length > 0
+                            task.assignees && task.assignees.length > 0
                                 ? task.assignees.slice(0, 3).map((name, i) => `
                                                 <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
-                                                     style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: ${3 - i};">
+                                                     style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: ${3 - i};"
+                                                     data-bs-toggle="tooltip" title="${name}">
                                                     ${name.charAt(0).toUpperCase()}
                                                 </div>
                                             `).join('')
                                 : `<span class="text-muted small fst-italic">Unassigned</span>`
                         }
                                         ${
-                            task.assignees.length > 3
+                            task.assignees && task.assignees.length > 3
                                 ? `
                                                 <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
-                                                     style="width: 28px; height: 28px; font-size: 10px;">
+                                                     style="width: 28px; height: 28px; font-size: 10px;"
+                                                     data-bs-toggle="tooltip" title="${task.assignees.length} assignees total">
                                                     +${task.assignees.length - 3}
                                                 </div>
                                               `
@@ -960,14 +1060,25 @@
                         }
                                     </div>
                                 </td>
-                                <td>${task.status}</td>
+                                <td><span class="badge bg-light text-dark border rounded-pill">${task.status}</span></td>
                             </tr>`;
                     });
                     tbody.innerHTML = html;
+
+                    // Re-initialize DataTable
+                    initDueTasksTable();
+
                     // Re-initialize tooltips for new rows
                     document.querySelectorAll('#due-tasks-tbody [data-bs-toggle="tooltip"]').forEach(el => {
                         new bootstrap.Tooltip(el);
                     });
+                })
+                .catch(error => {
+                    console.error('Error loading due tasks:', error);
+                    const tbody = document.getElementById('due-tasks-tbody');
+                    if (tbody) {
+                        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error loading tasks. Please try again.</td></tr>`;
+                    }
                 });
         }
 
@@ -983,6 +1094,9 @@
         document.addEventListener("DOMContentLoaded", function () {
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
                 new bootstrap.Tooltip(el);
+            });
+             document.querySelectorAll('#due-tasks-tbody a').forEach(el => {
+                el.textContent = titleCase(el.textContent);
             });
         });
     </script>

@@ -309,6 +309,8 @@ def due_tasks_ajax(request):
         due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=15))
     elif due_range == '30days':
         due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=30))
+    elif due_range == '7days':
+        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=7))
     
     due_tasks = due_tasks_qs.select_related('client').prefetch_related('assignees').order_by('due_date')[:20]
     
@@ -320,7 +322,7 @@ def due_tasks_ajax(request):
             'id': task.id,
             'title': task.task_title[:30] + '...' if len(task.task_title) > 30 else task.task_title,
             'client': task.client.client_name if task.client else '-',
-            'service': task.get_service_type_display() or '-',
+            'service': task.service_type or '-',
             'due_date': task.due_date.strftime('%b %d, %Y') if task.due_date else '-',
             'due_date_class': 'text-danger' if task.due_date and task.due_date < today else ('text-warning' if task.due_date == today else 'text-success'),
             'assignees': assignees,
@@ -333,6 +335,7 @@ def due_tasks_ajax(request):
         'overdue': 'Overdue Tasks',
         'today': 'Due Today',
         'tomorrow': 'Due Tomorrow',
+        '7days': 'Next 7 days',
         '5days': 'Due in 5 Days',
         '10days': 'Due in 10 Days',
         '15days': 'Due in 15 Days',
