@@ -5,7 +5,7 @@ from home.customViews.adminReportsView import PaymentCollectionDetailView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView,profileView,credentialsView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -148,5 +148,12 @@ urlpatterns = [
     path('credentials/<int:credential_id>/view/', credentialsView.view_portal_credential,name='view_portal_credential'),
     path('credentials/<int:credential_id>/delete/', credentialsView.delete_portal_credential,name='delete_portal_credential'),
 
+    # Data Management - CA Assignment
+    path('data-management/assign-ca/', caAssignmentView.assign_ca_view, name='assign_ca'),
+    path('data-management/search-clients/', caAssignmentView.search_clients_ajax, name='search_clients_ajax'),
+    path('data-management/search-employees/', caAssignmentView.search_employees_ajax, name='search_employees_ajax'),
+    path('data-management/manual-assign/', caAssignmentView.manual_assign_ca, name='manual_assign_ca'),
+    path('data-management/bulk-import/', caAssignmentView.bulk_import_ca, name='bulk_import_ca'),
+    path('data-management/download-template/', caAssignmentView.download_demo_template, name='download_ca_template'),
 
 ]
