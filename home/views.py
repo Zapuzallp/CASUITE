@@ -13,7 +13,7 @@ from django.views.generic import TemplateView
 from home.clients.client_access import get_accessible_clients
 # Import your models
 from home.models import Client
-from home.models import Task, TaskAssignmentStatus, Leave, Payment
+from home.models import Task, TaskAssignmentStatus, Leave, Payment, Lead
 
 
 # RequestedDocument, DocumentMaster, ClientDocumentUpload, DocumentRequest)
@@ -152,12 +152,22 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # =========================================================
         # 9. Client Growth - Top 5 Client Creators/Onboards
         # =========================================================
-        top_client_creators = User.objects.annotate(client_count=Count('clients_created')).order_by('-client_count')[:5]
+        top_client_creators = (
+            Client.objects
+            .values("created_by__id", "created_by__username", "created_by__employee__profile_pic")
+            .annotate(client_count=Count('id'))
+            .order_by('-client_count')[:5]
+        )
 
         # =========================================================
         # 10. Lead Performance - Top 5 Lead Generators
         # =========================================================
-        top_lead_generators = User.objects.annotate(lead_count=Count('leads_created')).order_by('-lead_count')[:5]
+        top_lead_generators = (
+            Lead.objects
+            .values("created_by__id", "created_by__username", "created_by__employee__profile_pic")
+            .annotate(lead_count=Count('id'))
+            .order_by('-lead_count')[:5]
+        )
         # =========================================================
         # 11. Employees On Leave Today
         # =========================================================
