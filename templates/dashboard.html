@@ -286,12 +286,40 @@
             </div>
         </div>
 
-        <div class="header-actions d-flex gap-2 mb-4">
+        <div class="header-actions d-flex align-items-center gap-3 mb-4 flex-wrap">
             <div class="bg-white border rounded-pill px-3 py-2 d-flex align-items-center shadow-sm">
                 <i class="bi bi-calendar3 me-2 text-primary"></i>
                 <span class="small fw-bold">{{ today|date:"M d, Y" }}</span>
             </div>
 
+            <!-- Top Performer Carousel -->
+            <div id="performerCarousel" class="carousel slide flex-grow-1" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for performer in top_performers %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <div class="d-flex align-items-center bg-white border rounded-pill px-3 py-2 shadow-sm">
+                            <!-- Avatar -->
+                            {% if performer.photo %}
+                            <img src="{{ performer.photo }}" class="rounded-circle me-3" style="width:40px;height:40px;object-fit:cover;">
+                            {% else %}
+                            <div class="avatar-item me-3" style="width:40px;height:40px;font-size:16px;">
+                            {{ performer.name|slice:":1"|upper }}
+                            </div>
+                            {% endif %}
+                            <!-- Name + Title -->
+                            <div class="me-3">
+                                <span class="fw-bold">{{ performer.name }}</span>
+                                <small class="text-muted ms-2">{{ performer.title }}</small>
+                            </div>
+                            <!-- Value -->
+                            <span class="fw-bold text-primary">
+                                {{ performer.value }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
         <section class="section dashboard">
@@ -1075,6 +1103,20 @@
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
                 new bootstrap.Tooltip(el);
             });
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const carousel = document.querySelector("#performerCarousel");
+
+            if (carousel) {
+                new bootstrap.Carousel(carousel, {
+                    interval: 3500,
+                    ride: "carousel",
+                    pause: false,
+                    wrap: true
+                });
+            }
         });
     </script>
 {% endblock body %}
