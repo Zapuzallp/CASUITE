@@ -366,69 +366,109 @@
             </div>
 
             <!-- Row 2: Attendance & Charts -->
-            <div class="row g-4 mb-4">
-                <div class="col-12 col-lg-4">
-                    <div class="card h-100 attendance-gradient border-0 shadow-lg">
-                        <div class="particle p-1"></div>
-                        <div class="particle p-2"></div>
-                        <div class="particle p-3"></div>
+            <!-- Row 2: Attendance & Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-lg-4">
+        <div class="card h-100 attendance-gradient border-0 shadow-lg">
+            <div class="particle p-1"></div>
+            <div class="particle p-2"></div>
+            <div class="particle p-3"></div>
 
-                        <div class="card-body text-center py-5" style="position: relative; z-index: 10;">
-                            <h5 class="card-title justify-content-center">Attendance</h5>
+            <div class="card-body text-center py-5" style="position: relative; z-index: 10;">
+                <h5 class="card-title justify-content-center">Attendance</h5>
 
-                            {% if attendance and attendance.clock_in and not attendance.clock_out %}
-                                <div class="mb-3">
-                                    <h1 class="display-5 fw-bold mb-0" id="liveTimer">00:00:00</h1>
-                                    <p class="small text-muted mb-4">Clocked in
-                                        at {{ attendance.clock_in|date:"h:i A" }}</p>
-                                </div>
-                                {% if attendance.location_name %}
-                                    <p class="small mb-4"><i
-                                            class="bi bi-geo-alt me-1"></i> {{ attendance.location_name|truncatechars:40 }}
-                                    </p>
-                                {% endif %}
-                                <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm"
-                                        data-bs-toggle="modal" data-bs-target="#clockOutModal">
-                                    <i class="bi bi-box-arrow-right me-1"></i> Clock Out
-                                </button>
-                            {% elif attendance and attendance.clock_out %}
-                                <div class="stat-icon bg-white text-success mx-auto mb-3" style="font-size: 2rem;"><i
-                                        class="bi bi-check2-circle"></i></div>
-                                <h4 class="fw-bold mb-1">Shift Completed</h4>
-                                <p class="text-muted mb-4">Total Time: {{ attendance.formatted_duration }}</p>
-                                <a href="{% url 'attendance_logs' %}"
-                                   class="btn btn-outline-light w-100 rounded-pill py-2">View Logs</a>
-                            {% else %}
-                                <div class="stat-icon bg-white bg-opacity-25 mx-auto mb-3" style="font-size: 2rem;"><i
-                                        class="bi bi-clock-history"></i></div>
-                                <h4 class="fw-bold mb-4">Ready to Start?</h4>
-                                <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm"
-                                        data-bs-toggle="modal" data-bs-target="#clockInModal">
-                                    <i class="bi bi-box-arrow-in-right me-1"></i> Clock In Now
-                                </button>
-                            {% endif %}
-                        </div>
+                {% if attendance and attendance.clock_in and not attendance.clock_out %}
+
+                    <div class="mb-3">
+                        <h1 class="display-5 fw-bold mb-0" id="liveTimer">00:00:00</h1>
+                        <p class="small text-muted mb-4">
+                            Clocked in at {{ attendance.clock_in|date:"h:i A" }}
+                        </p>
                     </div>
-                </div>
 
-                <div class="col-12 col-lg-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Task Aging <span>| Time Since Open</span></h5>
-                            <div id="agingChart" class="chart-box"></div>
-                        </div>
-                    </div>
-                </div>
+                    {% if attendance.location_name %}
+                    <p class="small mb-4">
+                        <i class="bi bi-geo-alt me-1"></i>
+                        {{ attendance.location_name|truncatechars:40 }}
+                    </p>
+                    {% endif %}
 
-                <div class="col-12 col-lg-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Client Distribution <span>| Entity Type</span></h5>
-                            <div id="clientTypeChart" class="chart-box"></div>
-                        </div>
+                    <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#clockOutModal">
+                        <i class="bi bi-box-arrow-right me-1"></i> Clock Out
+                    </button>
+
+                    <a href="{% url 'attendance_logs' %}"
+                       class="btn btn-outline-light w-100 rounded-pill py-2 mt-2">
+                        View Logs
+                    </a>
+
+                {% elif attendance and attendance.clock_out %}
+
+                    <div class="stat-icon bg-white text-success mx-auto mb-3" style="font-size: 2rem;">
+                        <i class="bi bi-check2-circle"></i>
                     </div>
-                </div>
+
+                    <h4 class="fw-bold mb-1">Shift Completed</h4>
+
+                    <p class="text-muted mb-4">
+                        Total Time: {{ attendance.formatted_duration }}
+                    </p>
+
+                    <a href="{% url 'attendance_logs' %}"
+                       class="btn btn-outline-light w-100 rounded-pill py-2">
+                        View Logs
+                    </a>
+
+                {% else %}
+
+                    <div class="stat-icon bg-white bg-opacity-25 mx-auto mb-3" style="font-size: 2rem;">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+
+                    <h4 class="fw-bold mb-4">Ready to Start?</h4>
+
+                    <button class="btn btn-light w-100 rounded-pill fw-bold py-2 shadow-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#clockInModal">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Clock In Now
+                    </button>
+
+                    <a href="{% url 'attendance_logs' %}"
+                       class="btn btn-outline-light w-100 rounded-pill py-2 mt-2">
+                        View Logs
+                    </a>
+
+                {% endif %}
+
             </div>
+        </div>
+    </div>
+
+    <!-- Task Aging -->
+    <div class="col-12 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Task Aging</h5>
+                <div id="agingChart" class="chart-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Distribution -->
+    <div class="col-12 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Client Distribution</h5>
+                <div id="clientTypeChart" class="chart-box"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div>
+
 
             <!-- Row 3: Action Required -->
             <div class="row g-4 mb-4" id="actions-section">
