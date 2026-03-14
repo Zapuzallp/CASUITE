@@ -293,28 +293,35 @@
             </div>
 
             <!-- Top Performer Carousel -->
-            <div id="performerCarousel" class="carousel slide flex-grow-1" data-bs-ride="carousel">
-                <div class="carousel-inner">
+            <div id="performerCarousel" class="carousel slide flex-grow-1" data-bs-ride="carousel" style="min-width: 250px;">
+                <div class="carousel-inner bg-white border rounded-pill shadow-sm pe-3">
                     {% for performer in top_performers %}
                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        <div class="d-flex align-items-center bg-white border rounded-pill px-3 py-2 shadow-sm">
-                            <!-- Avatar -->
-                            {% if performer.photo %}
-                            <img src="{{ performer.photo }}" class="rounded-circle me-3" style="width:40px;height:40px;object-fit:cover;">
-                            {% else %}
-                            <div class="avatar-item me-3" style="width:40px;height:40px;font-size:16px;">
-                            {{ performer.name|slice:":1"|upper }}
+                        <div class="d-flex align-items-center justify-content-between py-2 px-3" style="min-height: 56px;">
+                            <div class="d-flex align-items-center gap-3 overflow-hidden" style="min-width: 0;">
+                                <!-- Avatar -->
+                                {% if performer.photo %}
+                                <img src="{{ performer.photo }}" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;">
+                                {% else %}
+                                <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold" style="width:40px;height:40px;font-size:18px; background-color: #6162E6;">
+                                    {{ performer.name|slice:":1"|upper }}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Name + Title -->
+                                <div class="d-flex align-items-baseline gap-2 text-truncate">
+                                    <span class="fw-bold text-dark fs-6">{{ performer.name }}</span>
+                                    <span class="text-muted small">{{ performer.title }}</span>
+                                </div>
                             </div>
-                            {% endif %}
-                            <!-- Name + Title -->
-                            <div class="me-3">
-                                <span class="fw-bold">{{ performer.name }}</span>
-                                <small class="text-muted ms-2">{{ performer.title }}</small>
+
+                            <!-- Value + Next -->
+                            <div class="d-flex align-items-center gap-3 ms-3 flex-shrink-0">
+                                <span class="fw-bold text-primary" style="color: #0d6efd !important;">{{ performer.value }}</span>
+                                <a href="#" data-bs-target="#performerCarousel" data-bs-slide="next" class="text-muted d-flex align-items-center justify-content-center text-decoration-none" style="width: 24px;">
+                                    <i class="bi bi-chevron-right fs-5"></i>
+                                </a>
                             </div>
-                            <!-- Value -->
-                            <span class="fw-bold text-primary">
-                                {{ performer.value }}
-                            </span>
                         </div>
                     </div>
                     {% endfor %}

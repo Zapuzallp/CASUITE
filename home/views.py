@@ -226,18 +226,26 @@ class HomeView(LoginRequiredMixin, TemplateView):
             })
 
         collector = top_collectors.first()
-        if collector:
+        if collector and collector.get("created_by__username"):
 
             photo = None
-            if collector["created_by__employee__profile_pic"]:
+            if collector.get("created_by__employee__profile_pic"):
                 photo = "/media/" + str(collector["created_by__employee__profile_pic"])
 
             top_performers.append({
                 "name": collector["created_by__username"],
                 "title": "Top Collection",
-                "value": f"₹{collector['total_collection']}",
+                "value": f"₹{collector.get('total_collection', 0)}",
                 "avatar": collector["created_by__username"][0].upper(),
                 "photo": photo
+            })
+        else:
+            top_performers.append({
+                "name": "No Collections Yet",
+                "title": "Top Collection",
+                "value": "₹0",
+                "avatar": "-",
+                "photo": None
             })
         # =========================================================
         # CONTEXT PACKAGING
@@ -284,7 +292,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         })
 
         return context
-
+from django.contrib.auth.decorators import login_required
 def get_client_dashboard_data(user, today):
     """
     Handles:
