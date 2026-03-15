@@ -151,21 +151,38 @@
 
                                         <!-- Custom View -->
                                         <div class="col-md-3">
-                                            <label class="form-label small fw-bold text-secondary">Custom View</label>
+                                            <label class="form-label small fw-bold text-secondary">Custom Filter</label>
                                             <select name="custom_view" class="form-select">
                                                 <option value="">All Clients</option>
                                                 <option value="aadhaar_mobile_linked"
                                                         {% if request.GET.custom_view == 'aadhaar_mobile_linked' %}selected{% endif %}>
                                                     Aadhar Linked With Mobile
                                                 </option>
+                                                <option value="aadhaar_mobile_not_linked"
+                                                        {% if request.GET.custom_view == 'aadhaar_mobile_not_linked' %}selected{% endif %}>
+                                                    Aadhar Not Linked With Mobile
+                                                </option>
                                                 <option value="gst_enabled"
                                                         {% if request.GET.custom_view == 'gst_enabled' %}selected{% endif %}>
                                                     GST Enabled Clients
+                                                </option>
+                                                <option value="gst_not_enabled"
+                                                        {% if request.GET.custom_view == 'gst_not_enabled' %}selected{% endif %}>
+                                                    GST Not Enabled Clients
                                                 </option>
                                                 <option value="director_din_valid"
                                                         {% if request.GET.custom_view == 'director_din_valid' %}selected{% endif %}>
                                                     Directors (DIN No Available)
                                                 </option>
+                                                <option value="director_din_not_valid"
+                                                        {% if request.GET.custom_view == 'director_din_not_valid' %}selected{% endif %}>
+                                                    Directors (DIN No. Not Available)
+                                                </option>
+                                                <option value="not_assigned_ca"
+                                                        {% if request.GET.custom_view == 'not_assigned_ca' %}selected{% endif %}>
+                                                    CA Not Assigned
+                                                </option>
+
                                             </select>
                                         </div>
 
