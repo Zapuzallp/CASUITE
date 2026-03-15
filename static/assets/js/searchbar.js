@@ -13,13 +13,13 @@ document.addEventListener('DOMContentLoaded', function() {
         clearTimeout(debounceTimer);
         const query = this.value.trim();
 
-        if (query.length < 4) {
+        if (query.length < 2) {
             renderLayout({ results: [] }, query);
             return;
         }
 
         debounceTimer = setTimeout(() => {
-            fetch(`/global-search/?q=${encodeURIComponent(query)}`)
+            fetch(`/api/global-search/?q=${encodeURIComponent(query)}`)
                 .then(res => res.json())
                 .then(data => {
                     saveToHistory(query);

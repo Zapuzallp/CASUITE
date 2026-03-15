@@ -26,6 +26,18 @@ DEBUG = True
 ALLOWED_HOSTS = ["mondaltax.zapuza.in",'localhost', '*']
 CSRF_TRUSTED_ORIGINS = ["https://mondaltax.zapuza.in"]
 
+# Production-specific settings
+if not DEBUG:
+    # Security settings for production
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -44,6 +56,7 @@ INSTALLED_APPS = [
     "rangefilter",
     'django_admin_listfilter_dropdown',
     'django_apscheduler',
+    'django_elasticsearch_dsl',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -86,22 +99,22 @@ WSGI_APPLICATION = 'CASUITE.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': '3306',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': os.environ.get('DB_NAME'),
+#         'USER': os.environ.get('DB_USER'),
+#         'PASSWORD': os.environ.get('DB_PASSWORD'),
+#         'HOST': os.environ.get('DB_HOST'),
+#         'PORT': '3306',
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -157,3 +170,18 @@ from import_export.formats.base_formats import CSV
 
 IMPORT_FORMATS = [CSV]
 EXPORT_FORMATS = [CSV]
+
+# Elasticsearch Configuration
+ELASTICSEARCH_DSL = {
+    "default": {
+        "hosts": os.environ.get('ELASTICSEARCH_HOST', 'https://localhost:9200'),
+        "http_auth": (
+            os.environ.get('ELASTICSEARCH_USER', 'elastic'),
+            os.environ.get('ELASTICSEARCH_PASSWORD', 'VF7+gp_ebuaFnEZbsfN3')
+        ),
+        "verify_certs": os.environ.get('ELASTICSEARCH_VERIFY_CERTS', 'False').lower() == 'true',
+        "timeout": 30,
+        "max_retries": 3,
+        "retry_on_timeout": True
+    }
+}

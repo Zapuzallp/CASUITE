@@ -1,9 +1,11 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
+    leave_views, messageView, ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, \
+    caAssignmentView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -13,7 +15,6 @@ from home.customViews.attendanceView import (
 from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
 from home.customViews.services import list_services, delete_service
-from home.customViews.searchbarView import global_search
 from home.customViews.notificationView import (
     read_all_notifications,
     view_notification,
@@ -30,7 +31,9 @@ from home.customViews.payment_views import (
     payment_list, payment_collect, approve_payment,
     reject_payment, payment_detail, cancel_payment, bulk_payment_action
 )
+from home.customViews import searchbarView
 from home.views import client_search
+
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
     path('api/due-tasks/', due_tasks_ajax, name='due_tasks_ajax'),
@@ -62,6 +65,9 @@ urlpatterns = [
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
     path('tasks/<int:task_id>/copy/', taskView.copy_task_view, name='task_copy'),
     path('clients/search/', client_search, name='client_search'),
+
+    # Global Search API
+    path('api/global-search/', searchbarView.global_search, name='global_search'),
 
     # reset password
     path('password/change/', resetPassword.CustomPasswordChangeView.as_view(), name='password_change'),
@@ -106,9 +112,6 @@ urlpatterns = [
     path('payments/<int:payment_id>/', payment_detail, name='payment_detail'),
     path('payments/bulk-action/', bulk_payment_action, name='bulk_payment_action'),
 
-    #search-bar
-    path('global-search/', global_search, name='global_search'),
-
     # Lead Management
     path('leads/', leadView.lead_list_view, name='lead_list'),
     path('leads/add/', leadView.add_lead_view, name='add_lead'),
@@ -129,7 +132,7 @@ urlpatterns = [
     path('invoice/<int:invoice_id>/approve/', invoiceView.approve_invoice, name="invoice_approve"),
     path('invoice/<int:invoice_id>/change-status/', invoiceView.change_invoice_status, name="invoice_change_status"),
     path('invoices/bulk-status-update/', invoiceView.invoice_bulk_status_update, name="invoice_bulk_status_update"),
-    #profile url
+    # profile url
     path('upload-profile-pic/', profileView.upload_profile_pic, name='upload_profile_pic'),
     # Portal Credentials
     path('client/<int:client_id>/credentials/add/', credentialsView.add_portal_credential,name='add_portal_credential'),

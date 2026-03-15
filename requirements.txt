@@ -38,3 +38,6 @@ typing_extensions==4.12.2
 mysqlclient
 pandas
 cryptography==46.0.5
+django-elasticsearch-dsl==8.0
+elasticsearch-dsl==8.11.0
+elasticsearch==8.11.0
