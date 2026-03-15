@@ -183,7 +183,7 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
 
         # Get employee's shift timing - use same logic as attendance report
         from django.db.models import Q
-        today_date = date.today()
+        today_date = timezone.localdate()
 
         employee_shift = EmployeeShift.objects.filter(
             user=user,
@@ -259,14 +259,22 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
 
             # Calculate allowed early time (shift_end - grace_period)
             if shift_crosses_midnight:
-                shift_end_datetime = datetime.combine(date.today() + timedelta(days=1), shift_end)
-                allowed_early_datetime = shift_end_datetime - timedelta(minutes=grace_period_minutes)
-                allowed_early_time = allowed_early_datetime.time()
-                
-                # Check if early (clocked out before allowed early time)
-                if clock_out_time_only < allowed_early_time:
-                    early_minutes = (shift_end_datetime - datetime.combine(date.today() + timedelta(days=1), clock_out_time_only)).seconds // 60
-                    remarks.append(f"Early: {early_minutes}min")
+                # Pre-midnight clock-out: if still in the evening (after shift start), definitely early
+                if clock_out_time_only >= shift_start:
+                    minutes_to_midnight = (datetime.combine(date.today() + timedelta(days=1), time(0, 0)) -
+                                           datetime.combine(date.today(), clock_out_time_only)).seconds // 60
+                    minutes_midnight_to_end = (datetime.combine(date.today(), shift_end) -
+                                               datetime.combine(date.today(), time(0, 0))).seconds // 60
+                    early_minutes = minutes_to_midnight + minutes_midnight_to_end
+                    if early_minutes > grace_period_minutes:
+                        remarks.append(f"Early: {early_minutes}min")
+                else:
+                    # Post-midnight clock-out: compare against shift_end
+                    allowed_early_time = (datetime.combine(date.today(), shift_end) - timedelta(minutes=grace_period_minutes)).time()
+                    if clock_out_time_only < allowed_early_time:
+                        early_minutes = (datetime.combine(date.today(), shift_end) -
+                                        datetime.combine(date.today(), clock_out_time_only)).seconds // 60
+                        remarks.append(f"Early: {early_minutes}min")
             else:
                 allowed_early_time = (datetime.combine(date.today(), shift_end) - timedelta(minutes=grace_period_minutes)).time()
                 
@@ -296,7 +304,7 @@ def process_clock_in(user, lat=None, long=None, location_name=None, device_type=
     from home.models import Attendance
     from django.contrib import messages
 
-    today = date.today()
+    today = timezone.localdate()
     current_time = timezone.now()
 
     attendance, _ = Attendance.objects.get_or_create(user=user, date=today)
@@ -458,8 +466,9 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
                 message = f"Attendance marked as pending: {'; '.join(compliance_remarks)}"
                 success = False
             else:
-                # Only informational remarks
-                attendance.status = 'approved'
+                # Don't override 'pending' if clock-in already set it
+                if attendance.status != 'pending':
+                    attendance.status = 'approved'
                 message = 'Clocked out successfully!'
                 success = True
         else:
@@ -468,7 +477,9 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
                 attendance.remark = f"{attendance.remark}; {device_remark}"
             else:
                 attendance.remark = device_remark
-            attendance.status = 'approved'
+            # Don't override 'pending' if clock-in already set it
+            if attendance.status != 'pending':
+                attendance.status = 'approved'
             message = 'Clocked out successfully!'
             success = True
     else:

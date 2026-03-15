@@ -210,6 +210,9 @@ def client_details_view(request, client_id):
     if hasattr(user, 'employee'):
         is_partner = user.employee.role == 'PARTNER'
 
+    # === STATUS CHOICES FOR SWEETALERT ===
+    status_choices = Client.STATUS_CHOICES
+
     context = {
         'client': client,
         'client_fields': client_fields,
@@ -227,6 +230,7 @@ def client_details_view(request, client_id):
         'invoices_data': invoices_data,  # Include Invoices
         'portal_credentials': portal_credentials,  # Include Portal Credentials
         'credential_form': credential_form,  # Include Credential Form
+        'status_choices': status_choices,
         'is_partner': is_partner,  # Add partner flag
     }
 

@@ -307,9 +307,15 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        client = kwargs.pop('client', None)
         super().__init__(*args, **kwargs)
         self.fields['total_turnover'].widget.attrs.update({'placeholder': '0.00'})
         self.fields['tax_payable'].widget.attrs.update({'placeholder': '0.00'})
+
+        # Filter gstin_number field to show only current client's GST details
+        if client:
+            self.fields['gstin_number'].queryset = client.gst_details.all()
+            self.fields['gstin_number'].empty_label = "Select GST Number"
 
 
 # Leave form

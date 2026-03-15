@@ -15,7 +15,8 @@ from home.forms import TaskForm, TaskExtendedForm
 from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
 from home.clients.client_access import get_accessible_clients
 from home.tasks.task_copy import copy_task
-
+# Import of pagination
+from django.core.paginator import  Paginator
 
 @login_required
 def create_task_view(request, client_id):
@@ -34,21 +35,57 @@ def create_task_view(request, client_id):
         'din_no': client.din_no,
     }
 
-    # 2. Prepare GST Details for dropdown (no auto-filling)
-    gst_details_list = []
-    for gst in client.gst_details.all():
-        gst_details_list.append({
+    # 2. Prepare GST Details for Auto-Population
+    gst_details = client.gst_details.all()
+    gst_options = []
+    default_gst_id = None
+
+    for gst in gst_details:
+        gst_options.append({
             'id': gst.id,
             'gst_number': gst.gst_number,
-            'state': gst.get_state_display() if gst.state else '',
-            'status': gst.status
+            'state': gst.get_state_display(),
+            'label': f"{gst.gst_number} - {gst.get_state_display()}"
         })
+        # Set first GST as default for auto-population
+        if default_gst_id is None:
+            default_gst_id = gst.id
+
+    # Add validation message if no GST details found
+    gst_validation_message = None
+    if not gst_details.exists():
+        gst_validation_message = "No GST details found for this client. Add GST number for this client."
 
     if request.method == 'POST':
         task_form = TaskForm(request.POST)
-        extended_form = TaskExtendedForm(request.POST, request.FILES)
+        extended_form = TaskExtendedForm(request.POST, request.FILES, client=client)
+
+        # Filter gstin_number field to show only client's GST details
+        if hasattr(extended_form.fields, 'gstin_number'):
+            extended_form.fields['gstin_number'].queryset = client.gst_details.all()
 
         if task_form.is_valid() and extended_form.is_valid():
+            # Additional validation for GST Return Filing
+            if task_form.cleaned_data.get('service_type') == 'GST Return':
+                if not client.gst_details.exists():
+                    messages.error(
+                        request,
+                        "Cannot create GST Return Filing task: No GST details found for this client. "
+                        "Please add GST number for this client first."
+                    )
+                    # Re-render form with error
+                    context = {
+                        'client': client,
+                        'task_form': task_form,
+                        'extended_form': extended_form,
+                        'task_config': TASK_CONFIG,
+                        'client_data_json': client_data_map,
+                        'gst_options': gst_options,
+                        'default_gst_id': default_gst_id,
+                        'gst_validation_message': gst_validation_message
+                    }
+                    return render(request, 'client/create_task.html', context)
+
             try:
                 with transaction.atomic():
                     # Save Task
@@ -75,7 +112,11 @@ def create_task_view(request, client_id):
             messages.error(request, "Please check the form for errors.")
     else:
         task_form = TaskForm()
-        extended_form = TaskExtendedForm()
+        extended_form = TaskExtendedForm(client=client)
+
+        # Filter gstin_number field to show only client's GST details
+        if hasattr(extended_form.fields, 'gstin_number'):
+            extended_form.fields['gstin_number'].queryset = client.gst_details.all()
 
     context = {
         'client': client,
@@ -85,7 +126,9 @@ def create_task_view(request, client_id):
         # Pass Config and Data to Template
         'task_config': TASK_CONFIG,
         'client_data_json': client_data_map,
-        'gst_details_json': gst_details_list
+        'gst_options': gst_options,
+        'default_gst_id': default_gst_id,
+        'gst_validation_message': gst_validation_message
     }
     return render(request, 'client/create_task.html', context)
 
@@ -101,6 +144,7 @@ def task_list_view(request):
     # We select related fields to optimize database queries
     tasks_qs = Task.objects.select_related('client', 'created_by').prefetch_related('assignees')
 
+
     # 2. Role-Based Visibility Logic
     # Fetch clients accessible to the user using universal role-based logic
     # (Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
@@ -115,6 +159,7 @@ def task_list_view(request):
         # This ensures assignees always see their tasks, even if client visibility is not given to them
         Q(assignees=user)
     ).distinct()
+
 
     # 3. Apply UI Filters (GET parameters)
     search_query = request.GET.get('q')
@@ -152,19 +197,52 @@ def task_list_view(request):
             # Tasks that have no invoices
             tasks_qs = tasks_qs.filter(tagged_invoices__isnull=True)
 
+    # Records per page dropdown value
+    per_page = request.GET.get('per_page','all')
+
+    if per_page == "all":
+        per_page_value = tasks_qs.count()
+    else:
+        per_page_value = int(per_page)
+
+    tasks_qs = tasks_qs.order_by('-created_at')
+    # Pagination
+    paginator = Paginator(tasks_qs, per_page_value)
+    if len(tasks_qs) > 0:
+        page = request.GET.get('page')
+        tasks_qs = paginator.get_page(page)
+
+
+    # Remove page parameter from query string
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    # Remove empty query parameters
+    for key in list(query_params.keys()):
+        if not query_params.get(key):
+            query_params.pop(key)
+    has_filters = any([
+        search_query,
+        filter_client,
+        filter_service,
+        filter_consultancy_type,
+        filter_status,
+        filter_invoice_status,
+    ])
     # Check if user is a partner (view-only access)
     is_partner = False
     if hasattr(user, 'employee'):
         is_partner = user.employee.role == 'PARTNER'
 
     context = {
-        'tasks': tasks_qs.order_by('-created_at'),
+        'tasks': tasks_qs,
+        'query_params': query_params.urlencode(),
+        'per_page': per_page,
+        'has_filters': has_filters,
         'clients': clients_qs.order_by('client_name'),  # For the "Add Task" modal
         'filter_clients': clients_qs.order_by('client_name'),  # For the Filter dropdown
         'today': timezone.now().date(),
         'tomorrow': timezone.now().date() + timedelta(days=1),
         'service_type_choices': Task.SERVICE_TYPE_CHOICES,
-        # 'consultancy_type_choices': Task.CONSULTANCY_TYPE_CHOICES,
         'consultancy_type_choices': sorted(
             Task.CONSULTANCY_TYPE_CHOICES,
             key=lambda x: x[1]
@@ -174,7 +252,6 @@ def task_list_view(request):
         'is_partner': is_partner,
     }
     return render(request, 'client/tasks.html', context)
-
 
 # ---------------------------------------------------------
 # HELPER: Initialize Status Sequence
@@ -213,7 +290,7 @@ def task_detail_view(request, task_id):
         is_partner = user.employee.role == 'PARTNER'
 
     # Universal client visibility
-    # (Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
+    #(Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
     accessible_clients = get_accessible_clients(user)
 
     # Task access:
@@ -459,8 +536,6 @@ def task_detail_view(request, task_id):
     }
 
     return render(request, 'client/task-detail.html', context)
-
-
 # ==============================================================================
 # 2. NEW EDIT VIEW (Handles Full Editing)
 # ==============================================================================
@@ -484,16 +559,6 @@ def edit_task_view(request, task_id):
         # 'gst_number': client.gst_details.first().gst_number if ...
     }
 
-    # 3. Prepare GST Details for dropdown (no auto-filling)
-    gst_details_list = []
-    for gst in client.gst_details.all():
-        gst_details_list.append({
-            'id': gst.id,
-            'gst_number': gst.gst_number,
-            'state': gst.get_state_display() if gst.state else '',
-            'status': gst.status
-        })
-
     if not hasattr(task, 'extended_attributes'):
         TaskExtendedAttributes.objects.create(task=task)
 
@@ -516,11 +581,9 @@ def edit_task_view(request, task_id):
         'task_form': task_form,
         'extended_form': extended_form,
         'task_config': TASK_CONFIG,
-        'client_data_json': json.dumps(client_data_map, cls=DjangoJSONEncoder),  # <--- 4. PASS JSON DATA
-        'gst_details_json': gst_details_list
+        'client_data_json': json.dumps(client_data_map, cls=DjangoJSONEncoder)  # <--- 4. PASS JSON DATA
     }
     return render(request, 'client/create_task.html', context)
-
 
 @login_required
 @require_POST

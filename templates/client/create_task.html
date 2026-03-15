@@ -33,11 +33,17 @@
 
         .auto-filled {
             background-color: #e8f5e9 !important;
+            border-color: #4caf50 !important;
         }
 
         input[readonly] {
             background-color: #e9ecef;
             cursor: not-allowed;
+        }
+
+        .gst-auto-selected {
+            border: 2px solid #4caf50;
+            background-color: #e8f5e9;
         }
     </style>
 
@@ -106,6 +112,9 @@
 
     {{ task_config|json_script:"task-config-data" }}
     {{ client_data_json|json_script:"client-data-source" }}
+    {{ gst_options|json_script:"gst-options-data" }}
+    {{ default_gst_id|json_script:"default-gst-id" }}
+    {{ gst_validation_message|json_script:"gst-validation-message" }}
 
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script>
@@ -120,11 +129,19 @@
             if (hiddenInput.value) {
                     quill.root.innerHTML = hiddenInput.value;
                 }
-            document.getElementById('taskForm').addEventListener('submit', function () {
+            document.getElementById('taskForm').addEventListener('submit', function (e) {
+                // Validate GST Return Filing before submission
+                const serviceType = document.getElementById('id_service_type').value;
+                if (serviceType === 'GST Return' && gstValidationMessage) {
+                    e.preventDefault();
+                    alert('Cannot create GST Return Filing task: No GST details found for this client. Please add GST number for this client first.');
+                    return false;
+                }
+
                 document.getElementById('hiddenDescription').value = quill.root.innerHTML;
-                    const btn = document.getElementById('saveTaskBtn');
-                    btn.disabled = true;
-                    btn.innerText = "Saving...";
+                const btn = document.getElementById('saveTaskBtn');
+                btn.disabled = true;
+                btn.innerText = "Saving...";
             });
 
             // 2. Logic
@@ -133,10 +150,13 @@
             const dueDateInput = document.getElementById('id_due_date');
             const allWrappers = document.querySelectorAll('.field-wrapper');
 
-            let config = {}, clientData = {};
+            let config = {}, clientData = {}, gstOptions = [], defaultGstId = null, gstValidationMessage = null;
             try {
                 config = JSON.parse(document.getElementById('task-config-data').textContent);
                 clientData = JSON.parse(document.getElementById('client-data-source').textContent);
+                gstOptions = JSON.parse(document.getElementById('gst-options-data').textContent);
+                defaultGstId = JSON.parse(document.getElementById('default-gst-id').textContent);
+                gstValidationMessage = JSON.parse(document.getElementById('gst-validation-message').textContent);
             } catch (e) {
                 console.error("JSON Error", e);
             }
@@ -190,6 +210,55 @@
                             if (val && (!input.value || input.value === '')) {
                                 input.value = val;
                                 input.classList.add('auto-filled');
+                            }
+                        }
+
+                        // C. Special handling for GST Number auto-population
+                        if (fieldName === 'gstin_number' && input.tagName === 'SELECT' && selected === 'GST Return') {
+                            // Check if client has GST details
+                            if (gstValidationMessage) {
+                                // Show validation message if no GST details
+                                const wrapper = input.closest('.field-wrapper');
+                                if (wrapper) {
+                                    let alertDiv = wrapper.querySelector('.gst-validation-alert');
+                                    if (!alertDiv) {
+                                        alertDiv = document.createElement('div');
+                                        alertDiv.className = 'alert alert-warning gst-validation-alert mt-2 small';
+                                        alertDiv.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>No GST details found for this client. Add GST number for this client.`;
+                                        wrapper.appendChild(alertDiv);
+                                    }
+                                }
+                                input.disabled = true;
+                                input.style.backgroundColor = '#f8f9fa';
+                            } else {
+                                // Auto-select the first/default GST number for GST Return Filing
+                                if (defaultGstId && (!input.value || input.value === '')) {
+                                    input.value = defaultGstId;
+                                    input.classList.add('auto-filled');
+
+                                    // Show visual feedback
+                                    const wrapper = input.closest('.field-wrapper');
+                                    if (wrapper) {
+                                        const label = wrapper.querySelector('label');
+                                        if (label) {
+                                            const gstInfo = gstOptions.find(g => g.id == defaultGstId);
+                                            if (gstInfo) {
+                                                label.innerHTML = `${label.textContent} <small class="text-success">(Auto-selected: ${gstInfo.gst_number})</small>`;
+                                            }
+                                        }
+                                    }
+                                }
+                                input.disabled = false;
+                                input.style.backgroundColor = '';
+
+                                // Remove any existing validation alerts
+                                const wrapper = input.closest('.field-wrapper');
+                                if (wrapper) {
+                                    const alertDiv = wrapper.querySelector('.gst-validation-alert');
+                                    if (alertDiv) {
+                                        alertDiv.remove();
+                                    }
+                                }
                             }
                         }
 
