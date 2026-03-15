@@ -227,13 +227,13 @@ class HomeView(LoginRequiredMixin, TemplateView):
             if hasattr(lead, "employee") and lead.employee.profile_pic:
                 pic = lead.employee.profile_pic.url
 
-            top_performers.append({
-                "name": lead.first_name or lead.username,
-                "title": "Top Lead Generator",
-                "value": f"{lead.lead_count} Leads",
-                "avatar": lead.first_name[:1].upper(),
-                "photo": pic
-            })
+            # top_performers.append({
+            #     "name": lead.created_byfirst_name or lead.username,
+            #     "title": "Top Lead Generator",
+            #     "value": f"{lead.lead_count} Leads",
+            #     "avatar": lead.first_name[:1].upper(),
+            #     "photo": pic
+            # })
 
         collector = top_collectors.first()
         if collector and collector.get("created_by__username"):
