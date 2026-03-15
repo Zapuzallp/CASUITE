@@ -281,17 +281,28 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
 
                     # Set clock_out to shift end time
                     clock_out_datetime = timezone.make_aware(
-                        datetime.combine(attendance.date, shift_end_time)
+                        datetime.combine(attendance.date, shift_end_time),
+                        timezone.get_current_timezone()
                     )
 
                     # Handle night shifts
                     if attendance.clock_in and clock_out_datetime < attendance.clock_in:
                         clock_out_datetime += timedelta(days=1)
 
+                    # ✅ Prevent overwriting existing clock_out
+                    if attendance.clock_out:
+                        errors.append(f"{attendance.user.username} ({attendance.date}): Clock out already exists")
+                        error_count += 1
+                        continue
+
                     attendance.clock_out = clock_out_datetime
 
+                    # ✅ ADD THIS BLOCK
+                    if attendance.clock_in:
+                        attendance.duration = attendance.clock_out - attendance.clock_in
+
                     # Append remark
-                    new_remark = "Auto out (shift time)"
+                    new_remark = "Auto clock out"
 
                     if attendance.remark:
                         attendance.remark = f"{attendance.remark} | {new_remark}"
