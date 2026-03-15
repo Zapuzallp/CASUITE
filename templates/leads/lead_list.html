@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block body %}
+
 <main id="main" class="main">
 
     <div class="pagetitle">
@@ -75,7 +76,7 @@
                                         <!-- Assigned To -->
                                         <div class="col-md-4">
                                             <label class="form-label small fw-bold text-secondary">Assigned To</label>
-                                            <select name="assigned_to" class="form-select">
+                                            <select name="assigned_to" id="assignedUserDropdown" class="form-select">
                                                 <option value="">All Users</option>
                                                 {% for user in assigned_users %}
                                                     <option value="{{ user.id }}"
@@ -249,6 +250,66 @@
         font-size: 14px;
         vertical-align: middle;
     }
+
+    /* Select2 Search Box Fix */
+    .select2-container--bootstrap-5 .select2-dropdown .select2-search {
+        display: block !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-dropdown .select2-search .select2-search__field {
+        display: block !important;
+        width: 100% !important;
+        padding: 0.375rem 0.75rem !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 0.375rem !important;
+    }
+    
+    .select2-container--bootstrap-5 .select2-results__options {
+        max-height: 200px !important;
+        overflow-y: auto !important;
+    }
+
 </style>
+<script>
+// Wait for all dependencies to load
+function initSelect2() {
+    if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
+        setTimeout(initSelect2, 100);
+        return;
+    }
+    
+    $(document).ready(function() {
+        // Wait a bit more for all page elements to load
+        setTimeout(function() {
+            // Destroy any existing Select2 instance first
+            if ($('#assignedUserDropdown').hasClass('select2-hidden-accessible')) {
+                $('#assignedUserDropdown').select2('destroy');
+            }
+            
+            // Initialize Select2 with proper configuration
+            $('#assignedUserDropdown').select2({
+                width: '100%',
+                placeholder: 'Search and select user...',
+                allowClear: true,
+                minimumResultsForSearch: 0, // Always show search box
+                dropdownParent: $('body'), // Prevent z-index issues
+                theme: 'bootstrap-5',
+                templateResult: function(option) {
+                    if (!option.id) return option.text;
+                    return $('<span>' + option.text + '</span>');
+                },
+                templateSelection: function(option) {
+                    return option.text;
+                }
+            });
+            
+            console.log('Select2 initialized for assignedUserDropdown');
+        }, 500);
+    });
+}
+
+// Start initialization
+initSelect2();
+</script>
 
 {% endblock body %}

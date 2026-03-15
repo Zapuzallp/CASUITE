@@ -753,10 +753,12 @@ class Attendance(models.Model):
 
         # Calculate duration
         if self.clock_in and self.clock_out:
-            if self.clock_out < self.clock_in:
-                self.clock_out += timedelta(days=1)
+             # Use temp variable so we don't permanently mutate clock_out in DB
+            clock_out_for_calc = self.clock_out
+            if clock_out_for_calc < self.clock_in:
+                clock_out_for_calc += timedelta(days=1)
 
-            self.duration = self.clock_out - self.clock_in
+            self.duration = clock_out_for_calc - self.clock_in
 
             # Only auto-set status if admin logic didn’t already set it
             if not hasattr(self, '_skip_auto_status') and (not self.status or self.status == "approved"):
