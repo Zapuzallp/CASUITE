@@ -275,6 +275,21 @@
         </a>
         </li>
         {% endif %}
+        {% if request.user.is_superuser %}
+        <li class="nav-heading">Data Management</li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'assign_ca' %}">
+                <i class="bi bi-person-badge"></i>
+                <span>Assign / Update CA</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'import_gst_details' %}">
+                <i class="bi bi-file-earmark-spreadsheet"></i>
+                <span>Import GST Details</span>
+            </a>
+        </li>
+        {% endif %}
 
 
         <li class="nav-heading">System</li>

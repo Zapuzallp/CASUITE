@@ -205,6 +205,9 @@ def client_details_view(request, client_id):
     credential_form = ClientPortalCredentialsForm(client=client)
     # =================================
 
+    # === STATUS CHOICES FOR SWEETALERT ===
+    status_choices = Client.STATUS_CHOICES
+
     context = {
         'client': client,
         'client_fields': client_fields,
@@ -222,6 +225,7 @@ def client_details_view(request, client_id):
         'invoices_data': invoices_data,  # Include Invoices
         'portal_credentials': portal_credentials,  # Include Portal Credentials
         'credential_form': credential_form,  # Include Credential Form
+        'status_choices': status_choices,
     }
 
     return render(request, 'client/client-details.html', context)

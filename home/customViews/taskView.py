@@ -9,13 +9,14 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q, Max
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-
+from datetime import timedelta
 from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
 from home.forms import TaskForm, TaskExtendedForm
 from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
 from home.clients.client_access import get_accessible_clients
 from home.tasks.task_copy import copy_task
-
+# Import of pagination
+from django.core.paginator import  Paginator
 
 @login_required
 def create_task_view(request, client_id):
@@ -101,7 +102,6 @@ def task_list_view(request):
         Q(assignees=user)
     ).distinct()
 
-
     # 3. Apply UI Filters (GET parameters)
     search_query = request.GET.get('q')
     filter_client = request.GET.get('client')
@@ -138,13 +138,47 @@ def task_list_view(request):
             # Tasks that have no invoices
             tasks_qs = tasks_qs.filter(tagged_invoices__isnull=True)
 
+    # Records per page dropdown value
+    per_page = request.GET.get('per_page','all')
+
+    if per_page == "all":
+        per_page_value = tasks_qs.count()
+    else:
+        per_page_value = int(per_page)
+
+    tasks_qs = tasks_qs.order_by('-created_at')
+    # Pagination
+    paginator = Paginator(tasks_qs, per_page_value)
+    if len(tasks_qs) > 0:
+        page = request.GET.get('page')
+        tasks_qs = paginator.get_page(page)
+
+
+    # Remove page parameter from query string
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    # Remove empty query parameters
+    for key in list(query_params.keys()):
+        if not query_params.get(key):
+            query_params.pop(key)
+    has_filters = any([
+        search_query,
+        filter_client,
+        filter_service,
+        filter_consultancy_type,
+        filter_status,
+        filter_invoice_status,
+    ])
     context = {
-        'tasks': tasks_qs.order_by('-created_at'),
+        'tasks': tasks_qs,
+        'query_params': query_params.urlencode(),
+        'per_page': per_page,
+        'has_filters': has_filters,
         'clients': clients_qs.order_by('client_name'),  # For the "Add Task" modal
         'filter_clients': clients_qs.order_by('client_name'),  # For the Filter dropdown
         'today': timezone.now().date(),
+        'tomorrow': timezone.now().date() + timedelta(days=1),
         'service_type_choices': Task.SERVICE_TYPE_CHOICES,
-        # 'consultancy_type_choices': Task.CONSULTANCY_TYPE_CHOICES,
         'consultancy_type_choices': sorted(
             Task.CONSULTANCY_TYPE_CHOICES,
             key=lambda x: x[1]

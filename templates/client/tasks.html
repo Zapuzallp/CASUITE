@@ -44,7 +44,7 @@
                 <div class="accordion mb-4" id="taskFilterAccordion">
                     <div class="accordion-item border-0 shadow-sm">
                         <h2 class="accordion-header" id="headingOne">
-                            <button class="accordion-button {% if not request.GET %}collapsed{% endif %} bg-white text-primary fw-bold"
+                            <button class="accordion-button  {% if not has_filters %}collapsed{% endif %} bg-white text-primary fw-bold"
                                     type="button"
                                     data-bs-toggle="collapse"
                                     data-bs-target="#collapseFilter"
@@ -54,35 +54,36 @@
                             </button>
                         </h2>
                         <div id="collapseFilter"
-                             class="accordion-collapse collapse {% if request.GET %}show{% endif %}"
+                             class="accordion-collapse collapse  {% if has_filters %}show{% endif %}"
                              aria-labelledby="headingOne"
                              data-bs-parent="#taskFilterAccordion">
                             <div class="accordion-body bg-light">
                                 <form method="get" action=".">
                                     <div class="row g-3">
                                         <!-- Search Text -->
-                                        <div class="col-md-3">
+                                        <!-- Changed col-md-3 to col-12 col-md-3 for mobile stacking -->
+                                        <div class="col-12 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Search</label>
                                             <input type="text" name="q" class="form-control"
                                                    placeholder="Task Title, Description..." value="{{ request.GET.q }}">
                                         </div>
 
                                         <!-- Client Filter -->
+                                        <div class="col-12 col-sm-6 col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Client</label>
+                                            <select name="client" class="form-select">
+                                                <option value="">All Clients</option>
+                                                {% for client in filter_clients %}
+                                                    <option value="{{ client.id }}"
+                                                            {% if request.GET.client == client.id|stringformat:"i" %}selected{% endif %}>
+                                                        {{ client.client_name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
 
-<div class="col-md-3">
-    <label class="form-label small fw-bold text-secondary">Client</label>
-    <select name="client" id="clientFilter" class="form-select" style="width: 100%;">
-        <option value="">All Clients</option>
-        {% for client in filter_clients %}
-            <option value="{{ client.id }}"
-                    {% if request.GET.client == client.id|stringformat:"i" %}selected{% endif %}>
-                {{ client.client_name }}
-            </option>
-        {% endfor %}
-    </select>
-</div>
                                         <!-- Service Type -->
-                                        <div class="col-md-3">
+                                        <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Service Type</label>
                                             <select name="service_type" class="form-select">
                                                 <option value="">All Services</option>
@@ -96,7 +97,7 @@
                                         </div>
 
                                         <!-- Status -->
-                                        <div class="col-md-3">
+                                        <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Status</label>
                                             <select name="status" class="form-select">
                                                 <option value="">All Statuses</option>
@@ -110,7 +111,7 @@
                                         </div>
 
                                         <!-- Consultancy Type -->
-                                        <div class="col-md-3" id="consultancyFilterWrapper" style="display: none;">
+                                        <div class="col-12 col-sm-6 col-md-3" id="consultancyFilterWrapper" style="display: none;">
                                             <label class="form-label small fw-bold text-secondary">
                                                 Consultancy Type
                                             </label>
@@ -127,7 +128,7 @@
                                         </div>
 
                                         <!-- Invoice Status -->
-                                        <div class="col-md-3">
+                                        <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Invoice Status</label>
                                             <select name="invoice_status" class="form-select">
                                                 <option value="">All</option>
@@ -137,11 +138,12 @@
                                         </div>
 
                                         <!-- Filter Actions -->
-                                        <div class="col-md-12 d-flex justify-content-end">
-                                            <button type="submit" class="btn btn-primary me-2">
+                                        <!-- Used d-grid on mobile to make buttons stretch, and d-md-flex to align right on desktop -->
+                                        <div class="col-12 d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                            <button type="submit" class="btn btn-primary px-4">
                                                 <i class="bi bi-search"></i> Apply Filters
                                             </button>
-                                            <a href="{% url 'task_list' %}" class="btn btn-secondary">
+                                            <a href="{% url 'task_list' %}" class="btn btn-secondary px-4">
                                                 <i class="bi bi-x-circle"></i> Clear
                                             </a>
                                         </div>
@@ -156,21 +158,50 @@
                 <div class="card shadow-sm border-0">
                     <div class="card-body">
 
-                        <div class="d-flex justify-content-between align-items-center my-3">
-                            <div>
+                        <!-- Changed d-flex logic to flex-column on mobile and flex-md-row on desktop so elements don't get squashed -->
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center my-3 gap-3">
+                            <div class="d-flex flex-column gap-2">
                                 <h5 class="card-title m-0">Task Management</h5>
-                                <small class="text-muted">Showing {{ tasks|length }} task(s)</small>
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    {% if tasks %}
+                                    <small class="text-muted">
+                                        Showing {{ tasks.start_index }} - {{ tasks.end_index }} of {{ tasks.paginator.count }}
+                                    </small>
+                                    {% endif %}
+
+                                    <!-- Records per page dropdown -->
+                                    <!-- Added gap-2 and margin-bottom 0 to label -->
+                                    <form method="get" class="d-flex align-items-center gap-2 ms-md-2">
+                                        {% for key,value in request.GET.items %}
+                                            {% if key != "per_page" and key != "page" %}
+                                                <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        <label class="small text-muted mb-0">Show</label>
+                                        <!-- Added w-auto to prevent select from taking full width -->
+                                        <select name="per_page" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                            <option value="10" {% if per_page == "10" %}selected{% endif %}>10</option>
+                                            <option value="15" {% if per_page == "15" %}selected{% endif %}>15</option>
+                                            <option value="25" {% if per_page == "25" %}selected{% endif %}>25</option>
+                                            <option value="50" {% if per_page == "50" %}selected{% endif %}>50</option>
+                                            <option value="100" {% if per_page == "100" %}selected{% endif %}>100</option>
+                                            <option value="all" {% if per_page == "all" %}selected{% endif %}>All</option>
+                                        </select>
+                                    </form>
+                                </div>
                             </div>
 
-                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                            <!-- Make button full width on mobile, auto width on md+ -->
+                            <button class="btn btn-primary btn-sm w-md-auto shadow-sm" data-bs-toggle="modal"
                                     data-bs-target="#selectClientModal">
                                 <i class="bi bi-plus-lg me-1"></i> Add New Task
                             </button>
                         </div>
 
                         <!-- Table Responsive Wrapper to ensure scrolling on mobile -->
-                        <div class="table-responsive">
-                            <table class="table table-hover datatable align-middle">
+                        <div class="table-responsive border rounded-3">
+                            <table class="table table-hover datatable align-middle mb-0">
                                 <thead class="table-light text-nowrap">
                                     <tr>
                                         <th scope="col">#</th>
@@ -188,11 +219,7 @@
                                 {% for task in tasks %}
                                     <tr>
                                         <td>
-                                            {% if is_paginated %}
-                                                {{ page_obj.start_index|add:forloop.counter0 }}
-                                            {% else %}
-                                                {{ forloop.counter }}
-                                            {% endif %}
+                                            {{ forloop.counter|add:tasks.start_index|add:"-1" }}
                                         </td>
                                         <td class="text-nowrap">
                                             <a href="{% url 'task_detail' task.id %}"
@@ -205,7 +232,7 @@
                                         </td>
                                         <td>
                                             <a href="{% url 'client_details' task.client.id %}"
-                                               class="text-dark text-decoration-none fw-semibold">
+                                               class="text-dark text-decoration-none fw-semibold text-nowrap">
                                                 {{ task.client.client_name }}
                                             </a>
                                             <div class="small text-muted" style="font-size: 11px;">
@@ -219,9 +246,24 @@
                                             </div>
                                         </td>
                                         <td class="text-nowrap">
-                                            <span class="{% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
-                                                {{ task.due_date|date:"M d, Y" }}
-                                            </span>
+                                            {% if task.due_date %}
+                                                <div class="d-flex flex-column text-left">
+                                                <!-- Due date -->
+                                                <span class="small {% if task.due_date < today and task.status != 'Completed' %}text-danger fw-bold{% endif %}">
+                                                    {{ task.due_date|date:"M d, Y" }}
+                                                </span>
+                                                <!-- Badge -->
+                                                {% if task.status != 'Completed' %}
+                                                    {% if task.due_date < today %}
+                                                    <span class="badge bg-danger align-self-start small mt-1">Overdue</span>
+                                                    {% elif task.due_date == today %}
+                                                    <span class="badge bg-warning align-self-start small mt-1">Today</span>
+                                                    {% elif task.due_date == tomorrow %}
+                                                    <span class="badge bg-info align-self-start small mt-1">Tomorrow</span>
+                                                    {% endif %}
+                                               {% endif %}
+                                                </div>
+                                            {% endif %}
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -258,7 +300,7 @@
                                                 </span>
                                             {% endif %}
                                         </td>
-                                        <td class="text-end">
+                                        <td class="text-end text-nowrap">
                                             <a href="{% url 'task_detail' task.id %}"
                                                class="btn btn-sm btn-outline-primary">
                                                <i class="bi bi-eye"></i>
@@ -275,6 +317,50 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        {% if tasks and per_page != 'all' %}
+                        <div class="mt-4">
+                            <nav aria-label="Task pagination">
+                            <!-- Added flex-wrap to prevent pagination breaking on tiny screens -->
+                            <ul class="pagination justify-content-center flex-wrap gap-1">
+                            <!-- First -->
+                            <li class="page-item {% if not tasks.has_previous %}disabled{% endif %}">
+                                <a class="page-link shadow-none" {% if tasks.has_previous %} href="?{{ query_params }}&page=1" {% endif %}>
+                                   <i class="bi bi-skip-backward-fill"></i>
+                                </a>
+                            </li>
+
+                            <!-- Previous -->
+                            <li class="page-item {% if tasks.has_previous %}{% else %}disabled{% endif %}">
+                                <a class="page-link shadow-none" {% if tasks.has_previous %} href="?{{ query_params }}&page={{ tasks.previous_page_number }}" {% endif %}>
+                                   <i class="bi bi-arrow-left"></i>
+                                </a>
+                            </li>
+
+                            <!-- Current Page -->
+                            <li class="page-item active">
+                                <span class="page-link shadow-none">
+                                   {{ tasks.number }} / {{ tasks.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            <!-- Next -->
+                            <li class="page-item {% if not tasks.has_next %}disabled{% endif %}">
+                                <a class="page-link shadow-none" {% if tasks.has_next %} href="?{{ query_params }}&page={{ tasks.next_page_number }}" {% endif %}>
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </li>
+
+                            <!-- Last -->
+                            <li class="page-item {% if not tasks.has_next %}disabled{% endif %}">
+                                <a class="page-link shadow-none" {% if tasks.has_next %} href="?{{ query_params }}&page={{ tasks.paginator.num_pages }}" {% endif %}>
+                                   <i class="bi bi-skip-forward-fill"></i>
+                                </a>
+                            </li>
+                            </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -309,8 +395,9 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary px-4" id="btnProceedTask" disabled>
+                    <!-- Made buttons stack completely on mobile within modals -->
+                    <button type="button" class="btn btn-secondary  w-sm-auto mb-2 mb-sm-0" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary w-sm-auto px-4" id="btnProceedTask" disabled>
                         Proceed <i class="bi bi-arrow-right ms-1"></i>
                     </button>
                 </div>
