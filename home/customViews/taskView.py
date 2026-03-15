@@ -30,11 +30,57 @@ def create_task_view(request, client_id):
         'din_no': client.din_no,
     }
 
+    # 2. Prepare GST Details for Auto-Population
+    gst_details = client.gst_details.all()
+    gst_options = []
+    default_gst_id = None
+
+    for gst in gst_details:
+        gst_options.append({
+            'id': gst.id,
+            'gst_number': gst.gst_number,
+            'state': gst.get_state_display(),
+            'label': f"{gst.gst_number} - {gst.get_state_display()}"
+        })
+        # Set first GST as default for auto-population
+        if default_gst_id is None:
+            default_gst_id = gst.id
+
+    # Add validation message if no GST details found
+    gst_validation_message = None
+    if not gst_details.exists():
+        gst_validation_message = "No GST details found for this client. Add GST number for this client."
+
     if request.method == 'POST':
         task_form = TaskForm(request.POST)
-        extended_form = TaskExtendedForm(request.POST, request.FILES)
+        extended_form = TaskExtendedForm(request.POST, request.FILES, client=client)
+
+        # Filter gstin_number field to show only client's GST details
+        if hasattr(extended_form.fields, 'gstin_number'):
+            extended_form.fields['gstin_number'].queryset = client.gst_details.all()
 
         if task_form.is_valid() and extended_form.is_valid():
+            # Additional validation for GST Return Filing
+            if task_form.cleaned_data.get('service_type') == 'GST Return':
+                if not client.gst_details.exists():
+                    messages.error(
+                        request,
+                        "Cannot create GST Return Filing task: No GST details found for this client. "
+                        "Please add GST number for this client first."
+                    )
+                    # Re-render form with error
+                    context = {
+                        'client': client,
+                        'task_form': task_form,
+                        'extended_form': extended_form,
+                        'task_config': TASK_CONFIG,
+                        'client_data_json': client_data_map,
+                        'gst_options': gst_options,
+                        'default_gst_id': default_gst_id,
+                        'gst_validation_message': gst_validation_message
+                    }
+                    return render(request, 'client/create_task.html', context)
+
             try:
                 with transaction.atomic():
                     # Save Task
@@ -61,7 +107,11 @@ def create_task_view(request, client_id):
             messages.error(request, "Please check the form for errors.")
     else:
         task_form = TaskForm()
-        extended_form = TaskExtendedForm()
+        extended_form = TaskExtendedForm(client=client)
+
+        # Filter gstin_number field to show only client's GST details
+        if hasattr(extended_form.fields, 'gstin_number'):
+            extended_form.fields['gstin_number'].queryset = client.gst_details.all()
 
     context = {
         'client': client,
@@ -70,7 +120,10 @@ def create_task_view(request, client_id):
 
         # Pass Config and Data to Template
         'task_config': TASK_CONFIG,
-        'client_data_json': client_data_map
+        'client_data_json': client_data_map,
+        'gst_options': gst_options,
+        'default_gst_id': default_gst_id,
+        'gst_validation_message': gst_validation_message
     }
     return render(request, 'client/create_task.html', context)
 
