@@ -55,7 +55,7 @@
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Search</label>
                                             <input type="text" name="q" class="form-control"
-                                                   placeholder="Name, PAN, GST No, File No..." value="{{ request.GET.q }}">
+                                                   placeholder="Name, Client ID, PAN, GST No, File No, Remarks..." value="{{ request.GET.q }}">
                                         </div>
 
                                         <!-- Office Location -->
@@ -263,6 +263,7 @@
                                             {% endif %}
                                         </div>
                                         <div class="small text-muted" style="font-size: 12px;">
+                                            <i class="bi bi-hash"></i> ID: {{ client.id }} |
                                             <i class="bi bi-card-heading"></i> {{ client.pan_no }}
                                             {% if client.file_number %}
                                                 | <i class="bi bi-file-earmark-text"></i> {{ client.file_number }}
