@@ -508,31 +508,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="col-12 col-xl-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Top Solvers <span>| Lifetime Completed</span></h5>
-                            <div class="mt-2">
-                                {% for solver in top_solvers %}
-                                    <div class="d-flex align-items-center justify-content-between mb-4">
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-item border-0 me-3"
-                                                 style="width:45px; height:45px; background: #f1f5f9; color: #6366f1;">
-                                                {{ solver.first_name|slice:":1"|upper }}
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0 fw-bold">{{ solver.first_name }}</h6>
-                                                <small class="text-muted">@{{ solver.username }}</small>
-                                            </div>
-                                        </div>
-                                        <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">{{ solver.solved_count }} Steps</span>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Employees On Leave and Top Collectors -->
@@ -573,49 +548,6 @@
                                 </li>
                                 {% endfor %}
                             </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-xl-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                Top Collections <span>| Employees</span>
-                            </h5>
-                            <div class="mt-2">
-                                {% for user in top_collectors %}
-                                <div class="d-flex align-items-center justify-content-between mb-4">
-                                    <div class="d-flex align-items-center">
-                                        <!-- Avatar -->
-                                        <div class="me-3">
-                                            {% if user.created_by__employee__profile_pic %}
-                                            <img src="/media/{{ user.created_by__employee__profile_pic }}" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;">
-                                            {% else %}
-                                            <div class="avatar-item" style="width:45px;height:45px;">
-                                                {{ user.created_by__username|slice:":1"|upper }}
-                                            </div>
-                                            {% endif %}
-                                        </div>
-
-                                        <!-- Employee Name -->
-                                        <div>
-                                        <h6 class="mb-0 fw-bold">
-                                            {{ user.created_by__username }}
-                                        </h6>
-                                        <small class="text-muted">
-                                            Rank #{{ forloop.counter }}
-                                        </small>
-                                        </div>
-                                    </div>
-                                        <!-- Amount -->
-                                        <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">
-                                            ₹{{ user.total_collection|floatformat:0 }}
-                                        </span>
-                                </div>
-                                {% empty %}
-                                    <P class="text-muted">No collections yet</P>
-                                {% endfor %}
                             </div>
                         </div>
                     </div>
@@ -742,40 +674,134 @@
                 </div>
             </div>
 
-            <div class="row g-4">
-                <div class="col-12 col-md-6">
+            <!--Top Performance Widgets-->
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Top Solvers <span>| Lifetime Completed</span></h5>
+                            <div class="mt-2">
+                                {% for solver in top_solvers %}
+                                    <div class="d-flex align-items-center justify-content-between mb-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                            {% if solver.employee.profile_pic %}
+                                                <img src="{{ solver.employee.profile_pic.url }}" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;" alt="">
+                                            {% else %}
+                                                <div class="avatar-item" style="width:45px;height:45px;">
+                                                    {{ solver.first_name|slice:":1"|upper }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold">{{ solver.first_name }}</h6>
+                                                <small class="text-muted">@{{ solver.username }}</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">{{ solver.solved_count }} Steps</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-xl-3">
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">Top Client Onboards</h5>
                             {% for creator in top_client_creators %}
                                 <div class="d-flex align-items-center justify-content-between mb-4">
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar-item me-3"
-                                             style="background: #f1f5f9; color: #6366f1;">{{ creator.first_name|slice:":1"|upper }}</div>
-                                        <div><h6 class="mb-0 fw-bold">{{ creator.first_name }}</h6><small
-                                                class="text-muted">@{{ creator.username }}</small></div>
+                                        <div class="me-3">
+                                            {% if creator.created_by__employee__profile_pic %}
+                                                <img src="/media/{{ creator.created_by__employee__profile_pic }}" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;" alt="">
+                                            {% else %}
+                                                <div class="avatar-item" style="width:45px;height:45px;">
+                                                    {{ creator.created_by__username|slice:":1"|upper }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div><h6 class="mb-0 fw-bold">{{ creator.created_by__username }}</h6><small
+                                                class="text-muted">@{{ creator.created_by__username }}</small></div>
                                     </div>
                                     <span class="badge bg-success rounded-pill px-3 py-2 fw-bold">{{ creator.client_count }}</span>
                                 </div>
+                            {% empty %}
+                                    <P class="text-muted">No clients yet</P>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6">
+
+                <div class="col-12 col-md-6 col-xl-3">
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">Top Lead Generators</h5>
                             {% for leadgen in top_lead_generators %}
                                 <div class="d-flex align-items-center justify-content-between mb-4">
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar-item me-3"
-                                             style="background: #f1f5f9; color: #6366f1;">{{ leadgen.first_name|slice:":1"|upper }}</div>
-                                        <div><h6 class="mb-0 fw-bold">{{ leadgen.first_name }}</h6><small
-                                                class="text-muted">@{{ leadgen.username }}</small></div>
+                                        <div class="me-3">
+                                            {% if leadgen.created_by__employee__profile_pic %}
+                                            <img src="/media/{{ leadgen.created_by__employee__profile_pic }}" alt="" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;">
+                                            {% else %}
+                                            <div class="avatar-item" style="width:45px;height:45px;">
+                                                {{ leadgen.created_by__username|slice:":1"|upper }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div><h6 class="mb-0 fw-bold">{{ leadgen.created_by__username }}</h6><small
+                                                class="text-muted">@{{ leadgen.created_by__username }}</small></div>
                                     </div>
                                     <span class="badge bg-primary rounded-pill px-3 py-2 fw-bold">{{ leadgen.lead_count }}</span>
                                 </div>
+                            {% empty %}
+                                    <P class="text-muted">No leads yet</P>
                             {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                Top Collections <span>| Employees</span>
+                            </h5>
+                            <div class="mt-2">
+                                {% for user in top_collectors %}
+                                <div class="d-flex align-items-center justify-content-between mb-4">
+                                    <div class="d-flex align-items-center">
+                                        <!-- Avatar -->
+                                        <div class="me-3">
+                                            {% if user.created_by__employee__profile_pic %}
+                                            <img src="/media/{{ user.created_by__employee__profile_pic }}" alt="" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;">
+                                            {% else %}
+                                            <div class="avatar-item" style="width:45px;height:45px;">
+                                                {{ user.created_by__username|slice:":1"|upper }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Employee Name -->
+                                        <div>
+                                        <h6 class="mb-0 fw-bold">
+                                            {{ user.created_by__username }}
+                                        </h6>
+                                        <small class="text-muted">
+                                            Rank #{{ forloop.counter }}
+                                        </small>
+                                        </div>
+                                    </div>
+                                        <!-- Amount -->
+                                        <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">
+                                            ₹{{ user.total_collection|floatformat:0 }}
+                                        </span>
+                                </div>
+                                {% empty %}
+                                    <P class="text-muted">No collections yet</P>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
