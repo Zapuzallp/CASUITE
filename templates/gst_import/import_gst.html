@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block body %}
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>{{ page_title }}</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item">Data Management</li>
+            <li class="breadcrumb-item active">Import GST Details</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Alert Container -->
+<div id="alertContainer"></div>
+
+<section class="section">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Enhanced PAN-Based Validation & Multiple GST Support:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Client matching uses <strong>both Client Name AND PAN No</strong> for accuracy</li>
+                            <li>PAN No ensures unique identification even with duplicate client names</li>
+                            <li><strong>Multiple GST Numbers:</strong> One client can have multiple GST registrations</li>
+                            <li><strong>Duplicate Detection:</strong> If client already has the same GST number → Skipped</li>
+                            <li><strong>State Logic:</strong> Extracted from GST number (first 2 digits)</li>
+                            <li>If State column is <strong>blank</strong> → uses GST-derived state code</li>
+                            <li>If State column has <strong>state name</strong> → converts to code and validates</li>
+                            <li>All import results are tracked with detailed summaries</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-3">
+                        <a href="{% url 'download_gst_template' %}" class="btn btn-success">
+                            <i class="bi bi-download"></i> Download Import Template
+                        </a>
+                    </div>
+
+                    <form id="gstImportForm" enctype="multipart/form-data" method="post">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Upload Excel / CSV File <span class="text-danger">*</span></label>
+                                <input type="file" class="form-control" id="fileInput" name="file" 
+                                       accept=".xlsx,.xls,.csv" required>
+                                <small class="text-muted">
+                                    Required columns: Client Name, PAN No, GST Number<br>
+                                    Optional columns: Registered Address, State, GST Scheme Type, Status<br>
+                                    <strong>State:</strong> Auto-calculated from GST number if blank, accepts state names or codes
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i class="bi bi-upload"></i> Upload & Process GST Data
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="card mt-3" id="summaryCard" style="display: none;">
+                <div class="card-body">
+                    <h5 class="card-title">Import Summary</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="alert alert-primary">
+                                <strong>Total Processed:</strong> <span id="totalProcessed">0</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="alert alert-success">
+                                <strong>Successfully Added:</strong> <span id="addedCount">0</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="alert alert-warning">
+                                <strong>Skipped Records:</strong> <span id="skippedCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Successfully Added GST Details -->
+                    <div id="addedSection" style="display: none;">
+                        <h6 class="mt-3">Successfully Added GST Details</h6>
+                        <div class="mb-2">
+                            <button class="btn btn-sm btn-outline-primary" id="copyAddedBtn">
+                                <i class="bi bi-clipboard"></i> Copy All
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" id="exportAddedBtn">
+                                <i class="bi bi-file-earmark-excel"></i> Export as CSV
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered" id="addedTable">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>PAN No</th>
+                                        <th>GST Number</th>
+                                        <th>State</th>
+                                        <th>Scheme Type</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="addedTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Skipped Records -->
+                    <div id="skippedSection" style="display: none;">
+                        <h6 class="mt-3">Skipped Records</h6>
+                        <div class="mb-2">
+                            <button class="btn btn-sm btn-outline-primary" id="copySkippedBtn">
+                                <i class="bi bi-clipboard"></i> Copy All
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" id="exportSkippedBtn">
+                                <i class="bi bi-file-earmark-excel"></i> Export as CSV
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered" id="skippedTable">
+                                <thead class="table-warning">
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>PAN No</th>
+                                        <th>GST Number</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="skippedTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+// Wait for jQuery to be available
+(function initWhenReady() {
+    if (typeof jQuery === 'undefined') {
+        console.log('Waiting for jQuery...');
+        setTimeout(initWhenReady, 100);
+        return;
+    }
+    
+    console.log('jQuery loaded, initializing GST Import...');
+    
+    jQuery(document).ready(function($) {
+        console.log('GST Import page loaded - DOM ready');
+        
+        // Test CSRF token
+        console.log('CSRF Token:', $('[name=csrfmiddlewaretoken]').val());
+        
+        // Helper function to show alerts
+        function showAlert(message, type = 'success') {
+            console.log('Showing alert:', type, message);
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('#alertContainer').html(alertHtml);
+            $('html, body').animate({ scrollTop: 0 }, 300);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(function() {
+                $('#alertContainer .alert').fadeOut();
+            }, 5000);
+        }
+
+        // GST Import form submission - using the same pattern as CA assignment
+        $('#gstImportForm').on('submit', function(e) {
+            e.preventDefault();
+            console.log('Form submitted, preventing default');
+            
+            const fileInput = $('#fileInput')[0];
+            
+            if (!fileInput.files.length) {
+                showAlert('Please select a file to upload', 'warning');
+                return false;
+            }
+
+            console.log('File selected:', fileInput.files[0].name);
+
+            // Show loading state
+            const submitBtn = $('#submitBtn');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Processing GST Data...');
+            
+            // Create FormData
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('csrfmiddlewaretoken', $('[name=csrfmiddlewaretoken]').val());
+            
+            $.ajax({
+                url: '{% url "bulk_import_gst" %}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    console.log('AJAX Success:', response);
+                    submitBtn.prop('disabled', false).html(originalText);
+                    if (response.success) {
+                        const msg = `Successfully processed ${response.total_rows} row(s): ${response.added} added${response.skipped > 0 ? ', ' + response.skipped + ' skipped' : ''}`;
+                        showAlert(msg, response.skipped > 0 ? 'warning' : 'success');
+                        showSummary(
+                            response.total_rows,
+                            response.added,
+                            response.skipped,
+                            response.added_records || [],
+                            response.skipped_records || []
+                        );
+                        $('#gstImportForm')[0].reset();
+                    } else {
+                        showAlert(response.message, 'danger');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('AJAX Error:', xhr, status, error);
+                    console.log('Response Text:', xhr.responseText);
+                    submitBtn.prop('disabled', false).html(originalText);
+                    let errorMsg = 'An error occurred. Please try again.';
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        errorMsg = errorResponse.message || errorMsg;
+                    } catch (e) {
+                        errorMsg = xhr.responseText || errorMsg;
+                    }
+                    showAlert(errorMsg, 'danger');
+                }
+            });
+            
+            return false; // Prevent any form submission
+        });
+
+        // Show summary function
+        function showSummary(total, added, skipped, addedRecords, skippedRecords) {
+            console.log('showSummary called with:', {
+                total, added, skipped, 
+                addedRecords: addedRecords?.length || 0, 
+                skippedRecords: skippedRecords?.length || 0
+            });
+            
+            $('#totalProcessed').text(total);
+            $('#addedCount').text(added);
+            $('#skippedCount').text(skipped);
+            
+            // Show added records
+            if (added > 0 && addedRecords && addedRecords.length > 0) {
+                console.log('Showing added records:', addedRecords);
+                $('#addedTableBody').empty();
+                addedRecords.forEach(function(record) {
+                    $('#addedTableBody').append(
+                        '<tr>' +
+                        '<td>' + (record.client_name || '') + '</td>' +
+                        '<td>' + (record.pan_no || '') + '</td>' +
+                        '<td>' + (record.gst_number || '') + '</td>' +
+                        '<td>' + (record.state_name || record.state || '') + '</td>' +
+                        '<td>' + (record.scheme_type || '') + '</td>' +
+                        '<td>' + (record.status || '') + '</td>' +
+                        '</tr>'
+                    );
+                });
+                $('#addedSection').show();
+                window.addedRecordsData = addedRecords;
+            } else {
+                $('#addedSection').hide();
+            }
+            
+            // Show skipped records
+            if (skipped > 0 && skippedRecords && skippedRecords.length > 0) {
+                console.log('Showing skipped records:', skippedRecords);
+                $('#skippedTableBody').empty();
+                skippedRecords.forEach(function(record) {
+                    $('#skippedTableBody').append(
+                        '<tr>' +
+                        '<td>' + (record.client_name || '') + '</td>' +
+                        '<td>' + (record.pan_no || '') + '</td>' +
+                        '<td>' + (record.gst_number || '') + '</td>' +
+                        '<td>' + (record.reason || '') + '</td>' +
+                        '</tr>'
+                    );
+                });
+                $('#skippedSection').show();
+                window.skippedRecordsData = skippedRecords;
+            } else {
+                $('#skippedSection').hide();
+            }
+            
+            $('#summaryCard').show();
+            console.log('Summary card should now be visible');
+            
+            // Scroll to summary
+            setTimeout(function() {
+                $('html, body').animate({
+                    scrollTop: $('#summaryCard').offset().top - 100
+                }, 500);
+            }, 100);
+        }
+
+        // Copy and export functions for added records
+        $('#copyAddedBtn').on('click', function() {
+            if (!window.addedRecordsData || window.addedRecordsData.length === 0) {
+                showAlert('No added records to copy', 'warning');
+                return;
+            }
+            
+            let text = 'Client Name\tPAN No\tGST Number\tState\tScheme Type\tStatus\n';
+            window.addedRecordsData.forEach(function(record) {
+                text += (record.client_name || '') + '\t' + (record.pan_no || '') + '\t' + (record.gst_number || '') + '\t' + 
+                       (record.state_name || record.state || '') + '\t' + (record.scheme_type || '') + '\t' + (record.status || '') + '\n';
+            });
+            
+            navigator.clipboard.writeText(text).then(function() {
+                showAlert('Added records copied to clipboard!', 'success');
+            }).catch(function() {
+                showAlert('Failed to copy to clipboard', 'danger');
+            });
+        });
+
+        $('#exportAddedBtn').on('click', function() {
+            if (!window.addedRecordsData || window.addedRecordsData.length === 0) {
+                showAlert('No added records to export', 'warning');
+                return;
+            }
+            
+            let csv = 'Client Name,PAN No,GST Number,State,Scheme Type,Status\n';
+            window.addedRecordsData.forEach(function(record) {
+                csv += '"' + (record.client_name || '') + '","' + (record.pan_no || '') + '","' + (record.gst_number || '') + '","' + 
+                       (record.state_name || record.state || '') + '","' + (record.scheme_type || '') + '","' + (record.status || '') + '"\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'added_gst_records.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+
+        // Copy and export functions for skipped records
+        $('#copySkippedBtn').on('click', function() {
+            if (!window.skippedRecordsData || window.skippedRecordsData.length === 0) {
+                showAlert('No skipped records to copy', 'warning');
+                return;
+            }
+            
+            let text = 'Client Name\tPAN No\tGST Number\tReason\n';
+            window.skippedRecordsData.forEach(function(record) {
+                text += (record.client_name || '') + '\t' + (record.pan_no || '') + '\t' + (record.gst_number || '') + '\t' + (record.reason || '') + '\n';
+            });
+            
+            navigator.clipboard.writeText(text).then(function() {
+                showAlert('Skipped records copied to clipboard!', 'success');
+            }).catch(function() {
+                showAlert('Failed to copy to clipboard', 'danger');
+            });
+        });
+
+        $('#exportSkippedBtn').on('click', function() {
+            if (!window.skippedRecordsData || window.skippedRecordsData.length === 0) {
+                showAlert('No skipped records to export', 'warning');
+                return;
+            }
+            
+            let csv = 'Client Name,PAN No,GST Number,Reason\n';
+            window.skippedRecordsData.forEach(function(record) {
+                csv += '"' + (record.client_name || '') + '","' + (record.pan_no || '') + '","' + (record.gst_number || '') + '","' + (record.reason || '') + '"\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'skipped_gst_records.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+    }); // End of jQuery ready
+})(); // End of initWhenReady
+</script>
+</main>
+{% endblock %}
