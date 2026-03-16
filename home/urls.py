@@ -1,11 +1,9 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, \
-    caAssignmentView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -15,11 +13,14 @@ from home.customViews.attendanceView import (
 from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
 from home.customViews.services import list_services, delete_service
+from home.customViews.searchbarView import global_search
 from home.customViews.notificationView import (
     read_all_notifications,
     view_notification,
     all_notifications,
 )
+from home.customViews.client_details_status_change_View import update_single_client_status
+from home.customViews.update_client_status_view import bulk_update_client_status
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
@@ -33,7 +34,6 @@ from home.customViews.payment_views import (
 )
 from home.customViews import searchbarView
 from home.views import client_search
-
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
     path('api/due-tasks/', due_tasks_ajax, name='due_tasks_ajax'),
@@ -46,6 +46,8 @@ urlpatterns = [
     path('client/<int:client_id>/create-request/', documentsUploadView.create_document_request_view,
          name='create_client_doc_request'),
     path('client/<int:client_id>/create-task/', taskView.create_task_view, name='create_service_task'),
+    path("clients/bulk-update-status/",bulk_update_client_status,name="bulk_update_client_status"),
+    path("client/<int:client_id>/update-status/",update_single_client_status,name="update_single_client_status"),
 
     # GST Management
     path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
@@ -132,7 +134,7 @@ urlpatterns = [
     path('invoice/<int:invoice_id>/approve/', invoiceView.approve_invoice, name="invoice_approve"),
     path('invoice/<int:invoice_id>/change-status/', invoiceView.change_invoice_status, name="invoice_change_status"),
     path('invoices/bulk-status-update/', invoiceView.invoice_bulk_status_update, name="invoice_bulk_status_update"),
-    # profile url
+    #profile url
     path('upload-profile-pic/', profileView.upload_profile_pic, name='upload_profile_pic'),
     # Portal Credentials
     path('client/<int:client_id>/credentials/add/', credentialsView.add_portal_credential,name='add_portal_credential'),
@@ -146,5 +148,11 @@ urlpatterns = [
     path('data-management/manual-assign/', caAssignmentView.manual_assign_ca, name='manual_assign_ca'),
     path('data-management/bulk-import/', caAssignmentView.bulk_import_ca, name='bulk_import_ca'),
     path('data-management/download-template/', caAssignmentView.download_demo_template, name='download_ca_template'),
+
+    # Data Management - GST Import
+    path('data-management/import-gst/', gstImportView.import_gst_view, name='import_gst_details'),
+    path('data-management/search-clients-gst/', gstImportView.search_clients_for_gst_ajax, name='search_clients_gst_ajax'),
+    path('data-management/bulk-import-gst/', gstImportView.bulk_import_gst, name='bulk_import_gst'),
+    path('data-management/download-gst-template/', gstImportView.download_gst_template, name='download_gst_template'),
 
 ]
