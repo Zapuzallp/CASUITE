@@ -47,6 +47,65 @@ $(document).ready(function () {
         $('#btnProceedTask').prop('disabled', true);
     });
 
+    // Initialize Select2 for client filter (searchable)
+    $('#clientFilter').select2({
+        placeholder: 'Search Client Name...',
+        allowClear: true,
+        width: '100%',
+        minimumInputLength: 1, // Start searching after 1 character
+        ajax: {
+            url: '/clients/search/',
+            dataType: 'json',
+            delay: 300,
+            data: function (params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                // Add "All Clients" option at the beginning
+                const allClientsOption = {id: '', text: 'All Clients'};
+
+                // Transform the data based on format
+                let results = [];
+
+                if (Array.isArray(data)) {
+                    if (data.length > 0) {
+                        if (data[0].text !== undefined) {
+                            // Format: [{id: 1, text: "Name"}, ...]
+                            results = data;
+                        } else if (data[0].client_name !== undefined) {
+                            // Format: [{id: 1, client_name: "Name"}, ...]
+                            results = data.map(item => ({
+                                id: item.id,
+                                text: item.client_name
+                            }));
+                        }
+                    }
+                }
+
+                return {
+                    results: [allClientsOption, ...results]
+                };
+            },
+            cache: true
+        }
+    });
+
+    // Preselect value from URL parameter on page load
+    var urlParams = new URLSearchParams(window.location.search);
+    var clientParam = urlParams.get('client');
+    if (clientParam) {
+        // Create a static option for the preselected client
+        var option = new Option(
+            $('#clientFilter option[value="' + clientParam + '"]').text() || 'Selected Client',
+            clientParam,
+            true,
+            true
+        );
+        $('#clientFilter').append(option).trigger('change');
+    }
+
     // Initialize Select2 for consultancy filter
     $('.js-consultancy-select').select2({
     width: '100%',

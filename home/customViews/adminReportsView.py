@@ -398,6 +398,64 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             ).update(status=new_status)
 
             messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
+                    # Set clock_out to shift end time
+                    clock_out_datetime = timezone.make_aware(
+                        datetime.combine(attendance.date, shift_end_time),
+                        timezone.get_current_timezone()
+                    )
+
+                    # Handle night shifts
+                    if attendance.clock_in and clock_out_datetime < attendance.clock_in:
+                        clock_out_datetime += timedelta(days=1)
+
+                    # ✅ Prevent overwriting existing clock_out
+                    if attendance.clock_out:
+                        errors.append(f"{attendance.user.username} ({attendance.date}): Clock out already exists")
+                        error_count += 1
+                        continue
+
+                    attendance.clock_out = clock_out_datetime
+
+                    # ✅ ADD THIS BLOCK
+                    if attendance.clock_in:
+                        attendance.duration = attendance.clock_out - attendance.clock_in
+
+                    # Append remark
+                    new_remark = "Auto clock out"
+
+                    if attendance.remark:
+                        attendance.remark = f"{attendance.remark} | {new_remark}"
+                    else:
+                        attendance.remark = new_remark
+
+                    attendance._skip_auto_status = True
+                    attendance.save()
+                    success_count += 1
+
+                except Attendance.DoesNotExist:
+                    errors.append(f"Record ID {record_id}: Not found")
+                    error_count += 1
+                except Exception as e:
+                    errors.append(f"Record ID {record_id}: {str(e)}")
+                    error_count += 1
+
+            if success_count > 0:
+                messages.success(request, f"Successfully updated {success_count} attendance record(s)")
+            if error_count > 0:
+                messages.error(request, f"Failed to update {error_count} record(s)")
+                for error in errors[:5]:  # Show first 5 errors
+                    messages.warning(request, error)
+
+        elif action_type == 'status':
+            # Handle bulk status update
+            new_status = request.POST.get('bulk_status')
+            if new_status:
+                updated_count = Attendance.objects.filter(
+                    id__in=selected_records
+                ).update(status=new_status)
+                messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
+            else:
+                messages.error(request, 'Please select a status to update.')
         else:
             messages.error(request, 'Please select records and status to update.')
 
