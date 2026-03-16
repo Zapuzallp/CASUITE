@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q, Max
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta,datetime
 from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
 from home.forms import TaskForm, TaskExtendedForm
 from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
@@ -162,6 +162,9 @@ def task_list_view(request):
     filter_consultancy_type = request.GET.get('consultancy_type')
     filter_status = request.GET.get('status')
     filter_invoice_status = request.GET.get('invoice_status')
+    filter_due = request.GET.get('due_filter')
+    due_from = request.GET.get('due_from')
+    due_to = request.GET.get('due_to')
 
     if search_query:
         tasks_qs = tasks_qs.filter(
@@ -190,6 +193,68 @@ def task_list_view(request):
         elif filter_invoice_status == 'not_invoiced':
             # Tasks that have no invoices
             tasks_qs = tasks_qs.filter(tagged_invoices__isnull=True)
+
+        # Due Date Filter
+    if filter_due:
+        # today = timezone.now().date()
+        # tomorrow = today + timedelta(days=1)
+        today = timezone.localdate()
+        tomorrow = today + timedelta(days=1)
+
+        if filter_due == "overdue":
+            # Overdue but NOT completed
+            tasks_qs = tasks_qs.filter(
+                due_date__lt=today,
+                due_date__isnull=False,
+            ).exclude(status="Completed")
+
+        elif filter_due == "today":
+            tasks_qs = tasks_qs.filter(
+                due_date=today
+            ).exclude(status="Completed")
+
+        elif filter_due == "tomorrow":
+            tasks_qs = tasks_qs.filter(
+                due_date=tomorrow
+            ).exclude(status="Completed")
+
+        elif filter_due == "no_due":
+            tasks_qs = tasks_qs.filter(
+                due_date__isnull=True
+            )
+
+        elif filter_due == "range" :
+            try:
+                due_from_date = datetime.strptime(due_from, "%Y-%m-%d").date() if due_from else None
+                due_to_date = datetime.strptime(due_to, "%Y-%m-%d").date()  if due_to else None
+
+                # Case 1: Both dates provided
+                if due_from_date and due_to_date:
+                    if due_to_date < due_from_date:
+                        # invalid range → return no results
+                        tasks_qs = tasks_qs.none()
+                        messages.error(request, "End date cannot be before start date.")
+                    else:
+                        tasks_qs = tasks_qs.filter(
+                            due_date__range=[due_from_date, due_to_date],
+                            due_date__isnull=False
+                        )
+
+                # Case 2: Only FROM date
+                elif due_from_date:
+                    tasks_qs = tasks_qs.filter(
+                        due_date__gte=due_from_date,
+                        due_date__isnull=False
+                    )
+
+                # Case 3: Only TO date
+                elif due_to_date:
+                    tasks_qs = tasks_qs.filter(
+                        due_date__lte=due_to_date,
+                        due_date__isnull=False
+                    )
+            except ValueError:
+                messages.error(request, "Invalid date format.")
 
     # Records per page dropdown value
     per_page = request.GET.get('per_page','all')
@@ -221,6 +286,9 @@ def task_list_view(request):
         filter_consultancy_type,
         filter_status,
         filter_invoice_status,
+        filter_due,
+        due_from,
+        due_to,
     ])
     context = {
         'tasks': tasks_qs,
@@ -541,7 +609,7 @@ def edit_task_view(request, task_id):
             task_form.save()
             extended_form.save()
             messages.success(request, "Task updated successfully.")
-            return redirect('task_detail', task_id=task.id)
+            return redirect('task_list')
     else:
         task_form = TaskForm(instance=task)
         extended_form = TaskExtendedForm(instance=task.extended_attributes)

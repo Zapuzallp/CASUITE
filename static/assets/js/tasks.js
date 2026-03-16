@@ -133,3 +133,77 @@ $(document).ready(function () {
     });
 
 });
+
+
+//Add JS to Show Date Range Inputs
+document.addEventListener("DOMContentLoaded", function () {
+
+    const dueFilter = document.getElementById("dueFilter");
+    const dueFromWrapper = document.getElementById("dueFromWrapper");
+    const dueToWrapper = document.getElementById("dueToWrapper");
+
+    function toggleDueRange() {
+        if (!dueFilter) return;
+
+        if (dueFilter.value === "range") {
+            dueFromWrapper.style.display = "block";
+            dueToWrapper.style.display = "block";
+        } else {
+            dueFromWrapper.style.display = "none";
+            dueToWrapper.style.display = "none";
+        }
+    }
+
+    toggleDueRange();
+    dueFilter.addEventListener("change", toggleDueRange);
+
+});
+
+//Prevent Invalid Date Range (Frontend)
+// Custom Validation for Due Date Range (Instant)
+document.addEventListener("DOMContentLoaded", function () {
+
+    const dueFrom = document.querySelector("input[name='due_from']");
+    const dueTo = document.querySelector("input[name='due_to']");
+
+    if (!dueFrom || !dueTo) return;
+
+    // When user edits Due From
+    dueFrom.addEventListener("input", function () {
+
+        if (dueTo.value && dueFrom.value > dueTo.value) {
+
+            const formattedDate = new Date(dueTo.value).toLocaleDateString();
+
+            dueFrom.setCustomValidity(
+                "Due From date cannot be after Due To date (" + formattedDate + ")."
+            );
+
+            dueFrom.reportValidity(); // show message instantly
+
+        } else {
+            dueFrom.setCustomValidity("");
+        }
+
+    });
+
+    // When user edits Due To
+    dueTo.addEventListener("input", function () {
+
+        if (dueFrom.value && dueTo.value < dueFrom.value) {
+
+            const formattedDate = new Date(dueFrom.value).toLocaleDateString();
+
+            dueTo.setCustomValidity(
+                "Due To date cannot be before Due From date (" + formattedDate + ")."
+            );
+
+            dueTo.reportValidity(); // show message instantly
+
+        } else {
+            dueTo.setCustomValidity("");
+        }
+
+    });
+
+});

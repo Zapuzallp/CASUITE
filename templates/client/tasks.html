@@ -136,6 +136,35 @@
                                                 <option value="not_invoiced" {% if request.GET.invoice_status == 'not_invoiced' %}selected{% endif %}>Not Invoiced</option>
                                             </select>
                                         </div>
+                                        <!--Due Date-->
+                                        <div class="col-md-3">
+                                            <label class="form-label">Due Date</label>
+                                            <select name="due_filter"   id="dueFilter" class="form-select">
+                                                <option value="">All</option>
+                                                <option value="overdue" {% if request.GET.due_filter == "overdue" %}selected{% endif %}>Overdue</option>
+                                                <option value="today" {% if request.GET.due_filter == "today" %}selected{% endif %}>Today</option>
+                                                <option value="tomorrow" {% if request.GET.due_filter == "tomorrow" %}selected{% endif %}>Tomorrow</option>
+                                                <option value="no_due" {% if request.GET.due_filter == "no_due" %}selected{% endif %}>No Due Date</option>
+                                                <option value="range" {% if request.GET.due_filter == "range" %}selected{% endif %}>Date Range</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Date Range (Visible when "Date Range" selected) -->
+                                        <div class="col-md-3" id="dueFromWrapper" style="display:none;">
+                                            <label class="form-label small fw-bold text-secondary">From</label>
+                                            <input type="date"
+                                                   name="due_from"
+                                                   class="form-control"
+                                                   value="{{ request.GET.due_from }}">
+                                        </div>
+
+                                        <div class="col-md-3" id="dueToWrapper" style="display:none;">
+                                            <label class="form-label small fw-bold text-secondary">To</label>
+                                            <input type="date"
+                                                   name="due_to"
+                                                   class="form-control"
+                                                   value="{{ request.GET.due_to }}">
+                                        </div>
 
                                         <!-- Filter Actions -->
                                         <!-- Used d-grid on mobile to make buttons stretch, and d-md-flex to align right on desktop -->
