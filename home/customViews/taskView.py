@@ -648,3 +648,30 @@ def copy_task_view(request, task_id):
     # messages.success(request, "Task copied successfully.")
 
     return redirect('task_list')
+
+# Delete Function for  tasks
+@login_required
+@require_POST
+def delete_task_view(request, task_id):
+
+    user = request.user
+
+    accessible_clients = get_accessible_clients(user)
+
+    task = get_object_or_404(
+        Task.objects.filter(
+            Q(client__in=accessible_clients) |
+            Q(assignees=user)
+        ).distinct(),
+        id=task_id
+    )
+
+    # Only superuser allowed
+    if not user.is_superuser:
+        messages.error(request, "Only administrators can delete tasks.")
+        return redirect('task_list')
+
+    task.delete()
+    messages.success(request, "Task deleted successfully.")
+
+    return redirect('task_list')

@@ -207,3 +207,30 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
+
+
+// Delete Task Modal Handler
+document.addEventListener("DOMContentLoaded", function () {
+
+    const deleteModal = document.getElementById("deleteTaskModal");
+
+    if (deleteModal) {
+
+        deleteModal.addEventListener("show.bs.modal", function (event) {
+
+            const button = event.relatedTarget;
+
+            const deleteUrl = button.getAttribute("data-url");
+            const taskTitle = button.getAttribute("data-title");
+
+            const form = document.getElementById("deleteTaskForm");
+            const title = document.getElementById("deleteTaskTitle");
+
+            form.action = deleteUrl;
+            title.textContent = taskTitle;
+
+        });
+
+    }
+
+});
