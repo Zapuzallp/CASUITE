@@ -13,7 +13,7 @@ from django.views.generic import TemplateView
 from home.clients.client_access import get_accessible_clients
 # Import your models
 from home.models import Client
-from home.models import Task, TaskAssignmentStatus, Leave, Payment
+from home.models import Task, TaskAssignmentStatus, Leave, Payment, Lead
 
 
 # RequestedDocument, DocumentMaster, ClientDocumentUpload, DocumentRequest)
@@ -152,12 +152,22 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # =========================================================
         # 9. Client Growth - Top 5 Client Creators/Onboards
         # =========================================================
-        top_client_creators = User.objects.annotate(client_count=Count('clients_created')).order_by('-client_count')[:5]
+        top_client_creators = (
+            Client.objects
+            .values("created_by__id", "created_by__username", "created_by__employee__profile_pic")
+            .annotate(client_count=Count('id'))
+            .order_by('-client_count')[:5]
+        )
 
         # =========================================================
         # 10. Lead Performance - Top 5 Lead Generators
         # =========================================================
-        top_lead_generators = User.objects.annotate(lead_count=Count('leads_created')).order_by('-lead_count')[:5]
+        top_lead_generators = (
+            Lead.objects
+            .values("created_by__id", "created_by__username", "created_by__employee__profile_pic")
+            .annotate(lead_count=Count('id'))
+            .order_by('-lead_count')[:5]
+        )
         # =========================================================
         # 11. Employees On Leave Today
         # =========================================================
@@ -177,6 +187,76 @@ class HomeView(LoginRequiredMixin, TemplateView):
             .annotate(total_collection=Sum("amount"))
             .order_by("-total_collection")[:5]
         )
+
+        # =========================================================
+        # Top Performer Carousel
+        # =========================================================
+        top_performers = []
+
+        solver = top_solvers.first()
+        if solver:
+            pic = None
+            if hasattr(solver, "employee") and solver.employee.profile_pic:
+                pic = solver.employee.profile_pic.url
+
+            top_performers.append({
+                "name": solver.first_name or solver.username,
+                "title": "Top Solver",
+                "value": f"{solver.solved_count} Tasks Solved",
+                "avatar": solver.first_name[:1].upper(),
+                "photo": pic
+            })
+
+        creator = top_client_creators.first()
+        if creator:
+            pic = None
+            if hasattr(creator, "employee") and creator.employee.profile_pic:
+                pic = creator.employee.profile_pic.url
+
+            # top_performers.append({
+            #     "name": creator,
+            #     "title": "Top Client Onboarder",
+            #     "value": f"{creator} Clients",
+            #     "avatar": creator.first_name[:1].upper(),
+            #     "photo": pic
+            # })
+            top_performers = []
+        lead = top_lead_generators.first()
+        if lead:
+            pic = None
+            if hasattr(lead, "employee") and lead.employee.profile_pic:
+                pic = lead.employee.profile_pic.url
+
+            # top_performers.append({
+            #     "name": lead.created_byfirst_name or lead.username,
+            #     "title": "Top Lead Generator",
+            #     "value": f"{lead.lead_count} Leads",
+            #     "avatar": lead.first_name[:1].upper(),
+            #     "photo": pic
+            # })
+
+        collector = top_collectors.first()
+        if collector and collector.get("created_by__username"):
+
+            photo = None
+            if collector.get("created_by__employee__profile_pic"):
+                photo = "/media/" + str(collector["created_by__employee__profile_pic"])
+
+            top_performers.append({
+                "name": collector["created_by__username"],
+                "title": "Top Collection",
+                "value": f"₹{collector.get('total_collection', 0)}",
+                "avatar": collector["created_by__username"][0].upper(),
+                "photo": photo
+            })
+        else:
+            top_performers.append({
+                "name": "No Collections Yet",
+                "title": "Top Collection",
+                "value": "₹0",
+                "avatar": "-",
+                "photo": None
+            })
         # =========================================================
         # CONTEXT PACKAGING
         # =========================================================
@@ -218,10 +298,11 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
             'employees_on_leave_today': employees_on_leave_today,
             'top_collectors': top_collectors,
+            'top_performers': top_performers,
         })
 
         return context
-
+from django.contrib.auth.decorators import login_required
 def get_client_dashboard_data(user, today):
     """
     Handles:
@@ -330,6 +411,8 @@ def due_tasks_ajax(request):
         due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=15))
     elif due_range == '30days':
         due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=30))
+    elif due_range == '7days':
+        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=7))
     
     due_tasks = due_tasks_qs.select_related('client').prefetch_related('assignees').order_by('due_date')[:20]
     
@@ -341,7 +424,7 @@ def due_tasks_ajax(request):
             'id': task.id,
             'title': task.task_title[:30] + '...' if len(task.task_title) > 30 else task.task_title,
             'client': task.client.client_name if task.client else '-',
-            'service': task.get_service_type_display() or '-',
+            'service': task.service_type or '-',
             'due_date': task.due_date.strftime('%b %d, %Y') if task.due_date else '-',
             'due_date_class': 'text-danger' if task.due_date and task.due_date < today else ('text-warning' if task.due_date == today else 'text-success'),
             'assignees': assignees,
@@ -354,6 +437,7 @@ def due_tasks_ajax(request):
         'overdue': 'Overdue Tasks',
         'today': 'Due Today',
         'tomorrow': 'Due Tomorrow',
+        '7days': 'Next 7 days',
         '5days': 'Due in 5 Days',
         '10days': 'Due in 10 Days',
         '15days': 'Due in 15 Days',
