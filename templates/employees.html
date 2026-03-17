@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block body %}
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #7c3aed;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --bg-body: #f8fafc;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
+        }
+
+        .main-content {
+            padding: 1.5rem;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* Header Styling */
+        .pagetitle h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+
+        .breadcrumb-employee {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Card Modernization with Gradients */
+        .card {
+            border: none;
+            border-radius: 1.25rem;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
+            position: relative;
+            background: #ffffff;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-stats-indigo {
+            background: linear-gradient(180deg, #ffffff 0%, #f0f3ff 100%);
+        }
+
+        .card-stats-emerald {
+            background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%);
+        }
+
+        .card-stats-amber {
+            background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
+        }
+
+        .card-stats-rose {
+            background: linear-gradient(180deg, #ffffff 0%, #fff1f1 100%);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 1.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Stats Icons */
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 1rem;
+            display: flex;
+            align-employees: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .bg-indigo-light {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        .bg-emerald-light {
+            background: #dcfce7;
+            color: #059669;
+        }
+
+        .bg-amber-light {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .bg-rose-light {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Tables */
+        .table thead th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: none;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        /* Badges */
+        .badge-soft-success {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-soft-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-soft-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border: none;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #f1f5f9;
+            padding: 1.5rem;
+        }
+
+        .balance-pill {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            .pagetitle .d-flex {
+                flex-direction: column;
+                align-employees: flex-start !important;
+                gap: 1rem;
+            }
+        }
+    </style>
+
+    <!-- External Assets -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <main id="main" class="main-content">
+        <!-- Dashboard Header -->
+        <div class="pagetitle d-md-flex justify-content-between align-employees-center mb-4">
+            <div>
+                <h1>Employee Management</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Home</a></li>
+                        <li class="breadcrumb-item active">Employees</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="header-actions d-flex gap-2 mb-4">
+                <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal"
+                        data-bs-target="#addEmployeeModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add Employee
+                </button>
+            </div>
+        </div>
+
+        <section class="section dashboard">
+            <!-- Row 1: Employee Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">Employees</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                    <tr>
+                                        <th>Sr. No.</th>
+                                        <th>Name</th>
+                                        <th>Designation</th>
+                                        <th>Role</th>
+                                        <th>Office Location</th>
+                                        <th>Contact Info</th>
+                                        <th>Status</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for employee in employees %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>{{ employee.user }}</td>
+                                            <td>{{ employee.designation }}</td>
+                                            <td>{{ employee.role }}</td>
+                                            <td>{{ employee.office_location }}</td>
+                                            <td>{{ employee.work_phone }}</td>
+                                            <td></td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="7" class="text-center py-5 text-muted">No Employees
+                                                found.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Add Employees -->
+    <div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Add Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Logic Script -->
+    <script>
+
+    </script>
+{% endblock body %}
