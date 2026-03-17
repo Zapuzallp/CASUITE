@@ -307,9 +307,8 @@ def update_single_client_status(request, client_id):
         allowed = True
 
     # Branch Manager logic
-    elif employee and employee.role == "BRANCH_MANAGER":
-        if employee.office_location == client.office_location:
-            allowed = True
+    elif employee and employee.role == "BRANCH_MANAGER" and employee.office_location == client.office_location:
+        allowed = True
 
     if not allowed:
         messages.error(request, "You do not have permission to update this client.")
@@ -364,9 +363,9 @@ def bulk_update_client_status(request):
         if user.is_superuser:
             allowed = True
 
-        elif employee and employee.role == "BRANCH_MANAGER":
-            if employee.office_location == client.office_location:
-                allowed = True
+
+        elif employee and employee.role == "BRANCH_MANAGER" and employee.office_location == client.office_location:
+            allowed = True
 
         if allowed:
             client.status = new_status
