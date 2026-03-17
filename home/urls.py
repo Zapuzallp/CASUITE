@@ -66,6 +66,7 @@ urlpatterns = [
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
     path('tasks/<int:task_id>/copy/', taskView.copy_task_view, name='task_copy'),
+    path('tasks/<int:task_id>/delete/', taskView.delete_task_view, name='delete_task'),
     path('clients/search/', client_search, name='client_search'),
 
     # reset password
