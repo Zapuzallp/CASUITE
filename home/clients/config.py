@@ -46,7 +46,7 @@ STRUCTURE_CONFIG = {
             'exclude': []
         },
         'labels': {
-            'client_name': 'Proprietor Name',
+            'client_name': 'Proprietor Name / Trade Name',
             'registered_office_address': 'Shop/Office Address'
         }
     },

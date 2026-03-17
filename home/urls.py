@@ -3,7 +3,7 @@ from django.urls import path
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView
 from home.customViews import resetPassword
 from home.customViews import tutorialView
 from home.customViews.attendanceView import (
@@ -20,6 +20,8 @@ from home.customViews.notificationView import (
     view_notification,
     all_notifications,
 )
+from home.customViews.client_details_status_change_View import update_single_client_status
+from home.customViews.update_client_status_view import bulk_update_client_status
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
@@ -144,6 +146,12 @@ urlpatterns = [
     path('data-management/manual-assign/', caAssignmentView.manual_assign_ca, name='manual_assign_ca'),
     path('data-management/bulk-import/', caAssignmentView.bulk_import_ca, name='bulk_import_ca'),
     path('data-management/download-template/', caAssignmentView.download_demo_template, name='download_ca_template'),
+
+    # Data Management - GST Import
+    path('data-management/import-gst/', gstImportView.import_gst_view, name='import_gst_details'),
+    path('data-management/search-clients-gst/', gstImportView.search_clients_for_gst_ajax, name='search_clients_gst_ajax'),
+    path('data-management/bulk-import-gst/', gstImportView.bulk_import_gst, name='bulk_import_gst'),
+    path('data-management/download-gst-template/', gstImportView.download_gst_template, name='download_gst_template'),
 
     #Tutorials
     path("tutorials/", tutorialView.tutorial_list, name="tutorial_list"),
