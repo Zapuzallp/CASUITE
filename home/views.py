@@ -18,10 +18,31 @@ from home.models import Client
 from home.models import Task
 
 
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
+from django.views import View
+from django.views.generic import ListView
+from django.contrib.auth.models import User
+from .models import (Client,ClientUserEntitle )
+from django.contrib.auth.decorators import login_required
 # RequestedDocument, DocumentMaster, ClientDocumentUpload, DocumentRequest)
 # from .forms import ClientForm, CompanyDetailsForm, LLPDetailsForm, OPCDetailsForm, Section8CompanyDetailsForm, \
 #     HUFDetailsForm
-# from datetime import datetime
+from datetime import datetime
+
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count, Sum, Q
+from django.utils import timezone
+from home.clients.client_access import get_accessible_clients
+from datetime import timedelta
+
+# Import your models
+
+from home.models import Client
+from home.models import Task, TaskAssignmentStatus, Leave, Payment, Lead
+
 
 
 class HomeView(LoginRequiredMixin, TemplateView):
@@ -38,6 +59,82 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         # =========================================================
         # 1. DUE TASKS FOR DASHBOARD MODULE
+        # Single query aggregation for performance
+        stats = all_tasks.aggregate(
+            total=Count('id'),
+            completed=Count('id', filter=Q(status='Completed')),
+            # Active working states
+            pending=Count('id', filter=Q(status__in=['Pending', 'In Progress', 'Data Collection'])),
+            # Approval queue
+            review=Count('id', filter=Q(status='Review')),
+            # Overdue logic
+            overdue=Count('id', filter=Q(due_date__lt=today) & ~Q(status='Completed')),
+
+            # Financials
+            billed=Sum('agreed_fee', filter=Q(fee_status='Billed')),
+            paid=Sum('agreed_fee', filter=Q(fee_status='Paid')),
+            unbilled=Sum('agreed_fee', filter=Q(fee_status='Unbilled'))
+        )
+
+        # =========================================================
+        # 2. REPORT: SERVICE DISTRIBUTION (Donut Chart)
+        # =========================================================
+        # Count tasks per service type
+        service_counts = all_tasks.values('service_type').annotate(count=Count('id')).order_by('-count')
+        service_chart_data = [{'name': x['service_type'], 'value': x['count']} for x in service_counts]
+
+        # =========================================================
+        # 3. REPORT: TASK AGING (Pie Chart)
+        # =========================================================
+        # Get creation dates of open tasks
+        open_tasks = all_tasks.exclude(status='Completed').values('created_at')
+
+        aging_data = {'0-7 Days': 0, '8-15 Days': 0, '15-30 Days': 0, '30+ Days': 0}
+
+        for t in open_tasks:
+            age = (timezone.now() - t['created_at']).days
+            if age <= 7:
+                aging_data['0-7 Days'] += 1
+            elif age <= 15:
+                aging_data['8-15 Days'] += 1
+            elif age <= 30:
+                aging_data['15-30 Days'] += 1
+            else:
+                aging_data['30+ Days'] += 1
+
+        # =========================================================
+        # 4. REPORT: LEADERBOARD (Top Solvers)
+        # =========================================================
+        # Count completed assignment steps per user (Collaborative Score)
+        top_solvers = User.objects.filter(is_active=True).annotate(
+            solved_count=Count('taskassignmentstatus',
+                               filter=Q(taskassignmentstatus__is_completed=True))
+        ).order_by('-solved_count')[:5]
+
+        # =========================================================
+        # 5. USER SPECIFIC ACTIONS (Clickable)
+        # =========================================================
+        # "My Action Items" - Specific steps waiting for the logged-in user
+        my_actionable_items = TaskAssignmentStatus.objects.filter(
+            user=user,
+            is_completed=False,
+            task__status__in=['Pending', 'In Progress', 'Review']  # Only active workflows
+        ).select_related('task', 'task__client').order_by('task__due_date')
+
+        my_actions_count = my_actionable_items.count()
+
+        # =========================================================
+        # 6. RECENT ACTIVITY TABLE
+        # =========================================================
+        recent_tasks = all_tasks.select_related('client').prefetch_related('assignees').order_by('-created_at')[:6]
+
+        # =========================================================
+        # 7. CLIENT Distribution REPORT (PIE CHART)
+        # =========================================================
+        client_data = get_client_dashboard_data(user, today)
+
+        # =========================================================
+        # 8. DUE TASKS FOR DASHBOARD MODULE
         # =========================================================
         due_range = self.request.GET.get('due_range', 'overdue')  # Default to overdue
 
@@ -45,19 +142,20 @@ class HomeView(LoginRequiredMixin, TemplateView):
         due_tasks_qs = all_tasks.exclude(status='Completed')
 
         # Apply date range filter
-        due_tasks_qs = due_tasks_qs.filter(due_date__lt=today)
-        if due_range == 'today':
+        if due_range == 'overdue':
+            due_tasks_qs = due_tasks_qs.filter(due_date__lt=today)
+        elif due_range == 'today':
             due_tasks_qs = due_tasks_qs.filter(due_date=today)
         elif due_range == 'tomorrow':
             due_tasks_qs = due_tasks_qs.filter(due_date=today + timedelta(days=1))
         elif due_range == '5days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=5))
+            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=5))
         elif due_range == '10days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=10))
+            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=10))
         elif due_range == '15days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=15))
+            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=15))
         elif due_range == '30days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=30))
+            due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=30))
 
         due_tasks = due_tasks_qs.select_related('client').prefetch_related('assignees').order_by('due_date')[:20]
 
@@ -101,7 +199,8 @@ def client_search(request):
 # AJAX VIEW FOR DUE TASKS FILTERING
 # =========================================================
 from django.contrib.auth.decorators import login_required
-
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 @login_required
 def due_tasks_ajax(request):
@@ -128,12 +227,13 @@ def due_tasks_ajax(request):
     elif due_range == 'tomorrow':
         due_tasks_qs = due_tasks_qs.filter(due_date=today + timedelta(days=1))
     elif due_range == '5days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=5))
+        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=5))
     elif due_range == '10days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=10))
+        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=10))
     elif due_range == '15days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=15))
+        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=15))
     elif due_range == '30days':
+        due_tasks_qs = due_tasks_qs.filter(due_date__lte=today + timedelta(days=30))
         due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=30))
     elif due_range == '7days':
         due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=7))
@@ -146,6 +246,9 @@ def due_tasks_ajax(request):
         assignees = [a.get_full_name() or a.username for a in task.assignees.all()[:2]]
         tasks_data.append({
             'id': task.id,
+            'title': task.title[:30] + '...' if len(task.title) > 30 else task.title,
+            'client': task.client.name if task.client else '-',
+            'service': getattr(task, 'service', None).name if hasattr(task, 'service') and task.service else '-',
             'title': task.task_title[:30] + '...' if len(task.task_title) > 30 else task.task_title,
             'client': task.client.client_name if task.client else '-',
             'service': task.service_type or '-',
@@ -174,4 +277,3 @@ def due_tasks_ajax(request):
         'due_range': due_range,
         'range_label': range_labels.get(due_range, 'All Due Tasks'),
     })
-
