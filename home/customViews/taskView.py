@@ -257,19 +257,23 @@ def task_list_view(request):
                 messages.error(request, "Invalid date format.")
 
     # Records per page dropdown value
-    per_page = request.GET.get('per_page','all')
+    per_page = request.GET.get('per_page', '25')
 
     if per_page == "all":
-        per_page_value = tasks_qs.count()
+        per_page_value = tasks_qs.count() or 1
     else:
-        per_page_value = int(per_page)
+        try:
+            per_page_value = int(per_page)
+        except ValueError:
+            per_page = "25"
+            per_page_value = 25
 
+    # Order before pagination
     tasks_qs = tasks_qs.order_by('-created_at')
     # Pagination
     paginator = Paginator(tasks_qs, per_page_value)
-    if len(tasks_qs) > 0:
-        page = request.GET.get('page')
-        tasks_qs = paginator.get_page(page)
+    page = request.GET.get('page')
+    tasks_qs = paginator.get_page(page)
 
 
     # Remove page parameter from query string
