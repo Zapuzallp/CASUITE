@@ -307,3 +307,93 @@ def delete_gst_details_view(request, gst_id):
         return redirect('client_details', client_id=client_id)
 
     return redirect('client_details', client_id=client_id)
+
+@login_required
+def update_single_client_status(request, client_id):
+
+    client = get_object_or_404(Client, id=client_id)
+
+    user = request.user
+    employee = getattr(user, "employee", None)
+
+    # ---- PERMISSION LOGIC ----
+
+    allowed = False
+
+    # Superuser always allowed
+    if user.is_superuser:
+        allowed = True
+
+    # Branch Manager logic
+    elif employee and employee.role == "BRANCH_MANAGER" and employee.office_location == client.office_location:
+        allowed = True
+
+    if not allowed:
+        messages.error(request, "You do not have permission to update this client.")
+        return redirect("client_details", client_id=client.id)
+
+    if request.method == "POST":
+        new_status = request.POST.get("new_status")
+
+        if new_status:
+            client.status = new_status
+            client.save()
+
+            messages.success(request, "Client status updated successfully.")
+
+    return redirect("client_details", client_id=client.id)
+
+
+@login_required
+def bulk_update_client_status(request):
+
+    if request.method != "POST":
+        return redirect("clients")
+
+    client_ids = request.POST.getlist("client_ids")
+    new_status = request.POST.get("new_status")
+
+    if not client_ids:
+        messages.error(request, "No clients selected.")
+        return redirect("clients")
+
+    if not new_status:
+        messages.error(request, "Please select a status.")
+        return redirect("clients")
+
+    valid_statuses = [choice[0] for choice in Client.STATUS_CHOICES]
+
+    if new_status not in valid_statuses:
+        messages.error(request, "Invalid status selected.")
+        return redirect("clients")
+
+    user = request.user
+    employee = getattr(user, "employee", None)
+
+    clients = Client.objects.filter(id__in=client_ids)
+
+    updated_count = 0
+
+    for client in clients:
+
+        allowed = False
+
+        if user.is_superuser:
+            allowed = True
+
+
+        elif employee and employee.role == "BRANCH_MANAGER" and employee.office_location == client.office_location:
+            allowed = True
+
+        if allowed:
+            client.status = new_status
+            client.save()
+            updated_count += 1
+
+    if updated_count == 0:
+        messages.warning(request, "No clients were updated.")
+
+    else:
+        messages.success(request, f"{updated_count} client(s) updated successfully.")
+
+    return redirect("clients")

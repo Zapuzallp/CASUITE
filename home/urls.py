@@ -19,8 +19,7 @@ from home.customViews.notificationView import (
     view_notification,
     all_notifications,
 )
-from home.customViews.client_details_status_change_View import update_single_client_status
-from home.customViews.update_client_status_view import bulk_update_client_status
+
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
@@ -45,9 +44,8 @@ urlpatterns = [
     path('client/<int:client_id>/create-request/', documentsUploadView.create_document_request_view,
          name='create_client_doc_request'),
     path('client/<int:client_id>/create-task/', taskView.create_task_view, name='create_service_task'),
-    path("clients/bulk-update-status/",bulk_update_client_status,name="bulk_update_client_status"),
-    path("client/<int:client_id>/update-status/",update_single_client_status,name="update_single_client_status"),
-
+    path("clients/bulk-update-status/",clientView.bulk_update_client_status,name="bulk_update_client_status",),
+    path("client/<int:client_id>/update-status/",  clientView.update_single_client_status, name="update_single_client_status",),
     # GST Management
     path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
     path('gst/<int:gst_id>/edit/', clientView.edit_gst_details_view, name='edit_gst_details'),
@@ -65,6 +63,7 @@ urlpatterns = [
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
     path('tasks/<int:task_id>/copy/', taskView.copy_task_view, name='task_copy'),
+    path('tasks/<int:task_id>/delete/', taskView.delete_task_view, name='delete_task'),
     path('clients/search/', client_search, name='client_search'),
 
     # reset password
