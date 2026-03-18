@@ -687,6 +687,7 @@
                                     </tr>
                                     </thead>
                                     <tbody id="due-tasks-tbody">
+                                   {% if due_tasks %}
                                     {% for task in due_tasks %}
                                         <tr>
                                             <td>{{ forloop.counter }}</td>
@@ -720,11 +721,9 @@
                                                     class="badge bg-light text-dark border rounded-pill">{{ task.status }}</span>
                                             </td>
                                         </tr>
-                                    {% empty %}
-                                        <tr>
-                                            <td colspan="7" class="text-center py-4 text-muted">No tasks found.</td>
-                                        </tr>
+
                                     {% endfor %}
+                                    {% endif %}
                                     </tbody>
                                 </table>
                             </div>
