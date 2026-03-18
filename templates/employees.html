@@ -91,7 +91,7 @@
             height: 52px;
             border-radius: 1rem;
             display: flex;
-            align-employees: center;
+            align-items: center;
             justify-content: center;
             font-size: 1.5rem;
             flex-shrink: 0;
@@ -178,7 +178,7 @@
 
             .pagetitle .d-flex {
                 flex-direction: column;
-                align-employees: flex-start !important;
+                align-items: flex-start !important;
                 gap: 1rem;
             }
         }
@@ -201,10 +201,9 @@
                 </nav>
             </div>
             <div class="header-actions d-flex gap-2 mb-4">
-                <button class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal"
-                        data-bs-target="#addEmployeeModal">
+                <a href="{% url 'add-employee' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
                     <i class="bi bi-plus-lg me-1"></i> Add Employee
-                </button>
+                </a>
             </div>
         </div>
 
@@ -407,21 +406,6 @@
             </div>
         </section>
     </main>
-
-    <!-- Modal: Add Employees -->
-    <div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">Add Employee</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body pt-3">
-
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Modal: Delete Employees -->
     <div class="modal fade" id="deleteEmployeeModal" tabindex="-1">
