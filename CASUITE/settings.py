@@ -20,6 +20,14 @@ SECRET_KEY = 'django-insecure-i%cb2hzh_ab!ecqqf)g4z)*x^l2qqfnd=d4eo^y3huioo83d1k
 # Encryption key for portal credentials (generate with: Fernet.generate_key())
 ENCRYPTION_KEY = b'8fHQqZ8vN5YJ0KxP7LZxQJ9vN5YJ0KxP7LZxQJ9vN5Y='
 
+# Elasticsearch Configuration
+ELASTICSEARCH_HOST = os.environ.get("ELASTICSEARCH_HOST", "http://localhost:9200")
+ELASTICSEARCH_DSL = {
+    "default": {
+        "hosts": ELASTICSEARCH_HOST
+    }
+}
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -44,6 +52,7 @@ INSTALLED_APPS = [
     "rangefilter",
     'django_admin_listfilter_dropdown',
     'django_apscheduler',
+    'django_elasticsearch_dsl',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"

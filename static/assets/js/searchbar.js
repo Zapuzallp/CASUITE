@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
         clearTimeout(debounceTimer);
         const query = this.value.trim();
 
-        if (query.length < 4) {
+        if (query.length < 2) {  // Changed from 4 to 2 for better UX
             renderLayout({ results: [] }, query);
             return;
         }
@@ -24,6 +24,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     saveToHistory(query);
                     renderLayout(data, query);
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    renderLayout({ results: [], error: 'Search failed' }, query);
                 });
         }, 300);
     });
@@ -35,15 +39,32 @@ document.addEventListener('DOMContentLoaded', function() {
     return text.toString().replace(regex, '<mark>$1</mark>');
 }
 
-
-
     function renderLayout(data, query) {
         resultsContainer.classList.remove('d-none');
         const history = JSON.parse(localStorage.getItem('search_history') || '[]');
 
+        // Add search status indicator
+        let statusHtml = '';
+        if (data.elasticsearch_used !== undefined) {
+            const statusIcon = data.elasticsearch_used ? 
+                '<i class="bi bi-lightning-charge text-success"></i>' : 
+                '<i class="bi bi-database text-warning"></i>';
+            const statusText = data.elasticsearch_used ? 
+                'Elasticsearch' : 
+                'Database Fallback';
+            statusHtml = `
+                <div class="search-status small text-muted mb-2 px-3">
+                    ${statusIcon} ${statusText} 
+                    ${data.total_count ? `• ${data.total_count} results` : ''}
+                </div>`;
+        }
+
         // Results Column
-        let resultsHtml = data.results.length > 0
-            ? data.results.map(item => `
+        let resultsHtml = '';
+        if (data.error) {
+            resultsHtml = `<div class="p-4 text-danger"><i class="bi bi-exclamation-triangle"></i> ${data.error}</div>`;
+        } else if (data.results && data.results.length > 0) {
+            resultsHtml = data.results.map(item => `
                 <a href="${item.url}" class="search-card">
                     <span class="category-badge"><i class="${item.icon}"></i> ${item.type}</span>
                     <h6>${highlightMatch(item.title ?? '', query)}</h6>
@@ -56,9 +77,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="small text-muted mb-0">
                         ${highlightMatch(item.description ?? '', query)}
                     </p>
-
-                </a>`).join('')
-            : `<div class="p-4 text-muted">${query ? 'No results matching "' + query + '"' : 'Search'}</div>`;
+                </a>`).join('');
+        } else {
+            resultsHtml = `<div class="p-4 text-muted">${query ? 'No results matching "' + query + '"' : 'Search across clients, tasks, invoices, leads and more...'}</div>`;
+        }
 
         // History Column
         let historyHtml = history.map(q => `
@@ -69,12 +91,12 @@ document.addEventListener('DOMContentLoaded', function() {
         resultsList.innerHTML = `
             <div class="search-grid">
                 <div class="main-results-column">
+                   ${statusHtml}
                    <div class="section-title">
                       ${query
                         ? `Results for "${query}"`
-                        : 'Quick Access'}
+                        : 'Global Search'}
                    </div>
-
                     <div class="cards-container">${resultsHtml}</div>
                 </div>
                 <div class="side-column">
