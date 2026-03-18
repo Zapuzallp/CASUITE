@@ -156,5 +156,6 @@ urlpatterns = [
 
     # Employees
     path('employees/view/', employeesView.EmployeeView.as_view(), name='employee-view'),
+    path('employees/delete/<int:pk>/', employeesView.EmployeeDeleteView.as_view(), name='delete_employee'),
 
 ]

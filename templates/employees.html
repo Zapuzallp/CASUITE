@@ -215,6 +215,79 @@
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title mb-4">Employees</h5>
+                            <div class="accordion mb-4" id="employeeFilterAccordion">
+                                <div class="accordion-item border-0 shadow-sm">
+
+                                    <!-- Header -->
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button {% if not request.GET %}collapsed{% endif %} bg-white text-primary fw-bold"
+                                                type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#collapseEmployeeFilter"
+                                                aria-expanded="{% if request.GET %}true{% else %}false{% endif %}">
+                                            <i class="bi bi-funnel-fill me-2"></i> Filter Employees
+                                        </button>
+                                    </h2>
+
+                                    <!-- Body -->
+                                    <div id="collapseEmployeeFilter"
+                                         class="accordion-collapse collapse {% if request.GET %}show{% endif %}">
+
+                                        <div class="accordion-body bg-light">
+                                            <form method="get" action=".">
+                                                <div class="row g-3">
+
+                                                    <!-- 🔍 Search -->
+                                                    <div class="col-md-3">
+                                                        <label class="form-label small fw-bold text-secondary">Search</label>
+                                                        <input type="text" name="q" class="form-control"
+                                                               placeholder="Name / Username"
+                                                               value="{{ request.GET.q }}">
+                                                    </div>
+
+                                                    <!-- 🎭 Role -->
+                                                    <div class="col-md-3">
+                                                        <label class="form-label small fw-bold text-secondary">Role</label>
+                                                        <select name="role" class="form-select">
+                                                            <option value="">All Roles</option>
+                                                            <option value="ADMIN" {% if request.GET.role == "ADMIN" %}selected{% endif %}>Admin</option>
+                                                            <option value="BRANCH_MANAGER" {% if request.GET.role == "BRANCH_MANAGER" %}selected{% endif %}>Branch Manager</option>
+                                                            <option value="STAFF" {% if request.GET.role == "STAFF" %}selected{% endif %}>Staff</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- 🏢 Branch -->
+                                                    <div class="col-md-3">
+                                                        <label class="form-label small fw-bold text-secondary">Branch</label>
+                                                        <select name="office" class="form-select">
+                                                            <option value="">All Branches</option>
+                                                            {% for office in offices %}
+                                                                <option value="{{ office.id }}"
+                                                                    {% if request.GET.office == office.id|stringformat:"s" %}selected{% endif %}>
+                                                                    {{ office.office_name }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- 🎯 Actions -->
+                                                    <div class="col-md-6 d-flex align-items-end">
+                                                        <button type="submit" class="btn btn-primary me-2">
+                                                            <i class="bi bi-search"></i> Apply Filters
+                                                        </button>
+                                                        <a href="{% url 'employee-view' %}" class="btn btn-secondary">
+                                                            <i class="bi bi-x-circle"></i> Clear
+                                                        </a>
+                                                    </div>
+
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead>
@@ -231,13 +304,53 @@
                                     <tbody>
                                     {% for employee in employees %}
                                         <tr>
-                                            <td>{{ forloop.counter }}</td>
-                                            <td>{{ employee.user }}</td>
+                                            <td>{{ employee.id }}</td>
+                                            <td class="d-flex align-items-center gap-2">
+
+                                                <!-- Profile Image -->
+                                                {% if employee.profile_pic %}
+                                                    <img src="{{ employee.profile_pic.url }}"
+                                                         class="rounded-circle"
+                                                         width="35" height="35"
+                                                         style="object-fit: cover;">
+                                                {% else %}
+                                                    <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
+                                                         style="width:35px; height:35px; font-size:14px;">
+                                                        {{ employee.user.username|first|upper }}
+                                                    </div>
+                                                {% endif %}
+
+                                                <!-- Name -->
+                                                <span>
+                                                    {{ employee.user.get_full_name|default:employee.user.username }}
+                                                </span>
+
+                                            </td>
                                             <td>{{ employee.designation }}</td>
-                                            <td>{{ employee.role }}</td>
+                                            <td>
+                                                {% if employee.role == 'BRANCH_MANAGER' %}
+                                                    Branch Manager
+                                                {% else %}
+                                                    {{ employee.role|title }}
+                                                {% endif %}
+                                            </td>
                                             <td>{{ employee.office_location }}</td>
                                             <td>{{ employee.work_phone }}</td>
-                                            <td></td>
+                                            <td>
+                                                {% if employee.is_active %}
+                                                     <span class="p-2 rounded bg-success text-light">Active</span>
+                                                {% else %}
+                                                    <span class="p-2 rounded bg-danger text-light">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                            {% if request.user.is_superuser %}
+                                                <td>
+                                                    <button class="btn btn-outline-danger rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#deleteEmployeeModal"
+                                                            data-id="{{ employee.id }}" data-name="{{ employee.user.username }}">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            {% endif %}
                                         </tr>
                                     {% empty %}
                                         <tr>
@@ -249,6 +362,45 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+
+                                <!-- Left side (info - optional) -->
+                                <p class="text-muted small mb-0">
+                                    Page {{ employees.number }} of {{ employees.paginator.num_pages }}
+                                </p>
+
+                                <!-- Right side (pagination) -->
+                                <nav>
+                                    <ul class="pagination mb-0">
+
+                                        {% if employees.has_previous %}
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                   href="?page={{ employees.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.role %}&role={{ request.GET.role }}{% endif %}{% if request.GET.office %}&office={{ request.GET.office }}{% endif %}">
+                                                    &laquo;
+                                                </a>
+                                            </li>
+                                        {% endif %}
+
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ employees.number }}</span>
+                                        </li>
+
+                                        {% if employees.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                   href="?page={{ employees.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.role %}&role={{ request.GET.role }}{% endif %}{% if request.GET.office %}&office={{ request.GET.office }}{% endif %}">
+                                                    &raquo;
+                                                </a>
+                                            </li>
+                                        {% endif %}
+
+                                    </ul>
+                                </nav>
+
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -271,9 +423,49 @@
         </div>
     </div>
 
+    <!-- Modal: Delete Employees -->
+    <div class="modal fade" id="deleteEmployeeModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Employee</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body text-center">
+                    <p id="delete-text"></p>
+
+                    <form method="POST" id="delete-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            Confirm Delete
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
 
     <!-- Logic Script -->
     <script>
+        <!-- Delete the employee record -->
+        document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('deleteEmployeeModal');
 
+        modal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+
+            const employeeId = button.getAttribute('data-id');
+            const employeeName = button.getAttribute('data-name');
+
+            document.getElementById('delete-text').innerHTML =
+                `Are you sure you want to delete <strong>${employeeName}</strong>?`;
+
+            document.getElementById('delete-form').action =
+                `/employees/delete/${employeeId}/`;
+        });
+    });
     </script>
 {% endblock body %}
