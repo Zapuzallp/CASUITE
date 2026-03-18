@@ -147,13 +147,42 @@ def task_list_view(request):
 
     # Task visibility:
     # - Tasks linked to accessible clients
-    # - OR tasks explicitly assigned to the user
-    tasks_qs = tasks_qs.filter(
-        # Allow tasks if they belong to a client the user can access
-        Q(client__in=clients_qs) |
-        # This ensures assignees always see their tasks, even if client visibility is not given to them
-        Q(assignees=user)
-    ).distinct()
+    # - OR tasks assigned to the user
+    # - OR tasks created by the user
+    # - OR (Branch Manager only) tasks created by users in same branch
+
+    employee = getattr(user, 'employee', None)
+
+    if user.is_superuser:
+        pass  # full access
+
+    elif employee and employee.role == 'BRANCH_MANAGER':
+        tasks_qs = tasks_qs.filter(
+            # Tasks from accessible clients (branch-based access)
+            Q(client__in=clients_qs) |
+
+            # Tasks assigned to the user
+            Q(assignees=user) |
+
+            # Tasks created by the user
+            Q(created_by=user) |
+
+            # Tasks created by users in the same branch
+            Q(created_by__employee__isnull=False,
+            created_by__employee__office_location_id=employee.office_location_id)
+            ).distinct()
+
+    else:
+        tasks_qs = tasks_qs.filter(
+            # Tasks from accessible clients
+            Q(client__in=clients_qs) |
+
+            # Tasks assigned to the user
+            Q(assignees=user) |
+
+            # Tasks created by the user
+            Q(created_by=user)
+        ).distinct()
 
     # 3. Apply UI Filters (GET parameters)
     search_query = request.GET.get('q')
