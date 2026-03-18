@@ -145,6 +145,31 @@ def task_list_view(request):
     # (Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
     clients_qs = get_accessible_clients(user)
 
+    # ---------------------------------------------------------
+    # TASK VISIBILITY LOGIC (Role-Based Access Control)
+    # ---------------------------------------------------------
+    # Defines which tasks are visible to the logged-in user.
+    #
+    # Rules:
+    # 1. Admin (Superuser):
+    #    - Full access to all tasks.
+    #
+    # 2. Branch Manager:
+    #    - Tasks linked to accessible clients (branch-based client access)
+    #    - Tasks assigned to them
+    #    - Tasks created by them
+    #    - Tasks created by users in the same office_location
+    #
+    # 3. Staff Users:
+    #    - Tasks linked to accessible clients
+    #    - Tasks assigned to them
+    #    - Tasks created by them
+    #
+    # Notes:
+    # - Uses `office_location` (Employee model) instead of branch
+    # - Uses `_id` comparison for reliable FK matching
+    # - Includes `isnull=False` check to avoid missing Employee relations
+    # ---------------------------------------------------------
     # Task visibility:
     # - Tasks linked to accessible clients
     # - OR tasks assigned to the user
