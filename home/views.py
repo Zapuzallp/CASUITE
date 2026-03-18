@@ -1,44 +1,16 @@
-<<<<<<< HEAD
 from django.http import JsonResponse
 from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import Q 
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.generic import TemplateView
-#Imported the functions from dashboard directory
-from home.dashboard.performance_cards import get_performance_cards
-from home.dashboard.tracking import tracking
-from home.dashboard.bottom_screen_cards import bottom_screen_card
-from home.dashboard.stats_and_finance import stats_and_finance
-from home.clients.client_access import get_accessible_clients
+from home.utils import bottom_screen_card,get_performance_cards,stats_and_finance, tracking 
+
 # Import your models
-from home.models import Client
-from home.models import Task
-
-
-from django.contrib.auth.mixins import LoginRequiredMixin
-=======
->>>>>>> develop
-from django.http import JsonResponse
-from datetime import timedelta
-
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User
-from django.db.models import Count, Sum, Q
-from django.db.models import OuterRef, Subquery
-from django.http import JsonResponse
-from django.utils import timezone
-from django.views.generic import TemplateView
-
-from home.clients.client_access import get_accessible_clients
-# Import your models
-from home.models import Client
-from home.models import Task, TaskAssignmentStatus, Leave, Payment, Lead
-
+from home.models import Client,Task
 
 # RequestedDocument, DocumentMaster, ClientDocumentUpload, DocumentRequest)
 # from .forms import ClientForm, CompanyDetailsForm, LLPDetailsForm, OPCDetailsForm, Section8CompanyDetailsForm, \
@@ -60,95 +32,11 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
         # =========================================================
         # 1. DUE TASKS FOR DASHBOARD MODULE
-        # Single query aggregation for performance
-        stats = all_tasks.aggregate(
-            total=Count('id'),
-            completed=Count('id', filter=Q(status='Completed')),
-            # Active working states
-            pending=Count('id', filter=~Q(status__in=['GSTR Submit', 'Delivered', 'Completed'])),
-            # Approval queue
-            review=Count('id', filter=Q(status='Review')),
-            # Overdue logic
-            overdue=Count('id', filter=Q(due_date__lt=today) & ~Q(status='Completed')),
-
-            # Financials
-            billed=Sum('agreed_fee', filter=Q(fee_status='Billed')),
-            paid=Sum('agreed_fee', filter=Q(fee_status='Paid')),
-            unbilled=Sum('agreed_fee', filter=Q(fee_status='Unbilled'))
-        )
-
-        # =========================================================
-        # 2. REPORT: SERVICE DISTRIBUTION (Donut Chart)
-        # =========================================================
-        # Count tasks per service type
-        service_counts = all_tasks.values('service_type').annotate(count=Count('id')).order_by('-count')
-        service_chart_data = [{'name': x['service_type'], 'value': x['count']} for x in service_counts]
-
-        # =========================================================
-        # 3. REPORT: TASK AGING (Pie Chart)
-        # =========================================================
-        # Get creation dates of open tasks
-        open_tasks = all_tasks.exclude(status='Completed').values('created_at')
-
-        aging_data = {'0-7 Days': 0, '8-15 Days': 0, '15-30 Days': 0, '30+ Days': 0}
-
-        for t in open_tasks:
-            age = (timezone.now() - t['created_at']).days
-            if age <= 7:
-                aging_data['0-7 Days'] += 1
-            elif age <= 15:
-                aging_data['8-15 Days'] += 1
-            elif age <= 30:
-                aging_data['15-30 Days'] += 1
-            else:
-                aging_data['30+ Days'] += 1
-
-        # =========================================================
-        # 4. REPORT: LEADERBOARD (Top Solvers)
-        # =========================================================
-        # Count completed assignment steps per user (Collaborative Score)
-        top_solvers = User.objects.filter(is_active=True).annotate(
-            solved_count=Count('taskassignmentstatus',
-                               filter=Q(taskassignmentstatus__is_completed=True))
-        ).order_by('-solved_count')[:5]
-
-        # =========================================================
-        # 5. USER SPECIFIC ACTIONS (Clickable)
-        # =========================================================
-        # "My Action Items" - Specific steps waiting for the logged-in user
-        first_incomplete_order = TaskAssignmentStatus.objects.filter(
-            task=OuterRef('task_id'),
-            is_completed=False
-        ).order_by('order').values('order')[:1]
-
-        # Now filter steps for the current user that match that specific 'first' order
-        my_actionable_items = TaskAssignmentStatus.objects.filter(
-            user=user,
-            is_completed=False,
-            order=Subquery(first_incomplete_order)
-        ).select_related('task', 'task__client').order_by('task__due_date')
-
-        my_actions_count = my_actionable_items.count()
-
-        # =========================================================
-        # 6. RECENT ACTIVITY TABLE
-        # =========================================================
-        recent_tasks = all_tasks.select_related('client').prefetch_related('assignees').order_by('-created_at')[:6]
-
-        # =========================================================
-        # 7. CLIENT Distribution REPORT (PIE CHART)
-        # =========================================================
-        client_data = get_client_dashboard_data(user, today)
-
-        # =========================================================
-        # 8. DUE TASKS FOR DASHBOARD MODULE
         # =========================================================
         due_range = self.request.GET.get('due_range', 'overdue')  # Default to overdue
 
-        # Base queryset with role-based visibility (same as all_tasks)
         due_tasks_qs = all_tasks.exclude(status='Completed')
 
-        # Apply date range filter
         due_tasks_qs = due_tasks_qs.filter(due_date__lt=today)
         if due_range == 'today':
             due_tasks_qs = due_tasks_qs.filter(due_date=today)
@@ -172,7 +60,6 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context.update(get_performance_cards(self.request.user))
         context.update(tracking(self.request.user))
         context.update(bottom_screen_card())
-        # context.update({**stats_and_finance(self.request.user), **get_performance_cards(self.request.user), **tracking(self.request.user), **bottom_screen_card()})
         # print(context)
         
         context.update({
@@ -204,7 +91,6 @@ def client_search(request):
 # =========================================================
 # AJAX VIEW FOR DUE TASKS FILTERING
 # =========================================================
-from django.contrib.auth.decorators import login_required
 
 
 @login_required
