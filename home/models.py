@@ -874,6 +874,7 @@ class Employee(models.Model):
     role = models.CharField(max_length=255, choices=ROLES_CHOICE)
     supervisor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Supervisor_Or_Manager", null=True,
                                    blank=True)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
