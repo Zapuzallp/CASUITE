@@ -551,15 +551,15 @@ class LeadForm(BootstrapFormMixin, forms.ModelForm):
                 'required': 'required'
             }),
             'full_name': forms.TextInput(attrs={
-                'placeholder': 'e.g., Rajesh Kumar',
+                'placeholder': 'e.g., Full Name',
                 'required': 'required'
             }),
             'email': forms.EmailInput(attrs={
-                'placeholder': 'e.g., rajesh@example.com',
+                'placeholder': 'e.g., example@email.com',
                 'type': 'email'
             }),
             'phone_number': forms.TextInput(attrs={
-                'placeholder': 'e.g., 9876543210',
+                'placeholder': 'e.g., XXXXX-XXXXX',
                 'pattern': '[0-9]{10}',
                 'title': 'Please enter a valid 10-digit phone number',
                 'required': 'required'
@@ -614,6 +614,160 @@ class LeadForm(BootstrapFormMixin, forms.ModelForm):
             raise forms.ValidationError('Lead value cannot be negative.')
 
         return value
+
+
+# ---------------------------------------------------------
+# 5. Employee Form
+# ---------------------------------------------------------
+from home.models import Employee, OfficeDetails
+
+
+class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
+    # Custom user field that allows creating new users
+    first_name = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g., First Name',
+        }),
+        label='First Name'
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g., Last Name',
+        }),
+        label='Last Name'
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g., example@email.com',
+        }),
+        label='Email Address'
+    )
+
+    class Meta:
+        model = Employee
+        fields = ['designation', 'personal_phone', 'work_phone', 'personal_email', 
+                  'office_location', 'role', 'supervisor', 'address']
+        widgets = {
+            'designation': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Designation',
+            }),
+            'personal_phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., XXXXX-XXXXX',
+                'pattern': '[0-9]{10}',
+                'title': 'Enter a valid 10-digit phone number',
+            }),
+            'work_phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., XXXXX-XXXXX',
+                'pattern': '[0-9]{10}',
+                'title': 'Enter a valid 10-digit phone number',
+            }),
+            'personal_email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., example@email.com',
+            }),
+            'office_location': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'role': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'supervisor': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Enter full address...',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Set up supervisor queryset - exclude inactive users
+        self.fields['supervisor'].queryset = User.objects.filter(is_active=True)
+        self.fields['supervisor'].empty_label = "-- Select Supervisor (Optional) --"
+        self.fields['supervisor'].label_from_instance = lambda u: f"{u.first_name} {u.last_name}" if u.first_name else u.username
+        
+        # Mark optional fields
+        self.fields['supervisor'].required = False
+        self.fields['personal_email'].required = False
+        self.fields['address'].required = False
+        self.fields['last_name'].required = False
+
+    def clean_personal_phone(self):
+        """Validate personal phone number"""
+        phone = self.cleaned_data.get('personal_phone', '').strip()
+        if phone:
+            phone = phone.replace(' ', '').replace('-', '')
+            if not phone.isdigit():
+                raise forms.ValidationError('Phone number must contain only digits.')
+            if len(phone) != 10:
+                raise forms.ValidationError('Phone number must be exactly 10 digits.')
+        return phone
+
+    def clean_work_phone(self):
+        """Validate work phone number"""
+        phone = self.cleaned_data.get('work_phone', '').strip()
+        if phone:
+            phone = phone.replace(' ', '').replace('-', '')
+            if not phone.isdigit():
+                raise forms.ValidationError('Phone number must contain only digits.')
+            if len(phone) != 10:
+                raise forms.ValidationError('Phone number must be exactly 10 digits.')
+        return phone
+
+    def clean_email(self):
+        """Check if email already exists"""
+        email = self.cleaned_data.get('email')
+        # Check if email is already used by another user
+        if User.objects.filter(email=email).exclude(username=self.instance.user.username if self.instance.pk else None).exists():
+            raise forms.ValidationError('This email address is already in use.')
+        return email
+
+    def save(self, commit=True):
+        """Override save to create or update user"""
+        instance = super().save(commit=False)
+        
+        first_name = self.cleaned_data.get('first_name')
+        last_name = self.cleaned_data.get('last_name', '')
+        email = self.cleaned_data.get('email')
+        
+        # Create or get user
+        username = first_name.lower()
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={
+                'email': email,
+                'first_name': first_name,
+                'last_name': last_name,
+            }
+        )
+        
+        if not created:
+            # Update existing user
+            user.email = email
+            user.first_name = first_name
+            user.last_name = last_name
+            user.save()
+        
+        instance.user = user
+        
+        if commit:
+            instance.save()
+        
+        return instance
 
 
 # ---------------------------------------------------------
