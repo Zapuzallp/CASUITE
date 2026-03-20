@@ -20,8 +20,6 @@ from home.customViews.notificationView import (
     view_notification,
     all_notifications,
 )
-from home.customViews.client_details_status_change_View import update_single_client_status
-from home.customViews.update_client_status_view import bulk_update_client_status
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
@@ -157,5 +155,6 @@ urlpatterns = [
     #Tutorials
     path("tutorials/", tutorialView.tutorial_list, name="tutorial_list"),
     path("tutorials/add/", tutorialView.add_tutorial, name="add_tutorial"),
+    path('tutorials/delete/<int:tutorial_id>/', tutorialView.delete_tutorial, name='delete_tutorial'),
 
 ]
