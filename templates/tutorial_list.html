@@ -33,10 +33,13 @@
                     {% elif 'youtube' in tutorial.video_url or 'youtu.be' in tutorial.video_url %}
                         <img src="https://img.youtube.com/vi/{{ tutorial.video_id }}/hqdefault.jpg" class="card-img-top tutorial-thumb">
 
+                    {% elif 'drive.google.com' in tutorial.video_url %}
+                        <img src="https://drive.google.com/thumbnail?id={{ tutorial.video_id }}&sz=w800" class="card-img-top tutorial-thumb">
+
                     {% else %}
                         <div class="bg-light d-flex flex-column align-items-center justify-content-center tutorial-thumb border-bottom">
-                            <i class="bi bi-google-play mb-2" style="font-size: 3rem; color: #4285F4;"></i>
-                            <span class="small fw-bold text-secondary">Google Drive Video</span>
+                            <i class="bi bi-film mb-2" style="font-size: 3rem; color: #6c757d;"></i>
+                            <span class="small fw-bold text-secondary">Video</span>
                         </div>
                     {% endif %}
 
@@ -184,16 +187,13 @@
 
 
 <script>
-
 function playVideo(url) {
-
     let html = "";
 
     if (url.includes("youtube") || url.includes("youtu.be")) {
-
         let id = "";
 
-        // Extract ID robustly
+        // Extract ID robustly for YouTube
         if (url.includes("watch?v=")) {
             id = url.split("watch?v=")[1].split("&")[0];
         }
@@ -212,22 +212,36 @@ function playVideo(url) {
             </iframe>
         </div>
         `;
-
     }
     else if (url.includes("drive.google.com")) {
+        let id = "";
 
-        let id = url.split("/d/")[1].split("/")[0];
+        // Extract ID robustly for Google Drive (Handles /d/ and ?id= formats)
+        if (url.includes("/d/")) {
+            id = url.split("/d/")[1].split("/")[0];
+        } else if (url.includes("id=")) {
+            id = url.split("id=")[1].split("&")[0];
+        }
 
-        html = `
-        <div class="ratio ratio-16x9 shadow-lg rounded overflow-hidden">
-            <iframe
-                src="https://drive.google.com/file/d/${id}/preview"
-                frameborder="0"
-                allowfullscreen>
-            </iframe>
-        </div>
-        `;
-
+        if (id) {
+            html = `
+            <div class="ratio ratio-16x9 shadow-lg rounded overflow-hidden">
+                <iframe
+                    src="https://drive.google.com/file/d/${id}/preview"
+                    frameborder="0"
+                    allow="autoplay"
+                    allowfullscreen>
+                </iframe>
+            </div>
+            `;
+        } else {
+            // Failsafe if the URL is completely unrecognizable
+            html = `
+            <div class="alert alert-danger m-3 text-center">
+                <strong>Error:</strong> Could not extract the video ID from the provided Google Drive link. Please ensure it is a valid share link.
+            </div>
+            `;
+        }
     }
 
     // Insert the HTML into the modal body
@@ -249,7 +263,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
 </script>
 
 {% endblock %}
