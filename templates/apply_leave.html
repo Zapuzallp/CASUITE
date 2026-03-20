@@ -305,7 +305,7 @@
                                     {% for item in all_items %}
                                         <tr>
                                             <td>{{ forloop.counter }}</td>
-                                            <td><span class="fw-bold">{{ item.leave_type|title }}</span></td>
+                                            <td><span class="fw-bold">{{ item.get_leave_type_display }}</span></td>
                                             <td>
                                                 <div class="small fw-medium">{{ item.start_date|date:"d M Y" }}</div>
                                                 <div class="text-muted x-small">
@@ -453,7 +453,7 @@
                                  style="width: 80px; height: 80px; font-size: 2rem;"><i class="bi bi-trash"></i></div>
                             <h4 class="fw-bold">Delete Request?</h4>
                             <p class="text-muted">Are you sure you want to cancel your <span
-                                    class="fw-bold text-dark">{{ item.leave_type }}</span> request
+                                    class="fw-bold text-dark">{{ item.get_leave_type_display }}</span> request
                                 for {{ item.start_date }}?</p>
                             <div class="d-flex justify-content-center gap-2 mt-4">
                                 <button class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Keep It</button>
@@ -478,9 +478,9 @@
             const balanceWarning = document.getElementById("balance-warning");
             const submitBtn = document.getElementById("submit-btn");
 
-            const sickBalance = parseInt(document.getElementById("sick-balance").textContent) || 0;
-            const casualBalance = parseInt(document.getElementById("casual-balance").textContent) || 0;
-            const earnedBalance = parseInt(document.getElementById("earned-balance").textContent) || 0;
+            const sickBalance = parseFloat(document.getElementById("sick-balance").textContent) || 0;
+            const casualBalance = parseFloat(document.getElementById("casual-balance").textContent) || 0;
+            const earnedBalance = parseFloat(document.getElementById("earned-balance").textContent) || 0;
 
             function calculateDays() {
                 if (!startInput.value || !endInput.value) {
@@ -494,7 +494,11 @@
 
                 if (endDate < startDate) {
                     output.textContent = "Invalid Dates";
-                    updateRemainingBalance();
+                    remainingAfter.textContent = "-";
+                    remainingAfter.className = "fw-bold text-muted";
+                    balanceWarning.style.display = "block";
+                    balanceWarning.textContent = "End date cannot be earlier than start date.";
+                    submitBtn.disabled = true;
                     return;
                 }
 
@@ -508,6 +512,14 @@
             function updateRemainingBalance(totalDays = 0) {
                 const leaveType = leaveTypeSelect.value;
                 let currentBalance = 0;
+
+                if (leaveType === 'extra_vacation') {
+                    remainingAfter.textContent = "-";
+                    remainingAfter.className = "fw-bold text-muted";
+                    balanceWarning.style.display = "none";
+                    submitBtn.disabled = false;
+                    return;
+                }
 
                 switch (leaveType) {
                     case 'sick':
@@ -552,8 +564,20 @@
             const form = document.getElementById('leaveApplicationForm');
             form.onsubmit = function (e) {
                 const startDate = new Date(startInput.value);
+                const endDate = new Date(endInput.value);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
+
+                if (endInput.value && endDate < startDate) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Date Range',
+                        text: 'End date cannot be earlier than start date.',
+                        confirmButtonColor: '#4f46e5',
+                    });
+                    return false;
+                }
 
                 if (startDate < today) {
                     e.preventDefault();
