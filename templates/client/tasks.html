@@ -339,11 +339,13 @@
        <i class="bi bi-eye"></i>
     </a>
 
-    <!-- Edit -->
+    <!-- Edit - Hidden for Partners -->
+    {% if not is_partner %}
     <a href="{% url 'edit_task' task.id %}"
        class="btn btn-sm btn-outline-warning">
        <i class="bi bi-pencil"></i>
     </a>
+    {% endif %}
 
     <!-- Delete (Only Superuser) -->
     {% if request.user.is_superuser %}

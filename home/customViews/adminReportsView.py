@@ -25,6 +25,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         if user.is_superuser or (hasattr(user, 'employee') and user.employee.role in ['ADMIN', 'PARTNER']):
             # Superuser, Admin, and Partner can see all employees
             employees = User.objects.filter(is_active=True, is_staff=True)
+            offices = OfficeDetails.objects.all()
         elif hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
             # Branch Manager can only see employees in their branch
             branch_manager_office = user.employee.office_location
@@ -34,12 +35,14 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                     is_staff=True,
                     employee__office_location=branch_manager_office
                 )
+                # Branch manager should only see their own office in the filter
+                offices = OfficeDetails.objects.filter(id=branch_manager_office.id)
             else:
                 employees = User.objects.none()
+                offices = OfficeDetails.objects.none()
         else:
             employees = User.objects.none()
-        
-        offices = OfficeDetails.objects.all()
+            offices = OfficeDetails.objects.none()
 
         months = [
             (1, "January"), (2, "February"), (3, "March"),
@@ -83,6 +86,12 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             
         if status_filter:
             records = records.filter(status=status_filter)
+
+        # Apply branch manager restriction to attendance records
+        if hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
+            branch_manager_office = user.employee.office_location
+            if branch_manager_office:
+                records = records.filter(user__employee__office_location=branch_manager_office)
 
         # Generate daily attendance data
         daily_attendance_data = []
@@ -239,6 +248,12 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             ('full_day', 'Full Day Present')
         ]
 
+        # Get branch manager's office for pre-selection
+        branch_manager_office_id = None
+        if hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
+            if user.employee.office_location:
+                branch_manager_office_id = user.employee.office_location.id
+
         context = {
             "employees": employees,
             "offices": offices,
@@ -254,6 +269,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             "status_choices": status_choices,
             "today": today.isoformat(),
             "employee_id": employee_id,
+            "branch_manager_office_id": branch_manager_office_id,
         }
 
         return render(request, self.template_name, context)

@@ -31,6 +31,12 @@ def generate_file_number(office_location):
 # -------------------------------------------------------------------
 @login_required
 def onboard_client_view(request):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        from django.contrib import messages
+        messages.error(request, 'You do not have permission to onboard new clients.')
+        return redirect('clients')
+    
     # Check if converting from lead
     lead_id = request.GET.get('lead_id')
     lead = None

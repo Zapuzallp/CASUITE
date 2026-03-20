@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block head %}
+    <!-- DataTables Responsive CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+{% endblock %}
+
 {% block body %}
     <style>
         /* Scope styles to this page */
@@ -141,6 +146,82 @@
             .table .d-none-mobile {
                 display: none;
             }
+
+            /* DataTables mobile responsive fixes */
+            .dataTables_wrapper .dataTables_length,
+            .dataTables_wrapper .dataTables_filter {
+                margin-bottom: 0.5rem;
+            }
+
+            .dataTables_wrapper .dataTables_length select {
+                width: auto;
+                display: inline-block;
+            }
+
+            .dataTables_wrapper .dataTables_filter input {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .dataTables_wrapper .dataTables_info,
+            .dataTables_wrapper .dataTables_paginate {
+                margin-top: 0.5rem;
+            }
+
+            /* Fix button alignment in action columns */
+            .table td .d-flex {
+                flex-wrap: nowrap;
+                gap: 0.25rem;
+            }
+
+            /* Ensure action buttons stay aligned */
+            .table td .btn-group,
+            .table td .d-flex {
+                justify-content: flex-end;
+            }
+
+            /* DataTables responsive improvements */
+            .dataTables_wrapper .row {
+                margin: 0;
+            }
+
+            .dataTables_wrapper .col-sm-12,
+            .dataTables_wrapper .col-md-6,
+            .dataTables_wrapper .col-md-5,
+            .dataTables_wrapper .col-md-7 {
+                padding: 0.25rem;
+            }
+
+            /* Mobile pagination improvements */
+            .dataTables_wrapper .dataTables_paginate .paginate_button {
+                padding: 0.25rem 0.5rem;
+                margin: 0 0.1rem;
+            }
+
+            /* Search input full width on mobile */
+            .dataTables_wrapper .dataTables_filter {
+                text-align: left;
+            }
+
+            .dataTables_wrapper .dataTables_filter label {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .dataTables_wrapper .dataTables_filter input {
+                flex: 1;
+            }
+
+            /* Length menu improvements */
+            .dataTables_wrapper .dataTables_length label {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+        }
         }
     </style>
 
@@ -698,20 +779,22 @@
                                             </td>
                                             <td>{{ credential.username }}</td>
                                             <td class="text-end">
-                                                <a href="{% url 'view_portal_credential' credential.id %}"
-                                                   class="btn btn-sm btn-outline-primary"
-                                                   title="View Credential">
-                                                    <i class="bi bi-eye"></i> View
-                                                </a>
-                                                {% if not is_partner %}
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-danger"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#deleteCredentialModal{{ credential.id }}"
-                                                        title="Delete Credential">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                                {% endif %}
+                                                <div class="d-flex gap-1 justify-content-end">
+                                                    <a href="{% url 'view_portal_credential' credential.id %}"
+                                                       class="btn btn-sm btn-outline-primary"
+                                                       title="View Credential">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    {% if not is_partner %}
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#deleteCredentialModal{{ credential.id }}"
+                                                            title="Delete Credential">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                </div>
                                             </td>
                                         </tr>
 
@@ -1196,30 +1279,62 @@
 
         // Initialize DataTable for client invoices if the table exists and has data
         document.addEventListener('DOMContentLoaded', function() {
-            var invoiceTable = document.getElementById('clientInvoicesTable');
-            if (invoiceTable) {
-                // Check if table has data rows (not just the empty state)
-                var hasData = invoiceTable.querySelector('tbody tr td:not([colspan])');
-                if (hasData) {
-                    $('#clientInvoicesTable').DataTable({
-                        "pageLength": 10,
-                        "order": [[0, "desc"]], // Sort by Invoice # descending
-                        "language": {
-                            "search": "Search:",
-                            "lengthMenu": "Show _MENU_ entries",
-                            "info": "Showing _START_ to _END_ of _TOTAL_ invoices",
-                            "infoEmpty": "No invoices available",
-                            "paginate": {
-                                "first": "First",
-                                "last": "Last",
-                                "next": "Next",
-                                "previous": "Previous"
+            // Load DataTables Responsive extension
+            if (typeof $.fn.dataTable !== 'undefined') {
+                // Add responsive extension script
+                var script = document.createElement('script');
+                script.src = 'https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js';
+                document.head.appendChild(script);
+                
+                var script2 = document.createElement('script');
+                script2.src = 'https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js';
+                document.head.appendChild(script2);
+                
+                // Wait for scripts to load
+                script2.onload = function() {
+                    initializeInvoiceTable();
+                };
+            } else {
+                initializeInvoiceTable();
+            }
+            
+            function initializeInvoiceTable() {
+                var invoiceTable = document.getElementById('clientInvoicesTable');
+                if (invoiceTable) {
+                    // Check if table has data rows (not just the empty state)
+                    var hasData = invoiceTable.querySelector('tbody tr td:not([colspan])');
+                    if (hasData) {
+                        $('#clientInvoicesTable').DataTable({
+                            "pageLength": 10,
+                            "order": [[0, "desc"]], // Sort by Invoice # descending
+                            "responsive": true,
+                            "language": {
+                                "search": "Search:",
+                                "lengthMenu": "Show _MENU_ entries",
+                                "info": "Showing _START_ to _END_ of _TOTAL_ invoices",
+                                "infoEmpty": "No invoices available",
+                                "paginate": {
+                                    "first": "First",
+                                    "last": "Last",
+                                    "next": "Next",
+                                    "previous": "Previous"
+                                }
+                            },
+                            "columnDefs": [
+                                { "orderable": false, "targets": [9] }, // Disable sorting on Action column
+                                { "responsivePriority": 1, "targets": [0, 1, 9] }, // Keep Invoice#, Subject, and Action visible
+                                { "responsivePriority": 2, "targets": [4, 7] } // Keep Total Amount and Payment Status visible
+                            ],
+                            "dom": "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+                                   "<'row'<'col-sm-12'tr>>" +
+                                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                            "initComplete": function() {
+                                // Add mobile-friendly classes
+                                $('.dataTables_length select').addClass('form-select form-select-sm');
+                                $('.dataTables_filter input').addClass('form-control form-control-sm');
                             }
-                        },
-                        "columnDefs": [
-                            { "orderable": false, "targets": [8] } // Disable sorting on Action column
-                        ]
-                    });
+                        });
+                    }
                 }
             }
         });
