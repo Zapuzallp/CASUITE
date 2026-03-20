@@ -46,10 +46,8 @@ urlpatterns = [
     path('client/<int:client_id>/create-request/', documentsUploadView.create_document_request_view,
          name='create_client_doc_request'),
     path('client/<int:client_id>/create-task/', taskView.create_task_view, name='create_service_task'),
-    path("clients/bulk-update-status/", clientView.bulk_update_client_status, name="bulk_update_client_status", ),
-    path("client/<int:client_id>/update-status/", clientView.update_single_client_status,
-         name="update_single_client_status", ),
-
+    path("clients/bulk-update-status/",clientView.bulk_update_client_status,name="bulk_update_client_status",),
+    path("client/<int:client_id>/update-status/",  clientView.update_single_client_status, name="update_single_client_status",),
     # GST Management
     path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
     path('gst/<int:gst_id>/edit/', clientView.edit_gst_details_view, name='edit_gst_details'),
