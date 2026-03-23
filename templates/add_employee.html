@@ -293,6 +293,31 @@
                         
                         <div class="row g-3">
                             <div class="col-md-6">
+                                <label for="id_username" class="form-label">
+                                    Username <span class="text-danger">*</span>
+                                </label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                    <div class="invalid-feedback" style="display: block;">
+                                        {{ form.username.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_password" class="form-label">
+                                    Password <span class="text-danger">*</span>
+                                </label>
+                                {{ form.password }}
+                                {% if form.password.errors %}
+                                    <div class="invalid-feedback" style="display: block;">
+                                        {{ form.password.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
                                 <label for="id_first_name" class="form-label">
                                     First Name <span class="text-danger">*</span>
                                 </label>

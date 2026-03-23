@@ -642,6 +642,24 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
         }),
         label='Last Name'
     )
+    username = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g., username123',
+        }),
+        label='Username'
+    )
+    password = forms.CharField(
+        max_length=128,
+        required=True,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter temporary password',
+        }),
+        label='Password'
+    )
     email = forms.EmailField(
         required=True,
         widget=forms.EmailInput(attrs={
@@ -736,6 +754,13 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
             raise forms.ValidationError('This email address is already in use.')
         return email
 
+    def clean_username(self):
+        """Check if username already exists"""
+        username = self.cleaned_data.get('username')
+        if User.objects.filter(username=username).exclude(username=self.instance.user.username if self.instance.pk else None).exists():
+            raise forms.ValidationError('This username is already taken.')
+        return username
+
     def save(self, commit=True):
         """Override save to create or update user"""
         instance = super().save(commit=False)
@@ -743,9 +768,10 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
         first_name = self.cleaned_data.get('first_name')
         last_name = self.cleaned_data.get('last_name', '')
         email = self.cleaned_data.get('email')
+        username = self.cleaned_data.get('username')
+        password = self.cleaned_data.get('password')
         
         # Create or get user
-        username = first_name.lower()
         user, created = User.objects.get_or_create(
             username=username,
             defaults={
@@ -755,12 +781,17 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
             }
         )
         
-        if not created:
+        if created and password:
+            user.set_password(password)
+        elif not created:
             # Update existing user
             user.email = email
             user.first_name = first_name
             user.last_name = last_name
-            user.save()
+            if password:
+                user.set_password(password)
+        
+        user.save()
         
         instance.user = user
         

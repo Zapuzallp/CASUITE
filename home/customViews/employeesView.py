@@ -1,19 +1,15 @@
-from home.models import Employee
-from home.forms import EmployeeForm
+import json
 from django.views import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
-import json
-from django.http import HttpResponseForbidden
-from django.views import View
-from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-from home.models import Employee, OfficeDetails
 from django.core.paginator import Paginator
 
+from home.models import Employee, OfficeDetails
+from home.forms import EmployeeForm
 class EmployeeView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
 
@@ -65,7 +61,7 @@ class EmployeeView(LoginRequiredMixin, View):
 
         offices = OfficeDetails.objects.all()
 
-        employees = employees.select_related('user', 'office_location')
+        employees = employees.select_related('user', 'office_location').order_by('-id')
 
         page_number = request.GET.get('page', 1)
 
@@ -79,7 +75,7 @@ class EmployeeView(LoginRequiredMixin, View):
         })
 
 
-class AddEmployeeView(View):
+class AddEmployeeView(LoginRequiredMixin, View):
     """Handle adding a new employee"""
     def get(self, request, *args, **kwargs):
         form = EmployeeForm()
