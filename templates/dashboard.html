@@ -287,7 +287,6 @@
                 padding: 1rem;
             }
 
-            z
             .pagetitle .d-flex {
                 flex-direction: column;
                 align-items: flex-start !important;
@@ -305,6 +304,59 @@
     overflow-y: auto;
         }
 
+        .performer-1 {
+            background: linear-gradient(180deg, #ffffff 0%, #f0f3ff 100%);
+        }
+
+        .performer-2 {
+            background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%);
+        }
+
+        .performer-3 {
+            background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
+        }
+
+        .performer-4 {
+            background: linear-gradient(180deg, #ffffff 0%, #fff1f1 100%);
+        }
+
+        .text-performer-1 { color: #4f46e5; }
+        .text-performer-2 { color: #10b981; }
+        .text-performer-3 { color: #f59e0b; }
+        .text-performer-4 { color: #ef4444; }
+
+        .carousel-nav-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .carousel-nav-btn:hover {
+            background: rgba(0,0,0,0.1);
+            transform: scale(1.1);
+        }
+        .performer-bg-1 { background: #4f46e5; }
+        .performer-bg-2 { background: #10b981; }
+        .performer-bg-3 { background: #f59e0b; }
+        .performer-bg-4 { background: #ef4444; }
+
+        .performer-card {
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .performer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        }
     </style>
 
     <main id="main" class="main-content">
@@ -320,53 +372,48 @@
                 </nav>
             </div>
         </div>
-
-        <div class="header-actions d-flex align-items-center gap-3 mb-4 flex-wrap">
+        <div class="header-actions d-flex gap-2 mb-4">
             <div class="bg-white border rounded-pill px-3 py-2 d-flex align-items-center shadow-sm">
                 <i class="bi bi-calendar3 me-2 text-primary"></i>
                 <span class="small fw-bold">{{ today|date:"M d, Y" }}</span>
             </div>
-
-            <!-- Top Performer Carousel -->
-            <div id="performerCarousel" class="carousel slide flex-grow-1" data-bs-ride="carousel" style="min-width: 250px;">
-                <div class="carousel-inner bg-white border rounded-pill shadow-sm pe-3">
-                    {%  if top_performers %}
-                        {% for performer in top_performers %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <div class="d-flex align-items-center justify-content-between py-2 px-3" style="min-height: 56px;">
-                                <div class="d-flex align-items-center gap-3 overflow-hidden" style="min-width: 0;">
-                                    <!-- Avatar -->
-                                    {% if performer.photo %}
-                                    <img src="{{ performer.photo }}" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;">
-                                    {% else %}
-                                    <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold" style="width:40px;height:40px;font-size:18px; background-color: #6162E6;">
-                                        {{ performer.name|slice:":1"|upper }}
-                                    </div>
-                                    {% endif %}
-                                
-                                <!-- Name + Title -->
-                                    <div class="d-flex align-items-baseline gap-2 text-truncate">
-                                        <span class="fw-bold text-dark fs-6">{{ performer.name }}</span>
-                                        <span class="text-muted small">{{ performer.title }}</span>
-                                    </div>
+        </div>
+        <!-- Top Performer Carousel -->
+        <div class="mb-4">
+            <div id="performerCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner rounded-4 shadow-sm">
+                    {% if top_performers %}
+                    {% for performer in top_performers %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <div class="d-flex align-items-center justify-content-between py-4 px-4 performer-card performer-{{ forloop.counter }}">
+                            <div class="d-flex align-items-center gap-4">
+                                {% if performer.photo %}
+                                <img src="{{ performer.photo }}" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;">
+                                {% else %}
+                                <div class="rounded-circle text-white fw-bold d-flex align-items-center justify-content-center performer-bg-{{ forloop.counter }}" style="width:48px;height:48px;">
+                                    {{ performer.name|slice:":1"|upper }}
                                 </div>
-
-                                <!-- Value + Next -->
-                                <div class="d-flex align-items-center gap-3 ms-3 flex-shrink-0">
-                                    <span class="fw-bold text-primary" style="color: #0d6efd !important;">{{ performer.value }}</span>
-                                    <a href="#" data-bs-target="#performerCarousel" data-bs-slide="next" class="text-muted d-flex align-items-center justify-content-center text-decoration-none" style="width: 24px;">
-                                        <i class="bi bi-chevron-right fs-5"></i>
-                                    </a>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold">{{ performer.name }}</div>
+                                    <small class="text-muted">{{ performer.title }}</small>
                                 </div>
                             </div>
+                            <div class="d-flex align-items-center gap-3" style="min-width:140px; justify-content:end;">
+                                <span class="fw-bold fs-5 text-performer-{{ forloop.counter }}">
+                                    {{ performer.value }}
+                                </span>
+                                <button class="carousel-nav-btn" data-bs-target="#performerCarousel" data-bs-slide="next">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
                         </div>
-                        {% endfor %}
+                    </div>
+                    {% endfor %}
                     {% else %}
-                        <div class="carousel-item active">
-                            <div class="d-flex align-items-center justify-content-center py-2 px-3">
-                                <span class="text-muted small">No performance data available</span>
-                            </div>
-                        </div>
+                    <div class="carousel-item active text-center py-3">
+                        <span class="text-muted">No performance data available</span>
+                    </div>
                     {% endif %}
                 </div>
             </div>

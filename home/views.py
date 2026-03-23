@@ -215,6 +215,20 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 )
             )
 
+        collector = top_collectors.first()
+        if collector and collector.get("total_collection"):
+            photo = f"/media/{collector['created_by__employee__profile_pic']}" if collector.get(
+                "created_by__employee__profile_pic") else None
+
+            top_performers.append(
+                build_performer(
+                    collector["created_by__username"],
+                    "Top Collection",
+                    f"₹{collector['total_collection']}",
+                    photo
+                )
+            )
+
         creator = top_client_creators.first()
         if creator and creator.get("client_count"):
             photo = f"/media/{creator['created_by__employee__profile_pic']}" if creator.get(
@@ -243,19 +257,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 )
             )
 
-        collector = top_collectors.first()
-        if collector and collector.get("total_collection"):
-            photo = f"/media/{collector['created_by__employee__profile_pic']}" if collector.get(
-                "created_by__employee__profile_pic") else None
 
-            top_performers.append(
-                build_performer(
-                    collector["created_by__username"],
-                    "Top Collection",
-                    f"₹{collector['total_collection']}",
-                    photo
-                )
-            )
 
         # =========================================================
         # CONTEXT PACKAGING
