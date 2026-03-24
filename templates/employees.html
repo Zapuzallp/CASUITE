@@ -200,11 +200,13 @@
                     </ol>
                 </nav>
             </div>
+            {% if request.user.is_superuser %}
             <div class="header-actions d-flex gap-2 mb-4">
                 <a href="{% url 'add-employee' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
                     <i class="bi bi-plus-lg me-1"></i> Add Employee
                 </a>
             </div>
+            {% endif %}
         </div>
 
         <section class="section dashboard">
@@ -344,6 +346,10 @@
                                             </td>
                                             {% if request.user.is_superuser %}
                                                 <td>
+                                                    <!-- edit -->
+                                                    <a href="" class="btn btn-outline-primary rounded-pill px-4 shadow-sm fw-bold">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
                                                     <button class="btn btn-outline-danger rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#deleteEmployeeModal"
                                                             data-id="{{ employee.id }}" data-name="{{ employee.user.username }}">
                                                         <i class="bi bi-trash"></i>

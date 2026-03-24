@@ -108,6 +108,6 @@ class EmployeeDeleteView(LoginRequiredMixin, View):
             return HttpResponseForbidden("Only superusers can delete employees.")
 
         employee = get_object_or_404(Employee, pk=pk)
-        employee.delete()
+        employee.user.delete()
 
         return redirect(request.META.get('HTTP_REFERER', 'employee-view'))
