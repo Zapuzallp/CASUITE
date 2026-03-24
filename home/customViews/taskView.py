@@ -15,6 +15,7 @@ from home.forms import TaskForm, TaskExtendedForm
 from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
 from home.clients.client_access import get_accessible_clients
 from home.tasks.task_copy import copy_task
+from home.tasks.task_visibility import get_visible_tasks
 # Import of pagination
 from django.core.paginator import  Paginator
 
@@ -134,26 +135,12 @@ def task_list_view(request):
     Displays a list of tasks with role-based visibility and filtering.
     """
     user = request.user
+    # 1. Get visible tasks (core logic)
+    # Order by latest created
+    tasks_qs = get_visible_tasks(user).order_by('-created_at')
 
-    # 1. Initialize Base QuerySets
-    # We select related fields to optimize database queries
-    tasks_qs = Task.objects.select_related('client', 'created_by').prefetch_related('assignees')
-
-
-    # 2. Role-Based Visibility Logic
-    # Fetch clients accessible to the user using universal role-based logic
-    # (Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
+    # 2. Get clients (UI support)
     clients_qs = get_accessible_clients(user)
-
-    # Task visibility:
-    # - Tasks linked to accessible clients
-    # - OR tasks explicitly assigned to the user
-    tasks_qs = tasks_qs.filter(
-        # Allow tasks if they belong to a client the user can access
-        Q(client__in=clients_qs) |
-        # This ensures assignees always see their tasks, even if client visibility is not given to them
-        Q(assignees=user)
-    ).distinct()
 
     # 3. Apply UI Filters (GET parameters)
     search_query = request.GET.get('q')
@@ -257,19 +244,21 @@ def task_list_view(request):
                 messages.error(request, "Invalid date format.")
 
     # Records per page dropdown value
-    per_page = request.GET.get('per_page','all')
+    per_page = request.GET.get('per_page', '25')
 
     if per_page == "all":
-        per_page_value = tasks_qs.count()
+        per_page_value = tasks_qs.count() or 1
     else:
-        per_page_value = int(per_page)
+        try:
+            per_page_value = int(per_page)
+        except ValueError:
+            per_page = "25"
+            per_page_value = 25
 
-    tasks_qs = tasks_qs.order_by('-created_at')
     # Pagination
     paginator = Paginator(tasks_qs, per_page_value)
-    if len(tasks_qs) > 0:
-        page = request.GET.get('page')
-        tasks_qs = paginator.get_page(page)
+    page = request.GET.get('page')
+    tasks_qs = paginator.get_page(page)
 
 
     # Remove page parameter from query string
@@ -339,23 +328,15 @@ def task_detail_view(request, task_id):
     """
     user = request.user
     is_admin = user.is_superuser
-    # Universal client visibility
-    #(Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
-    accessible_clients = get_accessible_clients(user)
 
-    # Task access:
-    # - Task belongs to an accessible client
-    # - OR user is explicitly assigned
+    # NOTE:
+    # Task visibility is controlled via get_visible_tasks()
+    # Ensures consistency with task_list_view and prevents access mismatch
+
     task = get_object_or_404(
-        Task.objects.filter(
-            # Allow tasks if they belong to a client the user can access
-            Q(client__in=accessible_clients) |
-            # This ensures assignees always see their tasks, even if client visibility is not given to them
-            Q(assignees=user)
-        ).distinct(),
+        get_visible_tasks(user),
         id=task_id
     )
-
     # 1. Load Config & Steps
     config = TASK_CONFIG.get(task.service_type, {})
     workflow_steps = config.get('workflow_steps', DEFAULT_WORKFLOW_STEPS)
@@ -586,7 +567,11 @@ def task_detail_view(request, task_id):
 
 @login_required()
 def edit_task_view(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
+    # Task visibility enforced using centralized logic
+    task = get_object_or_404(
+        get_visible_tasks(request.user),
+        id=task_id
+    )
     client = task.client  # <--- 1. GET CLIENT FROM TASK
 
     # 2. PREPARE CLIENT DATA (Needed for the JS Auto-fill to not crash)
@@ -632,12 +617,17 @@ def copy_task_view(request, task_id):
     Uses shared copy logic.
     """
 
-    original_task = get_object_or_404(Task, id=task_id)
+    # Enforce task visibility before allowing copy
+    original_task = get_object_or_404(
+        get_visible_tasks(request.user),
+        id=task_id
+    )
 
-    # Optional: permission check (keep simple, same as edit/view)
-    if not request.user.has_perm('home.add_task'):
-        messages.error(request, "You do not have permission to copy tasks.")
-        return redirect('task_detail', task_id=task_id)
+    #
+    # # Optional: permission check (keep simple, same as edit/view)
+    # if not request.user.has_perm('home.add_task'):
+    #     messages.error(request, "You do not have permission to copy tasks.")
+    #     return redirect('task_detail', task_id=task_id)
 
     # Reusable copy logic
     new_task = copy_task(
@@ -655,23 +645,11 @@ def copy_task_view(request, task_id):
 def delete_task_view(request, task_id):
 
     user = request.user
-
-    accessible_clients = get_accessible_clients(user)
-
-    task = get_object_or_404(
-        Task.objects.filter(
-            Q(client__in=accessible_clients) |
-            Q(assignees=user)
-        ).distinct(),
-        id=task_id
-    )
-
-    # Only superuser allowed
     if not user.is_superuser:
         messages.error(request, "Only administrators can delete tasks.")
         return redirect('task_list')
 
+    task = get_object_or_404(Task, id=task_id)
     task.delete()
     messages.success(request, "Task deleted successfully.")
-
     return redirect('task_list')
