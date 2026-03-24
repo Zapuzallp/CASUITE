@@ -200,13 +200,17 @@
                     </ol>
                 </nav>
             </div>
-            {% if request.user.is_superuser %}
             <div class="header-actions d-flex gap-2 mb-4">
-                <a href="{% url 'add-employee' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
-                    <i class="bi bi-plus-lg me-1"></i> Add Employee
+                {% if request.user.is_superuser %}
+                    <a href="{% url 'add-employee' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
+                        <i class="bi bi-plus-lg me-1"></i> Add Employee
+                    </a>
+                {% endif %}
+                <a href="{% url 'export-employees' %}?q={{ request.GET.q|default:'' }}&role={{ request.GET.role|default:'' }}&office={{ request.GET.office|default:'' }}"
+                   class="btn btn-success rounded-pill px-4 shadow-sm fw-bold">
+                    <i class="bi bi-download me-1"></i> Export to Excel
                 </a>
             </div>
-            {% endif %}
         </div>
 
         <section class="section dashboard">

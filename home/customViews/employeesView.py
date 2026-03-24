@@ -7,66 +7,19 @@ from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-
 from home.models import Employee, OfficeDetails
 from home.forms import EmployeeForm
+import openpyxl
+from openpyxl.styles import Font
+from django.http import HttpResponse
+
 class EmployeeView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-
-        user = request.user
-
-        # safety check if the user is not employee
-        if not hasattr(user, 'employee') and not user.is_superuser:
-            return HttpResponseForbidden("Employee profile not found.")
-
-        # Superuser → full access
-        if user.is_superuser:
-            employees = Employee.objects.all()
-
-        else:
-            role = user.employee.role
-
-            # Admin → full access view only
-            if role == 'ADMIN':
-                employees = Employee.objects.all()
-
-            #  Branch Manager → only their branch view
-            elif role == 'BRANCH_MANAGER':
-                if user.employee.office_location:
-                    employees = Employee.objects.filter(
-                        office_location=user.employee.office_location
-                    )
-                else:
-                    employees = Employee.objects.none()
-
-            # Staff → blocked
-            else:
-                return HttpResponseForbidden("You do not have permission to view this page.")
-
-        #Filters
-        query = request.GET.get('q')
-        role_filter = request.GET.get('role')
-        office = request.GET.get('office')
-
-        if query:
-            employees = employees.filter(
-                user__username__icontains=query
-            )
-
-        if role_filter:
-            employees = employees.filter(role=role_filter)
-
-        if office:
-            employees = employees.filter(office_location_id=office)
-
+        employees = get_filtered_employees(request)
         offices = OfficeDetails.objects.all()
 
-        employees = employees.select_related('user', 'office_location').order_by('-id')
-
         page_number = request.GET.get('page', 1)
-
         paginator = Paginator(employees, 10)
-
         employees_page = paginator.get_page(page_number)
 
         return render(request, 'employees.html', {
@@ -111,3 +64,108 @@ class EmployeeDeleteView(LoginRequiredMixin, View):
         employee.user.delete()
 
         return redirect(request.META.get('HTTP_REFERER', 'employee-view'))
+
+class ExportEmployeeView(LoginRequiredMixin, View):
+        def get(self, request, *args, **kwargs):
+            employees = get_filtered_employees(request)
+
+            # Create workbook
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Employees"
+
+            # Header row
+            headers = [
+                'First Name', 'Last Name', 'Username', 'Email',
+                'Role', 'Office', 'Designation',
+                'Personal Phone', 'Work Phone'
+            ]
+
+            ws.append(headers)
+
+            # Make header bold
+            for cell in ws[1]:
+                cell.font = Font(bold=True)
+
+            # Helper for phone formatting
+            def format_phone(phone):
+                return str(phone) if phone else ''
+
+            # Add data rows
+            for emp in employees:
+                ws.append([
+                    emp.user.first_name or '',
+                    emp.user.last_name or '',
+                    emp.user.username or '',
+                    emp.user.email or '',
+                    emp.get_role_display() if hasattr(emp, 'get_role_display') else emp.role,
+                    str(emp.office_location) if emp.office_location else '',
+                    emp.designation or '',
+                    format_phone(emp.personal_phone),
+                    format_phone(emp.work_phone),
+                ])
+
+            # Auto-adjust column width (simple version)
+            for col in ws.columns:
+                max_length = 0
+                col_letter = col[0].column_letter
+
+                for cell in col:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+
+                ws.column_dimensions[col_letter].width = max_length + 2
+
+            # Prepare response
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = 'attachment; filename="employees.xlsx"'
+
+            wb.save(response)
+
+            return response
+
+# Reusable to both export and employee view
+def get_filtered_employees(request):
+    user = request.user
+
+    # Safety check
+    if not hasattr(user, 'employee') and not user.is_superuser:
+        return Employee.objects.none()
+
+    # Role-based access
+    if user.is_superuser:
+        employees = Employee.objects.all()
+
+    else:
+        role = user.employee.role
+
+        if role == 'ADMIN':
+            employees = Employee.objects.all()
+
+        elif role == 'BRANCH_MANAGER':
+            if user.employee.office_location:
+                employees = Employee.objects.filter(
+                    office_location=user.employee.office_location
+                )
+            else:
+                employees = Employee.objects.none()
+        else:
+            return Employee.objects.none()
+
+    # Filters
+    query = request.GET.get('q')
+    role_filter = request.GET.get('role')
+    office = request.GET.get('office')
+
+    if query:
+        employees = employees.filter(user__username__icontains=query)
+
+    if role_filter:
+        employees = employees.filter(role=role_filter)
+
+    if office:
+        employees = employees.filter(office_location_id=office)
+
+    return employees.select_related('user', 'office_location').order_by('-id')

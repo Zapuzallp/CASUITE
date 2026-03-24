@@ -158,5 +158,6 @@ urlpatterns = [
     path('employees/view/', employeesView.EmployeeView.as_view(), name='employee-view'),
     path('employees/add/', employeesView.AddEmployeeView.as_view(), name='add-employee'),
     path('employees/delete/<int:pk>/', employeesView.EmployeeDeleteView.as_view(), name='delete_employee'),
+    path('employees/export/', employeesView.ExportEmployeeView.as_view(), name='export-employees'),
 
 ]
