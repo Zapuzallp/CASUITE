@@ -91,7 +91,7 @@ class AddEmployeeView(LoginRequiredMixin, View):
                     request,
                     f'Employee {employee.user.first_name} {employee.user.last_name} added successfully!'
                 )
-                return redirect('employee-view')
+                return redirect('add-employee')
             except Exception as e:
                 messages.error(request, f'Error creating employee: {str(e)}')
                 return render(request, 'add_employee.html', {'form': form})

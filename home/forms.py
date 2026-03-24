@@ -726,7 +726,8 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
 
     def clean_personal_phone(self):
         """Validate personal phone number"""
-        phone = self.cleaned_data.get('personal_phone', '').strip()
+        phone = self.cleaned_data.get('personal_phone') or ''
+        phone = phone.strip()
         if phone:
             phone = phone.replace(' ', '').replace('-', '')
             if not phone.isdigit():
@@ -737,7 +738,8 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
 
     def clean_work_phone(self):
         """Validate work phone number"""
-        phone = self.cleaned_data.get('work_phone', '').strip()
+        phone = self.cleaned_data.get('work_phone') or ''
+        phone = phone.strip()
         if phone:
             phone = phone.replace(' ', '').replace('-', '')
             if not phone.isdigit():
@@ -793,7 +795,17 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
         
         user.save()
         
-        instance.user = user
+        # If a signal already created an Employee profile for this User, 
+        # we must update it to avoid a UNIQUE constraint error on user_id.
+        if hasattr(user, 'employee'):
+            employee_profile = user.employee
+            # Copy fields from our current form instance to the existing profile
+            for field in self.Meta.fields:
+                if hasattr(instance, field):
+                    setattr(employee_profile, field, getattr(instance, field))
+            instance = employee_profile
+        else:
+            instance.user = user
         
         if commit:
             instance.save()
