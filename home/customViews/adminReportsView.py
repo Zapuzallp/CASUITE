@@ -304,7 +304,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
 
                     # Append remark
                     new_remark = request.POST.get("remarks") or "Auto clock out"
-                    formatted_remark = f"{user_name}: {new_remark}"
+                    formatted_remark = f"clocked out by {user_name} : {new_remark}"
 
                     if attendance.remark:
                         attendance.remark += " | " + formatted_remark
@@ -335,6 +335,13 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
 
             if new_status:
                 updated_count = 0
+                action_map = {
+                    'pending': 'pending by',
+                    'approved': 'approved by',
+                    'rejected': 'rejected by',
+                    'half_day': 'marked as half-day by',
+                    'full_day': 'marked as full-day by'
+                }
 
                 for record_id in selected_records:
                     try:
@@ -347,7 +354,8 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             distance_text = f"{attendance.distance}m away" if hasattr(attendance,
                                                                                       'distance') and attendance.distance else ""
 
-                            formatted_remark = f"{distance_text} | approved by {user_name} : {new_remark}"
+                            action_text = action_map.get(new_status, "updated by")
+                            formatted_remark = f"{distance_text} | {action_text} {user_name} : {new_remark}"
 
                             if attendance.remark:
                                 # ✅ Prevent duplicate append
