@@ -257,12 +257,12 @@
     <main id="main" class="main-content">
         <!-- Page Header -->
         <div class="pagetitle mb-4">
-            <h1>Add New Employee</h1>
+            <h1>{% if is_edit %}Edit Employee{% else %}Add New Employee{% endif %}</h1>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'employee-view' %}">Employees</a></li>
-                    <li class="breadcrumb-item active">Add Employee</li>
+                    <li class="breadcrumb-item active">{% if is_edit %}Edit{% else %}Add{% endif %} Employee</li>
                 </ol>
             </nav>
         </div>
@@ -315,7 +315,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="id_password" class="form-label">
-                                    Password <span class="text-danger">*</span>
+                                    Password {% if not is_edit %}<span class="text-danger">*</span>{% endif %}
                                 </label>
                                 {{ form.password }}
                                 <div class="form-check mt-2">
@@ -484,7 +484,7 @@
                             <i class="bi bi-arrow-left me-2"></i>Back to Employees
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle me-2"></i>Add Employee
+                            <i class="bi bi-check-circle me-2"></i>{% if is_edit %}Update{% else %}Add{% endif %} Employee
                         </button>
                     </div>
                 </form>

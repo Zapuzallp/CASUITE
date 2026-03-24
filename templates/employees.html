@@ -204,8 +204,21 @@
                 <a href="{% url 'add-employee' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
                     <i class="bi bi-plus-lg me-1"></i> Add Employee
                 </a>
+                <button class="btn btn-success rounded-pill px-4 shadow-sm fw-bold" id="exportExcel">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+                </button>
             </div>
         </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
 
         <section class="section dashboard">
             <!-- Row 1: Employee Table -->
@@ -344,10 +357,15 @@
                                             </td>
                                             {% if request.user.is_superuser %}
                                                 <td>
-                                                    <button class="btn btn-outline-danger rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#deleteEmployeeModal"
-                                                            data-id="{{ employee.id }}" data-name="{{ employee.user.username }}">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
+                                                    <div class="d-flex gap-2 justify-content-center">
+                                                        <a href="{% url 'edit-employee' employee.id %}" class="btn btn-outline-primary rounded-pill px-3 shadow-sm fw-bold">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                        <button class="btn btn-outline-danger rounded-pill px-3 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#deleteEmployeeModal"
+                                                                data-id="{{ employee.id }}" data-name="{{ employee.user.username }}">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             {% endif %}
                                         </tr>
