@@ -29,29 +29,47 @@ class EmployeeView(LoginRequiredMixin, View):
 
 
 class AddEmployeeView(LoginRequiredMixin, View):
-    """Handle adding a new employee"""
-    def get(self, request, *args, **kwargs):
-        form = EmployeeForm()
-        return render(request, 'add_employee.html', {'form': form})
+    """Handle adding and editing an employee"""
+    def get(self, request, pk=None, *args, **kwargs):
+        instance = None
+        if pk:
+            instance = get_object_or_404(Employee, pk=pk)
+            
+        form = EmployeeForm(instance=instance)
+        return render(request, 'add_employee.html', {
+            'form': form,
+            'is_edit': bool(pk),
+            'employee': instance
+        })
     
-    def post(self, request, *args, **kwargs):
-        form = EmployeeForm(request.POST)
+    def post(self, request, pk=None, *args, **kwargs):
+        instance = None
+        if pk:
+            instance = get_object_or_404(Employee, pk=pk)
+            
+        form = EmployeeForm(request.POST, request.FILES, instance=instance)
         
         if form.is_valid():
             try:
                 employee = form.save()
+                action = "updated" if pk else "added"
                 messages.success(
                     request,
-                    f'Employee {employee.user.first_name} {employee.user.last_name} added successfully!'
+                    f'Employee {employee.user.first_name} {employee.user.last_name} {action} successfully!'
                 )
+                if pk:
+                    return redirect('employee-view')
                 return redirect('add-employee')
             except Exception as e:
-                messages.error(request, f'Error creating employee: {str(e)}')
-                return render(request, 'add_employee.html', {'form': form})
+                messages.error(request, f'Error saving employee: {str(e)}')
         else:
             messages.error(request, 'Please correct the errors below.')
         
-        return render(request, 'add_employee.html', {'form': form})
+        return render(request, 'add_employee.html', {
+            'form': form,
+            'is_edit': bool(pk),
+            'employee': instance
+        })
 
 
 class EmployeeDeleteView(LoginRequiredMixin, View):

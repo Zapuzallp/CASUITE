@@ -723,6 +723,18 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
         self.fields['personal_email'].required = False
         self.fields['address'].required = False
         self.fields['last_name'].required = False
+        
+        # If editing, make password optional and populate user fields from the linked User model
+        if self.instance and self.instance.pk and hasattr(self.instance, 'user'):
+            self.fields['password'].required = False
+            self.fields['password'].help_text = "Leave blank to keep current password"
+            
+            # Populate initial values for custom fields from the related User object
+            user = self.instance.user
+            self.fields['username'].initial = user.username
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial = user.last_name
+            self.fields['email'].initial = user.email
 
     def clean_personal_phone(self):
         """Validate personal phone number"""

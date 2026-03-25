@@ -210,8 +210,21 @@
                    class="btn btn-success rounded-pill px-4 shadow-sm fw-bold">
                     <i class="bi bi-download me-1"></i> Export to Excel
                 </a>
+                <button class="btn btn-success rounded-pill px-4 shadow-sm fw-bold" id="exportExcel">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+                </button>
             </div>
         </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
 
         <section class="section dashboard">
             <!-- Row 1: Employee Table -->
@@ -350,10 +363,6 @@
                                             </td>
                                             {% if request.user.is_superuser %}
                                                 <td>
-                                                    <!-- edit -->
-                                                    <a href="" class="btn btn-outline-primary rounded-pill px-4 shadow-sm fw-bold">
-                                                        <i class="bi bi-pencil"></i>
-                                                    </a>
                                                     <button class="btn btn-outline-danger rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#deleteEmployeeModal"
                                                             data-id="{{ employee.id }}" data-name="{{ employee.user.username }}">
                                                         <i class="bi bi-trash"></i>
