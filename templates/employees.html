@@ -210,9 +210,6 @@
                    class="btn btn-success rounded-pill px-4 shadow-sm fw-bold">
                     <i class="bi bi-download me-1"></i> Export to Excel
                 </a>
-                <button class="btn btn-success rounded-pill px-4 shadow-sm fw-bold" id="exportExcel">
-                    <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
-                </button>
             </div>
         </div>
 
@@ -317,6 +314,9 @@
                                         <th>Office Location</th>
                                         <th>Contact Info</th>
                                         <th>Status</th>
+                                        {% if request.user.is_superuser %}
+                                        <th class="text-center">Actions</th>
+                                        {% endif %}
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -363,10 +363,15 @@
                                             </td>
                                             {% if request.user.is_superuser %}
                                                 <td>
-                                                    <button class="btn btn-outline-danger rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#deleteEmployeeModal"
-                                                            data-id="{{ employee.id }}" data-name="{{ employee.user.username }}">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
+                                                    <div class="d-flex gap-2 justify-content-center">
+                                                        <a href="{% url 'edit-employee' employee.id %}" class="btn btn-outline-primary rounded-pill px-3 shadow-sm fw-bold">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                        <button class="btn btn-outline-danger rounded-pill px-3 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#deleteEmployeeModal"
+                                                                data-id="{{ employee.id }}" data-name="{{ employee.user.username }}">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             {% endif %}
                                         </tr>

@@ -2,518 +2,524 @@
 {% load static %}
 
 {% block body %}
-    <style>
-        :root {
-            --primary-color: #4f46e5;
-            --secondary-color: #7c3aed;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --bg-body: #f8fafc;
-            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
+<style>
+    :root {
+        --primary-color: #4f46e5;
+        --secondary-color: #7c3aed;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+        --bg-body: #f8fafc;
+        --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
 
-        body {
-            background-color: var(--bg-body);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            color: #1e293b;
-        }
+    body {
+        background-color: var(--bg-body);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        color: #1e293b;
+    }
 
+    .main-content {
+        padding: 2rem 1.5rem;
+        max-width: 100%;
+        min-height: 100vh;
+    }
+
+    /* Header Styling */
+    .pagetitle h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb-employee {
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    /* Card Styling */
+    .card {
+        border: none;
+        border-radius: 1.5rem;
+        box-shadow: var(--card-shadow);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+        background: #ffffff;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-body {
+        padding: 2.5rem;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    /* Form Label Styling */
+    .form-label {
+        font-size: 0.875rem;
+        color: #334155;
+        margin-bottom: 0.5rem;
+        display: block;
+        font-weight: 600;
+    }
+
+    .form-label .text-danger {
+        color: #ef4444;
+        margin-left: 2px;
+    }
+
+    /* Form Control Styling */
+    .form-control,
+    .form-select {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        background-color: #ffffff;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        outline: none;
+    }
+
+    .form-control::placeholder {
+        color: #cbd5e1;
+    }
+
+    /* Form Section Styling */
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .form-section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .form-section-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
+        display: block;
+    }
+
+    /* Error Message Styling */
+    .invalid-feedback {
+        font-size: 0.8rem;
+        color: #ef4444;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    .form-control.is-invalid,
+    .form-select.is-invalid {
+        border-color: #ef4444;
+    }
+
+    /* Alert Styling */
+    .alert {
+        border: none;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .alert-danger {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .alert-success {
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+
+    /* Button Styling */
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background-color: #4338ca;
+        border-color: #4338ca;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #f1f5f9;
+        border-color: #e2e8f0;
+        color: #334155;
+        padding: 0.75rem 2rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background-color: #e2e8f0;
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+
+    /* Button Group */
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2.5rem;
+    }
+
+    .button-group .btn {
+        min-width: 150px;
+    }
+
+    /* Breadcrumb Styling */
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+        margin: 0;
+    }
+
+    .breadcrumb-item {
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+
+    .breadcrumb-item.active {
+        color: #1e293b;
+        font-weight: 600;
+    }
+
+    .breadcrumb-item a {
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb-item a:hover {
+        color: #4338ca;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
         .main-content {
-            padding: 2rem 1.5rem;
-            max-width: 100%;
-            min-height: 100vh;
-        }
-
-        /* Header Styling */
-        .pagetitle h1 {
-            font-size: 1.75rem;
-            font-weight: 800;
-            letter-spacing: -0.025em;
-            margin-bottom: 0.5rem;
-        }
-
-        .breadcrumb-employee {
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        /* Card Styling */
-        .card {
-            border: none;
-            border-radius: 1.5rem;
-            box-shadow: var(--card-shadow);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            overflow: hidden;
-            background: #ffffff;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem 1rem;
         }
 
         .card-body {
-            padding: 2.5rem;
+            padding: 1.75rem;
         }
 
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-
-        /* Form Label Styling */
-        .form-label {
-            font-size: 0.875rem;
-            color: #334155;
-            margin-bottom: 0.5rem;
-            display: block;
-            font-weight: 600;
-        }
-
-        .form-label .text-danger {
-            color: #ef4444;
-            margin-left: 2px;
-        }
-
-        /* Form Control Styling */
-        .form-control, .form-select {
-            border: 1.5px solid #e2e8f0;
-            border-radius: 0.75rem;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            transition: all 0.2s ease;
-            background-color: #ffffff;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-            outline: none;
-        }
-
-        .form-control::placeholder {
-            color: #cbd5e1;
-        }
-
-        /* Form Section Styling */
-        .form-section {
-            margin-bottom: 2rem;
-            padding-bottom: 2rem;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .form-section:last-of-type {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .form-section-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: #64748b;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            margin-bottom: 1.5rem;
-            display: block;
-        }
-
-        /* Error Message Styling */
-        .invalid-feedback {
-            font-size: 0.8rem;
-            color: #ef4444;
-            margin-top: 0.25rem;
-            display: block;
-        }
-
-        .form-control.is-invalid,
-        .form-select.is-invalid {
-            border-color: #ef4444;
-        }
-
-        /* Alert Styling */
-        .alert {
-            border: none;
-            border-radius: 0.75rem;
-            padding: 1rem 1.25rem;
-            margin-bottom: 2rem;
-        }
-
-        .alert-danger {
-            background-color: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .alert-success {
-            background-color: #dcfce7;
-            color: #15803d;
-        }
-
-        /* Button Styling */
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            color: white;
-            padding: 0.75rem 2rem;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            border: none;
-        }
-
-        .btn-primary:hover {
-            background-color: #4338ca;
-            border-color: #4338ca;
-            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
-            color: white;
-        }
-
-        .btn-secondary {
-            background-color: #f1f5f9;
-            border-color: #e2e8f0;
-            color: #334155;
-            padding: 0.75rem 2rem;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-
-        .btn-secondary:hover {
-            background-color: #e2e8f0;
-            border-color: #cbd5e1;
-            color: #334155;
-        }
-
-        /* Button Group */
         .button-group {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 2.5rem;
+            flex-direction: column;
         }
 
         .button-group .btn {
-            min-width: 150px;
+            width: 100%;
+            min-width: unset;
         }
 
-        /* Breadcrumb Styling */
-        .breadcrumb {
-            background-color: transparent;
-            padding: 0;
-            margin: 0;
+        .pagetitle h1 {
+            font-size: 1.5rem;
         }
+    }
+</style>
 
-        .breadcrumb-item {
-            color: #64748b;
-            font-size: 0.875rem;
-        }
+<main id="main" class="main-content">
+    <!-- Page Header -->
+    <div class="pagetitle mb-4">
+        <h1>{% if is_edit %}Edit Employee{% else %}Add New Employee{% endif %}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'employee-view' %}">Employees</a></li>
+                <li class="breadcrumb-item active">{% if is_edit %}Edit{% else %}Add{% endif %} Employee</li>
+            </ol>
+        </nav>
+    </div>
 
-        .breadcrumb-item.active {
-            color: #1e293b;
-            font-weight: 600;
-        }
+    <!-- Form Card -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Employee Information</h5>
 
-        .breadcrumb-item a {
-            color: var(--primary-color);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .breadcrumb-item a:hover {
-            color: #4338ca;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 1.5rem 1rem;
-            }
-
-            .card-body {
-                padding: 1.75rem;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-
-            .button-group .btn {
-                width: 100%;
-                min-width: unset;
-            }
-
-            .pagetitle h1 {
-                font-size: 1.5rem;
-            }
-        }
-    </style>
-
-    <main id="main" class="main-content">
-        <!-- Page Header -->
-        <div class="pagetitle mb-4">
-            <h1>{% if is_edit %}Edit Employee{% else %}Add New Employee{% endif %}</h1>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'employee-view' %}">Employees</a></li>
-                    <li class="breadcrumb-item active">{% if is_edit %}Edit{% else %}Add{% endif %} Employee</li>
-                </ol>
-            </nav>
-        </div>
-
-        <!-- Form Card -->
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Employee Information</h5>
-
-                <!-- Messages -->
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-
-                <!-- Error Messages -->
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <strong>Error!</strong>
-                        {% for error in form.non_field_errors %}
-                            <div>{{ error }}</div>
-                        {% endfor %}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endif %}
-
-                <!-- Form -->
-                <form method="POST" class="form" id="employeeForm">
-                    {% csrf_token %}
-
-                    <!-- User Information Section -->
-                    <div class="form-section">
-                        <span class="form-section-title">User Information</span>
-                        
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="id_username" class="form-label">
-                                    Username <span class="text-danger">*</span>
-                                </label>
-                                {{ form.username }}
-                                {% if form.username.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.username.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="id_password" class="form-label">
-                                    Password {% if not is_edit %}<span class="text-danger">*</span>{% endif %}
-                                </label>
-                                {{ form.password }}
-                                <div class="form-check mt-2">
-                                    <input class="form-check-input" type="checkbox" id="showPassword">
-                                    <label class="form-check-label" for="showPassword" style="font-size: 0.8rem; font-weight: 500; color: #64748b;">
-                                        Show Password
-                                    </label>
-                                </div>
-                                {% if form.password.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.password.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-1">
-                            <div class="col-md-6">
-                                <label for="id_first_name" class="form-label">
-                                    First Name <span class="text-danger">*</span>
-                                </label>
-                                {{ form.first_name }}
-                                {% if form.first_name.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.first_name.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="id_last_name" class="form-label">Last Name</label>
-                                {{ form.last_name }}
-                                {% if form.last_name.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.last_name.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-1">
-                            <div class="col-md-12">
-                                <label for="id_email" class="form-label">
-                                    Email Address <span class="text-danger">*</span>
-                                </label>
-                                {{ form.email }}
-                                {% if form.email.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.email.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Professional Information Section -->
-                    <div class="form-section">
-                        <span class="form-section-title">Professional Information</span>
-                        
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="id_designation" class="form-label">
-                                    Designation <span class="text-danger">*</span>
-                                </label>
-                                {{ form.designation }}
-                                {% if form.designation.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.designation.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="id_role" class="form-label">
-                                    Role <span class="text-danger">*</span>
-                                </label>
-                                {{ form.role }}
-                                {% if form.role.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.role.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-1">
-                            <div class="col-md-6">
-                                <label for="id_office_location" class="form-label">
-                                    Office Location <span class="text-danger">*</span>
-                                </label>
-                                {{ form.office_location }}
-                                {% if form.office_location.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.office_location.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="id_supervisor" class="form-label">Supervisor</label>
-                                {{ form.supervisor }}
-                                {% if form.supervisor.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.supervisor.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Contact Information Section -->
-                    <div class="form-section">
-                        <span class="form-section-title">Contact Details</span>
-                        
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="id_work_phone" class="form-label">
-                                    Work Phone <span class="text-danger">*</span>
-                                </label>
-                                {{ form.work_phone }}
-                                {% if form.work_phone.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.work_phone.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="id_personal_phone" class="form-label">Personal Phone</label>
-                                {{ form.personal_phone }}
-                                {% if form.personal_phone.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.personal_phone.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-1">
-                            <div class="col-md-12">
-                                <label for="id_personal_email" class="form-label">Personal Email</label>
-                                {{ form.personal_email }}
-                                {% if form.personal_email.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.personal_email.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Address Section -->
-                    <div class="form-section">
-                        <div class="row g-3">
-                            <div class="col-md-12">
-                                <label for="id_address" class="form-label">Address</label>
-                                {{ form.address }}
-                                {% if form.address.errors %}
-                                    <div class="invalid-feedback" style="display: block;">
-                                        {{ form.address.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Buttons -->
-                    <div class="button-group">
-                        <a href="{% url 'employee-view' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left me-2"></i>Back to Employees
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-circle me-2"></i>{% if is_edit %}Update{% else %}Add{% endif %} Employee
-                        </button>
-                    </div>
-                </form>
+            <!-- Messages -->
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show"
+                role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Error Messages -->
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Error!</strong>
+                {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+                {% endfor %}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            <!-- Form -->
+            <form method="POST" class="form" id="employeeForm">
+                {% csrf_token %}
+
+                <!-- User Information Section -->
+                <div class="form-section">
+                    <span class="form-section-title">User Information</span>
+
+                    <div class="row g-3">
+                        <div class="{% if is_edit %}col-md-12{% else %}col-md-6{% endif %}">
+                            <label for="id_username" class="form-label">
+                                Username <span class="text-danger">*</span>
+                            </label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.username.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% if not is_edit %}
+                        <div class="col-md-6">
+                            <label for="id_password" class="form-label">
+                                Password <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password }}
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="showPassword">
+                                <label class="form-check-label" for="showPassword"
+                                    style="font-size: 0.8rem; font-weight: 500; color: #64748b;">
+                                    Show Password
+                                </label>
+                            </div>
+                            {% if form.password.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.password.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label for="id_first_name" class="form-label">
+                                First Name <span class="text-danger">*</span>
+                            </label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.first_name.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_last_name" class="form-label">Last Name</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.last_name.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-12">
+                            <label for="id_email" class="form-label">
+                                Email Address <span class="text-danger">*</span>
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.email.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Information Section -->
+                <div class="form-section">
+                    <span class="form-section-title">Professional Information</span>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="id_designation" class="form-label">
+                                Designation <span class="text-danger">*</span>
+                            </label>
+                            {{ form.designation }}
+                            {% if form.designation.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.designation.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_role" class="form-label">
+                                Role <span class="text-danger">*</span>
+                            </label>
+                            {{ form.role }}
+                            {% if form.role.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.role.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label for="id_office_location" class="form-label">
+                                Office Location <span class="text-danger">*</span>
+                            </label>
+                            {{ form.office_location }}
+                            {% if form.office_location.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.office_location.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_supervisor" class="form-label">Supervisor</label>
+                            {{ form.supervisor }}
+                            {% if form.supervisor.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.supervisor.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information Section -->
+                <div class="form-section">
+                    <span class="form-section-title">Contact Details</span>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="id_work_phone" class="form-label">
+                                Work Phone <span class="text-danger">*</span>
+                            </label>
+                            {{ form.work_phone }}
+                            {% if form.work_phone.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.work_phone.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_personal_phone" class="form-label">Personal Phone</label>
+                            {{ form.personal_phone }}
+                            {% if form.personal_phone.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.personal_phone.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-12">
+                            <label for="id_personal_email" class="form-label">Personal Email</label>
+                            {{ form.personal_email }}
+                            {% if form.personal_email.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.personal_email.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Address Section -->
+                <div class="form-section">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="id_address" class="form-label">Address</label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                            <div class="invalid-feedback" style="display: block;">
+                                {{ form.address.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="button-group">
+                    <a href="{% url 'employee-view' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Employees
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-2"></i>{% if is_edit %}Update{% else %}Add{% endif %} Employee
+                    </button>
+                </div>
+            </form>
         </div>
-    </main>
+    </div>
+</main>
 
-    <script>
-        // Enhance form with Bootstrap validation classes
-        document.getElementById('employeeForm')?.addEventListener('submit', function(e) {
-            // Form will submit normally - no AJAX needed
-        });
+<script>
+    // Enhance form with Bootstrap validation classes
+    document.getElementById('employeeForm')?.addEventListener('submit', function (e) {
+        // Form will submit normally - no AJAX needed
+    });
 
-        // Add focus styling
-        document.querySelectorAll('.form-control, .form-select').forEach(field => {
-            field.addEventListener('focus', function() {
-                this.parentElement.classList.add('focused');
-            });
-            field.addEventListener('blur', function() {
-                this.parentElement.classList.remove('focused');
-            });
+    // Add focus styling
+    document.querySelectorAll('.form-control, .form-select').forEach(field => {
+        field.addEventListener('focus', function () {
+            this.parentElement.classList.add('focused');
         });
+        field.addEventListener('blur', function () {
+            this.parentElement.classList.remove('focused');
+        });
+    });
 
-        // Toggle Password Visibility
-        document.getElementById('showPassword')?.addEventListener('change', function() {
-            const passwordField = document.getElementById('id_password');
-            if (passwordField) {
-                passwordField.type = this.checked ? 'text' : 'password';
-            }
-        });
-    </script>
+    // Toggle Password Visibility
+    document.getElementById('showPassword')?.addEventListener('change', function () {
+        const passwordField = document.getElementById('id_password');
+        if (passwordField) {
+            passwordField.type = this.checked ? 'text' : 'password';
+        }
+    });
+</script>
 {% endblock body %}

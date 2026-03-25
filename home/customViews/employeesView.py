@@ -57,9 +57,7 @@ class AddEmployeeView(LoginRequiredMixin, View):
                     request,
                     f'Employee {employee.user.first_name} {employee.user.last_name} {action} successfully!'
                 )
-                if pk:
-                    return redirect('employee-view')
-                return redirect('add-employee')
+                return redirect('employee-view')
             except Exception as e:
                 messages.error(request, f'Error saving employee: {str(e)}')
         else:
@@ -125,7 +123,7 @@ class ExportEmployeeView(LoginRequiredMixin, View):
 
             # Auto-adjust column width (simple version)
             for col in ws.columns:
-                max_length = 0
+                max_length: int = 0
                 col_letter = col[0].column_letter
 
                 for cell in col:
