@@ -18,8 +18,18 @@ class EmployeeView(LoginRequiredMixin, View):
         employees = get_filtered_employees(request)
         offices = OfficeDetails.objects.all()
 
+        per_page = request.GET.get('per_page', 10)
+
+        if per_page == "all":
+            per_page = employees.count()
+        else:
+            try:
+                per_page = int(per_page)
+            except:
+                per_page = 10
+
         page_number = request.GET.get('page', 1)
-        paginator = Paginator(employees, 10)
+        paginator = Paginator(employees, per_page)
         employees_page = paginator.get_page(page_number)
 
         return render(request, 'employees.html', {
@@ -184,4 +194,4 @@ def get_filtered_employees(request):
     if office:
         employees = employees.filter(office_location_id=office)
 
-    return employees.select_related('user', 'office_location').order_by('-id')
+    return employees.select_related('user', 'office_location').order_by('user__username')

@@ -224,13 +224,7 @@
         {% endif %}
 
         <section class="section dashboard">
-            <!-- Row 1: Employee Table -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title mb-4">Employees</h5>
-                            <div class="accordion mb-4" id="employeeFilterAccordion">
+            <div class="accordion mb-4" id="employeeFilterAccordion">
                                 <div class="accordion-item border-0 shadow-sm">
 
                                     <!-- Header -->
@@ -302,12 +296,40 @@
 
                                 </div>
                             </div>
+            <!-- Row 1: Employee Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-2 mb-3">
+
+                                <h5 class="card-title m-0">Employees</h5>
+
+                                <!-- Show dropdown BELOW title -->
+                                <form method="get" class="d-flex align-items-center gap-2">
+                                    {% for key,value in request.GET.items %}
+                                        {% if key != "per_page" and key != "page" %}
+                                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <label class="small text-muted mb-0">Show</label>
+                                    <select name="per_page" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                        <option value="10" {% if request.GET.per_page == "10" %}selected{% endif %}>10</option>
+                                        <option value="25" {% if request.GET.per_page == "25" %}selected{% endif %}>25</option>
+                                        <option value="50" {% if request.GET.per_page == "50" %}selected{% endif %}>50</option>
+                                        <option value="100" {% if request.GET.per_page == "100" %}selected{% endif %}>100</option>
+                                    </select>
+                                </form>
+
+                            </div>
+
 
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead>
                                     <tr>
-                                        <th>Sr. No.</th>
+                                        <th scope="col">#</th>
                                         <th>Name</th>
                                         <th>Designation</th>
                                         <th>Role</th>
@@ -322,7 +344,7 @@
                                     <tbody>
                                     {% for employee in employees %}
                                         <tr>
-                                            <td>{{ employee.id }}</td>
+                                            <td>{{ forloop.counter|add:employees.start_index|add:"-1" }}</td>
                                             <td class="d-flex align-items-center gap-2">
 
                                                 <!-- Profile Image -->
@@ -386,44 +408,57 @@
                                 </table>
                             </div>
 
-                            <div class="d-flex justify-content-between align-items-center mt-4">
+                            {% if employees %}
+                            <div class="mt-4">
+                                <nav aria-label="Employee pagination">
+                                    <ul class="pagination justify-content-center flex-wrap gap-1">
 
-                                <!-- Left side (info - optional) -->
-                                <p class="text-muted small mb-0">
-                                    Page {{ employees.number }} of {{ employees.paginator.num_pages }}
-                                </p>
-
-                                <!-- Right side (pagination) -->
-                                <nav>
-                                    <ul class="pagination mb-0">
-
-                                        {% if employees.has_previous %}
-                                            <li class="page-item">
-                                                <a class="page-link"
-                                                   href="?page={{ employees.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.role %}&role={{ request.GET.role }}{% endif %}{% if request.GET.office %}&office={{ request.GET.office }}{% endif %}">
-                                                    &laquo;
-                                                </a>
-                                            </li>
-                                        {% endif %}
-
-                                        <li class="page-item active">
-                                            <span class="page-link">{{ employees.number }}</span>
+                                        <li class="page-item {% if not employees.has_previous %}disabled{% endif %}">
+                                            <a class="page-link"
+                                               {% if employees.has_previous %}
+                                               href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                               {% endif %}>
+                                               <<
+                                            </a>
                                         </li>
 
-                                        {% if employees.has_next %}
-                                            <li class="page-item">
-                                                <a class="page-link"
-                                                   href="?page={{ employees.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.role %}&role={{ request.GET.role }}{% endif %}{% if request.GET.office %}&office={{ request.GET.office }}{% endif %}">
-                                                    &raquo;
-                                                </a>
-                                            </li>
-                                        {% endif %}
+                                        <li class="page-item {% if not employees.has_previous %}disabled{% endif %}">
+                                            <a class="page-link"
+                                               {% if employees.has_previous %}
+                                               href="?page={{ employees.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                               {% endif %}>
+                                               <
+                                            </a>
+                                        </li>
+
+                                        <li class="page-item active">
+                                            <span class="page-link">
+                                                {{ employees.number }} / {{ employees.paginator.num_pages }}
+                                            </span>
+                                        </li>
+
+                                        <li class="page-item {% if not employees.has_next %}disabled{% endif %}">
+                                            <a class="page-link"
+                                               {% if employees.has_next %}
+                                               href="?page={{ employees.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                               {% endif %}>
+                                               >
+                                            </a>
+                                        </li>
+
+                                        <li class="page-item {% if not employees.has_next %}disabled{% endif %}">
+                                            <a class="page-link"
+                                               {% if employees.has_next %}
+                                               href="?page={{ employees.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                               {% endif %}>
+                                               >>
+                                            </a>
+                                        </li>
 
                                     </ul>
                                 </nav>
-
                             </div>
-
+                            {% endif %}
                         </div>
                     </div>
                 </div>
