@@ -3,7 +3,7 @@ from django.urls import path
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView, employeesView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -152,5 +152,12 @@ urlpatterns = [
     path('data-management/search-clients-gst/', gstImportView.search_clients_for_gst_ajax, name='search_clients_gst_ajax'),
     path('data-management/bulk-import-gst/', gstImportView.bulk_import_gst, name='bulk_import_gst'),
     path('data-management/download-gst-template/', gstImportView.download_gst_template, name='download_gst_template'),
+
+    # Employees
+    path('employees/view/', employeesView.EmployeeView.as_view(), name='employee-view'),
+    path('employees/add/', employeesView.AddEmployeeView.as_view(), name='add-employee'),
+    path('employees/edit/<int:pk>/', employeesView.AddEmployeeView.as_view(), name='edit-employee'),
+    path('employees/delete/<int:pk>/', employeesView.EmployeeDeleteView.as_view(), name='delete_employee'),
+    path('employees/export/', employeesView.ExportEmployeeView.as_view(), name='export-employees'),
 
 ]
