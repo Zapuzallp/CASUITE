@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import User
 from django.contrib.auth.models import User
 from django.db import models
+from home.utils import send_notification
+from django.urls import reverse
 from django.db.models import Q
 # -------------------------
 # Client Base Table
@@ -988,6 +990,31 @@ class Invoice(models.Model):
     def __str__(self):
         return f"Invoice #{self.id} - {self.client.client_name}"
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+
+        if is_new:
+            from django.contrib.auth.models import User
+
+            # Get all superusers
+            superusers = User.objects.filter(is_superuser=True)
+
+            # Get client assigned user (CA)
+            user = self.client.assigned_ca
+
+            users_to_notify = list(superusers)
+            if user:
+                users_to_notify.append(user)
+
+            send_notification(
+                users_to_notify,
+                title="New Invoice Created",
+                message=f"Invoice #{self.id} has been created for {self.client.client_name}",
+                tag="info",
+                url=reverse('invoice_details', args=[self.id])
+            )
+
 from decimal import Decimal
 class InvoiceItem(models.Model):
     GST_CHOICES = [
@@ -1059,6 +1086,56 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment {self.id} for Invoice #{self.invoice.id}"
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        # Get old approval status (for update case)
+        old_status = None
+        if self.pk:
+            old_status = Payment.objects.get(pk=self.pk).approval_status
+
+        super().save(*args, **kwargs)
+
+        from django.contrib.auth.models import User
+
+        superusers = User.objects.filter(is_superuser=True)
+        user = self.invoice.client.assigned_ca
+
+        users_to_notify = list(superusers)
+        if user:
+            users_to_notify.append(user)
+
+        # 1. Payment Created
+        if is_new:
+            send_notification(
+                users_to_notify,
+                title="Payment Initiated",
+                message=f"Payment of ₹{self.amount} created for Invoice #{self.invoice.id}",
+                tag="info",
+                url=reverse('payment_detail', args=[self.id])
+            )
+
+        # 2. Approval / Rejection
+        elif old_status != self.approval_status:
+
+            if self.approval_status == "APPROVED":
+                send_notification(
+                    users_to_notify,
+                    title="Payment Approved",
+                    message=f"Payment for Invoice #{self.invoice.id} has been approved",
+                    tag="success",
+                    url=reverse('payment_detail', args=[self.id])
+                )
+
+            elif self.approval_status == "REJECTED":
+                send_notification(
+                    users_to_notify,
+                    title="Payment Rejected",
+                    message=f"Payment for Invoice #{self.invoice.id} has been rejected",
+                    tag="error",
+                    url=reverse('payment_detail', args=[self.id])
+                )
 
 
 class Message(models.Model):
