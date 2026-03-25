@@ -656,9 +656,18 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
         required=True,
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Enter temporary password',
+            'placeholder': 'Enter password',
         }),
         label='Password'
+    )
+    confirm_password = forms.CharField(
+        max_length=128,
+        required=True,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirm password',
+        }),
+        label='Confirm Password'
     )
     email = forms.EmailField(
         required=True,
@@ -727,7 +736,9 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
         # If editing, make password optional and populate user fields from the linked User model
         if self.instance and self.instance.pk and hasattr(self.instance, 'user'):
             self.fields['password'].required = False
+            self.fields['confirm_password'].required = False
             self.fields['password'].help_text = "Leave blank to keep current password"
+            self.fields['confirm_password'].help_text = "Let blank to keep current password"
             
             # Populate initial values for custom fields from the related User object
             user = self.instance.user
@@ -735,6 +746,17 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
             self.fields['first_name'].initial = user.first_name
             self.fields['last_name'].initial = user.last_name
             self.fields['email'].initial = user.email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if password and confirm_password:
+            if password != confirm_password:
+                self.add_error('confirm_password', "Passwords do not match.")
+        
+        return cleaned_data
 
     def clean_personal_phone(self):
         """Validate personal phone number"""

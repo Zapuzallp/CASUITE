@@ -254,6 +254,35 @@
             font-size: 1.5rem;
         }
     }
+
+    /* Target password fields to avoid text overlap with eye icon */
+    #id_password, #id_confirm_password {
+        padding-right: 2.5rem !important;
+    }
+
+    /* Hide browser default password reveal buttons */
+    input::-ms-reveal,
+    input::-ms-clear,
+    input::-webkit-reveal,
+    input::-webkit-clear {
+        display: none;
+    }
+
+    /* Fix row alignment when errors are present */
+    .form-section .row {
+        align-items: flex-start !important;
+    }
+
+    /* Show eye icon only on hover */
+    .toggle-password {
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        font-size: 1.25rem !important;
+    }
+
+    .position-relative:hover .toggle-password {
+        opacity: 1;
+    }
 </style>
 
 <main id="main" class="main-content">
@@ -305,7 +334,7 @@
                     <span class="form-section-title">User Information</span>
 
                     <div class="row g-3">
-                        <div class="{% if is_edit %}col-md-12{% else %}col-md-6{% endif %}">
+                        <div class="col-md-12">
                             <label for="id_username" class="form-label">
                                 Username <span class="text-danger">*</span>
                             </label>
@@ -317,21 +346,37 @@
                             {% endif %}
                         </div>
                         {% if not is_edit %}
-                        <div class="col-md-6">
+                        <!-- Password -->
+                        <div class="col-md-6 mt-4">
                             <label for="id_password" class="form-label">
                                 Password <span class="text-danger">*</span>
                             </label>
-                            {{ form.password }}
-                            <div class="form-check mt-2">
-                                <input class="form-check-input" type="checkbox" id="showPassword">
-                                <label class="form-check-label" for="showPassword"
-                                    style="font-size: 0.8rem; font-weight: 500; color: #64748b;">
-                                    Show Password
-                                </label>
+                            <div class="position-relative d-flex align-items-center">
+                                {{ form.password }}
+                                <i class="fa-regular fa-eye position-absolute end-0 me-3 toggle-password" 
+                                   style="cursor: pointer; color: #6c757d; z-index: 10;" 
+                                   data-target="id_password"></i>
                             </div>
                             {% if form.password.errors %}
-                            <div class="invalid-feedback" style="display: block;">
+                            <div class="invalid-feedback d-block mt-1">
                                 {{ form.password.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <!-- Confirm Password -->
+                        <div class="col-md-6 mt-4">
+                            <label for="id_confirm_password" class="form-label">
+                                Confirm Password <span class="text-danger">*</span>
+                            </label>
+                            <div class="position-relative d-flex align-items-center">
+                                {{ form.confirm_password }}
+                                <i class="fa-regular fa-eye position-absolute end-0 me-3 toggle-password" 
+                                   style="cursor: pointer; color: #6c757d; z-index: 10;" 
+                                   data-target="id_confirm_password"></i>
+                            </div>
+                            {% if form.confirm_password.errors %}
+                            <div class="invalid-feedback d-block mt-1">
+                                {{ form.confirm_password.errors|join:", " }}
                             </div>
                             {% endif %}
                         </div>
@@ -515,10 +560,32 @@
     });
 
     // Toggle Password Visibility
-    document.getElementById('showPassword')?.addEventListener('change', function () {
-        const passwordField = document.getElementById('id_password');
-        if (passwordField) {
-            passwordField.type = this.checked ? 'text' : 'password';
+    document.querySelectorAll('.toggle-password').forEach(icon => {
+        icon.addEventListener('click', function () {
+            const targetId = this.getAttribute('data-target');
+            const targetField = document.getElementById(targetId);
+            
+            if (targetField && targetField.type === 'password') {
+                targetField.type = 'text';
+                this.classList.remove('fa-eye');
+                this.classList.add('fa-eye-slash');
+            } else if (targetField) {
+                targetField.type = 'password';
+                this.classList.remove('fa-eye-slash');
+                this.classList.add('fa-eye');
+            }
+        });
+    });
+
+    // Make Supervisor field searchable with Select2
+    document.addEventListener("DOMContentLoaded", function () {
+        if (typeof $ !== 'undefined' && $('#id_supervisor').length) {
+            $('#id_supervisor').select2({
+                theme: 'bootstrap-5',
+                placeholder: '-- Search Supervisor --',
+                allowClear: true,
+                width: '100%'
+            });
         }
     });
 </script>
