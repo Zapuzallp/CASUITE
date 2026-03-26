@@ -158,6 +158,7 @@ class InvoiceListCreateView(LoginRequiredMixin, FormMixin, ListView):
         if form.is_valid():
             invoice = form.save(commit=False)
             invoice.invoice_status = "DRAFT"
+            invoice.created_by = request.user
             invoice.save()
             form.save_m2m()
             # Note: Removed invoice_status update on services as Task model doesn't have this field

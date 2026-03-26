@@ -986,9 +986,18 @@ class Invoice(models.Model):
     invoice_status = models.CharField(max_length=20, choices=INVOICE_STATUS, default="DRAFT")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoices_created"
+    )
 
     def __str__(self):
         return f"Invoice #{self.id} - {self.client.client_name}"
+
+
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
@@ -1007,6 +1016,12 @@ class Invoice(models.Model):
             if user:
                 users_to_notify.append(user)
 
+            # Creator
+            if self.created_by:
+                users_to_notify.append(self.created_by)
+            # Remove duplicates
+            users_to_notify = list(set(users_to_notify))
+
             send_notification(
                 users_to_notify,
                 title="New Invoice Created",
@@ -1014,6 +1029,8 @@ class Invoice(models.Model):
                 tag="info",
                 url=reverse('invoice_details', args=[self.id])
             )
+
+
 
 from decimal import Decimal
 class InvoiceItem(models.Model):
@@ -1105,6 +1122,11 @@ class Payment(models.Model):
         users_to_notify = list(superusers)
         if user:
             users_to_notify.append(user)
+
+        if self.created_by:
+            users_to_notify.append(self.created_by)
+
+        users_to_notify = list(set(users_to_notify))
 
         # 1. Payment Created
         if is_new:
