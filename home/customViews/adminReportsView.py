@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 import calendar
 from django.contrib import messages
 
-from home.models import Attendance, OfficeDetails, Leave
+from home.models import Attendance, OfficeDetails, Leave,Notification
 
 
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
@@ -328,16 +328,33 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                     messages.warning(request, error)
 
         elif action_type == 'status':
-            # Handle bulk status update
             new_status = request.POST.get('bulk_status')
-            if new_status:
-                updated_count = Attendance.objects.filter(
-                    id__in=selected_records
-                ).update(status=new_status)
-                messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
-            else:
-                messages.error(request, 'Please select a status to update.')
-        else:
-            messages.error(request, 'Invalid action type.')
 
+            if not new_status:
+                messages.error(request, 'Please select a status.')
+                return redirect(request.get_full_path())
+             # Optimize query to get user details for the notifications
+            records = Attendance.objects.filter(id__in=selected_records).select_related('user')
+            success_count = 0
+
+            for record in records:
+
+                # Only notify if the status is actually changing
+                if record.status != new_status:
+                    record.status = new_status
+                    record.save()
+                    display_status = record.get_status_display()
+                    msg = f"{record.user},Your Attendance for {record.date} has been {display_status}"
+
+                    Notification.objects.create(
+                        user=record.user,
+                        message=msg,
+                        is_read=False,
+                    )
+                    success_count += 1
+
+            if success_count > 0:
+                messages.success(request, f"Successfully updated {success_count} records and notified users.")
+            else:
+                messages.info(request, "No changes were made.")
         return redirect(request.get_full_path())
