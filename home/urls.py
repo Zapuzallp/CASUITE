@@ -134,6 +134,9 @@ urlpatterns = [
     path('invoices/bulk-status-update/', invoiceView.invoice_bulk_status_update, name="invoice_bulk_status_update"),
     #profile url
     path('upload-profile-pic/', profileView.upload_profile_pic, name='upload_profile_pic'),
+    path('profile/', profileView.profile_view, name='profile'),
+    path('profile/edit/', profileView.profile_edit, name='profile_edit'),
+
     # Portal Credentials
     path('client/<int:client_id>/credentials/add/', credentialsView.add_portal_credential,name='add_portal_credential'),
     path('credentials/<int:credential_id>/view/', credentialsView.view_portal_credential,name='view_portal_credential'),
