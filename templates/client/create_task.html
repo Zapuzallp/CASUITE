@@ -119,6 +119,7 @@
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+             let isDueDateAutoSet = false;
             // 1. Quill
             var quill = new Quill('#editor-container', {
                 theme: 'snow',
@@ -148,6 +149,18 @@
             const serviceSelect = document.getElementById('id_service_type');
             const extendedSection = document.getElementById('extendedFieldsSection');
             const dueDateInput = document.getElementById('id_due_date');
+           dueDateInput.addEventListener('change', function () {
+                // If user clears the field → allow auto-set again
+                if (!dueDateInput.value) {
+                    isDueDateAutoSet = true;
+                } else {
+                    isDueDateAutoSet = false;
+                }
+            });
+            // If already has value (edit mode), treat as user-set
+            if (dueDateInput.value) {
+                isDueDateAutoSet = false;
+            }
             const allWrappers = document.querySelectorAll('.field-wrapper');
 
             let config = {}, clientData = {}, gstOptions = [], defaultGstId = null, gstValidationMessage = null;
@@ -163,27 +176,41 @@
 
             function updateForm() {
                 const selected = serviceSelect.value;
-                if (!selected || !config[selected]) {
+                if (!selected) {
                     extendedSection.style.display = 'none';
-                    dueDateInput.value = '';   // NEW LINE
                     return;
                 }
 
-                const rules = config[selected];
-                extendedSection.style.display = 'block';
+                const rules = config[selected] || {};  // ✅ fallback
+
+                // Show section only if config exists
+                if (config[selected]) {
+                    extendedSection.style.display = 'block';
+                } else {
+                    extendedSection.style.display = 'none';
+                }
 
                 if (rules.default_due_days) {
                     let d = new Date();
                     d.setDate(d.getDate() + rules.default_due_days);
-                    dueDateInput.value = d.toISOString().split('T')[0];
-                }
-               else {
-                    // If service has no default due days, clear the field
-                    dueDateInput.value = '';
-               }
+                    const newDate = d.toISOString().split('T')[0];
 
-                const include = rules.fields.include || [];
-                const readonly = rules.fields.readonly || [];
+                    if (!dueDateInput.value || isDueDateAutoSet) {
+                        dueDateInput.value = newDate;
+                        isDueDateAutoSet = true;
+                    }
+                } else {
+                    // No default due date (like TDS / Consultancy)
+
+                    if (isDueDateAutoSet) {
+                        dueDateInput.value = '';   // ✅ CLEAR old GST value
+                    }
+
+                    isDueDateAutoSet = false;
+                }
+
+                const include = (rules.fields && rules.fields.include) || [];
+                const readonly = (rules.fields && rules.fields.readonly) || [];
                 const defaults = rules.dynamic_defaults || {};
                 const labels = rules.labels || {};
 
@@ -281,7 +308,10 @@
             }
 
             serviceSelect.addEventListener('change', updateForm);
-            updateForm();
+            // Only auto-run if creating (no due date already set)
+            if (!dueDateInput.value) {
+                updateForm();
+            }
         });
     </script>
     <script>
