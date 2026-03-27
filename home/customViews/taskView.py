@@ -88,6 +88,13 @@ def create_task_view(request, client_id):
                     task.client = client
                     task.created_by = request.user
 
+                    # ✅ ADD THIS BLOCK
+                    if not task.due_date:
+                        config = TASK_CONFIG.get(task.service_type, {})
+                        days = config.get('default_due_days')
+                        if days:
+                            task.due_date = timezone.now().date() + timedelta(days=days)
+
                     # Auto Title if empty: "GST Return Task"
                     if not task.task_title:
                         task.task_title = f"{task.get_service_type_display()} Task"
