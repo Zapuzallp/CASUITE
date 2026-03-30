@@ -219,6 +219,9 @@ document.addEventListener('DOMContentLoaded', function() {
         readAllBtn.addEventListener('click', function(e) {
             e.stopPropagation(); 
             e.preventDefault();
+            const hasNotifications = document.querySelectorAll('.notification-item').length > 0;
+            if (!hasNotifications) return;
+
             const footer = document.querySelector('.dropdown-footer');
             // 1. Visual change: Change icons to green ticks
             const icons = document.querySelectorAll('.notification-icon');

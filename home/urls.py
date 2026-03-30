@@ -9,8 +9,9 @@ from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
     AttendanceLogsView,
+    
 )
-from home.views import mark_all_as_read 
+from home.customViews.read_button_View import mark_all_as_read
 
 from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
