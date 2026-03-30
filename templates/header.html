@@ -63,8 +63,9 @@
                 <ul class="dropdown-menu dropdown-menu-end notifications-dropdown overflow-auto p-0 pt-1" style = "max-height: 18em;">
                     <li class="dropdown-header d-flex justify-content-between align-items-center overflow-auto">
                         <span>You have {{ total }} new notifications</span>
-                        <a href="#"  class="btn btn-sm btn-primary rounded-pill ms-2"id="read-all-btn"> Read All</a>
-                    </li>
+                        <form method = "post">{% csrf_token %}<button type = "submit" class="btn btn-sm btn-primary rounded-pill ms-2"id="read-all-btn"> Read All</button>
+                        </form>
+                        </li>
                     <li><hr class="dropdown-divider"></li>
 
                     {% if notifications or leaves %}
@@ -217,6 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (readAllBtn) {
         readAllBtn.addEventListener('click', function(e) {
             e.stopPropagation(); 
+            e.preventDefault();
             const footer = document.querySelector('.dropdown-footer');
             // 1. Visual change: Change icons to green ticks
             const icons = document.querySelectorAll('.notification-icon');
