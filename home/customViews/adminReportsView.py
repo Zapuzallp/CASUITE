@@ -357,7 +357,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
 
                     title = title_map.get(new_status, "Attendance Update")
 
-                    msg = f"Status- {display_status} {record.date.strftime('%B %d, %Y')}"
+                    msg = f"Status- {display_status}<br>{record.date.strftime('%B %d, %Y')}"
 
                     Notification.objects.create(
                         user=record.user,
