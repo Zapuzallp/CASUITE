@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from home.models import Notification
+from home.models import Notification, Leave
 
 
 @login_required
@@ -53,7 +53,8 @@ def all_notifications(request):
     notifications = Notification.objects.filter(
         user=request.user
     ).order_by('-created_at')
-
+    leaves_all = Leave.objects.filter(status__in = ['approved','rejected'], employee = request.user.employee).order_by('-created_at')
+    # print(leaves)
     return render(request, "home/all_notifications.html", {
-        "notifications": notifications
+        "notifications": notifications,"leaves_all":leaves_all,
     })

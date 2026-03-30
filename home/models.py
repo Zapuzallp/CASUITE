@@ -942,6 +942,8 @@ class Leave(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     # my change
     updated_at = models.DateTimeField(auto_now=True)
+    readed = models.BooleanField(default = False)
+    
 
     @property
     def duration(self):

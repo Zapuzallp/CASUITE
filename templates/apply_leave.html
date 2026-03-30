@@ -170,6 +170,24 @@
             border-radius: 12px;
             padding: 10px;
         }
+        /* 1. Define the "Flash and Fade" behavior */
+        @keyframes fadeOutHighlight {
+            0% { background-color: #eaeae6; }
+            70% { background-color: #eaeae6;  } 
+            100% { background-color: transparent; } 
+        }
+
+        /* 2. Apply it to the table cells */
+        .highlight-animation td {
+            /* 'forwards' keeps the final state (transparent) after 4s */
+            animation: fadeOutHighlight 4s forwards ease-in-out;
+        }
+
+        /* Ensure the row itself handles the border if needed */
+        .highlight-animation {
+            border-left: 5px solid transparent;
+            animation: fadeOutHighlight 4s forwards ease-in-out;
+        }
 
         @media (max-width: 768px) {
             .main-content {
@@ -182,6 +200,7 @@
                 gap: 1rem;
             }
         }
+
     </style>
 
     <!-- External Assets -->
@@ -303,7 +322,8 @@
                                     </thead>
                                     <tbody>
                                     {% for item in all_items %}
-                                        <tr>
+                                    <tr id="item-{{ item.pk }}" 
+                                    class="{% if request.GET.highlight|add:0 == item.pk %} highlight-animation{% endif %}">
                                             <td>{{ forloop.counter }}</td>
                                             <td><span class="fw-bold">{{ item.leave_type|title }}</span></td>
                                             <td>
@@ -351,6 +371,7 @@
                                                 found.
                                             </td>
                                         </tr>
+                                    
                                     {% endfor %}
                                     </tbody>
                                 </table>
@@ -548,25 +569,19 @@
             endInput.addEventListener("change", calculateDays);
             leaveTypeSelect.addEventListener("change", calculateDays);
 
-            // Validation for past dates
-            const form = document.getElementById('leaveApplicationForm');
-            form.onsubmit = function (e) {
-                const startDate = new Date(startInput.value);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                if (startDate < today) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Invalid Date',
-                        text: 'Cannot apply for leaves in the past.',
-                        confirmButtonColor: '#4f46e5',
-                    });
-                    return false;
-                }
-                return true;
-            };
+           
         });
     </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const highlightId = urlParams.get('highlight');
+        if (highlightId) {
+            const element = document.getElementById('item-' + highlightId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    });
+</script>
 {% endblock body %}
