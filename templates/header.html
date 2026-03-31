@@ -63,8 +63,8 @@
                 <ul class="dropdown-menu dropdown-menu-end notifications-dropdown overflow-auto p-0 pt-1" style = "max-height: 18em;">
                     <li class="dropdown-header d-flex justify-content-between align-items-center overflow-auto">
                         <span>You have {{ total }} new notifications</span>
-                        <form method = "post">{% csrf_token %}<button type = "submit" class="btn btn-sm btn-primary rounded-pill ms-2"id="read-all-btn"> Read All</button>
-                        </form>
+                        <button class="btn btn-sm btn-primary rounded-pill ms-2"id="read-all-btn"> Read All</button>
+                        
                         </li>
                     <li><hr class="dropdown-divider"></li>
 
@@ -218,7 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (readAllBtn) {
         readAllBtn.addEventListener('click', function(e) {
             e.stopPropagation(); 
-            e.preventDefault();
             const hasNotifications = document.querySelectorAll('.notification-item').length > 0;
             if (!hasNotifications) return;
 
