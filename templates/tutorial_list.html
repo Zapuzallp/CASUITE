@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block body %}
+
+<main id="main" class="main">
+
+    <div class="row align-items-center mb-4">
+        <div class="col-md-4">
+            <h1 class="fw-bold m-0" style="color: #1a202c;">Tutorials</h1>
+        </div>
+
+        <div class="col-md-8 d-flex justify-content-md-end align-items-center gap-3 mt-3 mt-md-0">
+            <div class="input-group" style="max-width: 300px;">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="searchInput" class="form-control border-start-0 ps-0" placeholder="Search..." onkeyup="filterTutorials()">
+            </div>
+
+            {% if is_admin %}
+             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTutorialModal">
+                <i class="bi bi-plus-circle me-1"></i> Add Tutorial
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="section">
+
+        <div class="d-flex justify-content-end mb-4">
+            <select id="categoryFilter" class="form-select w-auto shadow-sm" onchange="filterTutorials()">
+                <option value="all">Filter by Category</option>
+                <option value="Clients">Clients</option>
+                <option value="Lead">Lead</option>
+                <option value="Task">Task</option>
+                <option value="Invoices and Payments">Invoices and Payments</option>
+                <option value="General">General</option>
+            </select>
+        </div>
+
+        {% regroup tutorials by category as category_list %}
+
+        {% for category in category_list %}
+
+        <div class="tutorial-category-section" data-category="{{ category.grouper }}">
+
+            <h4 class="fw-bold mb-3 mt-4" style="color: #2d3748;">{{ category.grouper|default:"General" }}</h4>
+
+            <div class="row">
+                {% for tutorial in category.list %}
+
+                <div class="col-lg-4 col-md-6 mb-4 tutorial-card-wrapper" data-title="{{ tutorial.title|lower }}">
+
+                    <div class="card tutorial-card h-100 shadow-sm border-0">
+
+                        <div class="position-relative cursor-pointer" onclick="playVideo('{{ tutorial.video_url }}')">
+
+                            {% if tutorial.custom_thumbnail %}
+                                <img src="{{ tutorial.custom_thumbnail.url }}" class="card-img-top tutorial-thumb">
+                            {% elif 'youtube' in tutorial.video_url or 'youtu.be' in tutorial.video_url %}
+                                <img src="https://img.youtube.com/vi/{{ tutorial.video_id }}/hqdefault.jpg" class="card-img-top tutorial-thumb">
+                            {% elif 'drive.google.com' in tutorial.video_url %}
+                                <img src="https://drive.google.com/thumbnail?id={{ tutorial.video_id }}&sz=w800" class="card-img-top tutorial-thumb">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center tutorial-thumb">
+                                    <i class="bi bi-film" style="font-size: 3rem; color: #cbd5e1;"></i>
+                                </div>
+                            {% endif %}
+
+                            <div class="play-overlay">
+                                <i class="bi bi-play-fill text-white"></i>
+                            </div>
+                        </div>
+
+                        <div class="card-body d-flex flex-column mt-1">
+                            <h5 class="card-title p-0 m-0 mb-2 fw-bold" style="color: #1a202c;">
+                                {{ tutorial.title }}
+                            </h5>
+
+                            {% if tutorial.description %}
+                            <p class="card-text small text-muted flex-grow-1">
+                                {{ tutorial.description|truncatewords:15 }}
+                            </p>
+                            {% endif %}
+
+                            <div class="mt-auto pt-3 d-flex justify-content-between align-items-center">
+                                <span class="badge" style="background-color: #e2e8f0; color: #475569; font-weight: 500; padding: 0.4em 0.8em;">
+                                    {{ category.grouper|default:"General" }}
+                                </span>
+
+                                {% if is_admin %}
+                                <button type="button" class="btn btn-sm text-danger border-0 bg-transparent p-0" title="Delete Tutorial" onclick="openDeleteModal('{% url 'delete_tutorial' tutorial.id %}')">
+                                    <i class="bi bi-trash" style="font-size: 1.1rem;"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% empty %}
+        <div class="alert alert-info border-0 shadow-sm">
+            <i class="bi bi-info-circle me-2"></i> No tutorials available yet.
+        </div>
+        {% endfor %}
+
+    </section>
+
+    <div class="modal fade" id="addTutorialModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+
+          <div class="modal-header bg-light border-bottom-0 pb-3">
+            <h5 class="modal-title fw-bold"><i class="bi bi-film text-primary me-2"></i>Add New Tutorial</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-body p-4 pt-2">
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+                <input type="text" name="title" class="form-control" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                <select name="category" class="form-select" required>
+                    <option value="Clients">Clients</option>
+                    <option value="Lead">Lead</option>
+                    <option value="Task">Task</option>
+                    <option value="Invoices and Payments">Invoices and Payments</option>
+                    <option value="General">General</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Video URL <span class="text-danger">*</span></label>
+                <input type="url" name="video_url" class="form-control" placeholder="YouTube or Drive link" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Description</label>
+                <textarea name="description" class="form-control" rows="2"></textarea>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label fw-semibold">Thumbnail (Optional)</label>
+                <input type="file" name="custom_thumbnail" class="form-control" accept="image/*">
+              </div>
+
+            </div>
+            <div class="modal-footer border-top-0 bg-light">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Tutorial</button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-transparent border-0">
+                <div class="modal-header border-0 pb-0 justify-content-end">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="background-color: white; border-radius: 50%; padding: 0.5rem;"></button>
+                </div>
+                <div class="modal-body p-0" id="video-modal-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteTutorialModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white border-bottom-0 pb-3">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Tutorial</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 pt-4 text-center">
+                    <i class="bi bi-trash text-danger mb-3" style="font-size: 3rem;"></i>
+                    <h5 class="mb-3">Are you sure?</h5>
+                    <p class="text-muted mb-0">Do you really want to delete this tutorial? This process cannot be undone.</p>
+                </div>
+                <div class="modal-footer border-top-0 bg-light justify-content-center pt-2 pb-3">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteTutorialForm" method="POST" action="">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger px-4">Yes, Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<style>
+    /* Dashboard Aesthetic Styling */
+    .tutorial-card {
+        border-radius: 12px;
+        transition: all 0.25s ease;
+    }
+    .tutorial-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    }
+    .tutorial-thumb {
+        height: 180px;
+        width: 100%;
+        object-fit: cover;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    /* Play Button Glassmorphism Overlay */
+    .play-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 55px;
+        height: 55px;
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(4px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    .play-overlay i {
+        font-size: 2rem;
+        margin-left: 4px; /* Optical center alignment for play button */
+    }
+    .cursor-pointer:hover .play-overlay {
+        background: rgba(255, 255, 255, 0.4);
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+</style>
+
+<script>
+    // LIVE SEARCH & FILTER JAVASCRIPT
+    function filterTutorials() {
+        let searchQuery = document.getElementById('searchInput').value.toLowerCase();
+        let categoryFilter = document.getElementById('categoryFilter').value;
+
+        let sections = document.querySelectorAll('.tutorial-category-section');
+
+        sections.forEach(section => {
+            let sectionCategory = section.getAttribute('data-category');
+            let cards = section.querySelectorAll('.tutorial-card-wrapper');
+            let hasVisibleCards = false;
+
+            cards.forEach(card => {
+                let title = card.getAttribute('data-title');
+
+                // Match Search
+                let matchesSearch = title.includes(searchQuery);
+                // Match Category Dropdown
+                let matchesCategory = (categoryFilter === 'all') || (sectionCategory === categoryFilter);
+
+                if (matchesSearch && matchesCategory) {
+                    card.style.display = 'block';
+                    hasVisibleCards = true;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Hide the whole category header if no cards match inside it
+            if (hasVisibleCards) {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+            }
+        });
+    }
+
+    // VIDEO PLAYER LOGIC
+    function playVideo(url) {
+        let html = "";
+
+        if (url.includes("youtube") || url.includes("youtu.be")) {
+            let id = "";
+            if (url.includes("watch?v=")) id = url.split("watch?v=")[1].split("&")[0];
+            else if (url.includes("youtu.be/")) id = url.split("youtu.be/")[1].split("?")[0];
+
+            html = `
+            <div class="ratio ratio-16x9 shadow-lg rounded overflow-hidden">
+                <iframe src="https://www.youtube.com/embed/${id}?autoplay=1" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+            </div>`;
+        }
+        else if (url.includes("drive.google.com")) {
+            let id = "";
+            if (url.includes("/d/")) id = url.split("/d/")[1].split("/")[0];
+            else if (url.includes("id=")) id = url.split("id=")[1].split("&")[0];
+
+            if (id) {
+                html = `
+                <div class="ratio ratio-16x9 shadow-lg rounded overflow-hidden">
+                    <iframe src="https://drive.google.com/file/d/${id}/preview" frameborder="0" allow="autoplay" allowfullscreen></iframe>
+                </div>`;
+            }
+        }
+
+        document.getElementById("video-modal-body").innerHTML = html;
+        let videoModal = new bootstrap.Modal(document.getElementById('videoModal'));
+        videoModal.show();
+    }
+
+    // Stop video on close
+    document.addEventListener('DOMContentLoaded', function() {
+        let videoModalElement = document.getElementById('videoModal');
+        if(videoModalElement) {
+            videoModalElement.addEventListener('hidden.bs.modal', function () {
+                document.getElementById("video-modal-body").innerHTML = "";
+            });
+        }
+    });
+
+    // DELETE MODAL LOGIC
+    function openDeleteModal(deleteUrl) {
+        // Set the form action to the specific tutorial's delete URL
+        document.getElementById('deleteTutorialForm').action = deleteUrl;
+
+        // Show the modal
+        let deleteModal = new bootstrap.Modal(document.getElementById('deleteTutorialModal'));
+        deleteModal.show();
+    }
+</script>
+
+{% endblock %}

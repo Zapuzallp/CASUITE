@@ -1,6 +1,7 @@
 from django.utils.html import format_html
 from import_export import resources, fields
 from import_export.admin import ImportExportModelAdmin
+from django.contrib import admin
 
 from .models import (
     Client,
@@ -23,7 +24,8 @@ from .models import (
     Message,
     TaskRecurrence,
     Lead,
-    LeadCallLog
+    LeadCallLog,
+    Tutorial
 )
 
 
@@ -1240,3 +1242,10 @@ class ClientPortalCredentialsAdmin(admin.ModelAdmin):
         """Handle password encryption on save"""
         # Password encryption is handled in the model's save method
         super().save_model(request, obj, form, change)
+
+
+# ============= TUTORIALS MODEL ====================
+@admin.register(Tutorial)
+class TutorialAdmin(admin.ModelAdmin):
+    list_display = ('title', 'category', 'created_at')
+    # search_fields = ('title', 'category')
