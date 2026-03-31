@@ -2,6 +2,12 @@
 {% load static %}
 
 {% block body %}
+<style>
+    .select2-container--bootstrap-5 .select2-results__options {
+        max-height: 200px !important;
+        overflow-y: auto !important;
+    }
+</style>
 <main id="main" class="main">
 
     <div class="pagetitle">
@@ -62,8 +68,7 @@
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Branch /
                                                 Office</label>
-                                            <select name="office" class="form-select js-client-filter-select"
-                                                    data-placeholder="Search Branch / Office">
+                                            <select name="office" class="form-select js-client-filter-select">
                                                 <option value="">All Branches</option>
                                                 {% for office in offices %}
                                                     <option value="{{ office.id }}"
@@ -79,8 +84,10 @@
                                             <div class="col-md-3">
                                                 <label class="form-label small fw-bold text-secondary">Assigned
                                                     Employee</label>
-                                                <select name="assigned_to" class="form-select js-client-filter-select"
-                                                        data-placeholder="Search Assigned Employee">
+                                                <select name="assigned_to"
+                                                        class="form-select js-client-filter-select"
+                                                        data-enable-search="true"
+                                                        data-placeholder="All Employees">
                                                     <option value="">All Employees</option>
                                                     {% for emp_user in assigned_employee_choices %}
                                                         <option value="{{ emp_user.id }}"
@@ -96,8 +103,7 @@
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Task / Service
                                                 Type</label>
-                                            <select name="service_type" class="form-select border-primary bg-white js-client-filter-select"
-                                                    data-placeholder="Search Task / Service Type">
+                                            <select name="service_type" class="form-select border-primary bg-white js-client-filter-select">
                                                 <option value="">All Services</option>
                                                 {% for code, name in service_type_choices %}
                                                     <option value="{{ code }}"
@@ -112,8 +118,7 @@
                                         <!-- Status -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Status</label>
-                                            <select name="status" class="form-select js-client-filter-select"
-                                                    data-placeholder="Search Status">
+                                            <select name="status" class="form-select js-client-filter-select">
                                                 <option value="">All Statuses</option>
                                                 {% for code, name in status_choices %}
                                                     <option value="{{ code }}"
@@ -127,8 +132,7 @@
                                         <!-- Client Type -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Client Type</label>
-                                            <select name="client_type" class="form-select js-client-filter-select"
-                                                    data-placeholder="Search Client Type">
+                                            <select name="client_type" class="form-select js-client-filter-select">
                                                 <option value="">All Types</option>
                                                 {% for code, name in client_type_choices %}
                                                     <option value="{{ code }}"
@@ -142,8 +146,7 @@
                                         <!-- Business Structure -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Structure</label>
-                                            <select name="business_structure" class="form-select js-client-filter-select"
-                                                    data-placeholder="Search Structure">
+                                            <select name="business_structure" class="form-select js-client-filter-select">
                                                 <option value="">All Structures</option>
                                                 {% for code, name in business_structure_choices %}
                                                     <option value="{{ code }}"
@@ -158,8 +161,7 @@
                                         <!-- Custom View -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Custom Filter</label>
-                                            <select name="custom_view" class="form-select js-client-filter-select"
-                                                    data-placeholder="Search Custom Filter">
+                                            <select name="custom_view" class="form-select js-client-filter-select">
                                                 <option value="">All Clients</option>
                                                 <option value="aadhaar_mobile_linked"
                                                         {% if request.GET.custom_view == 'aadhaar_mobile_linked' %}selected{% endif %}>
@@ -602,13 +604,19 @@
                     return;
                 }
 
-                $select.select2({
+                const enableSearch = !!$select.data('enable-search');
+                const config = {
                     theme: 'bootstrap-5',
                     width: '100%',
-                    allowClear: $select.find('option[value=""]').length > 0,
-                    placeholder: $select.data('placeholder') || 'Search...',
-                    minimumResultsForSearch: 0
-                });
+                    allowClear: enableSearch && $select.find('option[value=""]').length > 0,
+                    minimumResultsForSearch: enableSearch ? 0 : Infinity
+                };
+
+                if (enableSearch && $select.data('placeholder')) {
+                    config.placeholder = $select.data('placeholder');
+                }
+
+                $select.select2(config);
             });
         });
     </script>
