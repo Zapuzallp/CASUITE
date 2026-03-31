@@ -16,6 +16,10 @@ def get_accessible_clients(user):
         if employee.role == 'ADMIN':
             return qs
 
+        elif employee.role == 'PARTNER':
+            # Partners can view all clients (read-only access)
+            return qs
+
         elif employee.role == 'BRANCH_MANAGER':
             if employee.office_location:
                 return qs.filter(

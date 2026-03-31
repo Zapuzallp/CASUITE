@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q, Max
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta,datetime
 from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
 from home.forms import TaskForm, TaskExtendedForm
 from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
@@ -20,6 +20,11 @@ from django.core.paginator import  Paginator
 
 @login_required
 def create_task_view(request, client_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to create tasks.')
+        return redirect('task_list')
+
     client = get_object_or_404(Client, id=client_id)
 
     # 1. Prepare Client Data for Auto-Population
@@ -155,6 +160,7 @@ def task_list_view(request):
         Q(assignees=user)
     ).distinct()
 
+
     # 3. Apply UI Filters (GET parameters)
     search_query = request.GET.get('q')
     filter_client = request.GET.get('client')
@@ -162,6 +168,9 @@ def task_list_view(request):
     filter_consultancy_type = request.GET.get('consultancy_type')
     filter_status = request.GET.get('status')
     filter_invoice_status = request.GET.get('invoice_status')
+    filter_due = request.GET.get('due_filter')
+    due_from = request.GET.get('due_from')
+    due_to = request.GET.get('due_to')
 
     if search_query:
         tasks_qs = tasks_qs.filter(
@@ -190,6 +199,68 @@ def task_list_view(request):
         elif filter_invoice_status == 'not_invoiced':
             # Tasks that have no invoices
             tasks_qs = tasks_qs.filter(tagged_invoices__isnull=True)
+
+        # Due Date Filter
+    if filter_due:
+        # today = timezone.now().date()
+        # tomorrow = today + timedelta(days=1)
+        today = timezone.localdate()
+        tomorrow = today + timedelta(days=1)
+
+        if filter_due == "overdue":
+            # Overdue but NOT completed
+            tasks_qs = tasks_qs.filter(
+                due_date__lt=today,
+                due_date__isnull=False,
+            ).exclude(status="Completed")
+
+        elif filter_due == "today":
+            tasks_qs = tasks_qs.filter(
+                due_date=today
+            ).exclude(status="Completed")
+
+        elif filter_due == "tomorrow":
+            tasks_qs = tasks_qs.filter(
+                due_date=tomorrow
+            ).exclude(status="Completed")
+
+        elif filter_due == "no_due":
+            tasks_qs = tasks_qs.filter(
+                due_date__isnull=True
+            )
+
+        elif filter_due == "range" :
+            try:
+                due_from_date = datetime.strptime(due_from, "%Y-%m-%d").date() if due_from else None
+                due_to_date = datetime.strptime(due_to, "%Y-%m-%d").date()  if due_to else None
+
+                # Case 1: Both dates provided
+                if due_from_date and due_to_date:
+                    if due_to_date < due_from_date:
+                        # invalid range → return no results
+                        tasks_qs = tasks_qs.none()
+                        messages.error(request, "End date cannot be before start date.")
+                    else:
+                        tasks_qs = tasks_qs.filter(
+                            due_date__range=[due_from_date, due_to_date],
+                            due_date__isnull=False
+                        )
+
+                # Case 2: Only FROM date
+                elif due_from_date:
+                    tasks_qs = tasks_qs.filter(
+                        due_date__gte=due_from_date,
+                        due_date__isnull=False
+                    )
+
+                # Case 3: Only TO date
+                elif due_to_date:
+                    tasks_qs = tasks_qs.filter(
+                        due_date__lte=due_to_date,
+                        due_date__isnull=False
+                    )
+            except ValueError:
+                messages.error(request, "Invalid date format.")
 
     # Records per page dropdown value
     per_page = request.GET.get('per_page','all')
@@ -221,7 +292,15 @@ def task_list_view(request):
         filter_consultancy_type,
         filter_status,
         filter_invoice_status,
+        filter_due,
+        due_from,
+        due_to,
     ])
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(user, 'employee'):
+        is_partner = user.employee.role == 'PARTNER'
+
     context = {
         'tasks': tasks_qs,
         'query_params': query_params.urlencode(),
@@ -238,6 +317,7 @@ def task_list_view(request):
         ),
 
         'status_choices': Task.STATUS_CHOICES,
+        'is_partner': is_partner,
     }
     return render(request, 'client/tasks.html', context)
 
@@ -271,6 +351,12 @@ def task_detail_view(request, task_id):
     """
     user = request.user
     is_admin = user.is_superuser
+
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(user, 'employee'):
+        is_partner = user.employee.role == 'PARTNER'
+
     # Universal client visibility
     #(Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
     accessible_clients = get_accessible_clients(user)
@@ -322,9 +408,14 @@ def task_detail_view(request, task_id):
             waiting_for_previous = True
 
     # ==========================================================================
-    # HANDLE POST ACTIONS
+    # HANDLE POST ACTIONS (Blocked for Partners)
     # ==========================================================================
     if request.method == 'POST':
+        # Block all POST actions for partners
+        if is_partner:
+            messages.error(request, 'You do not have permission to modify tasks.')
+            return redirect('task_detail', task_id=task.id)
+
         action = request.POST.get('action_type')
 
         # --- A. UPDATE SEQUENCE (Define User + Status Flow) ---
@@ -500,6 +591,7 @@ def task_detail_view(request, task_id):
         'my_status_entry': my_status_entry,
         'waiting_for_previous': waiting_for_previous,
         'is_admin': is_admin,
+        'is_partner': is_partner,
         'workflow_steps': workflow_steps,
         'aging_timeline': aging_timeline,
         'extended_fields': extended_fields,
@@ -518,6 +610,11 @@ def task_detail_view(request, task_id):
 
 @login_required()
 def edit_task_view(request, task_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to edit tasks.')
+        return redirect('task_detail', task_id=task_id)
+
     task = get_object_or_404(Task, id=task_id)
     client = task.client  # <--- 1. GET CLIENT FROM TASK
 
@@ -541,7 +638,7 @@ def edit_task_view(request, task_id):
             task_form.save()
             extended_form.save()
             messages.success(request, "Task updated successfully.")
-            return redirect('task_detail', task_id=task.id)
+            return redirect('task_list')
     else:
         task_form = TaskForm(instance=task)
         extended_form = TaskExtendedForm(instance=task.extended_attributes)
@@ -578,5 +675,32 @@ def copy_task_view(request, task_id):
     )
 
     # messages.success(request, "Task copied successfully.")
+
+    return redirect('task_list')
+
+# Delete Function for  tasks
+@login_required
+@require_POST
+def delete_task_view(request, task_id):
+
+    user = request.user
+
+    accessible_clients = get_accessible_clients(user)
+
+    task = get_object_or_404(
+        Task.objects.filter(
+            Q(client__in=accessible_clients) |
+            Q(assignees=user)
+        ).distinct(),
+        id=task_id
+    )
+
+    # Only superuser allowed
+    if not user.is_superuser:
+        messages.error(request, "Only administrators can delete tasks.")
+        return redirect('task_list')
+
+    task.delete()
+    messages.success(request, "Task deleted successfully.")
 
     return redirect('task_list')
