@@ -14,6 +14,7 @@
         height: 100%;
         margin: 0;
         overflow: hidden;
+        position: relative;
     }
 
     #main {
@@ -87,6 +88,8 @@
         flex-grow: 1;
         overflow-y: auto; /* Enable scrolling for messages */
         overflow-x: hidden;
+        -webkit-overflow-scrolling: touch; /* ✅ smooth scrolling in WebView */
+        min-height: 0;
         
     }
 
@@ -210,19 +213,29 @@
 /* -------- MOBILE VIEW -------- */
 
 @media (max-width: 768px) {
+    /* Hide common footer identifiers when the keyboard class is active */
+    body.keyboard-open footer,
+    body.keyboard-open .footer,
+    body.keyboard-open #footer,
+    body.keyboard-open [class*="footer"],
+    body.keyboard-open .copyright-section {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
 
-    /* Lock whole screen */
-    html, body {
-        height: 100% !important;
-        overflow: hidden !important;
-        position: fixed;
-        width: 100%;
+    /* Ensure the main container expands to fill the space */
+    body.keyboard-open #main {
+        height: 100dvh !important;
+        margin-bottom: 0 !important;
     }
 
     #main {
         padding: 0 !important;
         margin: 0 !important;
-        height: 100vh !important;
+        height: 100dvh !important;
         display: flex !important;
         flex-direction: column;
     }
@@ -428,6 +441,10 @@
 }
 
 /* Footer actions row */
+.footer {
+        position: relative; /* Changing from fixed to relative on mobile helps */
+        z-index: 1;
+    }
 .footer-actions{
     display:flex;
     flex-direction:row;
@@ -505,6 +522,11 @@
     background-image: url('data:image/svg+xml;utf8,<svg fill="black" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>');
     background-repeat: no-repeat;
     background-position: right 5px center;
+}
+.full-width-editor {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
 }
 
 }
@@ -778,6 +800,7 @@ send_btn.addEventListener('click', (e) => {
 
     
 </script>
+<script>
 function scrollToBottom() {
     var chatWindow = document.getElementById('chat-window');
     if (chatWindow) {
@@ -790,5 +813,67 @@ function scrollToBottom() {
 
 // Run it immediately on page load
 scrollToBottom();
+</script>
+<script>
+(function ($) {
+    $(document).ready(function () {
 
+        //  REMOVE FOOTER COMPLETELY (runs once)
+        const footer = document.querySelector('footer, .footer, #footer, .copyright-section');
+        if (footer) {
+            footer.remove();
+        }
+
+        // Run only on mobile
+        if (window.innerWidth > 768) return;
+
+        const chatWindow = document.getElementById('chat-window');
+        const editorContainer = document.querySelector('.full-width-editor');
+
+        //  Layout Fix Function
+        function fixLayout() {
+
+            // Force viewport height update
+            document.body.style.height = window.innerHeight + "px";
+
+            // Scroll messages to bottom
+            if (chatWindow) {
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            // Ensure editor + buttons visible
+            if (editorContainer) {
+                editorContainer.scrollIntoView({
+                    behavior: "smooth",
+                    block: "end"
+                });
+            }
+        }
+
+        //  When keyboard opens
+        $(document).on('summernote.focus', '.note-editable', function () {
+
+            $('body').addClass('keyboard-open');
+
+            // Run twice (important for WebView keyboard timing)
+            setTimeout(fixLayout, 100);
+            setTimeout(fixLayout, 400);
+        });
+
+        //  When keyboard closes
+        $(document).on('summernote.blur', '.note-editable', function () {
+
+            setTimeout(function () {
+                $('body').removeClass('keyboard-open');
+            }, 200);
+        });
+
+        //  Initial scroll when page loads
+        if (chatWindow) {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+    });
+})(jQuery);
+</script>
 {% endblock body %}
