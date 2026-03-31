@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db.models import Q
+from django.contrib import messages
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from datetime import datetime
@@ -381,7 +382,6 @@ def client_export_select_columns(request):
 
     # Validate model type
     if model_type not in EXPORT_CONFIGS:
-        from django.contrib import messages
         messages.error(request, f'Invalid export model: {model_type}')
         return redirect('clients')
 
@@ -425,7 +425,6 @@ def client_export_generate(request):
 
     # Validate model type
     if model_type not in EXPORT_CONFIGS:
-        from django.contrib import messages
         messages.error(request, f'Invalid export model: {model_type}')
         return redirect('clients')
 
@@ -436,7 +435,6 @@ def client_export_generate(request):
     selected_fields = request.POST.getlist('fields')
 
     if not selected_fields:
-        from django.contrib import messages
         messages.error(request, 'Please select at least one column to export.')
         return redirect('client_export_select_columns')
 
