@@ -472,6 +472,27 @@
                             {% endif %}
                         </div>
                     </div>
+
+                    {% if is_edit %}
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-12 d-flex align-items-center">
+                            {{ form.is_active }}
+                            <label for="id_is_active" class="form-check-label ms-2" style="font-weight: 500; color: #1e293b;">
+                                {{ form.is_active.label }}
+                            </label>
+                            {% if form.is_active.errors %}
+                            <div class="invalid-feedback ms-2" style="display: block;">
+                                {{ form.is_active.errors|join:", " }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% if form.is_active.help_text %}
+                        <div class="col-md-12 mt-1">
+                            <small class="text-muted">{{ form.is_active.help_text }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- Contact Information Section -->

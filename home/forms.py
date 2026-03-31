@@ -677,6 +677,14 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
         }),
         label='Email Address'
     )
+    is_active = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+        }),
+        label='Is Active'
+    )
 
     class Meta:
         model = Employee
@@ -746,6 +754,7 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
             self.fields['first_name'].initial = user.first_name
             self.fields['last_name'].initial = user.last_name
             self.fields['email'].initial = user.email
+            self.fields['is_active'].initial = user.is_active
 
     def clean(self):
         cleaned_data = super().clean()
@@ -817,15 +826,21 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
             }
         )
         
-        if created and password:
-            user.set_password(password)
-        elif not created:
+        if created:
+            user.is_staff = True
+            user.is_active = True
+            if password:
+                user.set_password(password)
+        else:
             # Update existing user
             user.email = email
             user.first_name = first_name
             user.last_name = last_name
+            if 'is_active' in self.cleaned_data:
+                user.is_active = self.cleaned_data['is_active']
             if password:
                 user.set_password(password)
+
         
         user.save()
         

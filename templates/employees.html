@@ -377,7 +377,7 @@
                                             <td>{{ employee.office_location }}</td>
                                             <td>{{ employee.work_phone }}</td>
                                             <td>
-                                                {% if employee.is_active %}
+                                                {% if employee.user.is_active %}
                                                      <span class="p-2 rounded bg-success text-light">Active</span>
                                                 {% else %}
                                                     <span class="p-2 rounded bg-danger text-light">Inactive</span>
