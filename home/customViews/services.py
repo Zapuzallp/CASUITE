@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django import forms
 from home.models import Product
 from django.shortcuts import get_object_or_404
+from django.contrib import messages
 
 
 class ProductForm(forms.ModelForm):
@@ -51,7 +52,6 @@ def list_services(request):
     if 'edit' in request.GET:
         # Block edit for partners
         if is_partner:
-            from django.contrib import messages
             messages.error(request, 'You do not have permission to edit services.')
             return redirect('list_services')
 
@@ -63,7 +63,6 @@ def list_services(request):
     if request.method == "POST":
         # Block POST for partners
         if is_partner:
-            from django.contrib import messages
             messages.error(request, 'You do not have permission to modify services.')
             return redirect('list_services')
 
@@ -89,7 +88,6 @@ def list_services(request):
 def delete_service(request, service_id):
     # Check if user is a partner - deny access
     if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        from django.contrib import messages
         messages.error(request, 'You do not have permission to delete services.')
         return redirect('list_services')
 

@@ -302,7 +302,6 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
 def process_clock_in(user, lat=None, long=None, location_name=None, device_type='web', reason=None):
     """Process clock in for both web and mobile"""
     from home.models import Attendance
-    from django.contrib import messages
 
     today = timezone.localdate()
     current_time = timezone.now()

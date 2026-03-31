@@ -247,7 +247,6 @@ def add_gst_details_view(request, client_id):
 
     # Check if user is a partner - deny access
     if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        from django.contrib import messages
         messages.error(request, 'You do not have permission to add GST details.')
         return redirect('client_details', client_id=client.id)
 
@@ -274,7 +273,6 @@ def edit_gst_details_view(request, gst_id):
 
     # Check if user is a partner - deny access
     if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        from django.contrib import messages
         messages.error(request, 'You do not have permission to edit GST details.')
         return redirect('client_details', client_id=client_id)
 
