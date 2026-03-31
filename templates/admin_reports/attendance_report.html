@@ -78,9 +78,9 @@
                         <h5 class="card-title">Filter Options</h5>
 
                         <!-- FILTERS -->
-                        <form method="get" class="row g-3 mb-4" id="filterForm">
+                        <form method="get" class="row g-2 mb-4" id="filterForm">
 
-                            <div class="col-md-3">
+                            <div class="col-12 col-md-3">
                                 <label class="form-label">Employee</label>
                                 <select name="employee" id="employeeFilter" class="form-select">
                                     <option value="">All</option>
@@ -90,7 +90,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-2">
+                            <div class="col-12 col-md-2">
                                 <label class="form-label">Month</label>
                                 <select name="month" id="monthFilter" class="form-select">
                                     <option value="">Select</option>
@@ -100,7 +100,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-2">
+                            <div class="col-12 col-md-2">
                                 <label class="form-label">Year</label>
                                 <select name="year" id="yearFilter" class="form-select">
                                     <option value="">Select</option>
@@ -110,7 +110,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-12 col-md-3">
                                 <label class="form-label">Office Location</label>
                                 <select name="office" class="form-select" {% if branch_manager_office_id %}disabled{% endif %}>
                                     {% if not branch_manager_office_id %}
@@ -133,7 +133,7 @@
                                 {% endif %}
                             </div>
 
-                            <div class="col-md-2">
+                            <div class="col-12 col-md-2">
                                 <label class="form-label">Status</label>
                                 <select name="status" class="form-select">
                                     <option value="">All</option>
@@ -143,8 +143,18 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-2 align-self-end">
-                                <button class="btn btn-primary w-100">
+                            <div class="col-12 col-sm-6 col-md-3">
+                                <label class="form-label">From Date</label>
+                                <input type="date" name="from_date" class="form-control" value="{{ request.GET.from_date }}">
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-md-3">
+                                <label class="form-label">To Date</label>
+                                <input type="date" name="to_date" class="form-control" value="{{ request.GET.to_date }}">
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-md-2 d-grid align-self-end">
+                                <button class="btn btn-primary">
                                     <i class="bi bi-search"></i> Generate
                                 </button>
                             </div>
@@ -231,9 +241,9 @@
                 <!-- RESULTS TABLE -->
                 <div class="card" style="margin-top: 1.5rem;">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">
                             <h5 class="card-title mb-0">Attendance Records</h5>
-                            <div class="d-flex gap-2 align-items-center">
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
                                 <!-- Export Buttons -->
                                 {% if records %}
                                 <div class="btn-group" role="group">
@@ -358,14 +368,16 @@
                                                         <i class="bi bi-x-circle-fill text-danger" style="font-size: 18px;"></i>
                                                     {% elif status == 'pending' %}
                                                         <i class="bi bi-clock-fill text-warning" style="font-size: 18px;"></i>
-                                                    {% elif status == 'sunday' %}
-                                                        <i class="bi bi-calendar-x text-primary" style="font-size: 18px;"></i>
                                                     {% elif status == 'holiday' %}
                                                         <i class="bi bi-calendar-event text-warning" style="font-size: 18px;"></i>
                                                     {% elif status == 'leave' %}
                                                         <i class="bi bi-person-dash text-info" style="font-size: 18px;"></i>
                                                     {% elif status == 'half_day' %}
                                                         <i class="bi bi-hourglass-split text-secondary" style="font-size: 18px;"></i>
+                                                    {% elif status == 'week_off' %}
+                                                        <i class="bi bi-calendar-x text-primary"></i>
+                                                    {% elif status == 'future' %}
+                                                        <span class="text-muted">-</span>
                                                     {% else %}
                                                         <span class="text-muted">-</span>
                                                     {% endif %}
@@ -949,6 +961,57 @@ function exportTableToExcel() {
     link.click();
     document.body.removeChild(link);
 }
+document.addEventListener('DOMContentLoaded', function () {
+
+    const form = document.getElementById('filterForm');
+
+    form.addEventListener('submit', function(e) {
+        const fromDate = document.querySelector('[name="from_date"]').value;
+        const toDate = document.querySelector('[name="to_date"]').value;
+
+        if (fromDate && toDate && fromDate > toDate) {
+            e.preventDefault();
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Date Range',
+                text: 'From Date cannot be greater than To Date',
+                confirmButtonColor: '#d33'
+            });
+            return;
+        }
+
+        if ((fromDate && !toDate) || (!fromDate && toDate)) {
+            e.preventDefault();
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Incomplete Date Range',
+                text: 'Please select both From Date and To Date',
+            });
+        }
+    });
+
+});
+    const fromInput = document.querySelector('[name="from_date"]');
+    const toInput = document.querySelector('[name="to_date"]');
+    const month = document.getElementById('monthFilter');
+    const year = document.getElementById('yearFilter');
+
+    function toggleMonthYear() {
+        if (fromInput.value || toInput.value) {
+            month.disabled = true;
+            year.disabled = true;
+        } else {
+            month.disabled = false;
+            year.disabled = false;
+        }
+    }
+
+    fromInput.addEventListener('change', toggleMonthYear);
+    toInput.addEventListener('change', toggleMonthYear);
+
+    window.addEventListener('load', toggleMonthYear);
 </script>
 
 {% endblock %}
