@@ -67,7 +67,7 @@
                                         <option value="">All clients</option>
                                         {% for client in clients %}
                                         <option value="{{ client.id }}" {% if client_id|stringformat:"s" == client.id|stringformat:"s" %}selected{% endif %}>
-                                            {{ client.client_name }}
+                                            {{ client.client_name }} || {{ client.pan_no|default:"No PAN" }} || {{ client.status|default:"Prospect" }}
                                         </option>
                                         {% endfor %}
                                     </select>
@@ -309,7 +309,8 @@ document.addEventListener('DOMContentLoaded', function () {
         theme: 'bootstrap-5',
         placeholder: 'Select client',
         allowClear: true,
-        width: '100%'
+        width: '100%',
+        minimumResultsForSearch: 0
     });
 
 
