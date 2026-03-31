@@ -495,3 +495,16 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
     attendance.save()
     return {'success': success, 'message': message}
 
+def send_notification(users, title, message, tag="info", url=""):
+    """
+    users → queryset or list of User objects
+    """
+    from home.models import Notification
+    for user in users:
+        Notification.objects.create(
+            user=user,
+            title=title,
+            message=message,
+            tag=tag,
+            target_url=url
+        )

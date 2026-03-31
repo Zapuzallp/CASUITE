@@ -18,6 +18,7 @@ from home.customViews.notificationView import (
     read_all_notifications,
     view_notification,
     all_notifications,
+    notification_count
 )
 
 # from home.customViews.serviceViews import (
@@ -77,6 +78,7 @@ urlpatterns = [
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
+    path('notifications/count/',notification_count, name='notification_count'),
 
     # Attendance
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
