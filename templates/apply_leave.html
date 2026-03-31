@@ -548,25 +548,8 @@
             endInput.addEventListener("change", calculateDays);
             leaveTypeSelect.addEventListener("change", calculateDays);
 
-            // Validation for past dates
-            const form = document.getElementById('leaveApplicationForm');
-            form.onsubmit = function (e) {
-                const startDate = new Date(startInput.value);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                if (startDate < today) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Invalid Date',
-                        text: 'Cannot apply for leaves in the past.',
-                        confirmButtonColor: '#4f46e5',
-                    });
-                    return false;
-                }
-                return true;
-            };
+            
+            
         });
     </script>
 {% endblock body %}

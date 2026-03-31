@@ -216,7 +216,8 @@
                                     <small class="text-muted">Showing {{ clients|length }} result(s)</small>
                                 {% endif %}
                             </div>
-                            <div>
+                            <!-- Client Action Buttons --> 
+                            <div class = "d-flex flex-column flex-sm-row gap-2">
                                 <a href="{% url 'client_export_select_columns' %}?{{ request.GET.urlencode }}" class="btn btn-success btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
                                 </a>
