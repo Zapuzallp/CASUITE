@@ -222,10 +222,12 @@
                             </div>
 
                             <!-- Make button full width on mobile, auto width on md+ -->
+                            {% if not is_partner %}
                             <button class="btn btn-primary btn-sm w-md-auto shadow-sm" data-bs-toggle="modal"
                                     data-bs-target="#selectClientModal">
                                 <i class="bi bi-plus-lg me-1"></i> Add New Task
                             </button>
+                            {% endif %}
                         </div>
 
                         <!-- Table Responsive Wrapper to ensure scrolling on mobile -->
@@ -337,11 +339,13 @@
        <i class="bi bi-eye"></i>
     </a>
 
-    <!-- Edit -->
+    <!-- Edit - Hidden for Partners -->
+    {% if not is_partner %}
     <a href="{% url 'edit_task' task.id %}"
        class="btn btn-sm btn-outline-warning">
        <i class="bi bi-pencil"></i>
     </a>
+    {% endif %}
 
     <!-- Delete (Only Superuser) -->
     {% if request.user.is_superuser %}

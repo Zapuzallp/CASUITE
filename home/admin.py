@@ -52,6 +52,7 @@ class ClientResource(resources.ModelResource):
         import_id_fields = ('pan_no',)
         fields = (
             # Client fields
+            'file_number',
             'client_name',
             'primary_contact_name',
             'pan_no',

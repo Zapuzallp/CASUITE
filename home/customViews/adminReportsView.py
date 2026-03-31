@@ -12,13 +12,37 @@ from home.models import Attendance, OfficeDetails, Leave
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "admin_reports/attendance_report.html"
 
-    # Only Superadmin
     def test_func(self):
-        return self.request.user.is_superuser
+        user = self.request.user
+        # Allow superuser, admin, partner, and branch manager
+        return user.is_superuser or (
+            hasattr(user, 'employee') and user.employee.role in ['ADMIN', 'PARTNER', 'BRANCH_MANAGER']
+        )
 
     def get(self, request):
-        employees = User.objects.filter(is_active=True, is_staff=True)
-        offices = OfficeDetails.objects.all()
+        # Filter employees based on role
+        user = request.user
+        if user.is_superuser or (hasattr(user, 'employee') and user.employee.role in ['ADMIN', 'PARTNER']):
+            # Superuser, Admin, and Partner can see all employees
+            employees = User.objects.filter(is_active=True, is_staff=True)
+            offices = OfficeDetails.objects.all()
+        elif hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
+            # Branch Manager can only see employees in their branch
+            branch_manager_office = user.employee.office_location
+            if branch_manager_office:
+                employees = User.objects.filter(
+                    is_active=True, 
+                    is_staff=True,
+                    employee__office_location=branch_manager_office
+                )
+                # Branch manager should only see their own office in the filter
+                offices = OfficeDetails.objects.filter(id=branch_manager_office.id)
+            else:
+                employees = User.objects.none()
+                offices = OfficeDetails.objects.none()
+        else:
+            employees = User.objects.none()
+            offices = OfficeDetails.objects.none()
 
         months = [
             (1, "January"), (2, "February"), (3, "March"),
@@ -62,6 +86,12 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             
         if status_filter:
             records = records.filter(status=status_filter)
+
+        # Apply branch manager restriction to attendance records
+        if hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
+            branch_manager_office = user.employee.office_location
+            if branch_manager_office:
+                records = records.filter(user__employee__office_location=branch_manager_office)
 
         # Generate daily attendance data
         daily_attendance_data = []
@@ -218,6 +248,12 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             ('full_day', 'Full Day Present')
         ]
 
+        # Get branch manager's office for pre-selection
+        branch_manager_office_id = None
+        if hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
+            if user.employee.office_location:
+                branch_manager_office_id = user.employee.office_location.id
+
         context = {
             "employees": employees,
             "offices": offices,
@@ -233,6 +269,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             "status_choices": status_choices,
             "today": today.isoformat(),
             "employee_id": employee_id,
+            "branch_manager_office_id": branch_manager_office_id,
         }
 
         return render(request, self.template_name, context)
@@ -244,6 +281,22 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         if not selected_records:
             messages.error(request, 'Please select records.')
             return redirect(request.get_full_path())
+        
+        # Filter records based on role for branch manager only
+        user = request.user
+        if hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
+            branch_manager_office = user.employee.office_location
+            if branch_manager_office:
+                # Only allow updating records for employees in their branch
+                allowed_records = Attendance.objects.filter(
+                    id__in=selected_records,
+                    user__employee__office_location=branch_manager_office
+                ).values_list('id', flat=True)
+                selected_records = [str(record_id) for record_id in allowed_records]
+                
+                if not selected_records:
+                    messages.error(request, 'You can only update attendance for employees in your branch.')
+                    return redirect(request.get_full_path())
 
         if action_type == 'clock_out_shift':
             # Handle clock out with shift time
