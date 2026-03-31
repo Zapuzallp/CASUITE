@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django import forms
 from home.models import Product
 from django.shortcuts import get_object_or_404
+from django.contrib import messages
 
 
 class ProductForm(forms.ModelForm):
@@ -38,17 +39,33 @@ class ProductForm(forms.ModelForm):
             }),
         }
 
+
 def list_services(request):
     services = Product.objects.all().order_by('item_name')
 
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(request.user, 'employee'):
+        is_partner = request.user.employee.role == 'PARTNER'
+
     edit_service = None
     if 'edit' in request.GET:
+        # Block edit for partners
+        if is_partner:
+            messages.error(request, 'You do not have permission to edit services.')
+            return redirect('list_services')
+
         edit_service = get_object_or_404(Product, id=request.GET.get('edit'))
         form = ProductForm(instance=edit_service)
     else:
         form = ProductForm()
 
     if request.method == "POST":
+        # Block POST for partners
+        if is_partner:
+            messages.error(request, 'You do not have permission to modify services.')
+            return redirect('list_services')
+
         service_id = request.POST.get('service_id')
         if service_id:
             service = get_object_or_404(Product, id=service_id)
@@ -64,10 +81,16 @@ def list_services(request):
         'services': services,
         'form': form,
         'edit_service': edit_service,
+        'is_partner': is_partner,
     })
 
 
 def delete_service(request, service_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to delete services.')
+        return redirect('list_services')
+
     service = get_object_or_404(Product, id=service_id)
     service.delete()
     return redirect('list_services')

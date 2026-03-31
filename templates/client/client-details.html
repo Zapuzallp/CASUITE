@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block head %}
+    <!-- DataTables Responsive CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+{% endblock %}
+
 {% block body %}
     <style>
         /* Scope styles to this page */
@@ -31,6 +36,25 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr); /* 3 Columns on PC */
             gap: 15px;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 992px) {
+            .detail-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns on tablet */
+            }
+        }
+
+        @media (max-width: 576px) {
+            .detail-grid {
+                grid-template-columns: 1fr; /* 1 column on mobile */
+            }
+
+            .profile-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
         }
 
         .detail-item {
@@ -80,6 +104,125 @@
             color: #4154f1;
             border-bottom: 2px solid #4154f1;
         }
+
+        /* Hide scrollbar for horizontal scrolling tabs */
+        .mobile-scroll-tabs {
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .mobile-scroll-tabs::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+
+        /* Mobile responsive tables */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+
+            .table thead th {
+                font-size: 0.75rem;
+                padding: 0.5rem;
+            }
+
+            .table tbody td {
+                padding: 0.5rem;
+            }
+
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+
+            .badge {
+                font-size: 0.7rem;
+            }
+
+            /* Hide less important columns on mobile */
+            .table .d-none-mobile {
+                display: none;
+            }
+
+            /* DataTables mobile responsive fixes */
+            .dataTables_wrapper .dataTables_length,
+            .dataTables_wrapper .dataTables_filter {
+                margin-bottom: 0.5rem;
+            }
+
+            .dataTables_wrapper .dataTables_length select {
+                width: auto;
+                display: inline-block;
+            }
+
+            .dataTables_wrapper .dataTables_filter input {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .dataTables_wrapper .dataTables_info,
+            .dataTables_wrapper .dataTables_paginate {
+                margin-top: 0.5rem;
+            }
+
+            /* Fix button alignment in action columns */
+            .table td .d-flex {
+                flex-wrap: nowrap;
+                gap: 0.25rem;
+            }
+
+            /* Ensure action buttons stay aligned */
+            .table td .btn-group,
+            .table td .d-flex {
+                justify-content: flex-end;
+            }
+
+            /* DataTables responsive improvements */
+            .dataTables_wrapper .row {
+                margin: 0;
+            }
+
+            .dataTables_wrapper .col-sm-12,
+            .dataTables_wrapper .col-md-6,
+            .dataTables_wrapper .col-md-5,
+            .dataTables_wrapper .col-md-7 {
+                padding: 0.25rem;
+            }
+
+            /* Mobile pagination improvements */
+            .dataTables_wrapper .dataTables_paginate .paginate_button {
+                padding: 0.25rem 0.5rem;
+                margin: 0 0.1rem;
+            }
+
+            /* Search input full width on mobile */
+            .dataTables_wrapper .dataTables_filter {
+                text-align: left;
+            }
+
+            .dataTables_wrapper .dataTables_filter label {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .dataTables_wrapper .dataTables_filter input {
+                flex: 1;
+            }
+
+            /* Length menu improvements */
+            .dataTables_wrapper .dataTables_length label {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+        }
+        }
     </style>
 
     <main id="main" class="main">
@@ -117,12 +260,12 @@
 
         <div class="profile-header-card d-flex flex-column flex-md-row align-items-md-center justify-content-between">
             <div class="d-flex align-items-center mb-3 mb-md-0">
-                <div class="profile-avatar me-4">
+                <div class="profile-avatar me-3 me-md-4">
                     {{ client.client_name|slice:":1"|upper }}
                 </div>
                 <div>
-                    <h2 class="mb-1 text-primary fw-bold" style="font-size: 1.75rem;">{{ client.client_name }}</h2>
-                    <div class="d-flex align-items-center gap-3 text-muted">
+                    <h2 class="mb-1 text-primary fw-bold" style="font-size: 1.5rem;">{{ client.client_name }}</h2>
+                    <div class="d-flex flex-wrap align-items-center gap-2 gap-md-3 text-muted">
                     <span class="badge bg-light text-secondary border">
                         <i class="bi bi-briefcase me-1"></i>
                         {% if client.business_structure %}{{ client.business_structure }}{% else %}
@@ -130,7 +273,7 @@
                     </span>
 
                         {% if client.email %}
-                            <small><i class="bi bi-envelope me-1"></i> {{ client.email }}</small>
+                            <small class="d-none d-md-inline"><i class="bi bi-envelope me-1"></i> {{ client.email }}</small>
                         {% endif %}
 
                         {% if client.phone_number %}
@@ -140,18 +283,19 @@
                 </div>
             </div>
 
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
+                {% if not is_partner %}
                 {% if request.user.is_superuser %}
                     <a href="{% url 'edit_client' client.id %}"
-                       class="btn btn-outline-primary" title="Edit Client">
-                        <i class="bi bi-pencil"></i> Edit Client
+                       class="btn btn-outline-primary btn-sm" title="Edit Client">
+                        <i class="bi bi-pencil"></i> <span class="d-none d-md-inline">Edit Client</span>
                     </a>
                 {% endif %}
 
                 <!-- Actions Dropdown Button -->
                 <div class="btn-group">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-three-dots-vertical me-1"></i> Actions
+                    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical me-1"></i> <span class="d-none d-md-inline">Actions</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
@@ -193,6 +337,7 @@
                         </li>
                     </ul>
                 </div>
+                {% endif %}
             </div>
         </div>
 
@@ -200,56 +345,56 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body pt-3">
 
-                    <ul class="nav nav-tabs nav-tabs-bordered w-100 mb-4">
+                    <!-- Updated Tab Navigation with hidden scrollbar class -->
+                    <ul class="nav nav-tabs nav-tabs-bordered w-100 mb-4 mobile-scroll-tabs">
                         <li class="nav-item">
                             <button class="nav-link active fw-bold" data-bs-toggle="tab"
-                                    data-bs-target="#profile-overview">
+                                    data-bs-target="#profile-overview" style="white-space: nowrap;">
                                 <i class="bi bi-grid me-2"></i>Overview
                             </button>
                         </li>
 
                         {% if gst_details_list %}
                             <li class="nav-item">
-                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-gst">
-                                    <i class="bi bi-receipt me-2"></i>GST Details
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-gst" style="white-space: nowrap;">
+                                    <i class="bi bi-receipt me-2"></i>GST
                                 </button>
                             </li>
                         {% endif %}
                         <li class="nav-item">
-                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-documents">
-                                <i class="bi bi-file-earmark-text me-2"></i>Documents
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-documents" style="white-space: nowrap;">
+                                <i class="bi bi-file-earmark-text me-2"></i>Docs
                             </button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-services">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-services" style="white-space: nowrap;">
                                 <i class="bi bi-briefcase me-2"></i>Services
                             </button>
                         </li>
                         {% if invoices_data %}
                             <li class="nav-item">
-                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-invoices">
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-invoices" style="white-space: nowrap;">
                                     <i class="bi bi-receipt-cutoff me-2"></i>Invoices
                                 </button>
                             </li>
                         {% endif %}
                         {% if portal_credentials %}
                             <li class="nav-item">
-                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-passwords">
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-passwords" style="white-space: nowrap;">
                                     <i class="bi bi-key me-2"></i>Passwords
                                 </button>
                             </li>
                         {% endif %}
                         <li class="nav-item">
-                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-linked">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-linked" style="white-space: nowrap;">
                                 <i class="bi bi-link-45deg me-2"></i>
-                                {% if link_type == 'businesses' %}Linked Businesses{% else %}Partners /
-                                    Directors{% endif %}
+                                {% if link_type == 'businesses' %}Linked{% else %}Partners{% endif %}
                             </button>
                         </li>
                         {% if client.client_type == 'Entity' %}
                             <li class="nav-item">
-                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-entity">
-                                    <i class="bi bi-building me-2"></i>Entity Details
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-entity" style="white-space: nowrap;">
+                                    <i class="bi bi-building me-2"></i>Entity
                                 </button>
                             </li>
                         {% endif %}
@@ -274,10 +419,12 @@
                         <div class="tab-pane fade" id="profile-gst">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="card-title text-primary"><i class="bi bi-receipt me-2"></i>All GST Data</h5>
+                                {% if not is_partner %}
                                 <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#addGSTModal">
                                     <i class="bi bi-plus-lg"></i> Add New GST
                                 </button>
+                                {% endif %}
                             </div>
 
                             <div class="table-responsive">
@@ -289,7 +436,7 @@
                                         <th>Scheme</th>
                                         <th>Status</th>
                                         <th>Created By</th>
-                                        {% if request.user.is_superuser or request.user == client.assigned_ca %}
+                                        {% if not is_partner and request.user.is_superuser or request.user == client.assigned_ca %}
                                             <th class="text-end">Action</th>
                                         {% endif %}
                                     </tr>
@@ -313,7 +460,7 @@
                                                 <small class="text-muted">{{ gst.created_by.first_name|default:gst.created_by.username }}</small>
                                             </td>
 
-                                            {% if request.user.is_superuser or request.user == client.assigned_ca %}
+                                            {% if not is_partner and request.user.is_superuser or request.user == client.assigned_ca %}
                                                 <td class="text-end">
                                                     <a href="{% url 'edit_gst_details' gst.id %}"
                                                        class="btn btn-sm btn-outline-secondary">
@@ -514,7 +661,17 @@
                                                 ₹{{ item.balance|floatformat:0 }}
                                             </td>
                                             <td>
-                                                {% if item.has_payments %}
+                                                {% if is_partner %}
+                                                  <!-- Partner: View-only - always show badge -->
+                                                  <span class="badge
+                                                    {% if item.payment_status == 'PAID' %}bg-success
+                                                    {% elif item.payment_status == 'PARTIALLY_PAID' %}bg-warning text-dark
+                                                    {% elif item.payment_status == 'OPEN' %}bg-info
+                                                    {% elif item.payment_status == 'DRAFT' %}bg-secondary
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ item.payment_status_display }}
+                                                  </span>
+                                                {% elif item.has_payments %}
                                                   <!-- Status locked - payment received - show badge only -->
                                                   <span class="badge
                                                     {% if item.payment_status == 'PAID' %}bg-success
@@ -562,7 +719,7 @@
                                                         <i class="bi bi-eye"></i>
                                                     </a>
 
-                                                    {% if item.balance > 0 and item.payment_status != 'DRAFT' %}
+                                                    {% if not is_partner and item.balance > 0 and item.payment_status != 'DRAFT' %}
                                                         <a class="btn btn-sm btn-success"
                                                            href="{% url 'payment_collect' item.invoice.id %}"
                                                            title="Collect Payment">
@@ -583,12 +740,14 @@
                                 </table>
                               </div>
 
-                              <!-- Save Button at Bottom -->
+                              <!-- Save Button at Bottom - Hidden for Partners -->
+                              {% if not is_partner %}
                               <div class="d-flex justify-content-end mt-3">
                                 <button type="submit" class="btn btn-primary px-4" id="saveClientInvoiceStatusBtn">
                                   <i class="bi bi-check-circle me-1"></i> Save Status Changes
                                 </button>
                               </div>
+                              {% endif %}
                             </form>
                         </div>
 
@@ -620,18 +779,22 @@
                                             </td>
                                             <td>{{ credential.username }}</td>
                                             <td class="text-end">
-                                                <a href="{% url 'view_portal_credential' credential.id %}"
-                                                   class="btn btn-sm btn-outline-primary"
-                                                   title="View Credential">
-                                                    <i class="bi bi-eye"></i> View
-                                                </a>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-danger"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#deleteCredentialModal{{ credential.id }}"
-                                                        title="Delete Credential">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
+                                                <div class="d-flex gap-1 justify-content-end">
+                                                    <a href="{% url 'view_portal_credential' credential.id %}"
+                                                       class="btn btn-sm btn-outline-primary"
+                                                       title="View Credential">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    {% if not is_partner %}
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#deleteCredentialModal{{ credential.id }}"
+                                                            title="Delete Credential">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                </div>
                                             </td>
                                         </tr>
 
@@ -1116,30 +1279,62 @@
 
         // Initialize DataTable for client invoices if the table exists and has data
         document.addEventListener('DOMContentLoaded', function() {
-            var invoiceTable = document.getElementById('clientInvoicesTable');
-            if (invoiceTable) {
-                // Check if table has data rows (not just the empty state)
-                var hasData = invoiceTable.querySelector('tbody tr td:not([colspan])');
-                if (hasData) {
-                    $('#clientInvoicesTable').DataTable({
-                        "pageLength": 10,
-                        "order": [[0, "desc"]], // Sort by Invoice # descending
-                        "language": {
-                            "search": "Search:",
-                            "lengthMenu": "Show _MENU_ entries",
-                            "info": "Showing _START_ to _END_ of _TOTAL_ invoices",
-                            "infoEmpty": "No invoices available",
-                            "paginate": {
-                                "first": "First",
-                                "last": "Last",
-                                "next": "Next",
-                                "previous": "Previous"
+            // Load DataTables Responsive extension
+            if (typeof $.fn.dataTable !== 'undefined') {
+                // Add responsive extension script
+                var script = document.createElement('script');
+                script.src = 'https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js';
+                document.head.appendChild(script);
+                
+                var script2 = document.createElement('script');
+                script2.src = 'https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js';
+                document.head.appendChild(script2);
+                
+                // Wait for scripts to load
+                script2.onload = function() {
+                    initializeInvoiceTable();
+                };
+            } else {
+                initializeInvoiceTable();
+            }
+            
+            function initializeInvoiceTable() {
+                var invoiceTable = document.getElementById('clientInvoicesTable');
+                if (invoiceTable) {
+                    // Check if table has data rows (not just the empty state)
+                    var hasData = invoiceTable.querySelector('tbody tr td:not([colspan])');
+                    if (hasData) {
+                        $('#clientInvoicesTable').DataTable({
+                            "pageLength": 10,
+                            "order": [[0, "desc"]], // Sort by Invoice # descending
+                            "responsive": true,
+                            "language": {
+                                "search": "Search:",
+                                "lengthMenu": "Show _MENU_ entries",
+                                "info": "Showing _START_ to _END_ of _TOTAL_ invoices",
+                                "infoEmpty": "No invoices available",
+                                "paginate": {
+                                    "first": "First",
+                                    "last": "Last",
+                                    "next": "Next",
+                                    "previous": "Previous"
+                                }
+                            },
+                            "columnDefs": [
+                                { "orderable": false, "targets": [9] }, // Disable sorting on Action column
+                                { "responsivePriority": 1, "targets": [0, 1, 9] }, // Keep Invoice#, Subject, and Action visible
+                                { "responsivePriority": 2, "targets": [4, 7] } // Keep Total Amount and Payment Status visible
+                            ],
+                            "dom": "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+                                   "<'row'<'col-sm-12'tr>>" +
+                                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                            "initComplete": function() {
+                                // Add mobile-friendly classes
+                                $('.dataTables_length select').addClass('form-select form-select-sm');
+                                $('.dataTables_filter input').addClass('form-control form-control-sm');
                             }
-                        },
-                        "columnDefs": [
-                            { "orderable": false, "targets": [8] } // Disable sorting on Action column
-                        ]
-                    });
+                        });
+                    }
                 }
             }
         });

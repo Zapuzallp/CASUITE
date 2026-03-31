@@ -31,6 +31,11 @@ def generate_file_number(office_location):
 # -------------------------------------------------------------------
 @login_required
 def onboard_client_view(request):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to onboard new clients.')
+        return redirect('clients')
+    
     # Check if converting from lead
     lead_id = request.GET.get('lead_id')
     lead = None
@@ -130,6 +135,11 @@ def onboard_client_view(request):
 # -------------------------------------------------------------------
 @login_required
 def edit_client_view(request, client_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to edit clients.')
+        return redirect('client_details', client_id=client_id)
+
     client = get_object_or_404(Client, id=client_id)
 
     # Try to get profile, if it doesn't exist (legacy data), create a dummy one in memory
@@ -231,5 +241,11 @@ class ClientView(LoginRequiredMixin, ListView):
                 pass
 
         context['assigned_employee_choices'] = assigned_employee_choices
+
+        # Check if user is a partner (view-only access)
+        is_partner = False
+        if hasattr(user, 'employee'):
+            is_partner = user.employee.role == 'PARTNER'
+        context['is_partner'] = is_partner
 
         return context
