@@ -125,30 +125,18 @@ class HomeView(LoginRequiredMixin, TemplateView):
         client_data = get_client_dashboard_data(user, today)
 
         # =========================================================
-        # 8. DUE TASKS FOR DASHBOARD MODULE
+        # 8. DUE TASKS FOR DASHBOARD MODULE (Initial Load Only)
         # =========================================================
-        due_range = self.request.GET.get('due_range', 'overdue')  # Default to overdue
+        # We only fetch the default "Overdue" tasks here.
+        # All other filtering (today, 7days, etc.) is handled by due_tasks_ajax.
+        due_range = self.request.GET.get('due_range', 'overdue')
+        due_tasks = all_tasks.exclude(status='Completed').filter(due_date__lt=today).select_related(
+            'client').prefetch_related('assignees').order_by('due_date')[:10]
 
-        # Base queryset with role-based visibility (same as all_tasks)
-        due_tasks_qs = all_tasks.exclude(status='Completed')
-
-        # Apply date range filter
-        due_tasks_qs = due_tasks_qs.filter(due_date__lt=today)
-        if due_range == 'today':
-            due_tasks_qs = due_tasks_qs.filter(due_date=today)
-        elif due_range == 'tomorrow':
-            due_tasks_qs = due_tasks_qs.filter(due_date=today + timedelta(days=1))
-        elif due_range == '5days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=5))
-        elif due_range == '10days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=10))
-        elif due_range == '15days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=15))
-        elif due_range == '30days':
-            due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=30))
-
-        due_tasks = due_tasks_qs.select_related('client').prefetch_related('assignees').order_by('due_date')[:20]
-
+        context.update({
+            'due_tasks': due_tasks,
+            'due_range': due_range,
+        })
         # =========================================================
         # 9. Client Growth - Top 5 Client Creators/Onboards
         # =========================================================
@@ -432,14 +420,6 @@ def due_tasks_ajax(request):
         due_tasks_qs = due_tasks_qs.filter(due_date=today)
     elif due_range == 'tomorrow':
         due_tasks_qs = due_tasks_qs.filter(due_date=today + timedelta(days=1))
-    elif due_range == '5days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=5))
-    elif due_range == '10days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=10))
-    elif due_range == '15days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=15))
-    elif due_range == '30days':
-        due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=30))
     elif due_range == '7days':
         due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=7))
     
@@ -467,10 +447,6 @@ def due_tasks_ajax(request):
         'today': 'Due Today',
         'tomorrow': 'Due Tomorrow',
         '7days': 'Next 7 days',
-        '5days': 'Due in 5 Days',
-        '10days': 'Due in 10 Days',
-        '15days': 'Due in 15 Days',
-        '30days': 'Due in 30 Days',
     }
     
     return JsonResponse({
