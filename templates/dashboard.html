@@ -504,7 +504,7 @@
 
             <!-- Row 3: Action Required -->
             <div class="row g-4 mb-4" id="actions-section">
-                <div class="col-12 col-xl-8">
+                <div class="col-6 col-xl-6">
                     <div class="card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -545,11 +545,10 @@
                         </div>
                     </div>
                 </div>
-            </div>
+
 
             <!-- Employees On Leave and Top Collectors -->
-            <div class="row g-4 mb-4">
-                <div class="col-12 col-xl-8">
+                <div class="col-6 col-xl-6">
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">Employees On Leave <span>| Today</span></h5>
@@ -900,6 +899,11 @@
                         <div id="locationErrorMessage" class="alert alert-danger d-none small">
                             <i class="bi bi-exclamation-triangle me-2"></i>
                             Location access is required to clock in. Please enable GPS and refresh.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Reason (Optional)</label>
+                            <textarea name="reason" class="form-control" rows="2" placeholder="e.g. Working outside office, client visit"></textarea>
                         </div>
                     </div>
 

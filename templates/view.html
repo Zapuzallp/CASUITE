@@ -1,0 +1,1503 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f5f7fa;
+        color: #334155;
+        overflow-x: hidden;
+    }
+
+    /* ===== ANIMATIONS & HOVER EFFECTS ===== */
+
+    /* Smooth Scroll Behavior */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Dashboard Wrapper - Responsive */
+    .dashboard-wrapper {
+        padding: 15px;
+        margin-left: 0;
+        margin-top: 60px;
+        width: 100%;
+        transition: all 0.3s ease;
+        animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (min-width: 768px) {
+        .dashboard-wrapper {
+            padding: 20px;
+        }
+    }
+
+    @media (min-width: 1200px) {
+        .dashboard-wrapper {
+            margin-left: 300px;
+            width: calc(100% - 300px);
+            padding: 20px 30px;
+        }
+    }
+
+    /* Enhanced Card Styles with Hover Effects */
+    .profile-card-rounded {
+        border-radius: 20px;
+        border: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-card-rounded::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s ease;
+        pointer-events: none;
+    }
+
+    .profile-card-rounded:hover::before {
+        left: 100%;
+    }
+
+    .card-shadow {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s ease;
+    }
+
+    .card-shadow:hover {
+        box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        transform: translateY(-4px);
+    }
+
+    /* Profile Image with Pulse Effect */
+    .profile-img {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 5px solid #fff;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .profile-img:hover {
+        transform: scale(1.05);
+        box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.15);
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7);
+        }
+        70% {
+            transform: scale(1.02);
+            box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
+        }
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+        }
+    }
+
+    .camera-btn {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: #0d6efd;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        animation: pulse 2s infinite;
+    }
+
+    .camera-btn:hover {
+        transform: scale(1.1);
+        background: #0b5ed7;
+        animation: none;
+    }
+
+    @media (min-width: 768px) {
+        .profile-img {
+            width: 140px;
+            height: 140px;
+        }
+        .camera-btn {
+            width: 40px;
+            height: 40px;
+        }
+    }
+
+    @media (min-width: 992px) {
+        .profile-img {
+            width: 160px;
+            height: 160px;
+        }
+    }
+
+    /* Button */
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary-custom::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-primary-custom:hover::before {
+        width: 300px;
+        height: 300px;
+    }
+
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(13, 110, 253, 0.3);
+        color: white;
+    }
+
+    .btn-primary-custom:active {
+        transform: translateY(0);
+    }
+
+    /* Status Badges */
+    .badge-status {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+
+    .badge-full_day {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #047857;
+    }
+
+    .badge-half_day {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #d97706;
+    }
+
+    .badge-approved {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #047857;
+    }
+
+    .badge-pending {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #d97706;
+        animation: pulsePending 2s infinite;
+    }
+
+    .badge-rejected {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #b91c1c;
+    }
+
+    .badge-absent {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #b91c1c;
+    }
+
+    @keyframes pulsePending {
+        0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.8;
+            transform: scale(1.02);
+        }
+    }
+
+    /* Enhanced Icon Boxes */
+    .info-icon-box {
+        width: 38px;
+        height: 38px;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+    }
+
+    .info-row:hover .info-icon-box {
+        transform: scale(1.05) rotate(5deg);
+        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    }
+
+    .info-row:hover .info-icon-box i {
+        color: white !important;
+    }
+
+    @media (min-width: 768px) {
+        .info-icon-box {
+            width: 42px;
+            height: 42px;
+        }
+    }
+
+    /* Attendance Boxes with Hover Effects */
+    .attendance-box {
+        background-color: #f8fafc;
+        border-radius: 12px;
+        padding: 0.75rem;
+        border: 1px solid #f1f5f9;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .attendance-box:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border-color: #0d6efd;
+    }
+
+    .duration-box {
+        background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+        border-radius: 12px;
+        padding: 0.75rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        animation: glow 2s ease-in-out infinite;
+    }
+
+    .duration-box::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(13,110,253,0.1) 0%, transparent 70%);
+        transform: scale(0);
+        transition: transform 0.6s ease;
+    }
+
+    .duration-box:hover::before {
+        transform: scale(1);
+    }
+
+    .duration-box:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(13, 110, 253, 0.2);
+    }
+
+    /*  Text Styles */
+    .label-xs {
+        font-size: 9px;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #94a3b8;
+        margin-bottom: 0.35rem;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+
+    .attendance-box:hover .label-xs {
+        color: #0d6efd;
+        letter-spacing: 1px;
+    }
+
+    .text-detail {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1e293b;
+        word-break: break-word;
+        transition: all 0.3s ease;
+    }
+
+    .attendance-box:hover .text-detail {
+        transform: scale(1.05);
+        color: #0d6efd;
+    }
+
+    .value-text {
+        font-weight: 600;
+        color: #1e293b;
+        flex: 1;
+        font-size: 0.85rem;
+        word-break: break-word;
+        transition: all 0.3s ease;
+    }
+
+    .info-row:hover .value-text {
+        color: #0d6efd;
+        transform: translateX(5px);
+    }
+
+    /*  Edit Icons */
+    .edit-icon-inline {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        cursor: pointer;
+        margin-left: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .edit-icon-inline:hover {
+        color: #0d6efd;
+        transform: rotate(15deg) scale(1.1);
+    }
+
+    /* Info Rows with Animation */
+    .info-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 12px;
+        padding: 8px 0;
+        transition: all 0.3s ease;
+        border-radius: 12px;
+    }
+
+    .info-row:hover {
+        background: linear-gradient(90deg, rgba(13,110,253,0.05) 0%, transparent 100%);
+        padding-left: 8px;
+    }
+
+    /* Date Display with Animation */
+    .top-date {
+        text-align: center;
+        margin-bottom: 15px;
+        animation: slideDown 0.5s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (min-width: 768px) {
+        .top-date {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+    }
+
+    .date-text {
+        background: white;
+        padding: 8px 20px;
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .date-text:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Modal Enhancement */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 24px;
+        border-radius: 24px;
+        width: 100%;
+        max-width: 500px;
+        max-height: 85vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s ease;
+        transform-origin: center;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* Form Groups */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #334155;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-group label i {
+        color: #0d6efd;
+        font-size: 0.9rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: #ffffff;
+        font-family: inherit;
+    }
+
+    .form-control:hover {
+        border-color: #cbd5e1;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+        transform: translateY(-2px);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    /* Modal Buttons */
+    .btn-modal {
+        padding: 10px 24px;
+        border-radius: 14px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+        transform: translateY(-2px);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(13, 110, 253, 0.4);
+    }
+
+    .btn-primary:active, .btn-secondary:active {
+        transform: translateY(0);
+    }
+
+    /* Enhanced Alert */
+    .alert {
+        position: fixed;
+        top: 70px;
+        right: 10px;
+        left: 10px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        z-index: 9999;
+        animation: slideInRight 0.3s ease;
+        font-size: 0.85rem;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @media (min-width: 768px) {
+        .alert {
+            top: 80px;
+            right: 20px;
+            left: auto;
+            padding: 12px 20px;
+        }
+    }
+
+    .alert-success {
+        background: #d1fae5;
+        color: #047857;
+        border-left: 4px solid #10b981;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        color: #b91c1c;
+        border-left: 4px solid #ef4444;
+    }
+
+    .alert-info {
+        background: #eff6ff;
+        color: #0d6efd;
+        border-left: 4px solid #0d6efd;
+    }
+
+    /* Glowing Effect for Important Elements */
+    .glow {
+        animation: glow 2s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+        0%, 100% {
+            box-shadow: 0 0 5px rgba(13, 110, 253, 0.2);
+        }
+        50% {
+            box-shadow: 0 0 20px rgba(13, 110, 253, 0.4);
+        }
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #0d6efd;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 576px) {
+        .info-row {
+            flex-wrap: wrap;
+        }
+
+        .info-icon-box {
+            width: 32px;
+            height: 32px;
+        }
+
+        .btn-modal {
+            padding: 8px 18px;
+            font-size: 0.85rem;
+        }
+
+        .modal-content {
+            padding: 20px;
+        }
+
+        .form-control {
+            padding: 10px 14px;
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Top Date with Icon -->
+    <div class="top-date">
+        <div class="date-text">
+            <i class="fa-regular fa-calendar-alt" style="color: #0d6efd;"></i>
+            <span id="current-date"></span>
+        </div>
+    </div>
+
+    <div class="row g-3 g-md-4">
+        <!-- LEFT PROFILE CARD -->
+        <div class="col-12 col-lg-4 col-xl-3">
+            <div class="card profile-card-rounded card-shadow p-3 p-md-4 text-center" style="background: white;">
+                <!-- Profile Picture -->
+                <div class="mb-3 mb-md-4 position-relative d-inline-block mx-auto">
+                    <img id="profile-card-img"
+                         src="{% if employee and employee.profile_pic %}{{ employee.profile_pic.url }}{% else %}{% static 'images/default.png' %}{% endif %}"
+                         class="rounded-circle profile-img"
+                         alt="Profile Picture"
+                         style="object-fit: cover;"
+                         onclick="document.getElementById('profile_pic_upload').click()">
+
+                    <div class="camera-btn" onclick="document.getElementById('profile_pic_upload').click()">
+                        <i class="fa-solid fa-camera text-white" style="font-size: 14px;"></i>
+                    </div>
+
+                    <input type="file" name="profile_pic" id="profile_pic_upload" accept="image/*" style="display: none;">
+                </div>
+
+                <!-- Identity Details -->
+                <div class="mb-3 mb-md-4">
+                    <h1 class="h3 fw-bold mb-1">{{ request.user.get_full_name|default:request.user.username }}</h1>
+                    <div class="d-flex align-items-center justify-content-center flex-wrap">
+                        <span class="text-secondary fw-medium" id="profile-designation">
+                            {{ employee.designation|default:"Not Specified" }}
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center flex-wrap mt-1">
+                        <span class="text-secondary fw-medium">
+                            {{ employee.get_role_display|default:"Not Specified" }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="mb-3 mb-md-4 py-2 py-md-3 border-top border-bottom">
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-2 text-secondary">
+                        <i class="fa-solid fa-at"></i>
+                        <span class="fw-medium" style="font-size: 0.85rem;">{{ request.user.username }}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center gap-2 text-secondary">
+                        <i class="fa-regular fa-envelope"></i>
+                        <span class="fw-medium" style="font-size: 0.85rem;">{{ request.user.email }}</span>
+                    </div>
+                </div>
+
+                <!-- Edit Profile Button - Always Enabled -->
+                <button class="btn btn-primary-custom d-flex align-items-center justify-content-center gap-2" onclick="openEditModal()">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    Edit Profile
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT CONTENT -->
+        <div class="col-12 col-lg-8 col-xl-9">
+            <!-- ATTENDANCE SECTION -->
+            <div class="card profile-card-rounded card-shadow p-3 p-md-4 mb-3 mb-md-4" style="background: white;">
+                <div class="d-flex align-items-center justify-content-between mb-3 mb-md-4 flex-wrap gap-2">
+                    <div>
+                        <h2 class="h5 fw-bold mb-1">
+                            <i class="fa-regular fa-clock me-2" style="color: #0d6efd;"></i>
+                            Today's Attendance
+                        </h2>
+                        <p class="text-muted small mb-0" id="attendance-date"></p>
+                    </div>
+
+                    <!-- Status Badge based on model status -->
+                    {% if attendance_status == "full_day" %}
+                        <span class="badge-status badge-full_day">
+                            <i class="fa-regular fa-check-circle me-1"></i> FULL DAY PRESENT
+                        </span>
+                    {% elif attendance_status == "half_day" %}
+                        <span class="badge-status badge-half_day">
+                            <i class="fa-regular fa-sun me-1"></i> HALF DAY PRESENT
+                        </span>
+                    {% elif attendance_status == "pending" %}
+                        <span class="badge-status badge-pending">
+                            <i class="fa-regular fa-hourglass-half me-1"></i> PENDING
+                        </span>
+                    {% elif attendance_status == "approved" %}
+                        <span class="badge-status badge-approved">
+                            <i class="fa-regular fa-check-circle me-1"></i> APPROVED
+                        </span>
+                    {% elif attendance_status == "rejected" %}
+                        <span class="badge-status badge-rejected">
+                            <i class="fa-regular fa-times-circle me-1"></i> REJECTED
+                        </span>
+                    {% else %}
+                        <span class="badge-status badge-absent">
+                            <i class="fa-regular fa-times-circle me-1"></i> NOT MARKED
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="row g-2 g-md-3">
+                    <div class="col-12 col-md-4">
+                        <div class="attendance-box">
+                            <div class="label-xs">
+                                <i class="fa-regular fa-arrow-right-to-bracket me-1"></i> Clock In
+                            </div>
+                            <div class="text-detail">
+                                {% if attendance and attendance.clock_in %}
+                                    {{ attendance.clock_in|time:"h:i A" }}
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <div class="attendance-box">
+                            <div class="label-xs">
+                                <i class="fa-regular fa-arrow-left-from-bracket me-1"></i> Clock Out
+                            </div>
+                            <div class="text-detail">
+                                {% if attendance and attendance.clock_out %}
+                                    {{ attendance.clock_out|time:"h:i A" }}
+                                {% elif attendance_status == "pending" or attendance_status == "half_day" %}
+                                    <span style="color: #d97706;">
+                                        <i class="fa-regular fa-hourglass-half me-1"></i> Not yet
+                                    </span>
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <div class="duration-box">
+                            <div class="label-xs">
+                                <i class="fa-regular fa-hourglass-half me-1"></i>
+                                {% if attendance_status == "pending" or attendance_status == "half_day" %}
+                                    Current Duration
+                                {% else %}
+                                    Total Duration
+                                {% endif %}
+                            </div>
+                            <div class="h4 fw-bold text-primary mb-0" style="font-size: 1.1rem;">
+                                {% if duration %}
+                                    {{ duration }}
+                                {% elif current_duration %}
+                                    {{ current_duration }}
+                                    <small class="text-muted" style="font-size: 0.7rem;">(ongoing)</small>
+                                {% else %}
+                                    0h 0m
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Messages -->
+                {% if attendance_status == "pending" %}
+                    <div class="mt-3 small text-center" style="color: #d97706; background: #fffbeb; padding: 8px; border-radius: 8px;">
+                        <i class="fa-regular fa-bell me-1"></i>
+                        Your attendance is pending approval. Please check back later.
+                    </div>
+                {% elif attendance_status == "rejected" %}
+                    <div class="mt-3 small text-center" style="color: #b91c1c; background: #fee2e2; padding: 8px; border-radius: 8px;">
+                        <i class="fa-regular fa-ban me-1"></i>
+                        Your attendance was rejected.
+                        {% if attendance.remark %}
+                            <br><strong>Remark:</strong> {{ attendance.remark }}
+                        {% endif %}
+                    </div>
+                {% elif attendance_status == "approved" %}
+                    <div class="mt-3 small text-center" style="color: #047857; background: #d1fae5; padding: 8px; border-radius: 8px;">
+                        <i class="fa-regular fa-check-circle me-1"></i>
+                        Your attendance has been approved.
+                    </div>
+                {% elif attendance_status == "half_day" %}
+                    <div class="mt-3 small text-center" style="color: #d97706; background: #fffbeb; padding: 8px; border-radius: 8px;">
+                        <i class="fa-regular fa-sun me-1"></i>
+                        Half-day attendance recorded.
+                    </div>
+                {% elif attendance_status == "full_day" %}
+                    <div class="mt-3 small text-center" style="color: #047857; background: #d1fae5; padding: 8px; border-radius: 8px;">
+                        <i class="fa-regular fa-check-circle me-1"></i>
+                        Full day attendance completed.
+                    </div>
+                {% endif %}
+
+                {% if attendance and attendance.remark and attendance_status != "rejected" %}
+                    <div class="mt-2 small text-center" style="color: #6c757d; background: #f8f9fa; padding: 8px; border-radius: 8px;">
+                        <i class="fa-regular fa-comment me-1"></i>
+                        <strong>Remark:</strong> {{ attendance.remark }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- DETAILS ROW -->
+            <div class="row g-3 g-md-4">
+                <!-- OFFICE DETAILS -->
+                <div class="col-12 col-md-6">
+                    <div class="card profile-card-rounded card-shadow p-3 p-md-4 h-100" style="background: white;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 mb-md-4">
+                            <h2 class="h6 fw-bold mb-0">
+                                <i class="fa-regular fa-building me-2" style="color: #0d6efd;"></i>
+                                Office Details
+                            </h2>
+                        </div>
+
+                        <div class="d-flex flex-column gap-2 gap-md-3">
+                            <div class="info-row">
+                                <div class="info-icon-box">
+                                    <i class="fa-solid fa-building" style="color: #0d6efd;"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="text-sub">Office Name</div>
+                                    <div class="info-value">
+                                        <span class="value-text" id="office-name">
+                                            {{ employee.office_location.office_name|default:"Not Specified" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="info-row">
+                                <div class="info-icon-box">
+                                    <i class="fa-solid fa-location-dot" style="color: #0d6efd;"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="text-sub">Office Address</div>
+                                    <div class="info-value">
+                                        <span class="value-text" id="work-address">
+                                            {{ employee.office_location.office_full_address|default:"Not Specified" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="info-row">
+                                <div class="info-icon-box">
+                                    <i class="fa-solid fa-landmark" style="color: #0d6efd;"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="text-sub">State</div>
+                                    <div class="info-value">
+                                        <span class="value-text">
+                                            {{ employee.office_location.get_state_display|default:"Not Specified" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="info-row">
+                                <div class="info-icon-box">
+                                    <i class="fa-solid fa-phone" style="color: #0d6efd;"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="text-sub">Work Phone</div>
+                                    <div class="info-value">
+                                        <span class="value-text" id="work-phone">
+                                            {{ employee.work_phone|default:"Not Specified" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PERSONAL DETAILS -->
+                <div class="col-12 col-md-6">
+                    <div class="card profile-card-rounded card-shadow p-3 p-md-4 h-100" style="background: white;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 mb-md-4">
+                            <h2 class="h6 fw-bold mb-0">
+                                <i class="fa-regular fa-user me-2" style="color: #0d6efd;"></i>
+                                Personal Details
+                            </h2>
+                        </div>
+
+                        <div class="d-flex flex-column gap-2 gap-md-3">
+                            <div class="info-row">
+                                <div class="info-icon-box">
+                                    <i class="fa-solid fa-mobile-screen-button" style="color: #0d6efd;"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="text-sub">Personal Phone</div>
+                                    <div class="info-value">
+                                        <span class="value-text" id="personal-phone">
+                                            {{ employee.personal_phone|default:"Not Specified" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="info-row">
+                                <div class="info-icon-box">
+                                    <i class="fa-solid fa-envelope-open-text" style="color: #0d6efd;"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="text-sub">Personal Email</div>
+                                    <div class="info-value">
+                                        <span class="value-text" id="personal-email">
+                                            {{ employee.personal_email|default:"Not Specified" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="info-row">
+                                <div class="info-icon-box">
+                                    <i class="fa-solid fa-house" style="color: #0d6efd;"></i>
+                                </div>
+                                <div class="info-content">
+                                    <div class="text-sub">Home Address</div>
+                                    <div class="info-value">
+                                        <span class="value-text" id="home-address">
+                                            {{ employee.address|default:"Not Specified" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal - Simplified Version -->
+<div class="modal-overlay" id="editModal" onclick="if(event.target === this) closeEditModal()">
+    <div class="modal-content">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">
+                <i class="fa-regular fa-pen-to-square me-2" style="color: #0d6efd;"></i>
+                Edit Profile
+            </h5>
+            <button class="btn btn-sm btn-light" onclick="closeEditModal()">✕</button>
+        </div>
+
+        <form id="editProfileForm">
+            {% csrf_token %}
+
+
+            <div class="form-group">
+                <label><i class="fa-solid fa-mobile-screen-button me-2"></i>Personal Phone</label>
+                <input type="tel" class="form-control" name="personal_phone" value="{{ employee.personal_phone|default:'' }}">
+                <small class="text-muted">Format: 10 digits or +91XXXXXXXXXX</small>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fa-solid fa-phone me-2"></i>Work Phone</label>
+                <input type="tel" class="form-control" name="work_phone" value="{{ employee.work_phone|default:'' }}">
+                <small class="text-muted">Format: 10 digits or +91XXXXXXXXXX</small>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fa-regular fa-envelope me-2"></i>Personal Email</label>
+                <input type="email" class="form-control" name="personal_email" value="{{ employee.personal_email|default:'' }}">
+            </div>
+
+            <div class="form-group">
+                <label><i class="fa-solid fa-house me-2"></i>Home Address</label>
+                <textarea class="form-control" name="address" rows="2">{{ employee.address|default:'' }}</textarea>
+            </div>
+        </form>
+
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <button class="btn-modal btn-secondary" onclick="closeEditModal()">Cancel</button>
+            <button class="btn-modal btn-primary" onclick="submitEditForm()">Save Changes</button>
+        </div>
+    </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+<script>
+// Set current date
+function setCurrentDate() {
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const today = new Date().toLocaleDateString('en-US', options);
+    const currentDateElem = document.getElementById('current-date');
+    const attendanceDateElem = document.getElementById('attendance-date');
+    if (currentDateElem) currentDateElem.textContent = today;
+    if (attendanceDateElem) attendanceDateElem.textContent = today;
+}
+
+// Profile picture upload with enhanced feedback
+const profilePicUpload = document.getElementById('profile_pic_upload');
+if (profilePicUpload) {
+    profilePicUpload.addEventListener('change', function(e) {
+        if (this.files && this.files[0]) {
+            const formData = new FormData();
+            formData.append('profile_pic', this.files[0]);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            const profileCardImg = document.getElementById('profile-card-img');
+            const navbarImg = document.getElementById('navbarProfilePic');
+
+            if (profileCardImg) {
+                profileCardImg.style.opacity = '0.5';
+                profileCardImg.style.transform = 'scale(0.95)';
+            }
+
+            showMessage('Uploading image...', 'info');
+
+            fetch('{% url "upload_profile_pic" %}', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (profileCardImg) {
+                    profileCardImg.style.opacity = '1';
+                    profileCardImg.style.transform = 'scale(1)';
+                }
+
+                if (data.success) {
+                    const timestamp = new Date().getTime();
+                    const newUrl = data.profile_pic_url + '?t=' + timestamp;
+
+                    if (profileCardImg) {
+                        profileCardImg.src = newUrl;
+                        profileCardImg.classList.add('glow');
+                        setTimeout(() => profileCardImg.classList.remove('glow'), 1000);
+                    }
+                    if (navbarImg) navbarImg.src = newUrl;
+
+                    showMessage('Profile picture updated successfully!', 'success');
+                } else {
+                    showMessage('Error: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                if (profileCardImg) {
+                    profileCardImg.style.opacity = '1';
+                    profileCardImg.style.transform = 'scale(1)';
+                }
+                showMessage('Error uploading image', 'error');
+            });
+        }
+    });
+}
+
+// Open/Close Modal
+function openEditModal() {
+    const modal = document.getElementById('editModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('editModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Submit Edit Form
+function submitEditForm() {
+    const formData = new FormData(document.getElementById('editProfileForm'));
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    showMessage('Saving changes...', 'info');
+
+    fetch('{% url "profile_edit" %}', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update all displayed fields with animation
+            const fields = [
+
+                { id: 'personal-phone', value: data.employee.personal_phone },
+                { id: 'work-phone', value: data.employee.work_phone },
+                { id: 'personal-email', value: data.employee.personal_email },
+                { id: 'home-address', value: data.employee.address }
+            ];
+
+            fields.forEach(field => {
+                const element = document.getElementById(field.id);
+                if (element) {
+                    element.style.opacity = '0.5';
+                    element.textContent = field.value || 'Not Specified';
+                    setTimeout(() => {
+                        element.style.opacity = '1';
+                        element.classList.add('glow');
+                        setTimeout(() => element.classList.remove('glow'), 500);
+                    }, 200);
+                }
+            });
+
+            if (data.employee.office_location) {
+                const officeName = document.getElementById('office-name');
+                const workAddress = document.getElementById('work-address');
+                if (officeName) officeName.textContent = data.employee.office_location.office_name || 'Not Specified';
+                if (workAddress) workAddress.textContent = data.employee.office_location.office_address || 'Not Specified';
+            }
+
+            showMessage('Profile updated successfully!', 'success');
+            closeEditModal();
+        } else {
+            showMessage('Error updating profile', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error updating profile', 'error');
+    });
+}
+
+// Show message with different types
+function showMessage(message, type) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `alert alert-${type}`;
+
+    let icon = '';
+    if (type === 'success') icon = '<i class="fa-regular fa-check-circle me-2"></i>';
+    else if (type === 'error') icon = '<i class="fa-regular fa-times-circle me-2"></i>';
+    else if (type === 'info') icon = '<i class="fa-regular fa-info-circle me-2"></i>';
+
+    msgDiv.innerHTML = icon + message;
+    document.body.appendChild(msgDiv);
+
+    setTimeout(() => {
+        msgDiv.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+            if (msgDiv) msgDiv.remove();
+        }, 300);
+    }, 3000);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    setCurrentDate();
+
+    // Add smooth entrance animation for cards
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+        card.style.animation = `fadeIn 0.5s ease ${index * 0.1}s forwards`;
+        card.style.opacity = '0';
+        setTimeout(() => {
+            card.style.opacity = '1';
+        }, index * 100);
+    });
+});
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeEditModal();
+});
+
+// Add loading state for images
+document.addEventListener('DOMContentLoaded', function() {
+    const images = document.querySelectorAll('img');
+    images.forEach(img => {
+        img.addEventListener('load', function() {
+            this.style.opacity = '1';
+        });
+        if (img.complete) {
+            img.style.opacity = '1';
+        } else {
+            img.style.opacity = '0.5';
+        }
+    });
+});
+    /// Submit Form with SweetAlert2
+// In your submitEditForm function, update the error handling
+function submitEditForm() {
+    const formData = new FormData(document.getElementById('editProfileForm'));
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    const saveBtn = document.querySelector('.btn-primary');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fa-regular fa-spinner fa-spin me-1"></i> Saving...';
+    saveBtn.disabled = true;
+
+    Swal.fire({
+        title: 'Saving...',
+        text: 'Please wait while we save your changes',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    fetch('{% url "profile_edit" %}', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+        Swal.close();
+
+        if (data.success) {
+            updateDisplayFields(data.employee);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: 'Profile updated successfully',
+                timer: 2000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+
+            closeEditModal();
+        } else if (data.errors) {
+            // Show validation errors in a nice format
+            let errorHtml = '<div style="text-align: left; max-height: 300px; overflow-y: auto;">';
+            const fieldLabels = {
+                'personal_phone': 'Personal Phone',
+                'work_phone': 'Work Phone',
+                'personal_email': 'Personal Email'
+            };
+
+            for (const [field, error] of Object.entries(data.errors)) {
+                const label = fieldLabels[field] || field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                errorHtml += `
+                    <div style="margin-bottom: 12px; padding: 8px; background: #fef2f2; border-left: 3px solid #dc2626; border-radius: 6px;">
+                        <strong style="color: #dc2626;">${label}:</strong><br>
+                        <span style="font-size: 0.9rem;">${error}</span>
+                    </div>
+                `;
+            }
+            errorHtml += '</div>';
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                html: errorHtml,
+                confirmButtonColor: '#0d6efd',
+                confirmButtonText: 'Got it'
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: data.error || 'Error updating profile',
+                confirmButtonColor: '#0d6efd'
+            });
+        }
+    })
+    .catch(error => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+        Swal.close();
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'Something went wrong. Please try again.',
+            confirmButtonColor: '#0d6efd'
+        });
+    });
+}
+function updateDisplayFields(employee) {
+    const fields = {
+        'profile-designation': employee.designation,
+        'personal-phone': employee.personal_phone,
+        'work-phone': employee.work_phone,
+        'personal-email': employee.personal_email,
+        'home-address': employee.address,
+        'office-name': employee.office_location?.office_name,
+        'work-address': employee.office_location?.office_address
+    };
+
+    Object.entries(fields).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el && value) {
+            el.textContent = value;
+            // Add highlight effect
+            el.classList.add('highlight');
+            setTimeout(() => el.classList.remove('highlight'), 500);
+        }
+    });
+
+    if (employee.profile_pic_url) {
+        const img = document.getElementById('profile-card-img');
+        if (img) {
+            img.src = employee.profile_pic_url + '?t=' + Date.now();
+            // Add pulse effect
+            img.classList.add('pulse');
+            setTimeout(() => img.classList.remove('pulse'), 500);
+        }
+    }
+}
+
+// Modal functions
+function openEditModal() {
+    const modal = document.getElementById('editModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Optional: Add animation class
+        modal.classList.add('show');
+    }
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('editModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+    }
+}
+
+// Set current date
+function setCurrentDate() {
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const dateStr = new Date().toLocaleDateString('en-US', options);
+    const currentDateElem = document.getElementById('current-date');
+    const attendanceDateElem = document.getElementById('attendance-date');
+    if (currentDateElem) currentDateElem.textContent = dateStr;
+    if (attendanceDateElem) attendanceDateElem.textContent = dateStr;
+}
+
+// Show message (kept for backward compatibility, but now using SweetAlert)
+function showMessage(message, type) {
+    if (type === 'success') {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: message,
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
+    } else if (type === 'error') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: message,
+            confirmButtonColor: '#0d6efd'
+        });
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    setCurrentDate();
+
+    // Add event listener for modal close on escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeEditModal();
+        }
+    });
+
+    // Close modal when clicking outside
+    const modal = document.getElementById('editModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+    }
+});
+    function validateEmailField(input) {
+    const email = input.value.trim();
+    const errorSpan = input.nextElementSibling;
+
+    if (email === '') {
+        errorSpan.style.display = 'none';
+        input.style.borderColor = '#e2e8f0';
+        return true;
+    }
+
+    // Strict validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    if (!emailRegex.test(email)) {
+        errorSpan.style.display = 'block';
+        errorSpan.innerHTML = '❌ Invalid email format';
+        input.style.borderColor = '#dc2626';
+        return false;
+    }
+
+    // Additional checks
+    const domain = email.split('@')[1];
+    if (domain && domain.includes('.')) {
+        const tld = domain.split('.').pop();
+        if (tld.length < 2 || tld.length > 6 || !/^[a-zA-Z]+$/.test(tld)) {
+            errorSpan.style.display = 'block';
+            errorSpan.innerHTML = '❌ Invalid domain extension';
+            input.style.borderColor = '#dc2626';
+            return false;
+        }
+    }
+
+    errorSpan.style.display = 'none';
+    input.style.borderColor = '#10b981';
+    return true;
+}
+</script>
+
+{% endblock body %}

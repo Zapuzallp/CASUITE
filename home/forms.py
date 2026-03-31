@@ -363,12 +363,6 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
                     "End date cannot be before start date."
                 )
 
-            # Check if dates are in the past
-            from datetime import date
-            if start_date < date.today():
-                raise forms.ValidationError(
-                    "Cannot apply for leaves in the past."
-                )
 
         return cleaned_data
 

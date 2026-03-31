@@ -11,7 +11,7 @@ def is_admin(user):
     return user.is_staff or user.is_superuser
 
 
-class ManageLeavesView(LoginRequiredMixin, AdminAccessMixin, TemplateView):
+class ManageLeavesView(LoginRequiredMixin, LeaveManagementMixin, TemplateView):
     template_name = "manage_leaves.html"
 
     def post(self, request, *args, **kwargs):
@@ -33,7 +33,7 @@ class ManageLeavesView(LoginRequiredMixin, AdminAccessMixin, TemplateView):
 
         employees = Employee.objects.all()
 
-        # Role-based leave filtering
+        # Role-based leave filtering - now includes PARTNER role
         if request.user.employee.role == 'BRANCH_MANAGER':
             all_leaves = (
                 Leave.objects.all()
@@ -43,7 +43,7 @@ class ManageLeavesView(LoginRequiredMixin, AdminAccessMixin, TemplateView):
                 .filter(employee__office_location=request.user.employee.office_location)
             )
 
-        elif request.user.is_superuser or request.user.employee.role == 'ADMIN':
+        elif request.user.is_superuser or request.user.employee.role == 'ADMIN' or request.user.employee.role == 'PARTNER':
             all_leaves = (
                 Leave.objects.all()
                 .select_related('employee__user')
