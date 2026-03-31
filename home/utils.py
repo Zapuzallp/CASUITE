@@ -299,7 +299,7 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
 
     return remarks
 
-def process_clock_in(user, lat=None, long=None, location_name=None, device_type='web'):
+def process_clock_in(user, lat=None, long=None, location_name=None, device_type='web', reason=None):
     """Process clock in for both web and mobile"""
     from home.models import Attendance
     from django.contrib import messages
@@ -330,6 +330,10 @@ def process_clock_in(user, lat=None, long=None, location_name=None, device_type=
     # Set location_name if provided
     if location_name and location_name.strip():
         attendance.location_name = location_name
+
+    # Set reason if provided
+    if reason and reason.strip():
+        attendance.reason = reason
 
     # Check compliance with device type
     compliance_remarks = check_attendance_compliance(user, current_time, clock_in_lat=lat, clock_in_lng=long, device_type=device_type)

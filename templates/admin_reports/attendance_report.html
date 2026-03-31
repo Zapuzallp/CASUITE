@@ -286,6 +286,7 @@
                                             <th>Clock Out</th>
                                             <th>Duration</th>
                                             <th>Status</th>
+                                            <th>Reason</th>
                                             <th>Remark</th>
                                         </tr>
                                     </thead>
@@ -306,11 +307,12 @@
                                                     {{ r.status|title }}
                                                 </span>
                                             </td>
+                                            <td>{{ r.reason|default:"-" }}</td>
                                             <td>{{ r.remark|default:"-" }}</td>
                                         </tr>
                                         {% empty %}
                                         <tr>
-                                            <td colspan="8" class="text-center text-muted">
+                                            <td colspan="9" class="text-center text-muted">
                                                 No records found. Try adjusting your filters.
                                             </td>
                                         </tr>

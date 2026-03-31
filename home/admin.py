@@ -845,6 +845,7 @@ class AttendanceAdmin(admin.ModelAdmin):
         "duration",
         "status",
         "location_name",
+        "reason",
         "remark",
     )
     list_filter = ("status", "date")
