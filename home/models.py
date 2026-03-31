@@ -925,6 +925,7 @@ class Leave(models.Model):
         ("sick", "Sick Leave"),
         ("casual", "Casual Leave"),
         ("earned", "Earned Leave"),
+        ("extra_vacation", "Tour Leave"),
     ]
 
     STATUS = [
