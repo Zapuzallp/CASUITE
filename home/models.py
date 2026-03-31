@@ -731,6 +731,7 @@ class Attendance(models.Model):
     )
 
     remark = models.TextField(blank=True, null=True)
+    reason = models.TextField(blank=True, null=True)
 
     location_name = models.CharField(max_length=255, null=True, blank=True)
     clock_in_lat = models.DecimalField(
@@ -859,6 +860,7 @@ class Notification(models.Model):
 ROLES_CHOICE = [
     ('BRANCH_MANAGER', 'Branch Manager'),
     ('ADMIN', 'Administrator'),
+    ('PARTNER', 'Partner'),
     ('STAFF', 'Staff')
 ]
 

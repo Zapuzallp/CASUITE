@@ -35,7 +35,7 @@
                     <div class="accordion-body bg-light border rounded-3 p-3">
                         <form method="get">
                             <div class="row g-3">
-                                <! -- SEARCH -->
+                                <!-- SEARCH -->
                                 <div class="col-md-4">
                                     <label class="form-label small text-secondary fw-semibold">Search</label>
                                     <input class="form-control" name="q" placeholder="Invoice ID or Client name" type="text" value="{{ q }}">
@@ -73,17 +73,23 @@
                                     </select>
                                 </div>
                                 <!-- PAYMENT DATE RANGE -->
-                                <div class="col-md-6">
-                                    <label class="form-label small text-secondary fw-semibold">Payment Date</label>
+                                <!--From-->
+                                <div class="col-md-3">
+                                    <label class="form-label small text-secondary fw-semibold">From </label>
                                     <div class="input-group">
-                                        <input type="date" class="form-control" name="date_from" value="{{ date_from }}">
-                                        <span class="input-group-text">to</span>
-                                        <input type="date" class="form-control" name="date_to" value="{{ date_to }}">
+                                        <input type="date" id = "from-fltr" class="form-control rounded" name="date_from" value="{{ date_from }}">
+                                    </div>
+                                </div>
+                                <!--To-->
+                                 <div class="col-md-3">
+                                    <label class="form-label small text-secondary fw-semibold">To</label>
+                                    <div class="input-group">
+                                        <input type="date" id = "to-fltr" class="form-control rounded" name="date_to" value="{{ date_to }}">
                                     </div>
                                 </div>
                                 <!-- ACTION BUTTONS -->
                                 <div class="col-12 d-flex justify-content-end gap-2 mt-3">
-                                    <button class="btn btn-primary px-4" type="submit"><i class="bi bi-search me-1"></i> Apply</button>
+                                    <button class="btn btn-primary px-4" type="submit" id = 'btn-apply'><i class="bi bi-search me-1"></i> Apply Filters</button>
                                     <a class="btn btn-outline-secondary px-4" href="{% url 'payment_list' %}"><i class="bi bi-x-circle me-1"></i> Clear</a>
                                 </div>
                             </div>
@@ -102,9 +108,11 @@
                             Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ paginator.count }} payments
                         </small>
                     </div>
+                    {% if not is_partner %}
                     <button class="btn btn-primary btn-sm" data-bs-target="#selectInvoiceModal" data-bs-toggle="modal">
                         <i class="bi bi-plus-circle me-1"></i> Collect Payment
                     </button>
+                    {% endif %}
                 </div>
 
                 {% if messages %}
@@ -294,7 +302,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-
     /* ---------- Invoice search ---------- */
     $('#invoicePicker').select2({
         theme: 'bootstrap-5',
@@ -331,6 +338,56 @@ document.addEventListener('DOMContentLoaded', function () {
             checkboxes.forEach(cb => cb.checked = this.checked);
         });
     }
+    
+    // Date filter 
+    const applyFilterBtn = document.getElementById("btn-apply");
+    if (applyFilterBtn) {
+    applyFilterBtn.addEventListener("click", function(e) {
+        const from = document.querySelector('#from-fltr').value;
+        const to = document.querySelector('#to-fltr').value;
+
+        // Case 1: Start date exists, but End date is missing
+        if (from && !to) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing End Date',
+                text: 'You’ve set a start date, but please select an end date to complete the range.',
+                confirmButtonColor: '#4f46e5',
+            });
+            return; 
+        }
+
+        // Case 2: End date exists, but Start date is missing
+        if (to && !from) {
+            e.preventDefault();
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Start Date',
+                text: 'You’ve set an end date, but please select a start date to complete the range.',
+                confirmButtonColor: '#4f46e5',
+            });
+            return; 
+        }
+
+        // Case 3: Both dates exist, but the range is logically impossible
+        if (from && to) {
+            const fromDate = new Date(from);
+            const toDate = new Date(to);
+
+            if (toDate < fromDate) {
+                e.preventDefault();
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Date Range',
+                    text: 'The "To" date cannot be earlier than the "From" date.',
+                    confirmButtonColor: '#4f46e5', 
+                });
+                return; 
+            }
+        }})}
 });
 
 // Trigger Bulk Confirmation Modal
@@ -387,4 +444,6 @@ function triggerBulkConfirm(actionType) {
     };
 }
 </script>
+
+
 {% endblock body %}
