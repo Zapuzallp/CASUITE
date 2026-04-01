@@ -173,6 +173,39 @@
         });
     });
 </script>
+
+<script>
+setInterval(function() {
+    fetch("{% url 'notification_count' %}")
+        .then(res => res.json())
+        .then(data => {
+            const userId = "{{ request.user.id }}";
+            const storageKey = `notif_count_${userId}`;
+
+            let lastCount = localStorage.getItem(storageKey);
+
+            console.log("NEW COUNT:", data.count);
+            console.log("OLD COUNT:", lastCount);
+
+            // FIRST TIME → don't play sound
+            if (lastCount === null) {
+                localStorage.setItem(storageKey, data.count);
+                return;
+            }
+
+            lastCount = parseInt(lastCount);
+
+            // PLAY SOUND ONLY IF INCREASED
+            if (data.count > lastCount) {
+                const audio = new Audio("{% static 'sound/sounds.mp3' %}");
+                audio.play()
+            }
+
+            localStorage.setItem(storageKey, data.count);
+        });
+}, 1500);
+</script>
+
 <!--    SCRIPT FOR THE SWEETALERT-->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="{% static 'assets/js/main.js' %}"></script>

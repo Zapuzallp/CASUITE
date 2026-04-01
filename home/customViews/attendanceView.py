@@ -17,8 +17,9 @@ class ClockInView(LoginRequiredMixin, View):
         lat = request.POST.get("lat")
         long = request.POST.get("long")
         location_name = request.POST.get("location_name")
+        reason = request.POST.get("reason")
         
-        result = process_clock_in(request.user, lat, long, location_name, device_type='web')
+        result = process_clock_in(request.user, lat, long, location_name, device_type='web', reason=reason)
         
         if result['success']:
             messages.success(request, result['message'])
