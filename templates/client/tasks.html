@@ -71,15 +71,14 @@
                                         <!-- Client Filter -->
                                         <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Client</label>
-                                            <select name="client" id="clientFilter" class="form-select js-task-filter-select"
-                                                    data-placeholder="Search Client / PAN / Status">
+                                            <select name="client" id="clientFilter" class="form-select js-task-filter-select">
                                                 <option value="">All Clients</option>
                                                 {% for client in filter_clients %}
                                                     <option value="{{ client.id }}"
                                                             data-pan="{{ client.pan_no|default_if_none:'' }}"
                                                             data-status="{{ client.status|default_if_none:'' }}"
                                                             {% if request.GET.client == client.id|stringformat:"i" %}selected{% endif %}>
-                                                        {{ client.client_name }}
+                                                        {{ client.client_name }} || {{ client.pan_no|default:"No PAN" }} || {{ client.status|default:"Prospect" }}
                                                     </option>
                                                 {% endfor %}
                                             </select>
@@ -510,6 +509,6 @@
 <!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<script src="{% static 'assets/js/tasks.js' %}?v=20260323-3"></script>
+    <script src="{% static 'assets/js/tasks.js' %}?v=20260331-17"></script>
 
 {% endblock body %}

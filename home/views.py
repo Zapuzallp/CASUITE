@@ -383,14 +383,13 @@ def client_search(request):
 
     data = []
     for c in clients:
-        status_display = c.get_status_display() if c.status else ''
+        status_display = c.get_status_display() if c.status else 'Prospect'
         label_parts = [
             c.client_name,
             c.pan_no or 'No PAN',
         ]
 
-        if status_display:
-            label_parts.append(status_display)
+        label_parts.append(status_display)
 
         data.append({
             "id": c.id,
