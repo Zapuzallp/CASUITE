@@ -67,7 +67,7 @@
                                         <option value="">All clients</option>
                                         {% for client in clients %}
                                         <option value="{{ client.id }}" {% if client_id|stringformat:"s" == client.id|stringformat:"s" %}selected{% endif %}>
-                                            {{ client.client_name }}
+                                            {{ client.client_name }} || {{ client.pan_no|default:"No PAN" }} || {{ client.get_status_display|default:"Prospect" }}
                                         </option>
                                         {% endfor %}
                                     </select>
