@@ -2,6 +2,20 @@
 Management command to process recurring tasks.
 This command can be run via cronjob in production environments.
 
+Features:
+- Automatically creates new tasks from recurring task templates
+- Sets due dates based on service type configuration (TASK_CONFIG)
+- Sends notifications to task creators and superusers
+- Supports dry-run mode for testing
+
+Due Date Calculation:
+When a recurring task is created, the due date is automatically calculated based on
+the 'default_due_days' setting in TASK_CONFIG for each service type:
+- GST Return: 20 days from creation
+- ITR Filing: 120 days from creation
+- Audit: 180 days from creation
+- ROC Compliance: 30 days from creation
+
 Usage:
     python manage.py run_recurring_tasks
 
@@ -224,8 +238,9 @@ class Command(BaseCommand):
                         self._send_success_notification(recurrence.task, new_task)
                     
                     if verbose:
+                        due_date_str = new_task.due_date.strftime('%Y-%m-%d') if new_task.due_date else 'Not set'
                         self.stdout.write(
-                            f'    → Created: {new_task.task_title} (ID: {new_task.id})'
+                            f'    → Created: {new_task.task_title} (ID: {new_task.id}, Due: {due_date_str})'
                         )
                     
                     logger.info(
@@ -274,6 +289,8 @@ class Command(BaseCommand):
             superusers = User.objects.filter(is_superuser=True)
             recipients.update(superusers)
             
+            due_date_str = new_task.due_date.strftime('%Y-%m-%d') if new_task.due_date else 'Not set'
+            
             title = f"Recurring Task Created: {new_task.task_title}"
             message = (
                 f"A new recurring task has been automatically created.\n\n"
@@ -281,7 +298,8 @@ class Command(BaseCommand):
                 f"Client: {new_task.client.client_name}\n"
                 f"Service: {new_task.service_type}\n"
                 f"Priority: {new_task.priority}\n"
-                f"Status: {new_task.status}"
+                f"Status: {new_task.status}\n"
+                f"Due Date: {due_date_str}"
             )
             
             for user in recipients:
