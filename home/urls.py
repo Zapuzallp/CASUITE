@@ -21,6 +21,7 @@ from home.customViews.notificationView import (
     read_all_notifications,
     view_notification,
     all_notifications,
+    notification_count
 )
 
 # from home.customViews.serviceViews import (
@@ -81,6 +82,7 @@ urlpatterns = [
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
+    path('notifications/count/',notification_count, name='notification_count'),
 
     # Attendance
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
@@ -139,6 +141,9 @@ urlpatterns = [
     path('invoices/bulk-status-update/', invoiceView.invoice_bulk_status_update, name="invoice_bulk_status_update"),
     #profile url
     path('upload-profile-pic/', profileView.upload_profile_pic, name='upload_profile_pic'),
+    path('profile/', profileView.profile_view, name='profile'),
+    path('profile/edit/', profileView.profile_edit, name='profile_edit'),
+
     # Portal Credentials
     path('client/<int:client_id>/credentials/add/', credentialsView.add_portal_credential,name='add_portal_credential'),
     path('credentials/<int:credential_id>/view/', credentialsView.view_portal_credential,name='view_portal_credential'),

@@ -186,7 +186,7 @@
                     {% if user.is_staff and user.employee.profile_pic %}
                         <img src="{{ user.employee.profile_pic.url }}" alt="Profile" class="rounded-circle" width="35" height="35">
                     {% else %}
-                        <img src="{% static 'assets/img/profile-img.jpg' %}" alt="Profile" class="rounded-circle" width="35" height="35">
+                        <img src="{% static 'images/default.png' %}" alt="Profile" class="rounded-circle" width="35" height="35">
                     {% endif %}
                 </a>
 
@@ -196,7 +196,7 @@
                         <span>{% if user.is_staff %}{{ user.employee.designation }}{% else %}Client{% endif %}</span>
                     </li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item d-flex align-items-center" href="#"><i class="bi bi-person"></i><span>My Profile</span></a></li>
+                    <li><a class="dropdown-item d-flex align-items-center" href="{% url 'profile' %}"><i class="bi bi-person"></i><span>My Profile</span></a></li>
                     <li><a class="dropdown-item d-flex align-items-center" href="#"><i class="bi bi-gear"></i><span>Account Settings</span></a></li>
                     {% if user.is_staff %}
                     <li><a class="dropdown-item d-flex align-items-center" href="/admin"><i class="bi bi-shield-lock"></i><span>Admin Panel</span></a></li>

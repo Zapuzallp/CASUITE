@@ -34,11 +34,13 @@
                                 </small>
                             </div>
 
+                            {% if not is_partner %}
                             <button class="btn btn-primary btn-sm"
                                     data-bs-toggle="modal"
                                     data-bs-target="#addServiceModal">
                                 <i class="bi bi-plus-circle me-1"></i> Add Service
                             </button>
+                            {% endif %}
                         </div>
 
                         <!-- TABLE -->
@@ -79,6 +81,7 @@
                                     <td>{{ service.hsn_code|default:"-" }}</td>
 
                                     <td class="text-center">
+                                        {% if not is_partner %}
                                         <div class="btn-group" role="group">
 
                                             <!-- EDIT SERVICE -->
@@ -101,6 +104,9 @@
 
 
                                         </div>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
                                     </td>
 
                                 </tr>

@@ -569,19 +569,8 @@
             endInput.addEventListener("change", calculateDays);
             leaveTypeSelect.addEventListener("change", calculateDays);
 
-           
+            
+            
         });
     </script>
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const highlightId = urlParams.get('highlight');
-        if (highlightId) {
-            const element = document.getElementById('item-' + highlightId);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-    });
-</script>
 {% endblock body %}

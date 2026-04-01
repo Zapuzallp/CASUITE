@@ -358,17 +358,46 @@ def get_client_dashboard_data(user, today):
 @login_required(login_url='/login/')
 def client_search(request):
     q = request.GET.get('q', '').strip()
+    normalized_q = q.lower()
 
-    clients = Client.objects.filter(
-        Q(client_name__icontains=q) |
-        Q(pan_no__icontains=q)
-    )[:20]
+    clients = get_accessible_clients(request.user).order_by('client_name')
+
+    if q:
+        search_terms = [q]
+
+        # Support common user wording/typos when they mean "Prospect".
+        if any(alias in normalized_q for alias in ('perspective', 'prospective')):
+            search_terms.append('Prospect')
+
+        search_filter = Q()
+        for term in search_terms:
+            search_filter |= (
+                Q(client_name__icontains=term) |
+                Q(pan_no__icontains=term) |
+                Q(status__icontains=term)
+            )
+
+        clients = clients.filter(search_filter)
+
+    clients = clients[:20]
 
     data = []
     for c in clients:
+        status_display = c.get_status_display() if c.status else ''
+        label_parts = [
+            c.client_name,
+            c.pan_no or 'No PAN',
+        ]
+
+        if status_display:
+            label_parts.append(status_display)
+
         data.append({
             "id": c.id,
-            "text": f"{c.client_name} || {c.pan_no} || {c.status}"
+            "text": " || ".join(label_parts),
+            "client_name": c.client_name,
+            "pan_no": c.pan_no or '',
+            "status": status_display
         })
     return JsonResponse(data, safe=False)
 
