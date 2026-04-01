@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from home.models import Notification
+from home.models import Notification,Leave
 from django.http import JsonResponse
 
 @login_required
