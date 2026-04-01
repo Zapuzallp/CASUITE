@@ -398,7 +398,7 @@ def process_clock_in(user, lat=None, long=None, location_name=None, device_type=
         # Append to existing remarks
         new_remarks = "; ".join(compliance_remarks)
         if attendance.remark:
-            attendance.remark = f"{attendance.remark}; {new_remarks}"
+            attendance.remark = f"{attendance.remark}\n{new_remarks}"
         else:
             attendance.remark = new_remarks
 
@@ -510,7 +510,7 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
             # Append to existing remarks
             new_remarks = "; ".join(compliance_remarks)
             if attendance.remark:
-                attendance.remark = f"{attendance.remark}; {new_remarks}"
+                attendance.remark = f"{attendance.remark}\n{new_remarks}"
             else:
                 attendance.remark = new_remarks
 
