@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% load static %}
+{% load custom_filters %}
 
 {% block body %}
 <!-- CUSTOM STYLES MOVED HERE SO THEY LOAD CORRECTLY -->
@@ -244,13 +245,11 @@
                 <h5 class="card-title m-0">All Invoices</h5>
                 <small class="text-muted">Showing {{ invoices|length}} invoice(s)</small>
               </div>
-              {% if not is_partner %}
               <div>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInvoiceModal">
                   <i class="bi bi-plus-circle me-1"></i> Add Invoice
                 </button>
               </div>
-              {% endif %}
             </div>
 
             {% if messages %}
@@ -388,18 +387,20 @@
                             {{ item.payment_status_display }}
                           </span>
                         {% elif item.payment_status == 'DRAFT' or item.payment_status == 'OPEN' %}
-                          <!-- Status editable - no payment yet - show dropdown (unless partner) -->
-                          {% if is_partner %}
+                          <!-- Status editable - no payment yet - show dropdown -->
+                          {% if item.invoice|can_edit_invoice:request.user %}
+                          <select name="status_{{ item.invoice.id }}" class="form-select form-select-sm status-dropdown"
+                                  data-invoice-id="{{ item.invoice.id }}"
+                                  style="width: auto; min-width: 100px;">
+                            <option value="DRAFT" {% if item.payment_status == 'DRAFT' %}selected{% endif %}>Draft</option>
+                            <option value="OPEN" {% if item.payment_status == 'OPEN' %}selected{% endif %}>Open</option>
+                          </select>
+                          {% else %}
                             <span class="badge
                               {% if item.payment_status == 'DRAFT' %}bg-secondary
                               {% else %}bg-info{% endif %}">
                               {{ item.payment_status_display }}
                             </span>
-                          {% else %}
-                            <select name="status_{{ item.invoice.id }}" class="form-select form-select-sm status-dropdown" style="min-width: 120px;">
-                              <option value="DRAFT" {% if item.payment_status == 'DRAFT' %}selected{% endif %}>Draft</option>
-                              <option value="OPEN" {% if item.payment_status == 'OPEN' %}selected{% endif %}>Open</option>
-                            </select>
                           {% endif %}
                         {% else %}
                           <!-- Fallback - show badge -->
@@ -435,7 +436,7 @@
                           </a>
 
                           {% if item.balance > 0 and item.payment_status != 'DRAFT' %}
-                            {% if not is_partner %}
+                            {% if item.invoice|can_edit_invoice:request.user %}
                             <a class="btn btn-sm btn-success"
                                href="{% url 'payment_collect' item.invoice.id %}"
                                title="Collect Payment">
@@ -458,8 +459,8 @@
                 </table>
               </div>
 
-              <!-- Save Button at Bottom (Hide for partners) -->
-              {% if not is_partner %}
+              <!-- Save Button at Bottom -->
+              {% if request.user.is_superuser or request.user.employee.role in 'ADMIN,BRANCH_MANAGER,PARTNER' %}
               <div class="d-flex justify-content-end mt-3">
                 <button type="submit" class="btn btn-primary px-4" id="saveStatusBtn">
                   <i class="bi bi-check-circle me-1"></i> Save Status Changes
