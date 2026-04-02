@@ -107,9 +107,10 @@
                             </div>
                             
                             <div>
-                                <h6 class="mb-1 ">{{ leave.leave_type|capfirst}} Leave</h6>
+                                <h6 class="mb-1">Leave Approval</h6>
                                 <p class="mb-1 small text-muted" style = "max-height: 16px;">Status - {{ leave.status|capfirst}}</p>
-                                <small class="text-muted">{{ leave.start_date}} - {{leave.end_date}}</small>
+                                <small class="text-muted">{{ leave.start_date}} - {{leave.end_date}}</small><br>
+                                <small class = "text-muted">{{leave.status|capfirst}} on {{leave.leave_approval_time}}</small>
                             </div>
                         </a>
 

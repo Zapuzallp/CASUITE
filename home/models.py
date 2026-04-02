@@ -947,6 +947,7 @@ class Leave(models.Model):
     # my change
     updated_at = models.DateTimeField(auto_now=True)
     readed = models.BooleanField(default = False)
+    leave_approval_time = models.DateField(null = True)
     
 
     @property
