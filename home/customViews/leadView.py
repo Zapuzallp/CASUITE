@@ -16,6 +16,7 @@ def get_accessible_leads(user):
     """
     Returns leads accessible to the user based on their role:
     - Admin/Superuser: All leads
+    - Partner: All leads (view-only)
     - Branch Manager: Leads from their branch + assigned to them + created by them
     - Staff: Leads assigned to them OR created by them
     """
@@ -28,6 +29,9 @@ def get_accessible_leads(user):
 
         if role == 'ADMIN':
             # Admin can see all leads
+            return Lead.objects.all()
+        elif role == 'PARTNER':
+            # Partner can see all leads (view-only access)
             return Lead.objects.all()
         elif role == 'BRANCH_MANAGER':
             # Branch manager can see leads from their branch + assigned to them + created by them
@@ -87,6 +91,11 @@ def lead_list_view(request):
     from django.contrib.auth.models import User
     assigned_users = User.objects.filter(is_active=True).order_by('username')
 
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(request.user, 'employee'):
+        is_partner = request.user.employee.role == 'PARTNER'
+
     context = {
         'leads': leads,
         'status_choices': Lead.STATUS_CHOICES,
@@ -94,6 +103,7 @@ def lead_list_view(request):
         'search_query': search_query,
         'status_filter': status_filter,
         'assigned_filter': assigned_filter,
+        'is_partner': is_partner,
     }
 
     return render(request, 'leads/lead_list.html', context)
@@ -125,6 +135,11 @@ def add_lead_view(request):
 @login_required
 def edit_lead_view(request, lead_id):
     """Edit an existing lead (only if status is New, Contacted, or Qualified)"""
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to edit leads.')
+        return redirect('lead_detail', lead_id=lead_id)
+
     lead = get_object_or_404(Lead, id=lead_id)
 
     # Check if user has access to this lead
@@ -170,10 +185,18 @@ def lead_detail_view(request, lead_id):
     # Get call logs for this lead
     call_logs = lead.call_logs.select_related('called_by_user', 'called_to_user', 'created_by').all()
 
-    # Check if user can add call logs (creator, assigned users, branch manager, or admin)
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(request.user, 'employee'):
+        is_partner = request.user.employee.role == 'PARTNER'
+
+    # Check if user can add call logs (creator, assigned users, branch manager, admin, but NOT partner)
     can_add_call_log = False
     if request.user.is_superuser:
         can_add_call_log = True
+    elif is_partner:
+        # Partners CANNOT add call logs
+        can_add_call_log = False
     elif lead.created_by == request.user or request.user in lead.assigned_to.all():
         can_add_call_log = True
     else:
@@ -213,6 +236,7 @@ def lead_detail_view(request, lead_id):
         'can_add_call_log': can_add_call_log,
         'authorized_users': sorted(authorized_users, key=lambda u: u.get_full_name() or u.username),
         'today': timezone.now().date(),
+        'is_partner': is_partner,
     }
     return render(request, 'leads/lead_detail.html', context)
 
@@ -221,6 +245,11 @@ def lead_detail_view(request, lead_id):
 @require_POST
 def mark_lead_contacted(request, lead_id):
     """Mark lead as Contacted"""
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to change lead status.')
+        return redirect('lead_detail', lead_id=lead_id)
+
     lead = get_object_or_404(Lead, id=lead_id)
 
     # Check if user has access to this lead
@@ -243,6 +272,11 @@ def mark_lead_contacted(request, lead_id):
 @require_POST
 def mark_lead_qualified(request, lead_id):
     """Mark lead as Qualified"""
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to change lead status.')
+        return redirect('lead_detail', lead_id=lead_id)
+
     lead = get_object_or_404(Lead, id=lead_id)
 
     # Check if user has access to this lead
@@ -265,6 +299,11 @@ def mark_lead_qualified(request, lead_id):
 @require_POST
 def mark_lead_lost(request, lead_id):
     """Mark lead as Lost with reason"""
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to change lead status.')
+        return redirect('lead_detail', lead_id=lead_id)
+
     lead = get_object_or_404(Lead, id=lead_id)
 
     # Check if user has access to this lead
@@ -295,6 +334,11 @@ def mark_lead_lost(request, lead_id):
 @login_required
 def convert_lead_view(request, lead_id):
     """Convert lead to client - redirect to onboarding with prefilled data"""
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to convert leads.')
+        return redirect('lead_detail', lead_id=lead_id)
+
     lead = get_object_or_404(Lead, id=lead_id)
 
     # Check if user has access to this lead

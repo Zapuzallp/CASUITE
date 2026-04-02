@@ -13,13 +13,37 @@ from home.models import Attendance, OfficeDetails, Leave,Notification
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "admin_reports/attendance_report.html"
 
-    # Only Superadmin
     def test_func(self):
-        return self.request.user.is_superuser
+        user = self.request.user
+        # Allow superuser, admin, partner, and branch manager
+        return user.is_superuser or (
+            hasattr(user, 'employee') and user.employee.role in ['ADMIN', 'PARTNER', 'BRANCH_MANAGER']
+        )
 
     def get(self, request):
-        employees = User.objects.filter(is_active=True, is_staff=True)
-        offices = OfficeDetails.objects.all()
+        # Filter employees based on role
+        user = request.user
+        if user.is_superuser or (hasattr(user, 'employee') and user.employee.role in ['ADMIN', 'PARTNER']):
+            # Superuser, Admin, and Partner can see all employees
+            employees = User.objects.filter(is_active=True, is_staff=True)
+            offices = OfficeDetails.objects.all()
+        elif hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
+            # Branch Manager can only see employees in their branch
+            branch_manager_office = user.employee.office_location
+            if branch_manager_office:
+                employees = User.objects.filter(
+                    is_active=True, 
+                    is_staff=True,
+                    employee__office_location=branch_manager_office
+                )
+                # Branch manager should only see their own office in the filter
+                offices = OfficeDetails.objects.filter(id=branch_manager_office.id)
+            else:
+                employees = User.objects.none()
+                offices = OfficeDetails.objects.none()
+        else:
+            employees = User.objects.none()
+            offices = OfficeDetails.objects.none()
 
         months = [
             (1, "January"), (2, "February"), (3, "March"),
@@ -35,13 +59,19 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         year = request.GET.get("year")
         office_id = request.GET.get("office")
         status_filter = request.GET.get("status")
+        from_date = request.GET.get("from_date")
+        to_date = request.GET.get("to_date")
+
+        if from_date or to_date:
+            month = None
+            year = None
 
         # Default to today's records for initial load
         today = date.today()
         records = Attendance.objects.select_related("user").filter(date=today)
 
         # Apply filters if provided
-        if employee_id or month or year or office_id or status_filter:
+        if employee_id or month or year or office_id or status_filter or from_date or to_date:
             records = Attendance.objects.select_related("user").all()
 
             if employee_id:
@@ -63,6 +93,24 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             
         if status_filter:
             records = records.filter(status=status_filter)
+
+        # Date range filter
+        if from_date and to_date:
+            try:
+                from_date_obj = datetime.strptime(from_date, "%Y-%m-%d").date()
+                to_date_obj = datetime.strptime(to_date, "%Y-%m-%d").date()
+
+                if from_date_obj <= to_date_obj:
+                    records = records.filter(date__range=[from_date_obj, to_date_obj])
+
+            except ValueError:
+                pass
+              
+        # Apply branch manager restriction to attendance records
+        if hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
+            branch_manager_office = user.employee.office_location
+            if branch_manager_office:
+                records = records.filter(user__employee__office_location=branch_manager_office)
 
         # Generate daily attendance data
         daily_attendance_data = []
@@ -141,40 +189,33 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                 
                 # Only count days up to today if viewing current month
                 today = date.today()
-                max_day = days_in_month
-                if year_int == today.year and month_int == today.month:
-                    max_day = today.day
                 
                 for day in calendar_days:
                     current_date = date(year_int, month_int, day)
-                    
-                    # Only process days up to today for current month
-                    if day <= max_day:
-                        total_days_till_today += 1
-                    
+
+                    if current_date > today:
+                        daily_status.append('future')
+                        continue
+                    total_days_till_today += 1
+
                     # Check if it's a day off according to shift
                     if current_date.weekday() in days_off_list:
-                        daily_status.append('sunday')
-                        if day <= max_day:
-                            total_week_offs += 1
+                        daily_status.append('week_off')
+                        total_week_offs += 1
                         continue
                     
                     # Check for approved leave
-                    try:
-                        leave = Leave.objects.filter(
-                            employee__user=emp,
-                            status='approved',
-                            start_date__lte=current_date,
-                            end_date__gte=current_date
-                        ).first()
+                    leave = Leave.objects.filter(
+                        employee__user=emp,
+                        status='approved',
+                        start_date__lte=current_date,
+                        end_date__gte=current_date
+                    ).first()
                         
-                        if leave:
-                            daily_status.append('leave')
-                            if day <= max_day:
-                                total_leaves += 1
-                            continue
-                    except Exception:
-                        pass
+                    if leave:
+                        daily_status.append('leave')
+                        total_leaves += 1
+                        continue
                     
                     # Check attendance
                     try:
@@ -187,12 +228,10 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             daily_status.append('absent')
                         elif attendance.status in ['approved', 'full_day']:
                             daily_status.append('present')
-                            if day <= max_day:
-                                total_present += 1
+                            total_present += 1
                         elif attendance.status == 'half_day':
                             daily_status.append('half_day')
-                            if day <= max_day:
-                                total_present += 0.5
+                            total_present += 0.5
                         else:  # pending
                             daily_status.append('pending')
                     except Attendance.DoesNotExist:
@@ -219,6 +258,12 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             ('full_day', 'Full Day Present')
         ]
 
+        # Get branch manager's office for pre-selection
+        branch_manager_office_id = None
+        if hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
+            if user.employee.office_location:
+                branch_manager_office_id = user.employee.office_location.id
+
         context = {
             "employees": employees,
             "offices": offices,
@@ -234,6 +279,7 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
             "status_choices": status_choices,
             "today": today.isoformat(),
             "employee_id": employee_id,
+            "branch_manager_office_id": branch_manager_office_id,
         }
 
         return render(request, self.template_name, context)
@@ -245,6 +291,22 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         if not selected_records:
             messages.error(request, 'Please select records.')
             return redirect(request.get_full_path())
+        
+        # Filter records based on role for branch manager only
+        user = request.user
+        if hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
+            branch_manager_office = user.employee.office_location
+            if branch_manager_office:
+                # Only allow updating records for employees in their branch
+                allowed_records = Attendance.objects.filter(
+                    id__in=selected_records,
+                    user__employee__office_location=branch_manager_office
+                ).values_list('id', flat=True)
+                selected_records = [str(record_id) for record_id in allowed_records]
+                
+                if not selected_records:
+                    messages.error(request, 'You can only update attendance for employees in your branch.')
+                    return redirect(request.get_full_path())
 
         if action_type == 'clock_out_shift':
             # Handle clock out with shift time

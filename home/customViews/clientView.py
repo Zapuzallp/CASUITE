@@ -205,6 +205,11 @@ def client_details_view(request, client_id):
     credential_form = ClientPortalCredentialsForm(client=client)
     # =================================
 
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(user, 'employee'):
+        is_partner = user.employee.role == 'PARTNER'
+
     # === STATUS CHOICES FOR SWEETALERT ===
     status_choices = Client.STATUS_CHOICES
 
@@ -226,6 +231,7 @@ def client_details_view(request, client_id):
         'portal_credentials': portal_credentials,  # Include Portal Credentials
         'credential_form': credential_form,  # Include Credential Form
         'status_choices': status_choices,
+        'is_partner': is_partner,  # Add partner flag
     }
 
     return render(request, 'client/client-details.html', context)
@@ -238,6 +244,11 @@ def client_details_view(request, client_id):
 @login_required
 def add_gst_details_view(request, client_id):
     client = get_object_or_404(Client, id=client_id)
+
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to add GST details.')
+        return redirect('client_details', client_id=client.id)
 
     if request.method == 'POST':
         form = GSTDetailsForm(request.POST)
@@ -259,6 +270,11 @@ def add_gst_details_view(request, client_id):
 def edit_gst_details_view(request, gst_id):
     gst_instance = get_object_or_404(GSTDetails, id=gst_id)
     client_id = gst_instance.client.id
+
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to edit GST details.')
+        return redirect('client_details', client_id=client_id)
 
     # Permission Check
     if not (request.user.is_superuser or request.user == gst_instance.client.assigned_ca):

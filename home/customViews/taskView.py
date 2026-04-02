@@ -20,6 +20,11 @@ from django.core.paginator import  Paginator
 
 @login_required
 def create_task_view(request, client_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to create tasks.')
+        return redirect('task_list')
+
     client = get_object_or_404(Client, id=client_id)
 
     # 1. Prepare Client Data for Auto-Population
@@ -88,6 +93,13 @@ def create_task_view(request, client_id):
                     task.client = client
                     task.created_by = request.user
 
+                    # ✅ ADD THIS BLOCK
+                    if not task.due_date:
+                        config = TASK_CONFIG.get(task.service_type, {})
+                        days = config.get('default_due_days')
+                        if days:
+                            task.due_date = timezone.now().date() + timedelta(days=days)
+
                     # Auto Title if empty: "GST Return Task"
                     if not task.task_title:
                         task.task_title = f"{task.get_service_type_display()} Task"
@@ -154,6 +166,7 @@ def task_list_view(request):
         # This ensures assignees always see their tasks, even if client visibility is not given to them
         Q(assignees=user)
     ).distinct()
+
 
     # 3. Apply UI Filters (GET parameters)
     search_query = request.GET.get('q')
@@ -290,6 +303,11 @@ def task_list_view(request):
         due_from,
         due_to,
     ])
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(user, 'employee'):
+        is_partner = user.employee.role == 'PARTNER'
+
     context = {
         'tasks': tasks_qs,
         'query_params': query_params.urlencode(),
@@ -306,6 +324,7 @@ def task_list_view(request):
         ),
 
         'status_choices': Task.STATUS_CHOICES,
+        'is_partner': is_partner,
     }
     return render(request, 'client/tasks.html', context)
 
@@ -339,6 +358,12 @@ def task_detail_view(request, task_id):
     """
     user = request.user
     is_admin = user.is_superuser
+
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(user, 'employee'):
+        is_partner = user.employee.role == 'PARTNER'
+
     # Universal client visibility
     #(Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
     accessible_clients = get_accessible_clients(user)
@@ -390,9 +415,14 @@ def task_detail_view(request, task_id):
             waiting_for_previous = True
 
     # ==========================================================================
-    # HANDLE POST ACTIONS
+    # HANDLE POST ACTIONS (Blocked for Partners)
     # ==========================================================================
     if request.method == 'POST':
+        # Block all POST actions for partners
+        if is_partner:
+            messages.error(request, 'You do not have permission to modify tasks.')
+            return redirect('task_detail', task_id=task.id)
+
         action = request.POST.get('action_type')
 
         # --- A. UPDATE SEQUENCE (Define User + Status Flow) ---
@@ -568,6 +598,7 @@ def task_detail_view(request, task_id):
         'my_status_entry': my_status_entry,
         'waiting_for_previous': waiting_for_previous,
         'is_admin': is_admin,
+        'is_partner': is_partner,
         'workflow_steps': workflow_steps,
         'aging_timeline': aging_timeline,
         'extended_fields': extended_fields,
@@ -586,6 +617,11 @@ def task_detail_view(request, task_id):
 
 @login_required()
 def edit_task_view(request, task_id):
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to edit tasks.')
+        return redirect('task_detail', task_id=task_id)
+
     task = get_object_or_404(Task, id=task_id)
     client = task.client  # <--- 1. GET CLIENT FROM TASK
 
