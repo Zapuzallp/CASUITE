@@ -1,5 +1,5 @@
 from django.urls import path
-
+from .views import payment_collection_report
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
@@ -10,7 +10,7 @@ from home.customViews.attendanceView import (
     ClockOutView,
     AttendanceLogsView,
 )
-from home.customViews.adminReportsView import AdminAttendanceReportView
+from home.customViews.adminReportsView import AdminAttendanceReportView, PaymentCollectionDetailView
 from home.customViews.notificationView import dashboard
 from home.customViews.services import list_services, delete_service
 from home.customViews.searchbarView import global_search
@@ -158,4 +158,7 @@ urlpatterns = [
     path('data-management/bulk-import-gst/', gstImportView.bulk_import_gst, name='bulk_import_gst'),
     path('data-management/download-gst-template/', gstImportView.download_gst_template, name='download_gst_template'),
 
+    # Admin Reports
+    path('payment-collection-report/', payment_collection_report, name='payment_collection_report'),
+    path('admin-reports/payment-collection/<int:client_id>/', PaymentCollectionDetailView.as_view(), name='payment_collection_detail'),
 ]

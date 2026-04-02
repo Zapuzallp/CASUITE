@@ -1,6 +1,6 @@
 from django.http import JsonResponse
-from datetime import timedelta
-
+from datetime import timedelta, date
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
@@ -480,3 +480,38 @@ def due_tasks_ajax(request):
         'range_label': range_labels.get(due_range, 'All Due Tasks'),
     })
 
+#Admin Reports
+def payment_collection_report(request):
+    today = date.today()
+
+    if today.month >= 4:
+        start_date = date(today.year, 4, 1)
+        end_date = date(today.year + 1, 3, 31)
+    else:
+        start_date = date(today.year - 1, 4, 1)
+        end_date = date(today.year, 3, 31)
+
+    clients = Client.objects.all()
+    client_id = request.GET.get('client')
+    payments = Payment.objects.filter(
+        payment_date__range=[start_date, end_date],
+        payment_status = 'PAID'
+    )
+
+    report_data = payments.values(
+        'invoice__client__id',
+        'invoice__client__client_name'
+    ).annotate(
+        credit=Sum('amount')
+    )
+
+    context = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'payments': payments,
+        'report_data': report_data,
+        'clients': clients,
+        'selected_client': client_id,
+    }
+
+    return render(request, 'payment_collection_report.html', context)
