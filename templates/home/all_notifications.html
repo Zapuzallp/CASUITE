@@ -25,17 +25,15 @@
                     <span class="icon-circle">
                     <i class="bi bi-info-circle text-primary"></i>
                 </span></div>
-              <div> <div class="notification-title">
-                    {{ leave.leave_type|capfirst}} Leave
-                </div>
+              <div>   
+                <h6 class="mb-1">Leave Approval</h6>
+                <p class="mb-1 small text-muted" style = "max-height: 16px;">Status - {{ leave.status|capfirst}}</p>
 
-                <div class="text-muted mb-1">
-                    You Leave is {{ leave.status|capfirst}}
-                </div>
+                <small class="text-muted">{{ leave.start_date}} - {{leave.end_date}}</small><br>
 
-                <small class="notification-time">
-                    {{ leave.start_date}} - {{leave.end_date}}
-                </small></div>
+                <small class = "text-muted">{{leave.status|capfirst}} on {{leave.leave_approval_time}}</small>
+
+            </div>
                
             </div>
 
