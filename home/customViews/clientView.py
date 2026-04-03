@@ -216,8 +216,12 @@ def client_details_view(request, client_id):
 
     # Check if user is a partner (view-only access)
     is_partner = False
+    can_edit_client = True
     if hasattr(user, 'employee'):
         is_partner = user.employee.role == 'PARTNER'
+        if is_partner:
+            # Partner can edit ONLY IF they onboarded the client OR are assigned to the client
+            can_edit_client = (client.created_by == user or client.assigned_ca == user)
 
     # === STATUS CHOICES FOR SWEETALERT ===
     status_choices = Client.STATUS_CHOICES
@@ -243,6 +247,7 @@ def client_details_view(request, client_id):
         'phone_call_form': phone_call_form,  # Include Phone Call Form
         'status_choices': status_choices,
         'is_partner': is_partner,  # Add partner flag
+        'can_edit_client': can_edit_client,  # Add edit permission flag
     }
 
     return render(request, 'client/client-details.html', context)

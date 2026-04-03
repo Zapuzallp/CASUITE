@@ -8,7 +8,6 @@ from django.contrib import messages
 
 from home.models import Attendance, OfficeDetails, Leave
 
-
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "admin_reports/attendance_report.html"
 
@@ -286,6 +285,8 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request):
         action_type = request.POST.get('action_type')
         selected_records = request.POST.getlist('selected_records')
+        new_remark = request.POST.get('remarks')
+        user_name = request.user.username
 
         if not selected_records:
             messages.error(request, 'Please select records.')
@@ -364,12 +365,13 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                         attendance.duration = attendance.clock_out - attendance.clock_in
 
                     # Append remark
-                    new_remark = "Auto clock out"
+                    new_remark = request.POST.get("remarks") or "Auto clock out"
+                    formatted_remark = f"clocked out by {user_name} : {new_remark}"
 
                     if attendance.remark:
-                        attendance.remark = f"{attendance.remark} | {new_remark}"
+                        attendance.remark += " | " + formatted_remark
                     else:
-                        attendance.remark = new_remark
+                        attendance.remark = formatted_remark
 
                     attendance._skip_auto_status = True
                     attendance.save()
@@ -389,17 +391,52 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                 for error in errors[:5]:  # Show first 5 errors
                     messages.warning(request, error)
 
+
         elif action_type == 'status':
-            # Handle bulk status update
             new_status = request.POST.get('bulk_status')
+
             if new_status:
-                updated_count = Attendance.objects.filter(
-                    id__in=selected_records
-                ).update(status=new_status)
-                messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
+                updated_count = 0
+                action_map = {
+                    'pending': 'pending by',
+                    'approved': 'approved by',
+                    'rejected': 'rejected by',
+                    'half_day': 'marked as half-day by',
+                    'full_day': 'marked as full-day by'
+                }
+
+                for record_id in selected_records:
+                    try:
+                        attendance = Attendance.objects.get(id=record_id)
+
+                        attendance.status = new_status
+
+                        # Append remark
+                        if new_remark:
+                            distance_text = f"{attendance.distance}m away" if hasattr(attendance,
+                                                                                      'distance') and attendance.distance else ""
+
+                            action_text = action_map.get(new_status, "updated by")
+                            formatted_remark = f"{distance_text} | {action_text} {user_name} : {new_remark}"
+
+                            if attendance.remark:
+                                # ✅ Prevent duplicate append
+                                if formatted_remark not in attendance.remark:
+                                    attendance.remark += " | " + formatted_remark
+                            else:
+                                attendance.remark = formatted_remark
+
+
+                        attendance.save()
+                        updated_count += 1
+
+                    except Attendance.DoesNotExist:
+                        continue
+
+                messages.success(request, f'Successfully updated {updated_count} attendance records.')
             else:
                 messages.error(request, 'Please select a status to update.')
+
         else:
             messages.error(request, 'Invalid action type.')
-
         return redirect(request.get_full_path())

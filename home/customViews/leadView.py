@@ -135,12 +135,14 @@ def add_lead_view(request):
 @login_required
 def edit_lead_view(request, lead_id):
     """Edit an existing lead (only if status is New, Contacted, or Qualified)"""
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to edit leads.')
-        return redirect('lead_detail', lead_id=lead_id)
-
     lead = get_object_or_404(Lead, id=lead_id)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can edit ONLY IF they onboarded the lead OR are assigned to the lead
+        if lead.created_by != request.user and request.user not in lead.assigned_to.all():
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("You are not allowed to perform this action")
 
     # Check if user has access to this lead
     accessible_leads = get_accessible_leads(request.user)
@@ -187,16 +189,20 @@ def lead_detail_view(request, lead_id):
 
     # Check if user is a partner (view-only access)
     is_partner = False
+    can_edit_lead = True
     if hasattr(request.user, 'employee'):
         is_partner = request.user.employee.role == 'PARTNER'
+        if is_partner:
+            # Partner can edit ONLY IF they onboarded the lead OR are assigned to the lead
+            can_edit_lead = (lead.created_by == request.user or request.user in lead.assigned_to.all())
 
-    # Check if user can add call logs (creator, assigned users, branch manager, admin, but NOT partner)
+    # Check if user can add call logs (creator, assigned users, branch manager, admin, and Partners with edit access)
     can_add_call_log = False
     if request.user.is_superuser:
         can_add_call_log = True
     elif is_partner:
-        # Partners CANNOT add call logs
-        can_add_call_log = False
+        # Partners CAN add call logs if they have edit access to the lead
+        can_add_call_log = can_edit_lead
     elif lead.created_by == request.user or request.user in lead.assigned_to.all():
         can_add_call_log = True
     else:
@@ -237,6 +243,7 @@ def lead_detail_view(request, lead_id):
         'authorized_users': sorted(authorized_users, key=lambda u: u.get_full_name() or u.username),
         'today': timezone.now().date(),
         'is_partner': is_partner,
+        'can_edit_lead': can_edit_lead,
     }
     return render(request, 'leads/lead_detail.html', context)
 
@@ -383,7 +390,10 @@ def add_lead_call_log(request, lead_id):
     else:
         try:
             employee = request.user.employee
-            if employee.role in ['ADMIN', 'BRANCH_MANAGER']:
+            # Partners can add call logs if they have edit access
+            if employee.role == 'PARTNER':
+                can_add = (lead.created_by == request.user or request.user in lead.assigned_to.all())
+            elif employee.role in ['ADMIN', 'BRANCH_MANAGER']:
                 if employee.role == 'BRANCH_MANAGER' and employee.office_location:
                     if lead.created_by and hasattr(lead.created_by, 'employee'):
                         if lead.created_by.employee.office_location == employee.office_location:

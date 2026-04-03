@@ -165,14 +165,12 @@
             </a>
         </li>
 
-        {% if not request.user.employee.role == "PARTNER" %}
         <li class="nav-item">
             <a class="nav-link" href="{% url 'onboard_client' %}">
                 <i class="bi bi-person-plus"></i>
                 <span>Onboard New Client</span>
             </a>
         </li>
-        {% endif %}
 
         <li class="nav-heading">Lead Management</li>
 
@@ -183,14 +181,12 @@
             </a>
         </li>
 
-        {% if not request.user.employee.role == "PARTNER" %}
         <li class="nav-item">
             <a class="nav-link" href="{% url 'add_lead' %}">
                 <i class="bi bi-plus-circle"></i>
                 <span>Add New Lead</span>
             </a>
         </li>
-        {% endif %}
 
         <li class="nav-heading">Operations</li>
 
@@ -246,7 +242,8 @@
 
 
 
-        <li class="nav-heading ">Accounts</li>
+        <li class="nav-heading">Accounts</li>
+
         <li class="nav-item" >
             <a class="nav-link"  href="{% url 'invoice_list' %}"">
                 <i class="bi bi-view-list" ></i> <span>All Invoices</span>
@@ -275,8 +272,6 @@
         </li>
 
         <li class="nav-heading">HR</li>
-
-
 
         <li class="nav-item">
             <a class="nav-link" href="{% url 'leave-apply' %}">
