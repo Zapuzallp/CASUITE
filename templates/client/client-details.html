@@ -4,6 +4,75 @@
 {% block head %}
     <!-- DataTables Responsive CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
+    <style>
+        /* Custom Select2 styling for phone call services multi-select */
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple {
+            min-height: 120px !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            padding: 0.25rem !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+            background-color: #0d6efd !important;
+            border: 1px solid #0d6efd !important;
+            color: white !important;
+            padding: 0.35rem 0.65rem !important;
+            border-radius: 0.25rem !important;
+            margin: 0.25rem !important;
+            font-size: 0.875rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+            color: white !important;
+            margin-right: 0.35rem !important;
+            font-weight: bold !important;
+            font-size: 1rem !important;
+            line-height: 1 !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #ffdddd !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-search--inline .select2-search__field {
+            margin-top: 0.25rem !important;
+            padding: 0.375rem !important;
+            min-width: 200px !important;
+        }
+
+        /* Dropdown styling */
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-dropdown {
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option {
+            padding: 0.5rem 0.75rem !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option--selected {
+            background-color: #e7f1ff !important;
+            color: #0d6efd !important;
+            font-weight: 500 !important;
+        }
+
+        /* Add icon to selected items */
+        #addPhoneCallModal .select2-selection__choice::before {
+            content: "\f0b1";
+            font-family: "bootstrap-icons";
+            margin-right: 0.25rem;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
@@ -325,6 +394,11 @@
                             </a>
                         </li>
                         <li>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addPhoneCallModal">
+                                <i class="bi bi-telephone-fill me-2"></i>Add Phone Call
+                            </a>
+                        </li>
+                        <li>
                             <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
                                 <i class="bi bi-cloud-upload me-2"></i>Upload Document
                             </a>
@@ -385,6 +459,11 @@
                                 </button>
                             </li>
                         {% endif %}
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-phone-calls" style="white-space: nowrap;">
+                                <i class="bi bi-telephone me-2"></i>Phone Calls
+                            </button>
+                        </li>
                         <li class="nav-item">
                             <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-linked" style="white-space: nowrap;">
                                 <i class="bi bi-link-45deg me-2"></i>
@@ -840,6 +919,89 @@
                             </div>
                         </div>
 
+                        <!-- Phone Calls Tab -->
+                        <div class="tab-pane fade" id="profile-phone-calls">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title text-primary m-0"><i class="bi bi-telephone me-2"></i>Phone Call Logs</h5>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addPhoneCallModal">
+                                    <i class="bi bi-plus-lg"></i> Add Phone Call
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle border" id="phoneCallsTable">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Employee</th>
+                                        <th>Services</th>
+                                        <th>Remarks</th>
+                                        <th>Feedback</th>
+                                        <th>Next Follow-up</th>
+                                        <th>Created At</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for call in phone_calls %}
+                                        <tr>
+                                            <td class="fw-bold">{{ call.call_date|date:"M d, Y" }}</td>
+                                            <td>
+                                                <small>{{ call.employee.get_full_name|default:call.employee.username }}</small>
+                                            </td>
+                                            <td>
+                                                {% for service in call.services.all|slice:":3" %}
+                                                    <span class="badge bg-light text-dark border me-1">{{ service.service_type }}</span>
+                                                {% endfor %}
+                                                {% if call.services.count > 3 %}
+                                                    <span class="badge bg-secondary">+{{ call.services.count|add:"-3" }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ call.remarks }}">
+                                                    {{ call.remarks|truncatewords:10 }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if call.feedback == 'positive' %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-hand-thumbs-up me-1"></i>Positive
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="bi bi-hand-thumbs-down me-1"></i>Negative
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if call.next_follow_up_date %}
+                                                    <span class="{% if call.is_follow_up_overdue %}text-danger fw-bold{% elif call.is_follow_up_today %}text-warning fw-bold{% endif %}">
+                                                        {{ call.next_follow_up_date|date:"M d, Y" }}
+                                                        {% if call.is_follow_up_overdue %}
+                                                            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                                                        {% elif call.is_follow_up_today %}
+                                                            <i class="bi bi-clock-fill text-warning"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ call.created_at|date:"M d, Y h:i A" }}</small>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                No phone call logs found for this client.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <div class="tab-pane fade" id="profile-linked">
                             <h5 class="card-title text-primary">
                                 {% if link_type == 'businesses' %}Linked Businesses{% else %}Key Associates{% endif %}
@@ -1130,6 +1292,81 @@
                 </div>
             </div>
         </div>
+
+        <!-- Add Phone Call Modal -->
+        <div class="modal fade" id="addPhoneCallModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-telephone-plus me-2"></i>Add Phone Call Log
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <form action="{% url 'add_phone_call_log' client.id %}" method="post" id="phoneCallForm">
+                        {% csrf_token %}
+                        <div class="modal-body p-4">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Call Date <span class="text-danger">*</span></label>
+                                    {{ phone_call_form.call_date }}
+                                    {% if phone_call_form.call_date.errors %}
+                                        <div class="text-danger small">{{ phone_call_form.call_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Feedback <span class="text-danger">*</span></label>
+                                    {{ phone_call_form.feedback }}
+                                    {% if phone_call_form.feedback.errors %}
+                                        <div class="text-danger small">{{ phone_call_form.feedback.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Services Discussed <span class="text-danger">*</span></label>
+                                <select name="services" class="form-select" id="id_services" multiple="multiple" required>
+                                    {% for service in phone_call_form.fields.services.queryset %}
+                                        <option value="{{ service.id }}">{{ service.service_type }} - {{ service.task_title }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text small">Select one or more services discussed during the call</div>
+                                {% if phone_call_form.services.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.services.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Discussion / Remarks <span class="text-danger">*</span></label>
+                                {{ phone_call_form.remarks }}
+                                {% if phone_call_form.remarks.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.remarks.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Next Follow-up Date</label>
+                                {{ phone_call_form.next_follow_up_date }}
+                                <div class="form-text small">Optional: Schedule next follow-up call</div>
+                                {% if phone_call_form.next_follow_up_date.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.next_follow_up_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle me-1"></i>Save Phone Call
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <form method="post" action="{% url 'update_single_client_status' client.id %}" id="clientStatusForm">
         {% csrf_token %}
         <input type="hidden" name="new_status" id="profileNewStatus">
@@ -1145,6 +1382,64 @@
                 selectBox.value = requestedDocId;
             }
         }
+
+        // Initialize Select2 for Phone Call Services
+        $(document).ready(function() {
+            // Initialize Select2 for services multi-select with better styling
+            function initializeServicesSelect2() {
+                $('#id_services').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select services discussed during the call',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#addPhoneCallModal'),
+                    closeOnSelect: false,
+                    templateResult: formatService,
+                    templateSelection: formatServiceSelection,
+                    language: {
+                        noResults: function() {
+                            return "No services found";
+                        }
+                    }
+                });
+            }
+
+            // Custom formatting for service options
+            function formatService(service) {
+                if (!service.id) {
+                    return service.text;
+                }
+                var $service = $(
+                    '<div class="d-flex align-items-center">' +
+                    '<i class="bi bi-briefcase-fill me-2 text-primary"></i>' +
+                    '<span>' + service.text + '</span>' +
+                    '</div>'
+                );
+                return $service;
+            }
+
+            function formatServiceSelection(service) {
+                if (!service.id) {
+                    return service.text;
+                }
+                return service.text;
+            }
+
+            // Initialize on page load
+            initializeServicesSelect2();
+
+            // Reset form when modal is closed
+            $('#addPhoneCallModal').on('hidden.bs.modal', function () {
+                $('#phoneCallForm')[0].reset();
+                $('#id_services').val(null).trigger('change');
+            });
+
+            // Reinitialize when modal is shown to ensure proper rendering
+            $('#addPhoneCallModal').on('shown.bs.modal', function () {
+                $('#id_services').select2('destroy');
+                initializeServicesSelect2();
+            });
+        });
 
         // Toggle password visibility in modal
         document.addEventListener('DOMContentLoaded', function() {
