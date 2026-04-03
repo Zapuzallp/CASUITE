@@ -30,26 +30,28 @@ class ManageLeavesView(LoginRequiredMixin, LeaveManagementMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         request = self.request
-
-        employees = Employee.objects.all()
+        user_emp = request.user.employee
 
         # Role-based leave filtering - now includes PARTNER role
         if request.user.employee.role == 'BRANCH_MANAGER':
+            employees = Employee.objects.filter(office_location=user_emp.office_location)
             all_leaves = (
                 Leave.objects.all()
-                .exclude(employee=request.user.employee)
+                .exclude(employee=user_emp)
                 .select_related('employee__user')
                 .order_by('-created_at')
-                .filter(employee__office_location=request.user.employee.office_location)
+                .filter(employee__office_location=user_emp.office_location)
             )
 
         elif request.user.is_superuser or request.user.employee.role == 'ADMIN' or request.user.employee.role == 'PARTNER':
+            employees = Employee.objects.all()
             all_leaves = (
                 Leave.objects.all()
                 .select_related('employee__user')
                 .order_by('-created_at')
             )
         else:
+            employees = Employee.objects.none()
             all_leaves = Leave.objects.none()
 
         leaves_with_data = []
