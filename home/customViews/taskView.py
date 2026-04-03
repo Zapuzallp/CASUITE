@@ -239,9 +239,7 @@ def task_list_view(request):
                 # Case 1: Both dates provided
                 if due_from_date and due_to_date:
                     if due_to_date < due_from_date:
-                        # invalid range → return no results
                         tasks_qs = tasks_qs.none()
-                        messages.error(request, "End date cannot be before start date.")
                     else:
                         tasks_qs = tasks_qs.filter(
                             due_date__range=[due_from_date, due_to_date],
@@ -262,7 +260,7 @@ def task_list_view(request):
                         due_date__isnull=False
                     )
             except ValueError:
-                messages.error(request, "Invalid date format.")
+                pass
 
     # Records per page dropdown value
     per_page = request.GET.get('per_page','all')

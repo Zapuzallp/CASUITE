@@ -158,56 +158,70 @@ document.addEventListener("DOMContentLoaded", function () {
     dueFilter.addEventListener("change", toggleDueRange);
 
 });
-
-//Prevent Invalid Date Range (Frontend)
-// Custom Validation for Due Date Range (Instant)
+// Due Date Filter Validations
 document.addEventListener("DOMContentLoaded", function () {
 
-    const dueFrom = document.querySelector("input[name='due_from']");
-    const dueTo = document.querySelector("input[name='due_to']");
+    const form = document.getElementById("taskFilterForm");
+    if (!form) return;
 
-    if (!dueFrom || !dueTo) return;
+    form.addEventListener("submit", function (e) {
 
-    // When user edits Due From
-    dueFrom.addEventListener("input", function () {
+        const dueFilter = document.getElementById("dueFilter").value;
+        const fromDate = document.querySelector("[name='due_from']").value;
+        const toDate = document.querySelector("[name='due_to']").value;
 
-        if (dueTo.value && dueFrom.value > dueTo.value) {
+        //only when range selected
+        if (dueFilter === "range") {
 
-            const formattedDate = new Date(dueTo.value).toLocaleDateString();
+            if(fromDate  && toDate && fromDate > toDate ) {
+                e.preventDefault();
 
-            dueFrom.setCustomValidity(
-                "Due From date cannot be after Due To date (" + formattedDate + ")."
-            );
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Date Range',
+                    text: 'From Date cannot be greater than To Date',
+                    confirmButtonColor: '#d33'
+                });
 
-            dueFrom.reportValidity(); // show message instantly
+                return
+            }
+            // both empty
+            if (!fromDate && !toDate)  {
+                e.preventDefault();
 
-        } else {
-            dueFrom.setCustomValidity("");
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Dates',
+                    text: 'Please select at least one date'
+                });
+
+                return
+            }
+            // only one date (THIS WAS MISSING)
+            if ((fromDate && !toDate) || (!fromDate && toDate)) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Incomplete Date Range',
+                    text: 'Please select both From Date and To Date'
+                });
+                return;
+            }
+
+            // invalid range
+            if (fromDate > toDate) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Date Range',
+                    text: 'From Date cannot be greater than To Date',
+                    confirmButtonColor: '#d33'
+                });
+                return;
+            }
         }
-
     });
-
-    // When user edits Due To
-    dueTo.addEventListener("input", function () {
-
-        if (dueFrom.value && dueTo.value < dueFrom.value) {
-
-            const formattedDate = new Date(dueFrom.value).toLocaleDateString();
-
-            dueTo.setCustomValidity(
-                "Due To date cannot be before Due From date (" + formattedDate + ")."
-            );
-
-            dueTo.reportValidity(); // show message instantly
-
-        } else {
-            dueTo.setCustomValidity("");
-        }
-
-    });
-
 });
-
 
 // Delete Task Modal Handler
 document.addEventListener("DOMContentLoaded", function () {

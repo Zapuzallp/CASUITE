@@ -59,7 +59,7 @@
                              aria-labelledby="headingOne"
                              data-bs-parent="#taskFilterAccordion">
                             <div class="accordion-body bg-light">
-                                <form method="get" action=".">
+                                <form method="get" action="." id="taskFilterForm">
                                     <div class="row g-3">
                                         <!-- Search Text -->
                                         <!-- Changed col-md-3 to col-12 col-md-3 for mobile stacking -->
@@ -510,5 +510,8 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script src="{% static 'assets/js/tasks.js' %}?v=20260323-3"></script>
+
+<!-- Sweetalert link -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 {% endblock body %}
