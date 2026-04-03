@@ -16,12 +16,8 @@ def add_phone_call_log(request, client_id):
     """
     Add a phone call log for a specific client.
     Only accessible via POST from client details page.
+    Partners can add logs for their assigned clients.
     """
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to add phone call logs.')
-        return redirect('client_details', client_id=client_id)
-    
     # Ensure client exists and user has access
     accessible_clients = get_accessible_clients(request.user)
     client = get_object_or_404(accessible_clients, id=client_id)
@@ -137,11 +133,18 @@ def phone_call_logs_list(request):
     # Order by latest first
     queryset = queryset.order_by('-call_date', '-created_at')
     
-    # Get unique employees for filter dropdown
+    # Get unique employees for filter dropdown based on role
     if user.is_superuser:
         employees = Employee.objects.select_related('user').all()
     elif hasattr(user, 'employee'):
-        if user.employee.role == 'BRANCH_MANAGER':
+        if user.employee.role == 'PARTNER':
+            # Partners see only employees assigned to their accessible clients
+            accessible_clients = get_accessible_clients(user)
+            assigned_user_ids = accessible_clients.values_list('assigned_ca_id', flat=True).distinct()
+            employees = Employee.objects.filter(
+                user_id__in=assigned_user_ids
+            ).select_related('user')
+        elif user.employee.role == 'BRANCH_MANAGER':
             employees = Employee.objects.filter(
                 office_location=user.employee.office_location
             ).select_related('user')

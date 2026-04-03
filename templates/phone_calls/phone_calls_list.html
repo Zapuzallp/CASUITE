@@ -5,6 +5,56 @@
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
+    <style>
+        /* Custom Select2 styling for multi-select */
+        .select2-container--bootstrap-5 .select2-selection--multiple {
+            min-height: 120px !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+        }
+        
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+            background-color: #0d6efd !important;
+            border: 1px solid #0d6efd !important;
+            color: white !important;
+            padding: 0.25rem 0.5rem !important;
+            border-radius: 0.25rem !important;
+            margin: 0.25rem !important;
+            font-size: 0.875rem !important;
+        }
+        
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+            color: white !important;
+            margin-right: 0.25rem !important;
+            font-weight: bold !important;
+        }
+        
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #ffdddd !important;
+        }
+        
+        .select2-container--bootstrap-5 .select2-search--inline .select2-search__field {
+            margin-top: 0.25rem !important;
+            padding: 0.25rem !important;
+        }
+        
+        /* Dropdown styling */
+        .select2-container--bootstrap-5 .select2-dropdown {
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+        }
+        
+        .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+        
+        .select2-container--bootstrap-5 .select2-results__option--selected {
+            background-color: #e7f1ff !important;
+            color: #0d6efd !important;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
@@ -28,7 +78,7 @@
     </style>
 
     <main id="main" class="main">
-        <div class="pagetitle mb-3">
+        <div class="pagetitle">
             <h1><i class="bi bi-telephone me-2"></i>Phone Call Logs</h1>
             <nav>
                 <ol class="breadcrumb">
@@ -39,9 +89,10 @@
         </div>
 
         {% if messages %}
-            <div class="container-fluid px-0 mb-3">
+            <div class="container-fluid p-0 mb-3">
                 {% for message in messages %}
                     <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show">
+                        <i class="bi bi-info-circle me-1"></i>
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
@@ -50,160 +101,203 @@
         {% endif %}
 
         <section class="section">
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <!-- Filters -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-12">
-                            <h5 class="card-title text-primary mb-3">
-                                <i class="bi bi-funnel me-2"></i>Filters
-                            </h5>
-                        </div>
+            <div class="row">
+                <div class="col-lg-12">
 
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Employee</label>
-                            <select name="employee" class="form-select" id="employeeFilter">
-                                <option value="">All Employees</option>
-                                {% for emp in employees %}
-                                    <option value="{{ emp.user.id }}" {% if selected_employee == emp.user.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ emp.user.get_full_name|default:emp.user.username }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                    <!-- ACCORDION FILTER SECTION -->
+                    <div class="accordion mb-4" id="phoneCallFilterAccordion">
+                        <div class="accordion-item border-0 shadow-sm">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button {% if not request.GET %}collapsed{% endif %} bg-white text-primary fw-bold"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#collapseFilter"
+                                        aria-expanded="{% if request.GET %}true{% else %}false{% endif %}"
+                                        aria-controls="collapseFilter">
+                                    <i class="bi bi-funnel-fill me-2"></i> Filter Phone Calls
+                                </button>
+                            </h2>
+                            <div id="collapseFilter"
+                                 class="accordion-collapse collapse {% if request.GET %}show{% endif %}"
+                                 aria-labelledby="headingOne"
+                                 data-bs-parent="#phoneCallFilterAccordion">
+                                <div class="accordion-body bg-light">
+                                    <form method="get" action="." id="filterForm">
+                                        <div class="row g-3">
 
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Date From</label>
-                            <input type="date" name="date_from" class="form-control" id="dateFromFilter" value="{{ date_from }}">
-                        </div>
+                                            <!-- Employee Filter -->
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-bold text-secondary">Employee</label>
+                                                <select name="employee" class="form-select js-phone-call-filter-select" id="employeeFilter" data-placeholder="Search Employee">
+                                                    <option value="">All Employees</option>
+                                                    {% for emp in employees %}
+                                                        <option value="{{ emp.user.id }}" {% if selected_employee == emp.user.id|stringformat:"s" %}selected{% endif %}>
+                                                            {{ emp.user.get_full_name|default:emp.user.username }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Date To</label>
-                            <input type="date" name="date_to" class="form-control" id="dateToFilter" value="{{ date_to }}">
-                        </div>
+                                            <!-- Date From -->
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-bold text-secondary">Date From</label>
+                                                <input type="date" name="date_from" class="form-control" id="dateFromFilter" value="{{ date_from }}">
+                                            </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Service Type</label>
-                            <select name="service_type" class="form-select" id="serviceTypeFilter">
-                                <option value="">All Services</option>
-                                {% for code, name in service_types %}
-                                    <option value="{{ code }}" {% if selected_service_type == code %}selected{% endif %}>
-                                        {{ name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                                            <!-- Date To -->
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-bold text-secondary">Date To</label>
+                                                <input type="date" name="date_to" class="form-control" id="dateToFilter" value="{{ date_to }}">
+                                            </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Feedback</label>
-                            <select name="feedback" class="form-select" id="feedbackFilter">
-                                <option value="">All Feedback</option>
-                                <option value="positive" {% if selected_feedback == 'positive' %}selected{% endif %}>Positive</option>
-                                <option value="negative" {% if selected_feedback == 'negative' %}selected{% endif %}>Negative</option>
-                            </select>
-                        </div>
+                                            <!-- Service Type -->
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-bold text-secondary">Service Type</label>
+                                                <select name="service_type" class="form-select js-phone-call-filter-select" id="serviceTypeFilter" data-placeholder="Search Service Type">
+                                                    <option value="">All Services</option>
+                                                    {% for code, name in service_types %}
+                                                        <option value="{{ code }}" {% if selected_service_type == code %}selected{% endif %}>
+                                                            {{ name }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Follow-up Status</label>
-                            <select name="follow_up_status" class="form-select" id="followUpFilter">
-                                <option value="">All</option>
-                                <option value="overdue" {% if selected_follow_up_status == 'overdue' %}selected{% endif %}>Overdue</option>
-                                <option value="today" {% if selected_follow_up_status == 'today' %}selected{% endif %}>Today</option>
-                                <option value="tomorrow" {% if selected_follow_up_status == 'tomorrow' %}selected{% endif %}>Tomorrow</option>
-                                <option value="next_7_days" {% if selected_follow_up_status == 'next_7_days' %}selected{% endif %}>Next 7 Days</option>
-                            </select>
-                        </div>
+                                            <!-- Feedback -->
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-bold text-secondary">Feedback</label>
+                                                <select name="feedback" class="form-select" id="feedbackFilter">
+                                                    <option value="">All Feedback</option>
+                                                    <option value="positive" {% if selected_feedback == 'positive' %}selected{% endif %}>Positive</option>
+                                                    <option value="negative" {% if selected_feedback == 'negative' %}selected{% endif %}>Negative</option>
+                                                </select>
+                                            </div>
 
-                        <div class="col-md-6 d-flex align-items-end">
-                            <button type="button" class="btn btn-primary me-2" id="applyFilters">
-                                <i class="bi bi-search me-1"></i>Apply Filters
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" id="clearFilters">
-                                <i class="bi bi-x-circle me-1"></i>Clear
-                            </button>
+                                            <!-- Follow-up Status -->
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-bold text-secondary">Follow-up Status</label>
+                                                <select name="follow_up_status" class="form-select" id="followUpFilter">
+                                                    <option value="">All</option>
+                                                    <option value="overdue" {% if selected_follow_up_status == 'overdue' %}selected{% endif %}>Overdue</option>
+                                                    <option value="today" {% if selected_follow_up_status == 'today' %}selected{% endif %}>Today</option>
+                                                    <option value="tomorrow" {% if selected_follow_up_status == 'tomorrow' %}selected{% endif %}>Tomorrow</option>
+                                                    <option value="next_7_days" {% if selected_follow_up_status == 'next_7_days' %}selected{% endif %}>Next 7 Days</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Action Buttons -->
+                                            <div class="col-12">
+                                                <div class="d-flex gap-2">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="bi bi-search me-1"></i>Apply Filters
+                                                    </button>
+                                                    <a href="{% url 'phone_calls_list' %}" class="btn btn-outline-secondary">
+                                                        <i class="bi bi-x-circle me-1"></i>Clear Filters
+                                                    </a>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Table -->
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle border" id="phoneCallsTable">
-                            <thead class="table-light">
-                            <tr>
-                                <th>Client</th>
-                                <th>Employee</th>
-                                <th>Date</th>
-                                <th>Services</th>
-                                <th>Remarks</th>
-                                <th>Feedback</th>
-                                <th>Next Follow-up</th>
-                                <th>Created At</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {% for call in phone_calls %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'client_details' call.client.id %}" class="text-decoration-none fw-bold">
-                                            {{ call.client.client_name }}
-                                        </a>
-                                    </td>
-                                    <td>
-                                        <small>{{ call.employee.get_full_name|default:call.employee.username }}</small>
-                                    </td>
-                                    <td class="fw-bold">{{ call.call_date|date:"M d, Y" }}</td>
-                                    <td>
-                                        {% for service in call.services.all|slice:":2" %}
-                                            <span class="badge bg-light text-dark border me-1">{{ service.service_type }}</span>
-                                        {% endfor %}
-                                        {% if call.services.count > 2 %}
-                                            <span class="badge bg-secondary">+{{ call.services.count|add:"-2" }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="text-truncate d-inline-block" style="max-width: 250px;" title="{{ call.remarks }}">
-                                            {{ call.remarks|truncatewords:15 }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if call.feedback == 'positive' %}
-                                            <span class="badge badge-feedback-positive">
-                                                <i class="bi bi-hand-thumbs-up me-1"></i>Positive
-                                            </span>
-                                        {% else %}
-                                            <span class="badge badge-feedback-negative">
-                                                <i class="bi bi-hand-thumbs-down me-1"></i>Negative
-                                            </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if call.next_follow_up_date %}
-                                            <span class="{% if call.is_follow_up_overdue %}follow-up-overdue{% elif call.is_follow_up_today %}follow-up-today{% endif %}">
-                                                {{ call.next_follow_up_date|date:"M d, Y" }}
-                                                {% if call.is_follow_up_overdue %}
-                                                    <i class="bi bi-exclamation-triangle-fill"></i>
-                                                {% elif call.is_follow_up_today %}
-                                                    <i class="bi bi-clock-fill"></i>
+                    <!-- DATA TABLE CARD -->
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body pt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title text-primary mb-0">
+                                    <i class="bi bi-list-ul me-2"></i>Phone Call Logs Directory
+                                </h5>
+                                <div class="text-muted small">
+                                    Showing {{ phone_calls|length }} record{{ phone_calls|length|pluralize }}
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle border" id="phoneCallsTable">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Client</th>
+                                        <th>Employee</th>
+                                        <th>Date</th>
+                                        <th>Services</th>
+                                        <th>Remarks</th>
+                                        <th>Feedback</th>
+                                        <th>Next Follow-up</th>
+                                        <th>Created At</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for call in phone_calls %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'client_details' call.client.id %}" class="text-decoration-none fw-bold">
+                                                    {{ call.client.client_name }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <small>{{ call.employee.get_full_name|default:call.employee.username }}</small>
+                                            </td>
+                                            <td class="fw-bold">{{ call.call_date|date:"M d, Y" }}</td>
+                                            <td>
+                                                {% for service in call.services.all|slice:":2" %}
+                                                    <span class="badge bg-light text-dark border me-1">{{ service.service_type }}</span>
+                                                {% endfor %}
+                                                {% if call.services.count > 2 %}
+                                                    <span class="badge bg-secondary">+{{ call.services.count|add:"-2" }}</span>
                                                 {% endif %}
-                                            </span>
-                                        {% else %}
-                                            <span class="text-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">{{ call.created_at|date:"M d, Y h:i A" }}</small>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted py-5">
-                                        <i class="bi bi-telephone-x display-4 opacity-50"></i>
-                                        <p class="mt-2">No phone call logs found.</p>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                        </table>
+                                            </td>
+                                            <td>
+                                                <span class="text-truncate d-inline-block" style="max-width: 250px;" title="{{ call.remarks }}">
+                                                    {{ call.remarks|truncatewords:15 }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if call.feedback == 'positive' %}
+                                                    <span class="badge badge-feedback-positive">
+                                                        <i class="bi bi-hand-thumbs-up me-1"></i>Positive
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge badge-feedback-negative">
+                                                        <i class="bi bi-hand-thumbs-down me-1"></i>Negative
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if call.next_follow_up_date %}
+                                                    <span class="{% if call.is_follow_up_overdue %}follow-up-overdue{% elif call.is_follow_up_today %}follow-up-today{% endif %}">
+                                                        {{ call.next_follow_up_date|date:"M d, Y" }}
+                                                        {% if call.is_follow_up_overdue %}
+                                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                                        {% elif call.is_follow_up_today %}
+                                                            <i class="bi bi-clock-fill"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ call.created_at|date:"M d, Y h:i A" }}</small>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted py-5">
+                                                <i class="bi bi-telephone-x display-4 opacity-50"></i>
+                                                <p class="mt-2">No phone call logs found.</p>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </section>
@@ -217,6 +311,26 @@
 
     <script>
         $(document).ready(function() {
+            // Initialize Select2 for filter dropdowns with search
+            $('.js-phone-call-filter-select').each(function() {
+                var placeholder = $(this).data('placeholder') || 'Select...';
+                $(this).select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    allowClear: true,
+                    placeholder: placeholder,
+                    minimumResultsForSearch: 0, // Always show search box
+                    language: {
+                        noResults: function() {
+                            return "No results found";
+                        },
+                        searching: function() {
+                            return "Searching...";
+                        }
+                    }
+                });
+            });
+
             // Initialize DataTable
             var table = $('#phoneCallsTable').DataTable({
                 "pageLength": 25,
@@ -227,6 +341,7 @@
                     "lengthMenu": "Show _MENU_ entries",
                     "info": "Showing _START_ to _END_ of _TOTAL_ phone calls",
                     "infoEmpty": "No phone calls available",
+                    "infoFiltered": "(filtered from _MAX_ total entries)",
                     "paginate": {
                         "first": "First",
                         "last": "Last",
@@ -238,36 +353,6 @@
                     { "responsivePriority": 1, "targets": [0, 2] }, // Keep Client and Date visible
                     { "responsivePriority": 2, "targets": [5, 6] } // Keep Feedback and Follow-up visible
                 ]
-            });
-
-            // Apply filters
-            $('#applyFilters').click(function() {
-                var params = new URLSearchParams();
-                
-                var employee = $('#employeeFilter').val();
-                if (employee) params.append('employee', employee);
-                
-                var dateFrom = $('#dateFromFilter').val();
-                if (dateFrom) params.append('date_from', dateFrom);
-                
-                var dateTo = $('#dateToFilter').val();
-                if (dateTo) params.append('date_to', dateTo);
-                
-                var serviceType = $('#serviceTypeFilter').val();
-                if (serviceType) params.append('service_type', serviceType);
-                
-                var feedback = $('#feedbackFilter').val();
-                if (feedback) params.append('feedback', feedback);
-                
-                var followUp = $('#followUpFilter').val();
-                if (followUp) params.append('follow_up_status', followUp);
-                
-                window.location.href = '{% url "phone_calls_list" %}?' + params.toString();
-            });
-
-            // Clear filters
-            $('#clearFilters').click(function() {
-                window.location.href = '{% url "phone_calls_list" %}';
             });
         });
     </script>
