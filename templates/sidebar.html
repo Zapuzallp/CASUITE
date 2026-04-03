@@ -274,7 +274,7 @@
 
         {% if request.user.employee.role == "BRANCH_MANAGER" or request.user.employee.role == "ADMIN" or request.user.employee.role == "PARTNER" or request.user.is_superuser %}
         <li class="nav-item">
-        <a class="nav-link " href="{% url 'manage-leaves' %}">
+        <a class="nav-link" href="{% url 'manage-leaves' %}">
             <i class="bi bi-clipboard-check"></i>
             <span>Manage Leaves</span>
         {% if total_pending > 0 %}
@@ -282,6 +282,14 @@
         {% endif %}
         </a>
         </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'employee-view' %}">
+                <i class="bi bi-people"></i>
+                <span>Employees</span>
+            </a>
+        </li>
+
         {% endif %}
         {% if request.user.is_superuser %}
         <li class="nav-heading">Data Management</li>
