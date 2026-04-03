@@ -205,6 +205,15 @@ def client_details_view(request, client_id):
     credential_form = ClientPortalCredentialsForm(client=client)
     # =================================
 
+    # === PHONE CALL LOGS LOGIC ===
+    from home.models import PhoneCallLog
+    from home.forms import PhoneCallLogForm
+    phone_calls = PhoneCallLog.objects.filter(
+        client=client
+    ).select_related('employee', 'employee__employee').prefetch_related('services').order_by('-call_date', '-created_at')[:10]
+    phone_call_form = PhoneCallLogForm(client=client)
+    # =============================
+
     # Check if user is a partner (view-only access)
     is_partner = False
     if hasattr(user, 'employee'):
@@ -230,6 +239,8 @@ def client_details_view(request, client_id):
         'invoices_data': invoices_data,  # Include Invoices
         'portal_credentials': portal_credentials,  # Include Portal Credentials
         'credential_form': credential_form,  # Include Credential Form
+        'phone_calls': phone_calls,  # Include Phone Calls
+        'phone_call_form': phone_call_form,  # Include Phone Call Form
         'status_choices': status_choices,
         'is_partner': is_partner,  # Add partner flag
     }

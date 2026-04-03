@@ -1395,3 +1395,59 @@ class ClientPortalCredentials(models.Model):
         """Decrypt and return password"""
         return decrypt_password(self.password)
 
+
+# -----------------------------------------
+# Phone Call Log Model
+# -----------------------------------------
+class PhoneCallLog(models.Model):
+    """
+    Tracks phone call interactions with clients.
+    Records call details, services discussed, feedback, and follow-up dates.
+    """
+    FEEDBACK_CHOICES = [
+        ('positive', 'Positive'),
+        ('negative', 'Negative'),
+    ]
+
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='phone_calls')
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='phone_calls_made')
+    services = models.ManyToManyField(Task, related_name='phone_call_logs', blank=True,
+                                      help_text="Services/Tasks discussed during the call")
+    
+    call_date = models.DateField(help_text="Date when the call happened")
+    remarks = models.TextField(help_text="Discussion details and notes")
+    feedback = models.CharField(max_length=10, choices=FEEDBACK_CHOICES, help_text="Client feedback")
+    next_follow_up_date = models.DateField(null=True, blank=True, help_text="Next scheduled follow-up date")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-call_date', '-created_at']
+        verbose_name = 'Phone Call Log'
+        verbose_name_plural = 'Phone Call Logs'
+        indexes = [
+            models.Index(fields=['client', 'call_date']),
+            models.Index(fields=['employee', 'call_date']),
+            models.Index(fields=['next_follow_up_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.client.client_name} - {self.call_date} - {self.employee.get_full_name() or self.employee.username}"
+
+    def get_services_display(self):
+        """Returns comma-separated list of service types"""
+        return ", ".join([service.service_type for service in self.services.all()[:5]])
+
+    def is_follow_up_overdue(self):
+        """Check if follow-up date has passed"""
+        if self.next_follow_up_date:
+            return timezone.now().date() > self.next_follow_up_date
+        return False
+
+    def is_follow_up_today(self):
+        """Check if follow-up is scheduled for today"""
+        if self.next_follow_up_date:
+            return self.next_follow_up_date == timezone.now().date()
+        return False
+

@@ -3,7 +3,7 @@ from django.urls import path
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView, phoneCallView
 from home.customViews import resetPassword
 from home.customViews.attendanceView import (
     ClockInView,
@@ -157,5 +157,10 @@ urlpatterns = [
     path('data-management/search-clients-gst/', gstImportView.search_clients_for_gst_ajax, name='search_clients_gst_ajax'),
     path('data-management/bulk-import-gst/', gstImportView.bulk_import_gst, name='bulk_import_gst'),
     path('data-management/download-gst-template/', gstImportView.download_gst_template, name='download_gst_template'),
+
+    # Phone Call Logs
+    path('client/<int:client_id>/phone-calls/add/', phoneCallView.add_phone_call_log, name='add_phone_call_log'),
+    path('client/<int:client_id>/phone-calls/ajax/', phoneCallView.get_client_phone_calls_ajax, name='get_client_phone_calls_ajax'),
+    path('phone-calls/', phoneCallView.phone_call_logs_list, name='phone_calls_list'),
 
 ]
