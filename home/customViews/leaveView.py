@@ -1,7 +1,7 @@
 from django.views.generic import CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-
+from django.urls import reverse
 from home.models import Leave, Employee
 from home.forms import LeaveForm
 from django.views import View
@@ -9,6 +9,14 @@ from django.shortcuts import render
 from django.shortcuts import get_object_or_404, redirect
 from datetime import date
 
+def ManageView(request, pk):
+
+    #updating readed
+    Leave.objects.filter(pk = pk ,employee= request.user.employee).update(readed = True)
+    base_url = reverse('leave-apply')
+    return redirect(f"{base_url}?highlight={pk}")
+
+    
 #Creating leave request
 class LeaveCreateView(LoginRequiredMixin, CreateView):
     model = Leave
@@ -17,6 +25,7 @@ class LeaveCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('leave-apply')
 
     def get_form_kwargs(self):
+
         kwargs = super().get_form_kwargs()
         employee = self.request.user.employee
         kwargs["leave_summary"] = employee.get_leave_summary()
@@ -31,7 +40,7 @@ class LeaveCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         employee_profile = Employee.objects.get(user=user)
-        context['today'] = date.today()
+        context['today'] = date.today()       
 
         # Get the dictionary from the model method
         leave_data = employee_profile.get_leave_summary()

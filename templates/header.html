@@ -55,19 +55,23 @@
             <li class="nav-item dropdown">
                 <a class="nav-link nav-icon" href="#" data-bs-toggle="dropdown">
                     <i class="bi bi-bell"></i>
-                    {% if unread_count > 0 %}
-                    <span class="badge bg-primary badge-number">{{ unread_count }}</span>
+                    {% if total > 0 %}
+                    <span class="badge bg-primary badge-number">{{ total }}</span>
                     {% endif %}
                 </a>
-
-                <ul class="dropdown-menu dropdown-menu-end notifications-dropdown">
-                    <li class="dropdown-header d-flex justify-content-between align-items-center">
-                        <span>You have {{ unread_count }} new notifications</span>
-                        <a href="{% url 'read_all_notifications' %}" class="btn btn-sm btn-primary rounded-pill">Read all</a>
-                    </li>
+        
+                <ul class="dropdown-menu dropdown-menu-end notifications-dropdown overflow-auto p-0 pt-1" style = "max-height: 18em;">
+                    <li class="dropdown-header d-flex justify-content-between align-items-center overflow-auto">
+                        <span>You have {{ total }} new notifications</span>
+                        <button class="btn btn-sm btn-primary rounded-pill ms-2"id="read-all-btn"> Read All</button>
+                        
+                        </li>
                     <li><hr class="dropdown-divider"></li>
 
+                    {% if notifications or leaves %}
+
                     {% for n in notifications %}
+                    
                     <li class="notification-item d-flex">
                         <a href="{% url 'view_notification' n.id %}" class="d-flex w-100 text-decoration-none text-dark">
                             <div class="me-3">
@@ -79,6 +83,7 @@
                                     {% endif %}
                                 </span>
                             </div>
+                            
                             <div>
                                 <h6 class="mb-1 {% if not n.is_read %}fw-bold{% endif %}">{{ n.title }}</h6>
                                 <p class="mb-1 small text-muted">{{ n.message }}</p>
@@ -86,12 +91,37 @@
                             </div>
                         </a>
                     </li>
-                    {% empty %}
-                    <li class="text-center text-muted p-3">No notifications</li>
+                    <li><hr class="dropdown-divider"></li>
+
                     {% endfor %}
 
+                    {% for leave in leaves %}
+
+                    <li class="notification-item d-flex ">
+                        <a href="{% url 'manage-views' leave.id %}" class="d-flex w-100 text-decoration-none text-dark " >
+                            <div class="me-3">
+                                <span class="icon-circle">
+                                    
+                                    <i class="bi bi-info-circle text-primary notification-icon"></i>
+                                </span>
+                            </div>
+                            
+                            <div>
+                                <h6 class="mb-1">Leave Approval</h6>
+                                <p class="mb-1 small text-muted" style = "max-height: 16px;">Status - {{ leave.status|capfirst}}</p>
+                                <small class="text-muted">{{ leave.start_date}} - {{leave.end_date}}</small><br>
+                                <small class = "text-muted">{{leave.status|capfirst}} on {{leave.leave_approval_time}}</small>
+                            </div>
+                        </a>
+
+                    </li>
                     <li><hr class="dropdown-divider"></li>
-                    <li class="dropdown-footer text-center">
+                    
+                    {% endfor %}
+
+                    {% endif %}
+
+                     <li class="dropdown-footer text-center">
                         <a href="{% url 'all_notifications' %}">Show all notifications</a>
                     </li>
                 </ul>
@@ -181,3 +211,62 @@
         </ul>
     </nav>
 </header>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const readAllBtn = document.getElementById('read-all-btn');
+    
+    if (readAllBtn) {
+        readAllBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); 
+            const hasNotifications = document.querySelectorAll('.notification-item').length > 0;
+            if (!hasNotifications) return;
+
+            const footer = document.querySelector('.dropdown-footer');
+            // 1. Visual change: Change icons to green ticks
+            const icons = document.querySelectorAll('.notification-icon');
+            icons.forEach(icon => {
+                icon.classList.remove('text-primary', 'bi-info-circle');
+                icon.classList.add('text-success', 'bi-check-circle');
+            });
+
+            // 2. Database Sync: Call the Django view
+            fetch("{% url 'mark_all_read' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // 3. UI Cleanup: Wait a moment for the user to see the tick
+                    setTimeout(() => {
+                        // Remove all notification items and dividers
+                        document.querySelectorAll('.notification-item').forEach(el => el.remove());
+                        document.querySelectorAll('.dropdown-divider').forEach(el => el.remove());
+                        
+                        // Reset the header text
+                        const header = document.querySelector('.dropdown-header span');
+                        if (header) header.textContent = 'You have 0 new notifications';
+                        if (footer) {
+                        // 2. Define your "No notifications" HTML
+                        const message = `
+                                <li><hr class="dropdown-divider"></li>
+                            `;
+
+                        // 3. Inject it BEFORE the footer starts
+                            footer.insertAdjacentHTML('beforebegin', message);
+                        }
+
+                        // Remove the red/blue badge from the bell icon
+                        const badge = document.querySelector('.badge-number');
+                        if (badge) badge.remove();
+                    }, 800);
+                }
+            })
+            .catch(err => console.error("Database update failed:", err));
+        });
+    }
+});
+</script>
