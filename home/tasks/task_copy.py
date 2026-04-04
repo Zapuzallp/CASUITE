@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.utils import timezone
-from home.models import Task, TaskExtendedAttributes,TaskAssignmentStatus
+from datetime import timedelta
+from home.models import Task, TaskExtendedAttributes, TaskAssignmentStatus
+from home.clients.config import TASK_CONFIG
 
 # function for title name of the recurrence task
 def build_auto_task_title(original_task, next_due_date):
@@ -44,6 +46,16 @@ def copy_task(original_task, created_at= None,created_by=None, is_auto=False,nex
         recurrence_period = original_task.recurrence_period
         is_recurring = original_task.is_recurring
 
+    # Calculate due_date for auto-recurring tasks based on config
+    calculated_due_date = None
+    if is_auto and original_task.service_type in TASK_CONFIG:
+        config = TASK_CONFIG[original_task.service_type]
+        default_due_days = config.get('default_due_days')
+        
+        if default_due_days:
+            # Calculate due date from the created_at timestamp
+            calculated_due_date = (created_at + timedelta(days=default_due_days)).date()
+
     new_task = Task.objects.create(
         client=original_task.client,
         created_by=created_by or original_task.created_by,
@@ -51,7 +63,7 @@ def copy_task(original_task, created_at= None,created_by=None, is_auto=False,nex
         task_title=title,
         consultancy_type=original_task.consultancy_type,
         description=original_task.description,
-        due_date=None,
+        due_date=calculated_due_date,
         completed_date=None,
         priority=original_task.priority,
         status='Pending',
