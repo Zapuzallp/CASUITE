@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block body %}
 
@@ -204,8 +205,8 @@
                                                class="btn btn-sm btn-outline-secondary" title="View Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <!-- Edit Lead (only if editable) -->
-                                            {% if lead.is_editable %}
+                                            <!-- Edit Lead - Check Partner Permissions -->
+                                            {% if lead.is_editable and lead|can_edit_lead:request.user %}
                                                 <a href="{% url 'edit_lead' lead.id %}"
                                                    class="btn btn-sm btn-outline-primary" title="Edit Lead">
                                                     <i class="bi bi-pencil"></i>

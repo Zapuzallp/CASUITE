@@ -37,6 +37,7 @@ def get_visible_payments(user):
     - STAFF: sees only own payments
     - BRANCH_MANAGER: sees payments created by staff under them AND their own payments
     - ADMIN: sees all payments in same office
+    - PARTNER: sees all payments (view-only access enforced in views)
     """
     from home.models import Payment, Employee
     from django.db.models import Q
@@ -66,25 +67,32 @@ def get_visible_payments(user):
         # Admin can see all payments in branch
         return Payment.objects.filter(created_by__employee__office_location=employee.office_location)
 
+    if role == 'PARTNER':
+        # Partner can see all payments (view-only)
+        return Payment.objects.all()
+
     return Payment.objects.none()
 
 def can_approve_payment(user, payment):
+    # Superuser can approve any payment
+    if user.is_superuser:
+        return True
+    
     try:
         approver = user.employee
         creator = payment.created_by.employee
     except Exception:
         return False
 
-    # Must be same branch
-    if approver.office_location != creator.office_location:
-        return False
-
-    # Admin can approve any payment
+    # Admin can approve any payment in their branch
     if approver.role == 'ADMIN':
         return approver.office_location == creator.office_location
 
-    # Branch manager can approve only their own payments
+    # Branch manager can approve payments from their staff or their own
     if approver.role == 'BRANCH_MANAGER':
+        # Must be same branch
+        if approver.office_location != creator.office_location:
+            return False
         return (
             payment.created_by == user or
             creator.supervisor == user
@@ -93,21 +101,28 @@ def can_approve_payment(user, payment):
     return False
 
 def can_cancel_payment(user, payment):
+    if payment.approval_status != "PENDING" or payment.payment_status != "PENDING":
+        return False
+
+    # Superuser can cancel any payment
+    if user.is_superuser:
+        return True
+
+    # Creator can cancel their own payment
+    if payment.created_by == user:
+        return True
+
     try:
         actor = user.employee
         creator = payment.created_by.employee
     except Exception:
         return False
 
-    if payment.approval_status != "PENDING" or payment.payment_status != "PENDING":
-        return False
-
-    if payment.created_by == user:
-        return True
-
+    # Admin can cancel any payment in their branch
     if actor.role == "ADMIN":
         return actor.office_location == creator.office_location
 
+    # Branch manager can cancel payments from their staff or their own
     if actor.role == "BRANCH_MANAGER":
         return (
             payment.created_by == user or
@@ -294,10 +309,9 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
 
     return remarks
 
-def process_clock_in(user, lat=None, long=None, location_name=None, device_type='web'):
+def process_clock_in(user, lat=None, long=None, location_name=None, device_type='web', reason=None):
     """Process clock in for both web and mobile"""
     from home.models import Attendance
-    from django.contrib import messages
 
     today = timezone.localdate()
     current_time = timezone.now()
@@ -325,6 +339,10 @@ def process_clock_in(user, lat=None, long=None, location_name=None, device_type=
     # Set location_name if provided
     if location_name and location_name.strip():
         attendance.location_name = location_name
+
+    # Set reason if provided
+    if reason and reason.strip():
+        attendance.reason = reason
 
     # Check compliance with device type
     compliance_remarks = check_attendance_compliance(user, current_time, clock_in_lat=lat, clock_in_lng=long, device_type=device_type)
@@ -487,3 +505,16 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
     attendance.save()
     return {'success': success, 'message': message}
 
+def send_notification(users, title, message, tag="info", url=""):
+    """
+    users → queryset or list of User objects
+    """
+    from home.models import Notification
+    for user in users:
+        Notification.objects.create(
+            user=user,
+            title=title,
+            message=message,
+            tag=tag,
+            target_url=url
+        )

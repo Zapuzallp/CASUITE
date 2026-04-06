@@ -230,11 +230,20 @@
                 <span>Attendance Report</span>
             </a>
         </li>
+        {% elif request.user.employee.role == "ADMIN" or request.user.employee.role == "PARTNER" or request.user.employee.role == "BRANCH_MANAGER" %}
+        <li class="nav-heading">Attendance Report</li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin_attendance_report' %}">
+                <i class="bi bi-person-check"></i>
+                <span>Attendance Report</span>
+            </a>
+        </li>
         {% endif %}
 
 
 
-        <li class="nav-heading ">Accounts</li>
+        <li class="nav-heading">Accounts</li>
+        
         <li class="nav-item" >
             <a class="nav-link"  href="{% url 'invoice_list' %}"">
                 <i class="bi bi-view-list" ></i> <span>All Invoices</span>
@@ -253,9 +262,8 @@
                 <i class="bi bi-currency-rupee"></i>
                 <span>List Payments</span>
             </a>
+        </li>
         <li class="nav-heading">HR</li>
-
-
 
         <li class="nav-item">
             <a class="nav-link" href="{% url 'leave-apply' %}">
@@ -264,7 +272,7 @@
             </a>
         </li>
 
-        {% if request.user.employee.role == "BRANCH_MANAGER" or request.user.employee.role == "ADMIN" or request.user.is_superuser %}
+        {% if request.user.employee.role == "BRANCH_MANAGER" or request.user.employee.role == "ADMIN" or request.user.employee.role == "PARTNER" or request.user.is_superuser %}
         <li class="nav-item">
         <a class="nav-link " href="{% url 'manage-leaves' %}">
             <i class="bi bi-clipboard-check"></i>

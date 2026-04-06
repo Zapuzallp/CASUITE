@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block head %}
     <!-- Include Select2 CSS -->
@@ -71,10 +72,13 @@
                                         <!-- Client Filter -->
                                         <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Client</label>
-                                            <select name="client" class="form-select">
+                                            <select name="client" id="clientFilter" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Client / PAN / Status">
                                                 <option value="">All Clients</option>
                                                 {% for client in filter_clients %}
                                                     <option value="{{ client.id }}"
+                                                            data-pan="{{ client.pan_no|default_if_none:'' }}"
+                                                            data-status="{{ client.status|default_if_none:'' }}"
                                                             {% if request.GET.client == client.id|stringformat:"i" %}selected{% endif %}>
                                                         {{ client.client_name }}
                                                     </option>
@@ -85,7 +89,8 @@
                                         <!-- Service Type -->
                                         <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Service Type</label>
-                                            <select name="service_type" class="form-select">
+                                            <select name="service_type" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Service Type">
                                                 <option value="">All Services</option>
                                                 {% for code, name in service_type_choices %}
                                                     <option value="{{ code }}"
@@ -99,7 +104,8 @@
                                         <!-- Status -->
                                         <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Status</label>
-                                            <select name="status" class="form-select">
+                                            <select name="status" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Status">
                                                 <option value="">All Statuses</option>
                                                 {% for code, name in status_choices %}
                                                     <option value="{{ code }}"
@@ -116,6 +122,7 @@
                                                 Consultancy Type
                                             </label>
                                             <select name="consultancy_type" id="consultancyFilter"
+                                                    data-placeholder="Search Consultancy Type"
                                                     class="form-select js-consultancy-select">
                                                 <option value="">All Consultancy Types</option>
                                                 {% for code, name in consultancy_type_choices %}
@@ -130,7 +137,8 @@
                                         <!-- Invoice Status -->
                                         <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Invoice Status</label>
-                                            <select name="invoice_status" class="form-select">
+                                            <select name="invoice_status" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Invoice Status">
                                                 <option value="">All</option>
                                                 <option value="invoiced" {% if request.GET.invoice_status == 'invoiced' %}selected{% endif %}>Invoiced</option>
                                                 <option value="not_invoiced" {% if request.GET.invoice_status == 'not_invoiced' %}selected{% endif %}>Not Invoiced</option>
@@ -139,7 +147,8 @@
                                         <!--Due Date-->
                                         <div class="col-md-3">
                                             <label class="form-label">Due Date</label>
-                                            <select name="due_filter"   id="dueFilter" class="form-select">
+                                            <select name="due_filter" id="dueFilter" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Due Date">
                                                 <option value="">All</option>
                                                 <option value="overdue" {% if request.GET.due_filter == "overdue" %}selected{% endif %}>Overdue</option>
                                                 <option value="today" {% if request.GET.due_filter == "today" %}selected{% endif %}>Today</option>
@@ -337,11 +346,13 @@
                                            <i class="bi bi-eye"></i>
                                         </a>
 
-                                        <!-- Edit -->
-                                        <a href="{% url 'edit_task' task.id %}"
-                                           class="btn btn-sm btn-outline-warning">
-                                           <i class="bi bi-pencil"></i>
-                                        </a>
+    <!-- Edit - Check Partner Permissions -->
+    {% if task|can_edit_task:request.user %}
+    <a href="{% url 'edit_task' task.id %}"
+       class="btn btn-sm btn-outline-warning">
+       <i class="bi bi-pencil"></i>
+    </a>
+    {% endif %}
 
                                         <!-- Delete (Only Superuser) -->
                                         {% if request.user.is_superuser %}
@@ -429,15 +440,15 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <p class="text-muted small mb-3">Choose a client to start a new task for.</p>
+                    <p class="text-muted small mb-3">Search by Client Name, PAN Number, or Prospect status.</p>
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Client Name</label>
                         <!-- Select2 dropdown -->
                         <select id="clientSelector" class="form-select form-select-lg" style="width: 100%;">
-                            <option value="" selected disabled>-- Search Client --</option>
+                            <option value="" selected disabled>-- Search Client || PAN Number || Prospect --</option>
                             {% for client in clients %}
-                                <option value="{{ client.id }}">{{ client.client_name }} ({{ client.status }})</option>
+                                <option value="{{ client.id }}">{{ client.client_name }}{% if client.pan_no %} - {{ client.pan_no }}{% endif %}</option>
                             {% empty %}
                                 <option disabled>No active clients found.</option>
                             {% endfor %}
@@ -498,6 +509,6 @@
 <!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<script src="{% static 'assets/js/tasks.js' %}"></script>
+<script src="{% static 'assets/js/tasks.js' %}?v=20260323-3"></script>
 
 {% endblock body %}
