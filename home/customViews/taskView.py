@@ -146,8 +146,16 @@ def task_list_view(request):
     # Order by latest created
     tasks_qs = get_visible_tasks(user).order_by('-created_at')
 
+
     # 2. Get clients (UI support)
+
+    # For modal → show all "assigned" clients (not RBAC restricted)
+    all_assigned_clients = Client.objects.all()
+
+    # Keep RBAC clients separately for filters (if needed
     clients_qs = get_accessible_clients(user)
+
+
 
     # 3. Apply UI Filters (GET parameters)
     search_query = request.GET.get('q')
@@ -297,7 +305,7 @@ def task_list_view(request):
         'query_params': query_params.urlencode(),
         'per_page': per_page,
         'has_filters': has_filters,
-        'clients': clients_qs.order_by('client_name'),  # For the "Add Task" modal
+        'clients': all_assigned_clients.order_by('client_name'),# For the "Add Task" modal
         'filter_clients': clients_qs.order_by('client_name'),  # For the Filter dropdown
         'today': timezone.now().date(),
         'tomorrow': timezone.now().date() + timedelta(days=1),
