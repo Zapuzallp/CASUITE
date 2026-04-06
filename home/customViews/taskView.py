@@ -627,7 +627,10 @@ def task_detail_view(request, task_id):
 @login_required()
 def edit_task_view(request, task_id):
     # task = get_object_or_404(Task, id=task_id)
-
+    task = get_object_or_404(
+        get_visible_tasks(request.user),
+        id=task_id
+    )
     # Check if user is a partner - apply restricted edit permissions
     if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
         # Partner can edit ONLY IF any of the following is true:
