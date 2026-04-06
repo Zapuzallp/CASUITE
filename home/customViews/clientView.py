@@ -210,7 +210,7 @@ def client_details_view(request, client_id):
     from home.forms import PhoneCallLogForm
     phone_calls = PhoneCallLog.objects.filter(
         client=client
-    ).select_related('employee', 'employee__employee').prefetch_related('services').order_by('-call_date', '-created_at')[:10]
+    ).select_related('employee', 'employee__employee').prefetch_related('services').order_by('-call_date', '-created_at')
     phone_call_form = PhoneCallLogForm(client=client)
     # =============================
 

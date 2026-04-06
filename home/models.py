@@ -1414,10 +1414,10 @@ class PhoneCallLog(models.Model):
     services = models.ManyToManyField(Task, related_name='phone_call_logs', blank=True,
                                       help_text="Services/Tasks discussed during the call")
     
-    call_date = models.DateField(help_text="Date when the call happened")
+    call_date = models.DateTimeField(help_text="Date and time when the call happened")
     remarks = models.TextField(help_text="Discussion details and notes")
-    feedback = models.CharField(max_length=10, choices=FEEDBACK_CHOICES, help_text="Client feedback")
     next_follow_up_date = models.DateField(null=True, blank=True, help_text="Next scheduled follow-up date")
+    feedback = models.CharField(max_length=10, choices=FEEDBACK_CHOICES, help_text="Client feedback")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

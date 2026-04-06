@@ -2,7 +2,8 @@
 {% load static %}
 
 {% block head %}
-    <!-- DataTables Responsive CSS -->
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
     
     <style>
@@ -929,22 +930,21 @@
                             </div>
 
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle border" id="phoneCallsTable">
+                                <table class="table table-hover align-middle border" id="clientPhoneCallsTable">
                                     <thead class="table-light">
                                     <tr>
-                                        <th>Date</th>
+                                        <th>Call Date & Time</th>
                                         <th>Employee</th>
                                         <th>Services</th>
                                         <th>Remarks</th>
-                                        <th>Feedback</th>
                                         <th>Next Follow-up</th>
-                                        <th>Created At</th>
+                                        <th>Feedback</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     {% for call in phone_calls %}
                                         <tr>
-                                            <td class="fw-bold">{{ call.call_date|date:"M d, Y" }}</td>
+                                            <td class="fw-bold">{{ call.call_date|date:"M d, Y h:i A" }}</td>
                                             <td>
                                                 <small>{{ call.employee.get_full_name|default:call.employee.username }}</small>
                                             </td>
@@ -962,17 +962,6 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                {% if call.feedback == 'positive' %}
-                                                    <span class="badge bg-success">
-                                                        <i class="bi bi-hand-thumbs-up me-1"></i>Positive
-                                                    </span>
-                                                {% else %}
-                                                    <span class="badge bg-danger">
-                                                        <i class="bi bi-hand-thumbs-down me-1"></i>Negative
-                                                    </span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
                                                 {% if call.next_follow_up_date %}
                                                     <span class="{% if call.is_follow_up_overdue %}text-danger fw-bold{% elif call.is_follow_up_today %}text-warning fw-bold{% endif %}">
                                                         {{ call.next_follow_up_date|date:"M d, Y" }}
@@ -987,12 +976,20 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                <small class="text-muted">{{ call.created_at|date:"M d, Y h:i A" }}</small>
+                                                {% if call.feedback == 'positive' %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-hand-thumbs-up me-1"></i>Positive
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="bi bi-hand-thumbs-down me-1"></i>Negative
+                                                    </span>
+                                                {% endif %}
                                             </td>
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted py-4">
+                                            <td colspan="6" class="text-center text-muted py-4">
                                                 No phone call logs found for this client.
                                             </td>
                                         </tr>
@@ -1308,19 +1305,11 @@
                         {% csrf_token %}
                         <div class="modal-body p-4">
                             <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold">Call Date <span class="text-danger">*</span></label>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-bold">Call Date & Time <span class="text-danger">*</span></label>
                                     {{ phone_call_form.call_date }}
                                     {% if phone_call_form.call_date.errors %}
                                         <div class="text-danger small">{{ phone_call_form.call_date.errors.0 }}</div>
-                                    {% endif %}
-                                </div>
-
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold">Feedback <span class="text-danger">*</span></label>
-                                    {{ phone_call_form.feedback }}
-                                    {% if phone_call_form.feedback.errors %}
-                                        <div class="text-danger small">{{ phone_call_form.feedback.errors.0 }}</div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -1352,6 +1341,14 @@
                                 <div class="form-text small">Optional: Schedule next follow-up call</div>
                                 {% if phone_call_form.next_follow_up_date.errors %}
                                     <div class="text-danger small">{{ phone_call_form.next_follow_up_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Feedback <span class="text-danger">*</span></label>
+                                {{ phone_call_form.feedback }}
+                                {% if phone_call_form.feedback.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.feedback.errors.0 }}</div>
                                 {% endif %}
                             </div>
                         </div>
@@ -1576,7 +1573,7 @@
             }
         });
 
-        // Initialize DataTable for client invoices if the table exists and has data
+        // Initialize DataTable for client invoices and phone calls if the tables exist and have data
         document.addEventListener('DOMContentLoaded', function() {
             // Load DataTables Responsive extension
             if (typeof $.fn.dataTable !== 'undefined') {
@@ -1591,13 +1588,14 @@
                 
                 // Wait for scripts to load
                 script2.onload = function() {
-                    initializeInvoiceTable();
+                    initializeTables();
                 };
             } else {
-                initializeInvoiceTable();
+                initializeTables();
             }
             
-            function initializeInvoiceTable() {
+            function initializeTables() {
+                // Initialize Invoice Table
                 var invoiceTable = document.getElementById('clientInvoicesTable');
                 if (invoiceTable) {
                     // Check if table has data rows (not just the empty state)
@@ -1623,6 +1621,43 @@
                                 { "orderable": false, "targets": [9] }, // Disable sorting on Action column
                                 { "responsivePriority": 1, "targets": [0, 1, 9] }, // Keep Invoice#, Subject, and Action visible
                                 { "responsivePriority": 2, "targets": [4, 7] } // Keep Total Amount and Payment Status visible
+                            ],
+                            "dom": "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+                                   "<'row'<'col-sm-12'tr>>" +
+                                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                            "initComplete": function() {
+                                // Add mobile-friendly classes
+                                $('.dataTables_length select').addClass('form-select form-select-sm');
+                                $('.dataTables_filter input').addClass('form-control form-control-sm');
+                            }
+                        });
+                    }
+                }
+                
+                // Initialize Phone Calls Table
+                var phoneCallsTable = document.getElementById('clientPhoneCallsTable');
+                if (phoneCallsTable) {
+                    var hasPhoneCallData = phoneCallsTable.querySelector('tbody tr td:not([colspan])');
+                    if (hasPhoneCallData) {
+                        $('#clientPhoneCallsTable').DataTable({
+                            "pageLength": 25,
+                            "order": [[0, "desc"]], // Sort by Call Date & Time descending
+                            "responsive": true,
+                            "language": {
+                                "search": "Search:",
+                                "lengthMenu": "Show _MENU_ entries",
+                                "info": "Showing _START_ to _END_ of _TOTAL_ phone calls",
+                                "infoEmpty": "No phone calls available",
+                                "paginate": {
+                                    "first": "First",
+                                    "last": "Last",
+                                    "next": "Next",
+                                    "previous": "Previous"
+                                }
+                            },
+                            "columnDefs": [
+                                { "responsivePriority": 1, "targets": [0, 1] }, // Keep Call Date and Employee visible
+                                { "responsivePriority": 2, "targets": [4, 5] } // Keep Next Follow-up and Feedback visible
                             ],
                             "dom": "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
                                    "<'row'<'col-sm-12'tr>>" +

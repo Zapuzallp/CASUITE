@@ -125,13 +125,31 @@
                                     <form method="get" action="." id="filterForm">
                                         <div class="row g-3">
 
+                                            <!-- Client Filter -->
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-bold text-secondary">Client</label>
+                                                <select name="client" class="form-select js-phone-call-filter-select" id="clientFilter" data-placeholder="Search Client / PAN / Status">
+                                                    <option value="">All Clients</option>
+                                                    {% for client in clients %}
+                                                        <option value="{{ client.id }}" 
+                                                                data-pan="{{ client.pan_no|default_if_none:'' }}"
+                                                                data-status="{{ client.status|default_if_none:'' }}"
+                                                                {% if selected_client == client.id|stringformat:"s" %}selected{% endif %}>
+                                                            {{ client.client_name }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
                                             <!-- Employee Filter -->
                                             <div class="col-md-3">
                                                 <label class="form-label small fw-bold text-secondary">Employee</label>
                                                 <select name="employee" class="form-select js-phone-call-filter-select" id="employeeFilter" data-placeholder="Search Employee">
                                                     <option value="">All Employees</option>
                                                     {% for emp in employees %}
-                                                        <option value="{{ emp.user.id }}" {% if selected_employee == emp.user.id|stringformat:"s" %}selected{% endif %}>
+                                                        <option value="{{ emp.user.id }}" 
+                                                                data-username="{{ emp.user.username }}"
+                                                                {% if selected_employee == emp.user.id|stringformat:"s" %}selected{% endif %}>
                                                             {{ emp.user.get_full_name|default:emp.user.username }}
                                                         </option>
                                                     {% endfor %}
@@ -222,12 +240,11 @@
                                     <tr>
                                         <th>Client</th>
                                         <th>Employee</th>
-                                        <th>Date</th>
+                                        <th>Call Date & Time</th>
                                         <th>Services</th>
                                         <th>Remarks</th>
-                                        <th>Feedback</th>
                                         <th>Next Follow-up</th>
-                                        <th>Created At</th>
+                                        <th>Feedback</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -241,7 +258,7 @@
                                             <td>
                                                 <small>{{ call.employee.get_full_name|default:call.employee.username }}</small>
                                             </td>
-                                            <td class="fw-bold">{{ call.call_date|date:"M d, Y" }}</td>
+                                            <td class="fw-bold">{{ call.call_date|date:"M d, Y h:i A" }}</td>
                                             <td>
                                                 {% for service in call.services.all|slice:":2" %}
                                                     <span class="badge bg-light text-dark border me-1">{{ service.service_type }}</span>
@@ -254,17 +271,6 @@
                                                 <span class="text-truncate d-inline-block" style="max-width: 250px;" title="{{ call.remarks }}">
                                                     {{ call.remarks|truncatewords:15 }}
                                                 </span>
-                                            </td>
-                                            <td>
-                                                {% if call.feedback == 'positive' %}
-                                                    <span class="badge badge-feedback-positive">
-                                                        <i class="bi bi-hand-thumbs-up me-1"></i>Positive
-                                                    </span>
-                                                {% else %}
-                                                    <span class="badge badge-feedback-negative">
-                                                        <i class="bi bi-hand-thumbs-down me-1"></i>Negative
-                                                    </span>
-                                                {% endif %}
                                             </td>
                                             <td>
                                                 {% if call.next_follow_up_date %}
@@ -281,12 +287,20 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                <small class="text-muted">{{ call.created_at|date:"M d, Y h:i A" }}</small>
+                                                {% if call.feedback == 'positive' %}
+                                                    <span class="badge badge-feedback-positive">
+                                                        <i class="bi bi-hand-thumbs-up me-1"></i>Positive
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge badge-feedback-negative">
+                                                        <i class="bi bi-hand-thumbs-down me-1"></i>Negative
+                                                    </span>
+                                                {% endif %}
                                             </td>
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="8" class="text-center text-muted py-5">
+                                            <td colspan="7" class="text-center text-muted py-5">
                                                 <i class="bi bi-telephone-x display-4 opacity-50"></i>
                                                 <p class="mt-2">No phone call logs found.</p>
                                             </td>
@@ -310,31 +324,105 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
     <script>
-        $(document).ready(function() {
-            // Initialize Select2 for filter dropdowns with search
-            $('.js-phone-call-filter-select').each(function() {
-                var placeholder = $(this).data('placeholder') || 'Select...';
-                $(this).select2({
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!window.jQuery || !$.fn.select2) {
+                console.error('jQuery or Select2 not loaded');
+                return;
+            }
+
+            // Custom formatting function for client dropdown
+            function formatClient(client) {
+                if (!client.id) {
+                    return client.text;
+                }
+                var $client = $(client.element);
+                var pan = $client.data('pan');
+                var status = $client.data('status');
+                
+                var html = '<div class="select2-result-item">';
+                html += '<strong>' + client.text + '</strong>';
+                if (pan) {
+                    html += ' | <span class="text-muted">' + pan + '</span>';
+                }
+                if (status) {
+                    html += ' | <span class="badge bg-light text-dark border">' + status + '</span>';
+                }
+                html += '</div>';
+                
+                return $(html);
+            }
+
+            function formatClientSelection(client) {
+                return client.text;
+            }
+
+            // Custom formatting function for employee dropdown
+            function formatEmployee(employee) {
+                if (!employee.id) {
+                    return employee.text;
+                }
+                var $employee = $(employee.element);
+                var username = $employee.data('username');
+                
+                var html = '<div class="select2-result-item">';
+                html += '<strong>' + employee.text + '</strong>';
+                if (username && username !== employee.text) {
+                    html += ' <span class="text-muted">(' + username + ')</span>';
+                }
+                html += '</div>';
+                
+                return $(html);
+            }
+
+            function formatEmployeeSelection(employee) {
+                return employee.text;
+            }
+
+            // Initialize Client Filter with custom formatting
+            $('#clientFilter').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                allowClear: true,
+                placeholder: 'Search Client / PAN / Status',
+                minimumResultsForSearch: 0,
+                templateResult: formatClient,
+                templateSelection: formatClientSelection
+            });
+
+            // Initialize Employee Filter with custom formatting
+            $('#employeeFilter').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                allowClear: true,
+                placeholder: 'Search Employee',
+                minimumResultsForSearch: 0,
+                templateResult: formatEmployee,
+                templateSelection: formatEmployeeSelection
+            });
+
+            // Initialize other Select2 dropdowns
+            $('.js-phone-call-filter-select').not('#clientFilter, #employeeFilter').each(function() {
+                var $select = $(this);
+                
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+                
+                var placeholder = $select.data('placeholder') || 'Select...';
+                
+                $select.select2({
                     theme: 'bootstrap-5',
                     width: '100%',
-                    allowClear: true,
+                    allowClear: $select.find('option[value=""]').length > 0,
                     placeholder: placeholder,
-                    minimumResultsForSearch: 0, // Always show search box
-                    language: {
-                        noResults: function() {
-                            return "No results found";
-                        },
-                        searching: function() {
-                            return "Searching...";
-                        }
-                    }
+                    minimumResultsForSearch: 0
                 });
             });
 
             // Initialize DataTable
             var table = $('#phoneCallsTable').DataTable({
                 "pageLength": 25,
-                "order": [[2, "desc"]], // Sort by Date descending
+                "order": [[2, "desc"]], // Sort by Call Date & Time descending
                 "responsive": true,
                 "language": {
                     "search": "Search:",
@@ -350,8 +438,8 @@
                     }
                 },
                 "columnDefs": [
-                    { "responsivePriority": 1, "targets": [0, 2] }, // Keep Client and Date visible
-                    { "responsivePriority": 2, "targets": [5, 6] } // Keep Feedback and Follow-up visible
+                    { "responsivePriority": 1, "targets": [0, 2] }, // Keep Client and Call Date visible
+                    { "responsivePriority": 2, "targets": [5, 6] } // Keep Next Follow-up and Feedback visible
                 ]
             });
         });

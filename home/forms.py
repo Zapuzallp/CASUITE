@@ -705,10 +705,10 @@ class PhoneCallLogForm(BootstrapFormMixin, forms.ModelForm):
 
     class Meta:
         model = PhoneCallLog
-        fields = ['call_date', 'services', 'remarks', 'feedback', 'next_follow_up_date']
+        fields = ['call_date', 'services', 'remarks', 'next_follow_up_date', 'feedback']
         widgets = {
-            'call_date': forms.DateInput(attrs={
-                'type': 'date',
+            'call_date': forms.DateTimeInput(attrs={
+                'type': 'datetime-local',
                 'class': 'form-control',
                 'required': 'required'
             }),
@@ -742,14 +742,18 @@ class PhoneCallLogForm(BootstrapFormMixin, forms.ModelForm):
             self.fields['services'].label_from_instance = lambda obj: \
                 f"{obj.service_type} - {obj.task_title}"
         
-        # Set today as default for call_date
+        # Set current datetime in Asia/Kolkata timezone as default for call_date
         if not self.instance.pk:
-            self.fields['call_date'].initial = timezone.now().date()
+            from django.utils import timezone
+            import pytz
+            kolkata_tz = pytz.timezone('Asia/Kolkata')
+            current_time = timezone.now().astimezone(kolkata_tz)
+            self.fields['call_date'].initial = current_time.strftime('%Y-%m-%dT%H:%M')
 
     def clean_call_date(self):
         """Validate call date - cannot be in the future"""
         call_date = self.cleaned_data.get('call_date')
-        if call_date and call_date > timezone.now().date():
+        if call_date and call_date > timezone.now():
             raise forms.ValidationError('Call date cannot be in the future.')
         return call_date
 

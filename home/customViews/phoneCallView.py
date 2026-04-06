@@ -28,6 +28,13 @@ def add_phone_call_log(request, client_id):
             phone_call = form.save(commit=False)
             phone_call.client = client
             phone_call.employee = request.user
+            
+            # Ensure call_date is timezone-aware (Asia/Kolkata)
+            if phone_call.call_date and timezone.is_naive(phone_call.call_date):
+                import pytz
+                kolkata_tz = pytz.timezone('Asia/Kolkata')
+                phone_call.call_date = kolkata_tz.localize(phone_call.call_date)
+            
             phone_call.save()
             
             # Save many-to-many relationship for services
@@ -87,6 +94,10 @@ def phone_call_logs_list(request):
         queryset = queryset.filter(employee=user)
     
     # Apply filters
+    client_filter = request.GET.get('client')
+    if client_filter:
+        queryset = queryset.filter(client_id=client_filter)
+    
     employee_filter = request.GET.get('employee')
     if employee_filter:
         queryset = queryset.filter(employee_id=employee_filter)
@@ -95,9 +106,9 @@ def phone_call_logs_list(request):
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     if date_from:
-        queryset = queryset.filter(call_date__gte=date_from)
+        queryset = queryset.filter(call_date__date__gte=date_from)
     if date_to:
-        queryset = queryset.filter(call_date__lte=date_to)
+        queryset = queryset.filter(call_date__date__lte=date_to)
     
     # Service type filter
     service_type = request.GET.get('service_type')
@@ -133,13 +144,15 @@ def phone_call_logs_list(request):
     # Order by latest first
     queryset = queryset.order_by('-call_date', '-created_at')
     
+    # Get accessible clients for filter dropdown
+    accessible_clients = get_accessible_clients(user)
+    
     # Get unique employees for filter dropdown based on role
     if user.is_superuser:
         employees = Employee.objects.select_related('user').all()
     elif hasattr(user, 'employee'):
         if user.employee.role == 'PARTNER':
             # Partners see only employees assigned to their accessible clients
-            accessible_clients = get_accessible_clients(user)
             assigned_user_ids = accessible_clients.values_list('assigned_ca_id', flat=True).distinct()
             employees = Employee.objects.filter(
                 user_id__in=assigned_user_ids
@@ -158,10 +171,12 @@ def phone_call_logs_list(request):
     
     context = {
         'phone_calls': queryset,
+        'clients': accessible_clients,
         'employees': employees,
         'service_types': service_types,
         'today': today,
         # Preserve filter values
+        'selected_client': client_filter,
         'selected_employee': employee_filter,
         'selected_service_type': service_type,
         'selected_feedback': feedback,
