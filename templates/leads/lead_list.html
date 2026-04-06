@@ -129,7 +129,7 @@
                                 <th>Lead Value</th>
                                 <th>Status</th>
                                 <th>Assigned To</th>
-                                <th>Created</th>
+                                <th>Expected Closure Date</th>
                                 <th data-sortable="false">Actions</th>
                             </tr>
                             </thead>
@@ -195,7 +195,7 @@
 
                                     <td>
                                         <div class="small text-muted">
-                                            {{ lead.created_at|date:"d M Y" }}
+                                            {{ lead.expected_closure_date|date:"d M Y"|default:"-" }}
                                         </div>
                                     </td>
 

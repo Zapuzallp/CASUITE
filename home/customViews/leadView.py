@@ -10,6 +10,9 @@ from django.contrib.auth.models import User
 
 from home.models import Lead, LeadCallLog
 from home.forms import LeadForm
+from django.utils.timezone import now
+from datetime import timedelta
+from django.db.models import Q
 
 
 def get_accessible_leads(user):
@@ -432,3 +435,75 @@ def add_lead_call_log(request, lead_id):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'Error creating call log: {str(e)}'}, status=500)
+
+
+def get_due_leads(user):
+    today = now().date()
+    next_7_days = today + timedelta(days=7)
+
+    leads = get_accessible_leads(user)
+
+    due_leads = leads.filter(
+        expected_closure_date__isnull=False
+    ).exclude(
+        status__in=['Converted', 'Lost']
+    ).filter(
+        Q(expected_closure_date__lt=today) |
+        Q(expected_closure_date=today) |
+        Q(expected_closure_date__range=(today, next_7_days))
+    ).select_related('created_by').prefetch_related('assigned_to').distinct().order_by('expected_closure_date')
+
+    return due_leads
+
+
+@login_required
+def due_leads_api(request):
+    range_type = request.GET.get('range')
+    today = now().date()
+
+    leads = get_due_leads(request.user)
+
+    if range_type == 'overdue':
+        leads = leads.filter(expected_closure_date__lt=today)
+        label = "Overdue Leads"
+
+    elif range_type == 'today':
+        leads = leads.filter(expected_closure_date=today)
+        label = "Due Today"
+
+    elif range_type == 'tomorrow':
+        leads = leads.filter(expected_closure_date=today + timedelta(days=1))
+        label = "Due Tomorrow"
+
+    else:
+        leads = leads.filter(
+            expected_closure_date__range=(today, today + timedelta(days=7))
+        )
+        label = "Next 7 Days"
+
+    data = []
+    for l in leads[:10]:
+
+        # ✅ TYPE LOGIC (VERY IMPORTANT)
+        if l.expected_closure_date < today:
+            lead_type = "overdue"
+        elif l.expected_closure_date == today:
+            lead_type = "today"
+        else:
+            lead_type = "upcoming"
+
+        data.append({
+            "id": l.id,
+            "name": l.lead_name,
+            "contact": l.full_name,
+            "assigned": ", ".join([u.username for u in l.assigned_to.all()]),
+            "date": l.expected_closure_date.strftime("%b %d, %Y"),
+            "status": l.status,
+            "type": lead_type
+        })
+
+    return JsonResponse({
+        "count": leads.count(),
+        "label": label,
+        "leads": data
+    })

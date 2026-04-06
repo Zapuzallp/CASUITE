@@ -14,7 +14,7 @@ from home.clients.client_access import get_accessible_clients
 # Import your models
 from home.models import Client
 from home.models import Task, TaskAssignmentStatus, Leave, Payment, Lead
-
+from home.customViews.leadView import get_due_leads
 
 # RequestedDocument, DocumentMaster, ClientDocumentUpload, DocumentRequest)
 # from .forms import ClientForm, CompanyDetailsForm, LLPDetailsForm, OPCDetailsForm, Section8CompanyDetailsForm, \
@@ -148,6 +148,11 @@ class HomeView(LoginRequiredMixin, TemplateView):
             due_tasks_qs = due_tasks_qs.filter(due_date__gte=today, due_date__lte=today + timedelta(days=30))
 
         due_tasks = due_tasks_qs.select_related('client').prefetch_related('assignees').order_by('due_date')[:20]
+
+        # =========================================================
+        # 8A. DUE LEADS FOR DASHBOARD
+        # =========================================================
+        due_leads = get_due_leads(user)[:10]
 
         # =========================================================
         # 9. Client Growth - Top 5 Client Creators/Onboards
@@ -292,6 +297,9 @@ class HomeView(LoginRequiredMixin, TemplateView):
             # Due Tasks Module
             'due_tasks': due_tasks,
             'due_range': due_range,
+
+            # Due Leads
+            'due_leads': due_leads,
 
             #clients
             'client_distribution_chart_data': client_data['client_distribution_chart_data'],
