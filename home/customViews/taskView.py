@@ -649,10 +649,7 @@ def edit_task_view(request, task_id):
             from django.http import HttpResponseForbidden
             return HttpResponseForbidden("You are not allowed to perform this action")
     # Task visibility enforced using centralized logic
-    task = get_object_or_404(
-        get_visible_tasks(request.user),
-        id=task_id
-    )
+
     client = task.client  # <--- 1. GET CLIENT FROM TASK
 
     # 2. PREPARE CLIENT DATA (Needed for the JS Auto-fill to not crash)
