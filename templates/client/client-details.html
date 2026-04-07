@@ -284,7 +284,7 @@
             </div>
 
             <div class="d-flex gap-2 flex-wrap">
-                {% if not is_partner %}
+                {% if can_edit_client %}
                 {% if request.user.is_superuser %}
                     <a href="{% url 'edit_client' client.id %}"
                        class="btn btn-outline-primary btn-sm" title="Edit Client">
@@ -419,7 +419,7 @@
                         <div class="tab-pane fade" id="profile-gst">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="card-title text-primary"><i class="bi bi-receipt me-2"></i>All GST Data</h5>
-                                {% if not is_partner %}
+                                {% if can_edit_client %}
                                 <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#addGSTModal">
                                     <i class="bi bi-plus-lg"></i> Add New GST
@@ -436,8 +436,10 @@
                                         <th>Scheme</th>
                                         <th>Status</th>
                                         <th>Created By</th>
-                                        {% if not is_partner and request.user.is_superuser or request.user == client.assigned_ca %}
+                                        {% if can_edit_client %}
+                                            {% if request.user.is_superuser or request.user == client.assigned_ca %}
                                             <th class="text-end">Action</th>
+                                            {% endif %}
                                         {% endif %}
                                     </tr>
                                     </thead>
@@ -460,13 +462,15 @@
                                                 <small class="text-muted">{{ gst.created_by.first_name|default:gst.created_by.username }}</small>
                                             </td>
 
-                                            {% if not is_partner and request.user.is_superuser or request.user == client.assigned_ca %}
+                                            {% if can_edit_client %}
+                                                {% if request.user.is_superuser or request.user == client.assigned_ca %}
                                                 <td class="text-end">
                                                     <a href="{% url 'edit_gst_details' gst.id %}"
                                                        class="btn btn-sm btn-outline-secondary">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                 </td>
+                                                {% endif %}
                                             {% endif %}
                                         </tr>
                                     {% empty %}
@@ -719,7 +723,7 @@
                                                         <i class="bi bi-eye"></i>
                                                     </a>
 
-                                                    {% if not is_partner and item.balance > 0 and item.payment_status != 'DRAFT' %}
+                                                    {% if can_edit_client and item.balance > 0 and item.payment_status != 'DRAFT' %}
                                                         <a class="btn btn-sm btn-success"
                                                            href="{% url 'payment_collect' item.invoice.id %}"
                                                            title="Collect Payment">
@@ -740,8 +744,8 @@
                                 </table>
                               </div>
 
-                              <!-- Save Button at Bottom - Hidden for Partners -->
-                              {% if not is_partner %}
+                              <!-- Save Button at Bottom -->
+                              {% if can_edit_client %}
                               <div class="d-flex justify-content-end mt-3">
                                 <button type="submit" class="btn btn-primary px-4" id="saveClientInvoiceStatusBtn">
                                   <i class="bi bi-check-circle me-1"></i> Save Status Changes
@@ -785,7 +789,7 @@
                                                        title="View Credential">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    {% if not is_partner %}
+                                                    {% if can_edit_client %}
                                                     <button type="button"
                                                             class="btn btn-sm btn-outline-danger"
                                                             data-bs-toggle="modal"

@@ -20,11 +20,6 @@ from django.core.paginator import  Paginator
 
 @login_required
 def create_task_view(request, client_id):
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to create tasks.')
-        return redirect('task_list')
-
     client = get_object_or_404(Client, id=client_id)
 
     # 1. Prepare Client Data for Auto-Population
@@ -415,12 +410,28 @@ def task_detail_view(request, task_id):
             waiting_for_previous = True
 
     # ==========================================================================
-    # HANDLE POST ACTIONS (Blocked for Partners)
+    # HANDLE POST ACTIONS
     # ==========================================================================
     if request.method == 'POST':
-        # Block all POST actions for partners
-        if is_partner:
-            messages.error(request, 'You do not have permission to modify tasks.')
+        action = request.POST.get('action_type')
+        
+        # Check if Partner has edit access to this task
+        partner_can_edit = False
+        if hasattr(user, 'employee') and user.employee.role == 'PARTNER':
+            is_creator = task.created_by == user
+            is_assignee = user in task.assignees.all()
+            is_client_ca = task.client.assigned_ca == user
+            is_in_sequence = assignee_statuses.filter(user=user).exists()
+            partner_can_edit = (is_creator or is_assignee or is_client_ca or is_in_sequence)
+        
+        # Allow comments and document uploads for Partners with edit access
+        if action in ['add_comment', 'upload_document']:
+            if hasattr(user, 'employee') and user.employee.role == 'PARTNER' and not partner_can_edit:
+                messages.error(request, 'You do not have permission to modify this task.')
+                return redirect('task_detail', task_id=task.id)
+        # Block other actions for Partners without edit access
+        elif hasattr(user, 'employee') and user.employee.role == 'PARTNER' and not partner_can_edit:
+            messages.error(request, 'You do not have permission to modify this task.')
             return redirect('task_detail', task_id=task.id)
 
         action = request.POST.get('action_type')
@@ -590,6 +601,19 @@ def task_detail_view(request, task_id):
                 if val: extended_fields.append(
                     {'label': field.verbose_name.title(), 'value': val, 'is_file': 'file' in field.name})
 
+    # Check if user is a partner and determine edit permissions
+    is_partner = False
+    can_edit_task = True
+    if hasattr(user, 'employee'):
+        is_partner = user.employee.role == 'PARTNER'
+        if is_partner:
+            # Partner can edit ONLY IF any of the following is true:
+            is_creator = task.created_by == user
+            is_assignee = user in task.assignees.all()
+            is_client_ca = task.client.assigned_ca == user
+            is_in_sequence = assignee_statuses.filter(user=user).exists()
+            can_edit_task = (is_creator or is_assignee or is_client_ca or is_in_sequence)
+
     # Timesheet forms 
     form_timesheet = TimesheetForm()
     
@@ -606,6 +630,7 @@ def task_detail_view(request, task_id):
         'waiting_for_previous': waiting_for_previous,
         'is_admin': is_admin,
         'is_partner': is_partner,
+        'can_edit_task': can_edit_task,
         'workflow_steps': workflow_steps,
         'aging_timeline': aging_timeline,
         'extended_fields': extended_fields,
@@ -627,12 +652,25 @@ def task_detail_view(request, task_id):
 
 @login_required()
 def edit_task_view(request, task_id):
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to edit tasks.')
-        return redirect('task_detail', task_id=task_id)
-
     task = get_object_or_404(Task, id=task_id)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can edit ONLY IF any of the following is true:
+        # 1. Partner created the task
+        # 2. Partner is assigned to the task
+        # 3. Partner is assigned CA of the client related to the task
+        # 4. Partner is in manage sequence (TaskAssignmentStatus) of the task
+        from home.models import TaskAssignmentStatus
+        
+        is_creator = task.created_by == request.user
+        is_assignee = request.user in task.assignees.all()
+        is_client_ca = task.client.assigned_ca == request.user
+        is_in_sequence = TaskAssignmentStatus.objects.filter(task=task, user=request.user).exists()
+        
+        if not (is_creator or is_assignee or is_client_ca or is_in_sequence):
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("You are not allowed to perform this action")
     client = task.client  # <--- 1. GET CLIENT FROM TASK
 
     # 2. PREPARE CLIENT DATA (Needed for the JS Auto-fill to not crash)

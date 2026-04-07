@@ -117,11 +117,6 @@ def payment_collect(request, invoice_id=None):
        GET/POST for /payment/<invoice_id>/collect/
        Uses PaymentCollectForm(invoice_instance=invoice) so invoice can be locked.
     """
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to collect payments.')
-        return redirect('payment_list')
-
     invoice = None
     total_amount = paid_amount = balance_amount = Decimal('0.00')
 
@@ -130,6 +125,16 @@ def payment_collect(request, invoice_id=None):
         total_amount, paid_amount, balance_amount = get_invoice_totals(invoice)
 
     if request.method == 'POST':
+        # Check if user is a partner - apply restricted edit permissions
+        if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+            # Partner can collect payment ONLY IF they have access to the invoice
+            # (created the invoice OR are the client's assigned CA)
+            if invoice:
+                has_access = (invoice.created_by == request.user or invoice.client.assigned_ca == request.user)
+                if not has_access:
+                    from django.http import HttpResponseForbidden
+                    return HttpResponseForbidden("You are not allowed to perform this action")
+        
         form = PaymentCollectForm(
             request.POST,
             invoice_instance=invoice,
@@ -172,19 +177,30 @@ def payment_collect(request, invoice_id=None):
 
 @login_required
 def approve_payment(request, payment_id):
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to approve payments.')
-        return redirect('payment_list')
-
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     payment = get_object_or_404(Payment, id=payment_id)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can approve ONLY IF they have access to the invoice
+        # (created the payment OR created the invoice OR are the client's assigned CA)
+        has_access = (
+            payment.created_by == request.user or 
+            payment.invoice.created_by == request.user or 
+            payment.invoice.client.assigned_ca == request.user
+        )
+        if not has_access:
+            return HttpResponseForbidden("You are not allowed to perform this action")
+    else:
+        # For non-partners, use the standard permission check
+        if not can_approve_payment(request.user, payment):
+            return HttpResponseForbidden("You are not authorized to approve this payment.")
+    
     if payment.approval_status != 'PENDING' or payment.payment_status != 'PENDING':
         messages.error(request, "This payment cannot be approved.")
         return redirect('payment_list')
-    if not can_approve_payment(request.user, payment):
-        return HttpResponseForbidden("You are not authorized to approve this payment.")
+    
     with transaction.atomic():
         payment.approval_status = 'APPROVED'
         payment.payment_status = 'PAID'
@@ -197,19 +213,30 @@ def approve_payment(request, payment_id):
 
 @login_required
 def reject_payment(request, payment_id):
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to reject payments.')
-        return redirect('payment_list')
-
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     payment = get_object_or_404(Payment, id=payment_id)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can reject ONLY IF they have access to the invoice
+        # (created the payment OR created the invoice OR are the client's assigned CA)
+        has_access = (
+            payment.created_by == request.user or 
+            payment.invoice.created_by == request.user or 
+            payment.invoice.client.assigned_ca == request.user
+        )
+        if not has_access:
+            return HttpResponseForbidden("You are not allowed to perform this action")
+    else:
+        # For non-partners, use the standard permission check
+        if not can_approve_payment(request.user, payment):
+            return HttpResponseForbidden("You are not authorized to reject this payment.")
+    
     if payment.approval_status != 'PENDING' or payment.payment_status != 'PENDING':
         messages.error(request, "This payment cannot be rejected.")
         return redirect('payment_list')
-    if not can_approve_payment(request.user, payment):
-        return HttpResponseForbidden("You are not authorized to reject this payment.")
+    
     with transaction.atomic():
         payment.approval_status = 'REJECTED'
         payment.payment_status = 'UNPAID'
@@ -222,14 +249,22 @@ def reject_payment(request, payment_id):
 
 @login_required
 def cancel_payment(request, payment_id):
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to cancel payments.')
-        return redirect('payment_list')
-
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     payment = get_object_or_404(Payment, id=payment_id)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can cancel ONLY IF they have access to the invoice
+        # (created the payment OR created the invoice OR are the client's assigned CA)
+        has_access = (
+            payment.created_by == request.user or 
+            payment.invoice.created_by == request.user or 
+            payment.invoice.client.assigned_ca == request.user
+        )
+        if not has_access:
+            return HttpResponseForbidden("You are not allowed to perform this action")
+    
     if payment.approval_status != 'PENDING' or payment.payment_status != 'PENDING':
         messages.error(request, "This payment cannot be canceled.")
         return redirect('payment_list')
@@ -246,7 +281,7 @@ def cancel_payment(request, payment_id):
 
 @login_required
 def payment_detail(request, payment_id):
-    # Check if user is a partner (view-only access)
+    # Check if user is a partner
     is_partner = False
     if hasattr(request.user, 'employee'):
         is_partner = request.user.employee.role == 'PARTNER'
@@ -263,8 +298,18 @@ def payment_detail(request, payment_id):
 
     invoice_total, invoice_paid, balance_amount = get_invoice_totals(invoice)
 
-    user_can_approve = can_approve_payment(request.user, payment) and not is_partner
-    user_can_cancel = can_cancel_payment(request.user, payment) and not is_partner
+    # Check if Partner has access to this payment's invoice
+    partner_has_access = False
+    if is_partner:
+        partner_has_access = (
+            payment.created_by == request.user or 
+            invoice.created_by == request.user or 
+            invoice.client.assigned_ca == request.user
+        )
+
+    # Partners can approve/reject/cancel if they have access to the client
+    user_can_approve = can_approve_payment(request.user, payment) if not is_partner else partner_has_access
+    user_can_cancel = can_cancel_payment(request.user, payment) if not is_partner else partner_has_access
 
     context = {
         'payment': payment,
