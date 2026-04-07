@@ -159,14 +159,15 @@
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-top mb-0">
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Clock In</th>
-                                <th>Clock Out</th>
+                                <th class="text-nowrap">Clock In</th>
+                                <th class="text-nowrap">Clock Out</th>
                                 <th>Duration</th>
                                 <th>Status</th>
+                                <th>Remark</th>
                                 <th>Location</th>
                             </tr>
                         </thead>
@@ -174,11 +175,15 @@
                             {% for log in logs %}
                             <tr>
                                 <td class="fw-bold">{{ log.date|date:"d M Y" }}</td>
-                                <td class="text-primary fw-medium">{{ log.clock_in|date:"h:i A"|default:"-" }}</td>
-                                <td class="text-muted">{{ log.clock_out|date:"h:i A"|default:"-" }}</td>
+                                <td class="text-primary fw-medium text-nowrap">{{ log.clock_in|date:"h:i A"|default:"-" }}</td>
+                                <td class="text-muted text-nowrap">{{ log.clock_out|date:"h:i A"|default:"-" }}</td>
                                 <td><span class="badge bg-light text-dark border px-3 rounded-pill">{{ log.formatted_duration }}</span></td>
                                 <td>
-                                    {% if log.status == 'approved' or log.status == 'full_day' %}
+                                    {% if log.status == 'rejected' %}
+                                        <span class="badge badge-soft-primary rounded-pill px-3">Rejected</span>
+                                    {% elif not log.clock_out %}
+                                        <span class="badge badge-soft-primary rounded-pill px-3">Pending</span>
+                                    {% elif log.status == 'approved' or log.status == 'full_day' %}
                                         <span class="badge badge-soft-success rounded-pill px-3">Present</span>
                                     {% elif log.status == 'half_day' %}
                                         <span class="badge badge-soft-warning rounded-pill px-3">Half Day</span>
@@ -186,6 +191,9 @@
                                         <span class="badge badge-soft-primary rounded-pill px-3">{{ log.status|title }}</span>
                                     {% endif %}
                                 </td>
+                                 <td class="small text-muted" style="max-width: 200px; white-space: normal; word-break: break-word;">
+                                    {{ log.remark|default:"-" }}
+                                 </td>
                                 <td class="small text-muted text-start" style="max-width: 200px;">
                                     <i class="bi bi-geo-alt me-1"></i>{{ log.location_name|default:"-" }}
                                 </td>

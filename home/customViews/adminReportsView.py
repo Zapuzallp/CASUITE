@@ -407,19 +407,9 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                     record.status = new_status
                     record.save()
                     display_status = record.get_status_display()
-                    # Title mapping
-                    title_map = {
-                        "approved": "Attendance Approved",
-                        "rejected": "Attendance Rejected",
-                        "pending": "Attendance Pending",
-                        "half_day": "Attendance Marked as Half Day",
-                        "full_day": "Attendance Marked as Full Day",
-                        "auto_clockout": "Auto Clockout"
-                    }
+                    title = "Attendance Updated"
 
-                    title = title_map.get(new_status, "Attendance Update")
-
-                    msg = f"Status- {display_status}<br>{record.date.strftime('%B %d, %Y')}"
+                    msg = f"Your Attendance on {record.date.strftime('%B %d, %Y')} has been {display_status} by {request.user.username}"
 
                     Notification.objects.create(
                         user=record.user,
