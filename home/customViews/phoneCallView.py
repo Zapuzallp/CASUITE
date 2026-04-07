@@ -147,7 +147,7 @@ def phone_call_logs_list(request):
     # Pagination
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
     
-    per_page = request.GET.get('per_page', '10')  # Default to 10
+    per_page = request.GET.get('per_page', '25')  # Default to 10
     if per_page == 'all':
         paginator = Paginator(queryset, queryset.count() or 1)
         page_number = 1
