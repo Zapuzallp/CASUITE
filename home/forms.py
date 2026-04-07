@@ -2,7 +2,7 @@ import re
 
 from django import forms
 from django.contrib.auth.models import User
-
+from home.models import Timesheet
 from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
@@ -682,3 +682,25 @@ class ClientPortalCredentialsForm(BootstrapFormMixin, forms.ModelForm):
                 )
 
         return cleaned_data
+
+class TimesheetForm(forms.ModelForm):
+    class Meta:
+        model = Timesheet
+        fields = ['start_time', 'end_time', 'memo']
+        widgets = {
+            
+            'memo': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'placeholder': 'What did you work on?'
+            }),
+            'start_time': forms.TimeInput(attrs={
+                'class': 'form-control', 
+            }),
+            'end_time': forms.TimeInput(attrs={
+                'class': 'form-control', 
+
+            }),
+        }
+
+
+        

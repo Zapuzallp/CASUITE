@@ -11,8 +11,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from datetime import timedelta,datetime
 from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
-from home.forms import TaskForm, TaskExtendedForm
-from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
+from home.forms import TaskForm, TaskExtendedForm,TimesheetForm
+from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus,Timesheet
 from home.clients.client_access import get_accessible_clients
 from home.tasks.task_copy import copy_task
 # Import of pagination
@@ -590,6 +590,13 @@ def task_detail_view(request, task_id):
                 if val: extended_fields.append(
                     {'label': field.verbose_name.title(), 'value': val, 'is_file': 'file' in field.name})
 
+    # Timesheet forms 
+    form_timesheet = TimesheetForm()
+    
+    if request.user.is_superuser or request.user.employee.role == "ADMIN":
+        timesheet = Timesheet.objects.filter(task_id = task.id).order_by('-start_time')
+    else:
+        timesheet = Timesheet.objects.filter(employee = request.user, task_id = task.id).order_by('-start_time')
     context = {
         'task': task,
         'assignee_statuses': assignee_statuses,  # Full sequence
@@ -607,7 +614,10 @@ def task_detail_view(request, task_id):
         'documents': task.documents.select_related('uploaded_by').order_by('-uploaded_at'),
         # Progress Calculation:
         'progress_percent': (assignee_statuses.filter(
-            is_completed=True).count() / assignee_statuses.count() * 100) if assignee_statuses.exists() else 0
+            is_completed=True).count() / assignee_statuses.count() * 100) if assignee_statuses.exists() else 0,
+        'timesheet':timesheet,
+        'form_timesheet':form_timesheet,
+        
     }
 
     return render(request, 'client/task-detail.html', context)
@@ -711,3 +721,17 @@ def delete_task_view(request, task_id):
     messages.success(request, "Task deleted successfully.")
 
     return redirect('task_list')
+
+@login_required
+def save_timesheet(request,task_id):
+    task_obj = get_object_or_404(Task, id=task_id)
+    if request.method == 'POST':
+        form = TimesheetForm(request.POST)
+        print(form.is_valid)
+        if form.is_valid():
+            timesheet = form.save(commit=False)
+            timesheet.task = task_obj
+            timesheet.employee = request.user
+            timesheet.save()
+        
+    return redirect(request.META.get('HTTP_REFERER'))    

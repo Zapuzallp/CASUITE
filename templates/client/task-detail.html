@@ -58,7 +58,8 @@
         
         /* Modal Table */
         .seq-table td { vertical-align: middle; }
-    </style>
+
+</style>
 
 <main id="main" class="main">
 
@@ -71,8 +72,39 @@
                 <li class="breadcrumb-item active">{{ task.task_title }}</li>
             </ol>
         </nav>
-        {% if not is_partner %}
         <div class="d-flex gap-2">
+        <!--Start timer-->
+        {% if user_action_needed %}
+
+        <div class="d-flex align-items-center gap-2">
+            <div id="liveClock" class="fs-6 fw-bold font-monospace text-primary d-none" style="min-width: 80px;">
+                00:00:00
+            </div>
+
+            <div id="timerActions">
+                <button type="button" id="startBtn"
+                class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1 rounded-1">
+                <i class="bi bi-play"></i>
+                <span>Start Timer</span>
+                </button>
+
+                <div id="activeControls" class="d-none d-flex align-items-center gap-1">
+                <button type="button" id="pauseBtn"
+                    class="btn btn-outline-warning btn-sm d-flex align-items-center justify-content-center rounded-1">
+                    <i class="bi bi-pause-fill"></i>
+                </button>
+                <button type="button" id="stopBtn"
+                    class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1 rounded-1"
+                    data-bs-toggle="modal" data-bs-target="#startTimerModal">
+                    <i class="bi bi-stop-fill"></i>
+                    <span>Stop</span>
+                </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <!--end Start timer-->
+        {% if not is_partner %}
             <a href="{% url 'edit_task' task.id %}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-pencil me-1"></i> Edit</a>
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
@@ -111,7 +143,56 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="startTimerModal" tabindex="-1" aria-labelledby="timerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 rounded-2">
 
+                <form method="post" action="{% url 'save_timesheet_url' task.id %}">
+                    {% csrf_token %}
+
+                    <div class="modal-header border-bottom px-3 py-2">
+                        <h6 class="modal-title fw-semibold text-dark mb-0" id="timerModalLabel">
+                            <i class="bi bi-clock-history text-primary me-1"></i> Stop Timer
+                        </h6>
+                        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        
+                        <div class="mb-2">
+                            
+                            <label for="exampleInput" class="form-label">Total Time</label>
+                            <input type="text" class="form-control" id="exampleInput">
+                            
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label for="modalStartTime" >Start Time</label>
+                                {{ form_timesheet.start_time }}
+                            </div>
+                            <div class="col-6">
+                                <label for="modalEndTime">End Time</label>
+                                {{ form_timesheet.end_time }}
+                            </div>
+                        </div>
+
+                        <div class="mb-0 overflow-y">
+                            <label for="memoText">Memo</label>
+                            {{ form_timesheet.memo }}
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-top px-3 py-2">
+                        <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted me-auto p-0" data-bs-dismiss="modal">Discard</button>
+                        <button type="submit" class="btn btn-primary btn-sm rounded-1">Save & Submit</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
     <!-- MESSAGES -->
     {% if messages %}
         {% for message in messages %}
@@ -229,6 +310,9 @@
                         <li class="nav-item flex-fill text-center">
                             <button class="nav-link py-2 small fw-bold" data-bs-toggle="tab" data-bs-target="#tab-comments">Comments</button>
                         </li>
+                        <li class="nav-item flex-fill text-center">
+                            <button class="nav-link py-2 small fw-bold" data-bs-toggle="tab" data-bs-target="#tab-timesheet">Timesheet</button>
+                        </li>
                     </ul>
                 </div>
                 <div class="card-body pt-3" style="max-height: 300px; overflow-y: auto;">
@@ -264,6 +348,46 @@
                             {% empty %}
                                 <div class="text-center text-muted small">No comments yet.</div>
                             {% endfor %}
+                            </div>
+                        <div class="tab-pane fade" id="tab-timesheet">
+                        {% if timesheet %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle small mb-0 ">
+                                <thead class="table-light border-bottom">
+                                    <tr>
+                                        <th class="text-muted fw-semibold px-4">ID</th>
+                                        <th class="text-muted fw-semibold text-center px-4">Task</th>
+                                        <th class="text-muted fw-semibold text-center px-4">Employee</th>
+                                        <th class="text-muted fw-semibold px-4">Start Time</th>
+                                        <th class="text-muted fw-semibold px-4">End Time</th>
+                                        <th class="text-muted fw-semibold text-nowrap">Total Hours</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in timesheet %}
+                                    <tr>
+                                        <td class="text-nowrap px-4">{{entry.pk}}</td>
+                                           <td>
+                                            <div title="{{ entry.task.task_title }}" 
+                                                class="text-wrap" 
+                                                style="min-width: 200px; max-width: 350px;">
+                                                {{ entry.task.task_title }}
+                                            </div>
+                                        </td>                          
+                                                <td class="px-4 text-nowrap">
+                                                {{entry.employee.get_full_name}}
+                                            </td>
+                                        <td class="text-nowrap px-4">{{entry.date}} {{ entry.start_time }}</td>
+                                        <td class="text-nowrap px-4">{{entry.date}} {{ entry.end_time }}</td>
+                                        <td title="{{entry.memo}}" class="text-nowrap text-center px-4">{{entry.total_hours}}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                            {% else %}
+                            <div class="text-center text-muted small py-3">No timesheet entries yet.</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -525,5 +649,133 @@
         addBtn.addEventListener('click', () => addRow());
     });
 </script>
+<!--Timesheet Tab-->
+{% if user_action_needed %}
+<script>
+    let startTime, timerInterval;
+    let elapsedTime = 0; 
+    let sessionStartTimeStr = ""; 
+
+    const clockDisplay = document.getElementById('liveClock');
+    const startBtn = document.getElementById('startBtn');
+    const activeControls = document.getElementById('activeControls');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const stopBtn = document.getElementById('stopBtn');
+
+    function formatTime(ms) {
+        let hh = Math.floor(ms / 3600000);
+        let mm = Math.floor((ms % 3600000) / 60000);
+        let ss = Math.floor((ms % 60000) / 1000);
+        return (
+            hh.toString().padStart(2, '0') + ":" +
+            mm.toString().padStart(2, '0') + ":" +
+            ss.toString().padStart(2, '0')
+        );
+    }
+
+    function calculateDurationString(startObj, endObj) {
+    // Calculate difference in total milliseconds
+    let diffMs = endObj - startObj;
+    
+    // Handle midnight rollover (if end time is '00:05:00' and start was '23:55:00')
+    if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
+
+    // Convert to total seconds
+    const totalSeconds = Math.floor(diffMs / 1000);
+    
+    // Breakdown logic
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    // Returns the string for your input field
+    return `${hours} hr ${minutes} m ${seconds} s`;
+}
+    function getWallClockTime() {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+        const dd = now.getDate().toString().padStart(2, '0');
+        const hh = now.getHours().toString().padStart(2, '0');
+        const min = now.getMinutes().toString().padStart(2, '0');
+        const ss = now.getSeconds().toString().padStart(2, '0');
+        return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+    }
+
+    startBtn.addEventListener('click', () => {
+        if (elapsedTime === 0) {
+            sessionStartTimeStr = getWallClockTime();
+        }
+        startTime = Date.now() - elapsedTime;
+        clockDisplay.classList.remove('d-none');
+        timerInterval = setInterval(() => {
+            elapsedTime = Date.now() - startTime;
+            clockDisplay.textContent = formatTime(elapsedTime);
+        }, 1000);
+        startBtn.classList.add('d-none');
+        activeControls.classList.remove('d-none');
+    });
+
+    pauseBtn.addEventListener('click', () => {
+        clearInterval(timerInterval);
+        startBtn.innerHTML = '<i class="bi bi-play-fill"></i> <span>Resume</span>';
+        startBtn.classList.remove('d-none');
+        activeControls.classList.add('d-none');
+    });
+    stopBtn.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    
+    const now = new Date(); // The exact moment they click "Stop"
+    
+    // Helper to format Date object into HH:MM:SS for the input fields
+    const formatForInput = (dateObj) => {
+        const hh = String(dateObj.getHours()).padStart(2, '0');
+        const min = String(dateObj.getMinutes()).padStart(2, '0');
+        const sec = String(dateObj.getSeconds()).padStart(2, '0');
+        return `${hh}:${min}:${sec}`;
+    };
+
+    // Parse the session start time string back into a Date object
+    const startDateTime = new Date(sessionStartTimeStr.replace(' ', 'T'));
+    
+    const modal = document.getElementById('startTimerModal');
+    const startInput = modal.querySelector('input[name="start_time"]');
+    const endInput = modal.querySelector('input[name="end_time"]');
+    const totalTimeInput = document.getElementById('exampleInput');
+
+    // 1. Fill Start & End Time (Enable seconds support in the UI)
+    if (startInput) {
+        startInput.setAttribute('step', '1'); // Allows seconds to show in HTML input
+        startInput.value = formatForInput(startDateTime);
+    }
+    if (endInput) {
+        endInput.setAttribute('step', '1');
+        endInput.value = formatForInput(now);
+    }
+
+    // 2. Fill the "Total Time" field with the breakdown
+    if (totalTimeInput) {
+        totalTimeInput.value = calculateDurationString(startDateTime, now);
+    }
+
+    // 3. Fill Employee and Task (Existing logic)
+    const employeeInput = modal.querySelector('input[name="employee"]');
+    const taskInput = modal.querySelector('input[name="task"]');
+    if (employeeInput) employeeInput.value = "{{ request.user.get_full_name}}";
+    if (taskInput) {
+        const titleElem = document.querySelector('h3.fw-bold');
+        if (titleElem) taskInput.value = titleElem.textContent.trim();
+    }
+
+    // Reset Timer UI
+    elapsedTime = 0;
+    clockDisplay.textContent = "00:00:00";
+    clockDisplay.classList.add('d-none');
+    startBtn.innerHTML = '<i class="bi bi-play"></i> <span>Start Timer</span>';
+    startBtn.classList.remove('d-none');
+    activeControls.classList.add('d-none');
+});
+</script>
+{% endif %}
 
 {% endblock body %}
