@@ -317,6 +317,17 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
             self.fields['gstin_number'].queryset = client.gst_details.all()
             self.fields['gstin_number'].empty_label = "Select GST Number"
 
+    # Hidden fields are not sent in POST (due to dynamic form rendering),
+    # so we keep existing DB values instead of overwriting them with NULL
+    def clean(self):
+        cleaned_data = super().clean()
+
+        if self.instance and self.instance.pk:
+            for field in self.fields:
+                if field not in self.data:
+                    cleaned_data[field] = getattr(self.instance, field)
+
+        return cleaned_data
 
 # Leave form
 class LeaveForm(BootstrapFormMixin, forms.ModelForm):

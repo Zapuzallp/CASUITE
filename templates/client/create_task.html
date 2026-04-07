@@ -303,16 +303,13 @@
 
                     } else {
                         div.style.display = 'none';
-                        if (input) input.value = '';
                     }
                 });
             }
 
             serviceSelect.addEventListener('change', updateForm);
             // Only auto-run if creating (no due date already set)
-            if (!dueDateInput.value) {
-                updateForm();
-            }
+            updateForm();
         });
     </script>
     <script>

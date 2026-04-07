@@ -677,11 +677,13 @@ def edit_task_view(request, task_id):
 
     if request.method == 'POST':
         task_form = TaskForm(request.POST, instance=task)
-        extended_form = TaskExtendedForm(request.POST, request.FILES, instance=task.extended_attributes)
+        extended_form = TaskExtendedForm(request.POST, request.FILES, instance=task.extended_attributes,client=task.client)
 
         if task_form.is_valid() and extended_form.is_valid():
-            task_form.save()
-            extended_form.save()
+            task = task_form.save()
+            extended = extended_form.save(commit=False)
+            extended.task = task
+            extended.save()
             messages.success(request, "Task updated successfully.")
             return redirect('task_list')
     else:
