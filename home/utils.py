@@ -74,22 +74,25 @@ def get_visible_payments(user):
     return Payment.objects.none()
 
 def can_approve_payment(user, payment):
+    # Superuser can approve any payment
+    if user.is_superuser:
+        return True
+    
     try:
         approver = user.employee
         creator = payment.created_by.employee
     except Exception:
         return False
 
-    # Must be same branch
-    if approver.office_location != creator.office_location:
-        return False
-
-    # Admin can approve any payment
+    # Admin can approve any payment in their branch
     if approver.role == 'ADMIN':
         return approver.office_location == creator.office_location
 
-    # Branch manager can approve only their own payments
+    # Branch manager can approve payments from their staff or their own
     if approver.role == 'BRANCH_MANAGER':
+        # Must be same branch
+        if approver.office_location != creator.office_location:
+            return False
         return (
             payment.created_by == user or
             creator.supervisor == user
@@ -98,21 +101,28 @@ def can_approve_payment(user, payment):
     return False
 
 def can_cancel_payment(user, payment):
+    if payment.approval_status != "PENDING" or payment.payment_status != "PENDING":
+        return False
+
+    # Superuser can cancel any payment
+    if user.is_superuser:
+        return True
+
+    # Creator can cancel their own payment
+    if payment.created_by == user:
+        return True
+
     try:
         actor = user.employee
         creator = payment.created_by.employee
     except Exception:
         return False
 
-    if payment.approval_status != "PENDING" or payment.payment_status != "PENDING":
-        return False
-
-    if payment.created_by == user:
-        return True
-
+    # Admin can cancel any payment in their branch
     if actor.role == "ADMIN":
         return actor.office_location == creator.office_location
 
+    # Branch manager can cancel payments from their staff or their own
     if actor.role == "BRANCH_MANAGER":
         return (
             payment.created_by == user or
