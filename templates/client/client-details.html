@@ -3,7 +3,7 @@
 
 {% block head %}
     <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
     
     <style>
@@ -629,7 +629,7 @@
                             <h5 class="card-title text-primary"><i class="bi bi-briefcase-fill me-2"></i>Active Services
                             </h5>
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle border">
+                                <table class="table table-hover align-middle border datatable1" id="clientServicesTable">
                                     <thead class="table-light">
                                     <tr>
                                         <th>Title</th>
@@ -717,7 +717,7 @@
                             <form method="post" action="{% url 'invoice_bulk_status_update' %}" id="clientInvoiceBulkStatusForm">
                               {% csrf_token %}
                               <div class="table-responsive">
-                                <table class="table table-hover align-middle border" id="clientInvoicesTable">
+                                <table class="table table-hover align-middle border datatable1" id="clientInvoicesTable">
                                     <thead class="table-light">
                                     <tr>
                                         <th>Invoice #</th>
@@ -930,7 +930,7 @@
                             </div>
 
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle border" id="clientPhoneCallsTable">
+                                <table class="table table-hover align-middle border datatable1" id="clientPhoneCallsTable">
                                     <thead class="table-light">
                                     <tr>
                                         <th>Call Date & Time</th>
@@ -1573,104 +1573,18 @@
             }
         });
 
-        // Initialize DataTable for client invoices and phone calls if the tables exist and have data
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load DataTables Responsive extension
-            if (typeof $.fn.dataTable !== 'undefined') {
-                // Add responsive extension script
-                var script = document.createElement('script');
-                script.src = 'https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js';
-                document.head.appendChild(script);
-                
-                var script2 = document.createElement('script');
-                script2.src = 'https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js';
-                document.head.appendChild(script2);
-                
-                // Wait for scripts to load
-                script2.onload = function() {
-                    initializeTables();
-                };
-            } else {
-                initializeTables();
-            }
-            
-            function initializeTables() {
-                // Initialize Invoice Table
-                var invoiceTable = document.getElementById('clientInvoicesTable');
-                if (invoiceTable) {
-                    // Check if table has data rows (not just the empty state)
-                    var hasData = invoiceTable.querySelector('tbody tr td:not([colspan])');
-                    if (hasData) {
-                        $('#clientInvoicesTable').DataTable({
-                            "pageLength": 10,
-                            "order": [[0, "desc"]], // Sort by Invoice # descending
-                            "responsive": true,
-                            "language": {
-                                "search": "Search:",
-                                "lengthMenu": "Show _MENU_ entries",
-                                "info": "Showing _START_ to _END_ of _TOTAL_ invoices",
-                                "infoEmpty": "No invoices available",
-                                "paginate": {
-                                    "first": "First",
-                                    "last": "Last",
-                                    "next": "Next",
-                                    "previous": "Previous"
-                                }
-                            },
-                            "columnDefs": [
-                                { "orderable": false, "targets": [9] }, // Disable sorting on Action column
-                                { "responsivePriority": 1, "targets": [0, 1, 9] }, // Keep Invoice#, Subject, and Action visible
-                                { "responsivePriority": 2, "targets": [4, 7] } // Keep Total Amount and Payment Status visible
-                            ],
-                            "dom": "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
-                                   "<'row'<'col-sm-12'tr>>" +
-                                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
-                            "initComplete": function() {
-                                // Add mobile-friendly classes
-                                $('.dataTables_length select').addClass('form-select form-select-sm');
-                                $('.dataTables_filter input').addClass('form-control form-control-sm');
-                            }
-                        });
-                    }
-                }
-                
-                // Initialize Phone Calls Table
-                var phoneCallsTable = document.getElementById('clientPhoneCallsTable');
-                if (phoneCallsTable) {
-                    var hasPhoneCallData = phoneCallsTable.querySelector('tbody tr td:not([colspan])');
-                    if (hasPhoneCallData) {
-                        $('#clientPhoneCallsTable').DataTable({
-                            "pageLength": 25,
-                            "order": [[0, "desc"]], // Sort by Call Date & Time descending
-                            "responsive": true,
-                            "language": {
-                                "search": "Search:",
-                                "lengthMenu": "Show _MENU_ entries",
-                                "info": "Showing _START_ to _END_ of _TOTAL_ phone calls",
-                                "infoEmpty": "No phone calls available",
-                                "paginate": {
-                                    "first": "First",
-                                    "last": "Last",
-                                    "next": "Next",
-                                    "previous": "Previous"
-                                }
-                            },
-                            "columnDefs": [
-                                { "responsivePriority": 1, "targets": [0, 1] }, // Keep Call Date and Employee visible
-                                { "responsivePriority": 2, "targets": [4, 5] } // Keep Next Follow-up and Feedback visible
-                            ],
-                            "dom": "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
-                                   "<'row'<'col-sm-12'tr>>" +
-                                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
-                            "initComplete": function() {
-                                // Add mobile-friendly classes
-                                $('.dataTables_length select').addClass('form-select form-select-sm');
-                                $('.dataTables_filter input').addClass('form-control form-control-sm');
-                            }
-                        });
-                    }
-                }
-            }
+        });
+    </script>
+
+    <!-- Fix for DataTables in Bootstrap Tabs -->
+    <script>
+        $(document).ready(function() {
+            // Adjust DataTable columns when tab is shown (fixes hidden tab issue)
+            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                setTimeout(function() {
+                    $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+                }, 100);
+            });
         });
     </script>
 

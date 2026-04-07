@@ -40,6 +40,7 @@ urlpatterns = [
     path('accounts/logout/', authView.LoginView.as_view(), name='logout'),
     # Client Details
     path('client/<int:client_id>/details/', clientView.client_details_view, name='client_details'),
+    path('client/<int:client_id>/phone-calls-ajax/', clientView.client_phone_calls_ajax, name='client_phone_calls_ajax'),
     path('client/<int:client_id>/upload-document/', documentsUploadView.upload_document_view,
          name='upload_client_document'),
     path('client/<int:client_id>/create-request/', documentsUploadView.create_document_request_view,

@@ -2,10 +2,6 @@
 {% load static %}
 
 {% block head %}
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
-    
     <style>
         /* Custom Select2 styling for multi-select */
         .select2-container--bootstrap-5 .select2-selection--multiple {
@@ -108,17 +104,17 @@
                     <div class="accordion mb-4" id="phoneCallFilterAccordion">
                         <div class="accordion-item border-0 shadow-sm">
                             <h2 class="accordion-header" id="headingOne">
-                                <button class="accordion-button {% if not request.GET %}collapsed{% endif %} bg-white text-primary fw-bold"
+                                <button class="accordion-button collapsed bg-white text-primary fw-bold"
                                         type="button"
                                         data-bs-toggle="collapse"
                                         data-bs-target="#collapseFilter"
-                                        aria-expanded="{% if request.GET %}true{% else %}false{% endif %}"
+                                        aria-expanded="false"
                                         aria-controls="collapseFilter">
                                     <i class="bi bi-funnel-fill me-2"></i> Filter Phone Calls
                                 </button>
                             </h2>
                             <div id="collapseFilter"
-                                 class="accordion-collapse collapse {% if request.GET %}show{% endif %}"
+                                 class="accordion-collapse collapse"
                                  aria-labelledby="headingOne"
                                  data-bs-parent="#phoneCallFilterAccordion">
                                 <div class="accordion-body bg-light">
@@ -225,12 +221,34 @@
                     <!-- DATA TABLE CARD -->
                     <div class="card shadow-sm border-0">
                         <div class="card-body pt-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title text-primary mb-0">
-                                    <i class="bi bi-list-ul me-2"></i>Phone Call Logs Directory
-                                </h5>
-                                <div class="text-muted small">
-                                    Showing {{ phone_calls|length }} record{{ phone_calls|length|pluralize }}
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center my-3 gap-3">
+                                <div class="d-flex flex-column gap-2">
+                                    <h5 class="card-title m-0">Phone Call Logs Directory</h5>
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        {% if phone_calls %}
+                                        <small class="text-muted">
+                                            Showing {{ phone_calls.start_index }} - {{ phone_calls.end_index }} of {{ phone_calls.paginator.count }}
+                                        </small>
+                                        {% endif %}
+
+                                        <!-- Records per page dropdown -->
+                                        <form method="get" class="d-flex align-items-center gap-2 ms-md-2">
+                                            {% for key,value in request.GET.items %}
+                                                {% if key != "per_page" and key != "page" %}
+                                                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                                {% endif %}
+                                            {% endfor %}
+
+                                            <label class="small text-muted mb-0">Show</label>
+                                            <select name="per_page" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                                <option value="10" {% if per_page == "10" %}selected{% endif %}>10</option>
+                                                <option value="25" {% if per_page == "25" %}selected{% endif %}>25</option>
+                                                <option value="50" {% if per_page == "50" %}selected{% endif %}>50</option>
+                                                <option value="100" {% if per_page == "100" %}selected{% endif %}>100</option>
+                                                <option value="all" {% if per_page == "all" %}selected{% endif %}>All</option>
+                                            </select>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
 
@@ -309,6 +327,50 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            <!-- Pagination Controls (Same as Tasks Page) -->
+                            {% if phone_calls and per_page != 'all' %}
+                            <div class="mt-4">
+                                <nav aria-label="Phone calls pagination">
+                                    <ul class="pagination justify-content-center flex-wrap gap-1">
+                                        <!-- First -->
+                                        <li class="page-item {% if not phone_calls.has_previous %}disabled{% endif %}">
+                                            <a class="page-link shadow-none" {% if phone_calls.has_previous %}href="?{{ query_params }}&page=1"{% endif %}>
+                                                <i class="bi bi-skip-backward-fill"></i>
+                                            </a>
+                                        </li>
+
+                                        <!-- Previous -->
+                                        <li class="page-item {% if not phone_calls.has_previous %}disabled{% endif %}">
+                                            <a class="page-link shadow-none" {% if phone_calls.has_previous %}href="?{{ query_params }}&page={{ phone_calls.previous_page_number }}"{% endif %}>
+                                                <i class="bi bi-arrow-left"></i>
+                                            </a>
+                                        </li>
+
+                                        <!-- Current Page -->
+                                        <li class="page-item active">
+                                            <span class="page-link shadow-none">
+                                                {{ phone_calls.number }} / {{ phone_calls.paginator.num_pages }}
+                                            </span>
+                                        </li>
+
+                                        <!-- Next -->
+                                        <li class="page-item {% if not phone_calls.has_next %}disabled{% endif %}">
+                                            <a class="page-link shadow-none" {% if phone_calls.has_next %}href="?{{ query_params }}&page={{ phone_calls.next_page_number }}"{% endif %}>
+                                                <i class="bi bi-arrow-right"></i>
+                                            </a>
+                                        </li>
+
+                                        <!-- Last -->
+                                        <li class="page-item {% if not phone_calls.has_next %}disabled{% endif %}">
+                                            <a class="page-link shadow-none" {% if phone_calls.has_next %}href="?{{ query_params }}&page={{ phone_calls.paginator.num_pages }}"{% endif %}>
+                                                <i class="bi bi-skip-forward-fill"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -316,12 +378,6 @@
             </div>
         </section>
     </main>
-
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -417,30 +473,6 @@
                     placeholder: placeholder,
                     minimumResultsForSearch: 0
                 });
-            });
-
-            // Initialize DataTable
-            var table = $('#phoneCallsTable').DataTable({
-                "pageLength": 25,
-                "order": [[2, "desc"]], // Sort by Call Date & Time descending
-                "responsive": true,
-                "language": {
-                    "search": "Search:",
-                    "lengthMenu": "Show _MENU_ entries",
-                    "info": "Showing _START_ to _END_ of _TOTAL_ phone calls",
-                    "infoEmpty": "No phone calls available",
-                    "infoFiltered": "(filtered from _MAX_ total entries)",
-                    "paginate": {
-                        "first": "First",
-                        "last": "Last",
-                        "next": "Next",
-                        "previous": "Previous"
-                    }
-                },
-                "columnDefs": [
-                    { "responsivePriority": 1, "targets": [0, 2] }, // Keep Client and Call Date visible
-                    { "responsivePriority": 2, "targets": [5, 6] } // Keep Next Follow-up and Feedback visible
-                ]
             });
         });
     </script>

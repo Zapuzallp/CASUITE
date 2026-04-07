@@ -144,6 +144,28 @@ def phone_call_logs_list(request):
     # Order by latest first
     queryset = queryset.order_by('-call_date', '-created_at')
     
+    # Pagination
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    
+    per_page = request.GET.get('per_page', '10')  # Default to 10
+    if per_page == 'all':
+        paginator = Paginator(queryset, queryset.count() or 1)
+        page_number = 1
+    else:
+        try:
+            per_page = int(per_page)
+        except (ValueError, TypeError):
+            per_page = 10  # Default to 10
+        paginator = Paginator(queryset, per_page)
+        page_number = request.GET.get('page', 1)
+    
+    try:
+        phone_calls = paginator.page(page_number)
+    except PageNotAnInteger:
+        phone_calls = paginator.page(1)
+    except EmptyPage:
+        phone_calls = paginator.page(paginator.num_pages)
+    
     # Get accessible clients for filter dropdown
     accessible_clients = get_accessible_clients(user)
     
@@ -169,12 +191,25 @@ def phone_call_logs_list(request):
     # Get unique service types for filter
     service_types = Task.SERVICE_TYPE_CHOICES
     
+    # Build query params for pagination (exclude page parameter)
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    # Remove empty query parameters
+    for key in list(query_params.keys()):
+        if not query_params.get(key):
+            query_params.pop(key)
+    
+    # Store per_page as string for template comparison
+    per_page_str = str(per_page) if per_page != 'all' else 'all'
+    
     context = {
-        'phone_calls': queryset,
+        'phone_calls': phone_calls,
         'clients': accessible_clients,
         'employees': employees,
         'service_types': service_types,
         'today': today,
+        'per_page': per_page_str,
+        'query_params': query_params.urlencode(),
         # Preserve filter values
         'selected_client': client_filter,
         'selected_employee': employee_filter,
