@@ -30,6 +30,35 @@ def generate_file_number(office_location):
 
     return f"{office_code}{str(next_number).zfill(6)}"
 
+
+def resolve_employee_shift(user):
+    from home.models import EmployeeShift, Shift
+    from django.db.models import Q
+    from django.utils import timezone
+
+    today = timezone.localdate()
+
+    # 1. Try assigned shift
+    employee_shift = EmployeeShift.objects.filter(
+        user=user,
+        valid_from__lte=today
+    ).filter(
+        Q(valid_to__isnull=True) | Q(valid_to__gte=today)
+    ).first()
+
+    if employee_shift:
+        return employee_shift.shift, "assigned"
+
+    # 2. Fallback → default shift
+    default_shift = Shift.objects.filter(is_default=True).first()
+
+    if default_shift:
+        return default_shift, "default"
+
+    # 3. No shift at all
+    return None, "none"
+
+
 def get_visible_payments(user):
     """
     Returns a queryset of payments the given user is allowed to see.
@@ -73,56 +102,70 @@ def get_visible_payments(user):
 
     return Payment.objects.none()
 
+
 def can_approve_payment(user, payment):
+    # Superuser can approve any payment
+    if user.is_superuser:
+        return True
+    
     try:
         approver = user.employee
         creator = payment.created_by.employee
     except Exception:
         return False
 
-    # Must be same branch
-    if approver.office_location != creator.office_location:
-        return False
-
-    # Admin can approve any payment
+    # Admin can approve any payment in their branch
     if approver.role == 'ADMIN':
         return approver.office_location == creator.office_location
 
-    # Branch manager can approve only their own payments
+    # Branch manager can approve payments from their staff or their own
     if approver.role == 'BRANCH_MANAGER':
+        # Must be same branch
+        if approver.office_location != creator.office_location:
+            return False
         return (
-            payment.created_by == user or
-            creator.supervisor == user
+                payment.created_by == user or
+                creator.supervisor == user
         )
 
     return False
 
+
 def can_cancel_payment(user, payment):
+    if payment.approval_status != "PENDING" or payment.payment_status != "PENDING":
+        return False
+
+    # Superuser can cancel any payment
+    if user.is_superuser:
+        return True
+
+    # Creator can cancel their own payment
+    if payment.created_by == user:
+        return True
+
     try:
         actor = user.employee
         creator = payment.created_by.employee
     except Exception:
         return False
 
-    if payment.approval_status != "PENDING" or payment.payment_status != "PENDING":
-        return False
-
-    if payment.created_by == user:
-        return True
-
+    # Admin can cancel any payment in their branch
     if actor.role == "ADMIN":
         return actor.office_location == creator.office_location
 
+    # Branch manager can cancel payments from their staff or their own
     if actor.role == "BRANCH_MANAGER":
         return (
-            payment.created_by == user or
-            creator.supervisor == user
+                payment.created_by == user or
+                creator.supervisor == user
         )
 
     return False
 
+
 from django.db.models import Sum
 from decimal import Decimal
+
 
 def get_invoice_totals(invoice):
     total_amount = invoice.items.aggregate(
@@ -139,22 +182,27 @@ def get_invoice_totals(invoice):
     balance = total_amount - total_paid
 
     return total_amount, total_paid, balance
+
+
 # Attendance utility functions
 from math import radians, cos, sin, asin, sqrt
 from django.utils import timezone
 from django.conf import settings
 from datetime import date, datetime, time, timedelta
 
+
 def get_distance(lat1, lon1, lat2, lon2):
     """Calculate distance between two points using Haversine formula"""
     R = 6371000  # meters
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
-    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
     c = 2 * asin(sqrt(a))
     return R * c
 
-def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_in_lat=None, clock_in_lng=None, clock_out_lat=None, clock_out_lng=None, device_type=None):
+
+def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_in_lat=None, clock_in_lng=None,
+                                clock_out_lat=None, clock_out_lng=None, device_type=None):
     """Check attendance compliance for both web and mobile"""
     from home.models import Employee, EmployeeShift
     from django.utils import timezone as tz
@@ -185,30 +233,36 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
         from django.db.models import Q
         today_date = timezone.localdate()
 
-        employee_shift = EmployeeShift.objects.filter(
-            user=user,
-            valid_from__lte=today_date
-        ).filter(
-            Q(valid_to__isnull=True) | Q(valid_to__gte=today_date)
-        ).first()
-        if not employee_shift:
-            remarks.append("No shift assigned")
+        shift, shift_source = resolve_employee_shift(user)
 
+        if not shift:
+            remarks.append("Shift Not Defined")
+
+            # Keep location checks (important - DO NOT LOSE THIS)
             if office and clock_in_lat and clock_in_lng and office.latitude and office.longitude:
-                distance = get_distance(float(clock_in_lat), float(clock_in_lng), float(office.latitude), float(office.longitude))
+                distance = get_distance(float(clock_in_lat), float(clock_in_lng), float(office.latitude),
+                                        float(office.longitude))
                 if distance > 100:
                     remarks.append(f"In: {distance:.0f}m away")
 
             if office and clock_out_lat and clock_out_lng and office.latitude and office.longitude:
-                distance = get_distance(float(clock_out_lat), float(clock_out_lng), float(office.latitude), float(office.longitude))
+                distance = get_distance(float(clock_out_lat), float(clock_out_lng), float(office.latitude),
+                                        float(office.longitude))
                 if distance > 100:
                     remarks.append(f"Out: {distance:.0f}m away")
 
             return remarks
 
-        shift = employee_shift.shift
+        # Optional: track if default shift used
+        if shift_source == "default":
+            remarks.append("Default shift applied")
         shift_start = shift.shift_start_time
         shift_end = shift.shift_end_time
+
+        # Day-off handling
+        today_day = timezone.localdate().strftime('%a')  # Mon, Tue...
+        if shift.days_off and today_day in shift.days_off:
+            remarks.append("Day Off")
 
         # maximum_allowed_duration is the grace period in hours
         grace_period_hours = float(shift.maximum_allowed_duration)
@@ -230,17 +284,19 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
             clock_in_time_only = clock_in_local.time()
 
             # Calculate allowed late time (shift_start + grace_period)
-            allowed_late_time = (datetime.combine(date.today(), shift_start) + timedelta(minutes=grace_period_minutes)).time()
+            allowed_late_time = (
+                        datetime.combine(date.today(), shift_start) + timedelta(minutes=grace_period_minutes)).time()
 
             # Check if late (clocked in after allowed late time)
             if clock_in_time_only > allowed_late_time:
                 late_minutes = (datetime.combine(date.today(), clock_in_time_only) -
-                              datetime.combine(date.today(), shift_start)).seconds // 60
+                                datetime.combine(date.today(), shift_start)).seconds // 60
                 remarks.append(f"Late: {late_minutes}min")
 
             # Check location if office assigned
             if office and clock_in_lat and clock_in_lng and office.latitude and office.longitude:
-                distance = get_distance(float(clock_in_lat), float(clock_in_lng), float(office.latitude), float(office.longitude))
+                distance = get_distance(float(clock_in_lat), float(clock_in_lng), float(office.latitude),
+                                        float(office.longitude))
                 if distance > 100:
                     remarks.append(f"In: {distance:.0f}m away")
             elif office and (not office.latitude or not office.longitude):
@@ -270,23 +326,26 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
                         remarks.append(f"Early: {early_minutes}min")
                 else:
                     # Post-midnight clock-out: compare against shift_end
-                    allowed_early_time = (datetime.combine(date.today(), shift_end) - timedelta(minutes=grace_period_minutes)).time()
+                    allowed_early_time = (datetime.combine(date.today(), shift_end) - timedelta(
+                        minutes=grace_period_minutes)).time()
                     if clock_out_time_only < allowed_early_time:
                         early_minutes = (datetime.combine(date.today(), shift_end) -
-                                        datetime.combine(date.today(), clock_out_time_only)).seconds // 60
+                                         datetime.combine(date.today(), clock_out_time_only)).seconds // 60
                         remarks.append(f"Early: {early_minutes}min")
             else:
-                allowed_early_time = (datetime.combine(date.today(), shift_end) - timedelta(minutes=grace_period_minutes)).time()
-                
+                allowed_early_time = (
+                            datetime.combine(date.today(), shift_end) - timedelta(minutes=grace_period_minutes)).time()
+
                 # Check if early (clocked out before allowed early time)
                 if clock_out_time_only < allowed_early_time:
                     early_minutes = (datetime.combine(date.today(), shift_end) -
-                                   datetime.combine(date.today(), clock_out_time_only)).seconds // 60
+                                     datetime.combine(date.today(), clock_out_time_only)).seconds // 60
                     remarks.append(f"Early: {early_minutes}min")
 
             # Check location if office assigned
             if office and clock_out_lat and clock_out_lng and office.latitude and office.longitude:
-                distance = get_distance(float(clock_out_lat), float(clock_out_lng), float(office.latitude), float(office.longitude))
+                distance = get_distance(float(clock_out_lat), float(clock_out_lng), float(office.latitude),
+                                        float(office.longitude))
                 if distance > 100:
                     remarks.append(f"Out: {distance:.0f}m away")
             elif office and (not office.latitude or not office.longitude):
@@ -298,6 +357,7 @@ def check_attendance_compliance(user, clock_in_time, clock_out_time=None, clock_
         remarks.append("No employee profile")
 
     return remarks
+
 
 def process_clock_in(user, lat=None, long=None, location_name=None, device_type='web', reason=None):
     """Process clock in for both web and mobile"""
@@ -335,17 +395,19 @@ def process_clock_in(user, lat=None, long=None, location_name=None, device_type=
         attendance.reason = reason
 
     # Check compliance with device type
-    compliance_remarks = check_attendance_compliance(user, current_time, clock_in_lat=lat, clock_in_lng=long, device_type=device_type)
+    compliance_remarks = check_attendance_compliance(user, current_time, clock_in_lat=lat, clock_in_lng=long,
+                                                     device_type=device_type)
 
     if compliance_remarks:
         # Check if there are actual violations (not just device/shift info)
         violation_keywords = ['late', 'away from office', 'early']
-        has_violations = any(keyword in remark.lower() for remark in compliance_remarks for keyword in violation_keywords)
+        has_violations = any(
+            keyword in remark.lower() for remark in compliance_remarks for keyword in violation_keywords)
 
         # Append to existing remarks
         new_remarks = "; ".join(compliance_remarks)
         if attendance.remark:
-            attendance.remark = f"{attendance.remark}; {new_remarks}"
+            attendance.remark = f"{attendance.remark}\n{new_remarks}"
         else:
             attendance.remark = new_remarks
 
@@ -373,6 +435,7 @@ def process_clock_in(user, lat=None, long=None, location_name=None, device_type=
     attendance.save()
     return {'success': success, 'message': message}
 
+
 def process_clock_out(user, lat=None, long=None, location_name=None, device_type='web'):
     """Process clock out for both web and mobile"""
     from home.models import Attendance
@@ -391,15 +454,10 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
 
         # Get user's shift end time using same logic as compliance check
         today_date = attendance.date
-        employee_shift = EmployeeShift.objects.filter(
-            user=user,
-            valid_from__lte=today_date
-        ).filter(
-            Q(valid_to__isnull=True) | Q(valid_to__gte=today_date)
-        ).first()
+        shift, _ = resolve_employee_shift(user)
 
-        if employee_shift:
-            shift_end_time = employee_shift.shift.shift_end_time
+        if shift:
+            shift_end_time = shift.shift_end_time
             attendance.clock_out = timezone.make_aware(datetime.combine(attendance.date, shift_end_time))
             if attendance.remark:
                 attendance.remark = f"{attendance.remark}; Auto out (shift time)"
@@ -455,12 +513,13 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
         if compliance_remarks:
             # Check if there are actual violations
             violation_keywords = ['late', 'away from office', 'early']
-            has_violations = any(keyword in remark.lower() for remark in compliance_remarks for keyword in violation_keywords)
+            has_violations = any(
+                keyword in remark.lower() for remark in compliance_remarks for keyword in violation_keywords)
 
             # Append to existing remarks
             new_remarks = "; ".join(compliance_remarks)
             if attendance.remark:
-                attendance.remark = f"{attendance.remark}; {new_remarks}"
+                attendance.remark = f"{attendance.remark}\n{new_remarks}"
             else:
                 attendance.remark = new_remarks
 

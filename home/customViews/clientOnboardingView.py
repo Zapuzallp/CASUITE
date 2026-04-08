@@ -31,11 +31,6 @@ def generate_file_number(office_location):
 # -------------------------------------------------------------------
 @login_required
 def onboard_client_view(request):
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to onboard new clients.')
-        return redirect('clients')
-    
     # Check if converting from lead
     lead_id = request.GET.get('lead_id')
     lead = None
@@ -135,12 +130,14 @@ def onboard_client_view(request):
 # -------------------------------------------------------------------
 @login_required
 def edit_client_view(request, client_id):
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to edit clients.')
-        return redirect('client_details', client_id=client_id)
-
     client = get_object_or_404(Client, id=client_id)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can edit ONLY IF they onboarded the client OR are assigned to the client
+        if client.created_by != request.user and client.assigned_ca != request.user:
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("You are not allowed to perform this action")
 
     # Try to get profile, if it doesn't exist (legacy data), create a dummy one in memory
     try:
@@ -228,6 +225,9 @@ class ClientView(LoginRequiredMixin, ListView):
             try:
                 employee = user.employee
                 if employee.role == 'ADMIN':
+                    assigned_employee_choices = User.objects.filter(is_active=True).order_by('username')
+                elif employee.role == 'PARTNER':
+                    # Partners can see all active users for filtering
                     assigned_employee_choices = User.objects.filter(is_active=True).order_by('username')
                 elif employee.role == 'BRANCH_MANAGER':
                     if employee.office_location:
