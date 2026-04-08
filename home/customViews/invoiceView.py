@@ -159,16 +159,12 @@ class InvoiceListCreateView(LoginRequiredMixin, FormMixin, ListView):
         return context
 
     def post(self, request, *args, **kwargs):
-        # Check if user is a partner - deny access
-        if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-            messages.error(request, 'You do not have permission to create invoices.')
-            return redirect(self.success_url)
-
         form = self.get_form()
 
         if form.is_valid():
             invoice = form.save(commit=False)
             invoice.invoice_status = "DRAFT"
+            invoice.created_by = request.user
             invoice.save()
             form.save_m2m()
             # Note: Removed invoice_status update on services as Task model doesn't have this field
@@ -199,11 +195,13 @@ def load_tasks(request):
 
 @login_required
 def add_invoice_item_ajax(request, pk):
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        return JsonResponse({'error': 'You do not have permission to add invoice items.'}, status=403)
-
     invoice = Invoice.objects.get(pk=pk)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can edit ONLY IF they are the client's assigned CA or created the invoice
+        if invoice.client.assigned_ca != request.user and invoice.created_by != request.user:
+            return JsonResponse({'error': 'You are not allowed to perform this action.'}, status=403)
 
     if request.method == 'POST':
         form = InvoiceItemForm(request.POST)
@@ -226,13 +224,17 @@ def add_invoice_item_ajax(request, pk):
 
 @login_required
 def invoice_item_delete(request, item_id):
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        return JsonResponse({'success': False, 'error': 'You do not have permission to delete invoice items.'},
-                            status=403)
-
     if request.method == "POST":
         item = InvoiceItem.objects.get(pk=item_id)
+        invoice = item.invoice
+        
+        # Check if user is a partner - apply restricted edit permissions
+        if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+            # Partner can edit ONLY IF they are the client's assigned CA or created the invoice
+            if invoice.client.assigned_ca != request.user and invoice.created_by != request.user:
+                return JsonResponse({'success': False, 'error': 'You are not allowed to perform this action.'},
+                                    status=403)
+        
         item.delete()
         return JsonResponse({'success': True})
 
@@ -241,12 +243,14 @@ def invoice_item_delete(request, item_id):
 
 @login_required
 def approve_invoice(request, invoice_id):
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to approve invoices.')
-        return redirect('invoice_details', invoice_id)
-
     invoice = Invoice.objects.get(pk=invoice_id)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can edit ONLY IF they are the client's assigned CA or created the invoice
+        if invoice.client.assigned_ca != request.user and invoice.created_by != request.user:
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("You are not allowed to perform this action")
 
     invoice.services.filter(invoice_status="DRAFT").update(invoice_status="INVOICED")
     return redirect('invoice_details', invoice.invoice_id)
@@ -258,13 +262,15 @@ def change_invoice_status(request, invoice_id):
     Change invoice status between DRAFT and OPEN.
     Status is locked once payment is received.
     """
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to change invoice status.')
-        return redirect('invoice_details', invoice_id)
-
     if request.method == 'POST':
         invoice = Invoice.objects.get(pk=invoice_id)
+        
+        # Check if user is a partner - apply restricted edit permissions
+        if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+            # Partner can edit ONLY IF they are the client's assigned CA or created the invoice
+            if invoice.client.assigned_ca != request.user and invoice.created_by != request.user:
+                from django.http import HttpResponseForbidden
+                return HttpResponseForbidden("You are not allowed to perform this action")
 
         # Check if any payment has been received
         has_payment = invoice.payments.filter(payment_status='PAID').exists()
@@ -411,14 +417,10 @@ def invoice_bulk_status_update(request):
     Bulk update invoice statuses from the invoice list table.
     Only updates invoices that are DRAFT or OPEN and have no payments.
     """
-    # Check if user is a partner - deny access
-    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
-        messages.error(request, 'You do not have permission to update invoice statuses.')
-        return redirect('invoice_list')
-
     if request.method == 'POST':
         updated_count = 0
         locked_count = 0
+        forbidden_count = 0
 
         for key, value in request.POST.items():
             if key.startswith('status_'):
@@ -427,6 +429,13 @@ def invoice_bulk_status_update(request):
 
                 try:
                     invoice = Invoice.objects.get(pk=invoice_id)
+                    
+                    # Check if user is a partner - apply restricted edit permissions
+                    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+                        # Partner can edit ONLY IF they are the client's assigned CA or created the invoice
+                        if invoice.client.assigned_ca != request.user and invoice.created_by != request.user:
+                            forbidden_count += 1
+                            continue
 
                     # Check if any payment has been received
                     has_payment = invoice.payments.filter(payment_status='PAID').exists()
@@ -449,8 +458,11 @@ def invoice_bulk_status_update(request):
 
         if locked_count > 0:
             messages.warning(request, f"{locked_count} invoice(s) could not be updated - Payment received.")
+        
+        if forbidden_count > 0:
+            messages.warning(request, f"{forbidden_count} invoice(s) skipped - No permission to edit.")
 
-        if updated_count == 0 and locked_count == 0:
+        if updated_count == 0 and locked_count == 0 and forbidden_count == 0:
             messages.info(request, "No changes were made.")
 
     return redirect('invoice_list')

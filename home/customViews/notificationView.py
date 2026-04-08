@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from home.models import Notification
-
+from django.http import JsonResponse
 
 @login_required
 def dashboard(request):
@@ -57,3 +57,12 @@ def all_notifications(request):
     return render(request, "home/all_notifications.html", {
         "notifications": notifications
     })
+
+@login_required
+def notification_count(request):
+    count = Notification.objects.filter(
+        user=request.user,
+        is_read=False
+    ).count()
+
+    return JsonResponse({"count": count})
