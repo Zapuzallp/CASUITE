@@ -5,6 +5,7 @@ from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
     leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView, phoneCallView
 from home.customViews import resetPassword
+from home.customViews import tutorialView
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
@@ -20,7 +21,6 @@ from home.customViews.notificationView import (
     all_notifications,
     notification_count
 )
-
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
@@ -65,7 +65,6 @@ urlpatterns = [
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
     path('tasks/<int:task_id>/copy/', taskView.copy_task_view, name='task_copy'),
-    path('tasks/<int:task_id>/delete/', taskView.delete_task_view, name='delete_task'),
     path('clients/search/', client_search, name='client_search'),
 
     # reset password
@@ -160,6 +159,10 @@ urlpatterns = [
     path('data-management/bulk-import-gst/', gstImportView.bulk_import_gst, name='bulk_import_gst'),
     path('data-management/download-gst-template/', gstImportView.download_gst_template, name='download_gst_template'),
 
+    #Tutorials
+    path("tutorials/", tutorialView.tutorial_list, name="tutorial_list"),
+    path("tutorials/add/", tutorialView.add_tutorial, name="add_tutorial"),
+    path('tutorials/delete/<int:tutorial_id>/', tutorialView.delete_tutorial, name='delete_tutorial'),
     # Phone Call Logs
     path('client/<int:client_id>/phone-calls/add/', phoneCallView.add_phone_call_log, name='add_phone_call_log'),
     path('client/<int:client_id>/phone-calls/ajax/', phoneCallView.get_client_phone_calls_ajax, name='get_client_phone_calls_ajax'),

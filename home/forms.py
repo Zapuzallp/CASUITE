@@ -7,7 +7,7 @@ from home.clients.config import STRUCTURE_CONFIG, REQUIRED_FIELDS_MAP
 from .models import (
     Task,
     ClientDocumentUpload, RequestedDocument, DocumentMaster, DocumentRequest, TaskExtendedAttributes, Message, Invoice,
-    InvoiceItem, GSTDetails
+    InvoiceItem, GSTDetails, Tutorial
     # Added GSTDetails to imports
 )
 from home.models import Leave
@@ -684,6 +684,11 @@ class ClientPortalCredentialsForm(BootstrapFormMixin, forms.ModelForm):
         return cleaned_data
 
 
+
+class TutorialForm(forms.ModelForm):
+    class Meta:
+        model = Tutorial
+        fields = ['title', 'description', 'video_url', 'custom_thumbnail', 'category']
 # ---------------------------------------------------------
 # 6. Phone Call Log Form
 # ---------------------------------------------------------
