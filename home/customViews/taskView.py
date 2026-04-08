@@ -173,6 +173,7 @@ def task_list_view(request):
     filter_due = request.GET.get('due_filter')
     due_from = request.GET.get('due_from')
     due_to = request.GET.get('due_to')
+    filter_visibility = request.GET.get('visibility')
 
     if search_query:
         tasks_qs = tasks_qs.filter(
@@ -264,6 +265,12 @@ def task_list_view(request):
             except ValueError:
                 messages.error(request, "Invalid date format.")
 
+    if filter_visibility:
+        if filter_visibility == "with_workflow":
+            tasks_qs = tasks_qs.filter(assignees__isnull=False).distinct()
+        elif filter_visibility == "without_workflow":
+            tasks_qs = tasks_qs.filter(assignees__isnull=True).distinct()
+
     # Records per page dropdown value
     per_page = request.GET.get('per_page','all')
 
@@ -297,6 +304,7 @@ def task_list_view(request):
         filter_due,
         due_from,
         due_to,
+        filter_visibility,
     ])
     # Check if user is a partner (view-only access)
     is_partner = False
@@ -320,6 +328,7 @@ def task_list_view(request):
 
         'status_choices': Task.STATUS_CHOICES,
         'is_partner': is_partner,
+        'visibility_filter': filter_visibility,
     }
     return render(request, 'client/tasks.html', context)
 
