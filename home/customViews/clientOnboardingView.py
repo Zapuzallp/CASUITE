@@ -131,6 +131,13 @@ def onboard_client_view(request):
 @login_required
 def edit_client_view(request, client_id):
     client = get_object_or_404(Client, id=client_id)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can edit ONLY IF they onboarded the client OR are assigned to the client
+        if client.created_by != request.user and client.assigned_ca != request.user:
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("You are not allowed to perform this action")
 
     # Try to get profile, if it doesn't exist (legacy data), create a dummy one in memory
     try:
@@ -219,6 +226,9 @@ class ClientView(LoginRequiredMixin, ListView):
                 employee = user.employee
                 if employee.role == 'ADMIN':
                     assigned_employee_choices = User.objects.filter(is_active=True).order_by('username')
+                elif employee.role == 'PARTNER':
+                    # Partners can see all active users for filtering
+                    assigned_employee_choices = User.objects.filter(is_active=True).order_by('username')
                 elif employee.role == 'BRANCH_MANAGER':
                     if employee.office_location:
                         # Only employees in the same office
@@ -231,5 +241,11 @@ class ClientView(LoginRequiredMixin, ListView):
                 pass
 
         context['assigned_employee_choices'] = assigned_employee_choices
+
+        # Check if user is a partner (view-only access)
+        is_partner = False
+        if hasattr(user, 'employee'):
+            is_partner = user.employee.role == 'PARTNER'
+        context['is_partner'] = is_partner
 
         return context
