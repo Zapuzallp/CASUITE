@@ -2,612 +2,214 @@
 {% load static %}
 
 {% block body %}
-<style>
-    :root {
-        --primary-color: #4f46e5;
-        --secondary-color: #7c3aed;
-        --success-color: #10b981;
-        --danger-color: #ef4444;
-        --warning-color: #f59e0b;
-        --bg-body: #f8fafc;
-        --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
 
-    body {
-        background-color: var(--bg-body);
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        color: #1e293b;
-    }
+<main id="main" class="main">
 
-    .main-content {
-        padding: 2rem 1.5rem;
-        max-width: 100%;
-        min-height: 100vh;
-    }
+    <!-- Messages (client style) -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' or message.tags == 'warning' %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 
-    /* Header Styling */
-    .pagetitle h1 {
-        font-size: 1.75rem;
-        font-weight: 800;
-        letter-spacing: -0.025em;
-        margin-bottom: 0.5rem;
-    }
-
-    .breadcrumb-employee {
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-
-    /* Card Styling */
-    .card {
-        border: none;
-        border-radius: 1.5rem;
-        box-shadow: var(--card-shadow);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        overflow: hidden;
-        background: #ffffff;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-
-    .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    }
-
-    .card-body {
-        padding: 2.5rem;
-    }
-
-    .card-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 2rem;
-        text-align: center;
-    }
-
-    /* Form Label Styling */
-    .form-label {
-        font-size: 0.875rem;
-        color: #334155;
-        margin-bottom: 0.5rem;
-        display: block;
-        font-weight: 600;
-    }
-
-    .form-label .text-danger {
-        color: #ef4444;
-        margin-left: 2px;
-    }
-
-    /* Form Control Styling */
-    .form-control,
-    .form-select {
-        border: 1.5px solid #e2e8f0;
-        border-radius: 0.75rem;
-        padding: 0.75rem 1rem;
-        font-size: 0.875rem;
-        transition: all 0.2s ease;
-        background-color: #ffffff;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        outline: none;
-    }
-
-    .form-control::placeholder {
-        color: #cbd5e1;
-    }
-
-    /* Form Section Styling */
-    .form-section {
-        margin-bottom: 2rem;
-        padding-bottom: 2rem;
-        border-bottom: 1px solid #f1f5f9;
-    }
-
-    .form-section:last-of-type {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-
-    .form-section-title {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        color: #64748b;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        margin-bottom: 1.5rem;
-        display: block;
-    }
-
-    /* Error Message Styling */
-    .invalid-feedback {
-        font-size: 0.8rem;
-        color: #ef4444;
-        margin-top: 0.25rem;
-        display: block;
-    }
-
-    .form-control.is-invalid,
-    .form-select.is-invalid {
-        border-color: #ef4444;
-    }
-
-    /* Alert Styling */
-    .alert {
-        border: none;
-        border-radius: 0.75rem;
-        padding: 1rem 1.25rem;
-        margin-bottom: 2rem;
-    }
-
-    .alert-danger {
-        background-color: #fee2e2;
-        color: #b91c1c;
-    }
-
-    .alert-success {
-        background-color: #dcfce7;
-        color: #15803d;
-    }
-
-    /* Button Styling */
-    .btn-primary {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
-        color: white;
-        padding: 0.75rem 2rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        border: none;
-    }
-
-    .btn-primary:hover {
-        background-color: #4338ca;
-        border-color: #4338ca;
-        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
-        color: white;
-    }
-
-    .btn-secondary {
-        background-color: #f1f5f9;
-        border-color: #e2e8f0;
-        color: #334155;
-        padding: 0.75rem 2rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }
-
-    .btn-secondary:hover {
-        background-color: #e2e8f0;
-        border-color: #cbd5e1;
-        color: #334155;
-    }
-
-    /* Button Group */
-    .button-group {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 2.5rem;
-    }
-
-    .button-group .btn {
-        min-width: 150px;
-    }
-
-    /* Breadcrumb Styling */
-    .breadcrumb {
-        background-color: transparent;
-        padding: 0;
-        margin: 0;
-    }
-
-    .breadcrumb-item {
-        color: #64748b;
-        font-size: 0.875rem;
-    }
-
-    .breadcrumb-item.active {
-        color: #1e293b;
-        font-weight: 600;
-    }
-
-    .breadcrumb-item a {
-        color: var(--primary-color);
-        text-decoration: none;
-        transition: color 0.2s ease;
-    }
-
-    .breadcrumb-item a:hover {
-        color: #4338ca;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .main-content {
-            padding: 1.5rem 1rem;
-        }
-
-        .card-body {
-            padding: 1.75rem;
-        }
-
-        .button-group {
-            flex-direction: column;
-        }
-
-        .button-group .btn {
-            width: 100%;
-            min-width: unset;
-        }
-
-        .pagetitle h1 {
-            font-size: 1.5rem;
-        }
-    }
-
-    /* Target password fields to avoid text overlap with eye icon */
-    #id_password, #id_confirm_password {
-        padding-right: 2.5rem !important;
-    }
-
-    /* Hide browser default password reveal buttons */
-    input::-ms-reveal,
-    input::-ms-clear,
-    input::-webkit-reveal,
-    input::-webkit-clear {
-        display: none;
-    }
-
-    /* Fix row alignment when errors are present */
-    .form-section .row {
-        align-items: flex-start !important;
-    }
-
-    /* Show eye icon only on hover */
-    .toggle-password {
-        opacity: 0;
-        transition: opacity 0.2s ease-in-out;
-        font-size: 1.25rem !important;
-    }
-
-    .position-relative:hover .toggle-password {
-        opacity: 1;
-    }
-</style>
-
-<main id="main" class="main-content">
-    <!-- Page Header -->
-    <div class="pagetitle mb-4">
+    <!-- Page Title -->
+    <div class="pagetitle">
         <h1>{% if is_edit %}Edit Employee{% else %}Add New Employee{% endif %}</h1>
-        <nav aria-label="breadcrumb">
+        <nav>
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{% url 'employee-view' %}">Employees</a></li>
                 <li class="breadcrumb-item active">{% if is_edit %}Edit{% else %}Add{% endif %} Employee</li>
             </ol>
         </nav>
     </div>
 
-    <!-- Form Card -->
+    <!-- CARD -->
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title">Employee Information</h5>
 
-            <!-- Messages -->
-            {% if messages %}
-            {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show"
-                role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
-            {% endif %}
+            <h5 class="card-title">
+                Employee Information
+                <small class="text-muted">(<span class="text-danger">*</span> indicates required field)</small>
+            </h5>
 
-            <!-- Error Messages -->
-            {% if form.non_field_errors %}
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <strong>Error!</strong>
-                {% for error in form.non_field_errors %}
-                <div>{{ error }}</div>
-                {% endfor %}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endif %}
-
-            <!-- Form -->
-            <form method="POST" class="form" id="employeeForm">
+            <form method="POST" novalidate>
                 {% csrf_token %}
 
-                <!-- User Information Section -->
-                <div class="form-section">
-                    <span class="form-section-title">User Information</span>
+                <!-- ROW 1 -->
+                <div class="row mb-3">
 
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label for="id_username" class="form-label">
-                                Username <span class="text-danger">*</span>
-                            </label>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Username <span class="text-danger">*</span></label>
                             {{ form.username }}
-                            {% if form.username.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.username.errors|join:", " }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% if not is_edit %}
-                        <!-- Password -->
-                        <div class="col-md-6 mt-4">
-                            <label for="id_password" class="form-label">
-                                Password <span class="text-danger">*</span>
-                            </label>
-                            <div class="position-relative d-flex align-items-center">
-                                {{ form.password }}
-                                <i class="fa-regular fa-eye position-absolute end-0 me-3 toggle-password" 
-                                   style="cursor: pointer; color: #6c757d; z-index: 10;" 
-                                   data-target="id_password"></i>
-                            </div>
-                            {% if form.password.errors %}
-                            <div class="invalid-feedback d-block mt-1">
-                                {{ form.password.errors|join:", " }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        <!-- Confirm Password -->
-                        <div class="col-md-6 mt-4">
-                            <label for="id_confirm_password" class="form-label">
-                                Confirm Password <span class="text-danger">*</span>
-                            </label>
-                            <div class="position-relative d-flex align-items-center">
-                                {{ form.confirm_password }}
-                                <i class="fa-regular fa-eye position-absolute end-0 me-3 toggle-password" 
-                                   style="cursor: pointer; color: #6c757d; z-index: 10;" 
-                                   data-target="id_confirm_password"></i>
-                            </div>
-                            {% if form.confirm_password.errors %}
-                            <div class="invalid-feedback d-block mt-1">
-                                {{ form.confirm_password.errors|join:", " }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="row g-3 mt-1">
-                        <div class="col-md-6">
-                            <label for="id_first_name" class="form-label">
-                                First Name <span class="text-danger">*</span>
-                            </label>
-                            {{ form.first_name }}
-                            {% if form.first_name.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.first_name.errors|join:", " }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="id_last_name" class="form-label">Last Name</label>
-                            {{ form.last_name }}
-                            {% if form.last_name.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.last_name.errors|join:", " }}
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
 
-                    <div class="row g-3 mt-1">
-                        <div class="col-md-12">
-                            <label for="id_email" class="form-label">
-                                Email Address <span class="text-danger">*</span>
-                            </label>
-                            {{ form.email }}
-                            {% if form.email.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.email.errors|join:", " }}
-                            </div>
-                            {% endif %}
+                    {% if not is_edit %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            {{ form.password }}
                         </div>
-                    </div>
-                </div>
-
-                <!-- Professional Information Section -->
-                <div class="form-section">
-                    <span class="form-section-title">Professional Information</span>
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="id_designation" class="form-label">
-                                Designation <span class="text-danger">*</span>
-                            </label>
-                            {{ form.designation }}
-                            {% if form.designation.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.designation.errors|join:", " }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="id_role" class="form-label">
-                                Role <span class="text-danger">*</span>
-                            </label>
-                            {{ form.role }}
-                            {% if form.role.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.role.errors|join:", " }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="row g-3 mt-1">
-                        <div class="col-md-6">
-                            <label for="id_office_location" class="form-label">
-                                Office Location <span class="text-danger">*</span>
-                            </label>
-                            {{ form.office_location }}
-                            {% if form.office_location.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.office_location.errors|join:", " }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="id_supervisor" class="form-label">Supervisor</label>
-                            {{ form.supervisor }}
-                            {% if form.supervisor.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.supervisor.errors|join:", " }}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    {% if is_edit %}
-                    <div class="row g-3 mt-1">
-                        <div class="col-md-12 d-flex align-items-center">
-                            {{ form.is_active }}
-                            <label for="id_is_active" class="form-check-label ms-2" style="font-weight: 500; color: #1e293b;">
-                                {{ form.is_active.label }}
-                            </label>
-                            {% if form.is_active.errors %}
-                            <div class="invalid-feedback ms-2" style="display: block;">
-                                {{ form.is_active.errors|join:", " }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        {% if form.is_active.help_text %}
-                        <div class="col-md-12 mt-1">
-                            <small class="text-muted">{{ form.is_active.help_text }}</small>
-                        </div>
-                        {% endif %}
                     </div>
                     {% endif %}
+
                 </div>
 
-                <!-- Contact Information Section -->
-                <div class="form-section">
-                    <span class="form-section-title">Contact Details</span>
+                <!-- ROW 2 -->
+                {% if not is_edit %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                            {{ form.confirm_password }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="id_work_phone" class="form-label">
-                                Work Phone <span class="text-danger">*</span>
+                <!-- ROW 3 -->
+                <div class="row mb-3">
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">First Name <span class="text-danger">*</span></label>
+                            {{ form.first_name }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ROW 4 -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            {{ form.email }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 5 -->
+                <div class="row mb-3">
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Designation<span class="text-danger">*</span></label>
+                            {{ form.designation }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Role <span class="text-danger">*</span></label>
+                            {{ form.role }}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ROW 6 -->
+                <div class="row mb-3">
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Office Location</label>
+                            {{ form.office_location }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Supervisor</label>
+                            {{ form.supervisor }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+
+                        <div class="form-check mt-2">
+                            {{ form.is_active }}
+                            <label class="form-check-label">
+                                Active
                             </label>
+                        </div>
+
+                        {% if form.is_active.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.is_active.errors|join:", " }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                <!-- ROW 7 -->
+                <div class="row mb-3">
+
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Work Phone <span class="text-danger">*</span></label>
                             {{ form.work_phone }}
-                            {% if form.work_phone.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.work_phone.errors|join:", " }}
-                            </div>
-                            {% endif %}
                         </div>
-                        <div class="col-md-6">
-                            <label for="id_personal_phone" class="form-label">Personal Phone</label>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Personal Phone</label>
                             {{ form.personal_phone }}
-                            {% if form.personal_phone.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.personal_phone.errors|join:", " }}
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
 
-                    <div class="row g-3 mt-1">
-                        <div class="col-md-12">
-                            <label for="id_personal_email" class="form-label">Personal Email</label>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Personal Email</label>
                             {{ form.personal_email }}
-                            {% if form.personal_email.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.personal_email.errors|join:", " }}
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
+
                 </div>
 
-                <!-- Address Section -->
-                <div class="form-section">
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label for="id_address" class="form-label">Address</label>
+                <!-- ROW 8 -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
                             {{ form.address }}
-                            {% if form.address.errors %}
-                            <div class="invalid-feedback" style="display: block;">
-                                {{ form.address.errors|join:", " }}
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <!-- Buttons -->
-                <div class="button-group">
-                    <a href="{% url 'employee-view' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left me-2"></i>Back to Employees
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle me-2"></i>{% if is_edit %}Update{% else %}Add{% endif %} Employee
-                    </button>
+                <!-- ACTIONS -->
+                <div class="row mt-4">
+                    <div class="col-12 d-flex justify-content-between">
+                        <a href="{% url 'employee-view' %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if is_edit %}Update Employee{% else %}Add Employee{% endif %}
+                        </button>
+                    </div>
                 </div>
+
             </form>
+
         </div>
     </div>
+
 </main>
 
-<script>
-    // Enhance form with Bootstrap validation classes
-    document.getElementById('employeeForm')?.addEventListener('submit', function (e) {
-        // Form will submit normally - no AJAX needed
-    });
-
-    // Add focus styling
-    document.querySelectorAll('.form-control, .form-select').forEach(field => {
-        field.addEventListener('focus', function () {
-            this.parentElement.classList.add('focused');
-        });
-        field.addEventListener('blur', function () {
-            this.parentElement.classList.remove('focused');
-        });
-    });
-
-    // Toggle Password Visibility
-    document.querySelectorAll('.toggle-password').forEach(icon => {
-        icon.addEventListener('click', function () {
-            const targetId = this.getAttribute('data-target');
-            const targetField = document.getElementById(targetId);
-            
-            if (targetField && targetField.type === 'password') {
-                targetField.type = 'text';
-                this.classList.remove('fa-eye');
-                this.classList.add('fa-eye-slash');
-            } else if (targetField) {
-                targetField.type = 'password';
-                this.classList.remove('fa-eye-slash');
-                this.classList.add('fa-eye');
-            }
-        });
-    });
-
-    // Make Supervisor field searchable with Select2
-    document.addEventListener("DOMContentLoaded", function () {
-        if (typeof $ !== 'undefined' && $('#id_supervisor').length) {
-            $('#id_supervisor').select2({
-                theme: 'bootstrap-5',
-                placeholder: '-- Search Supervisor --',
-                allowClear: true,
-                width: '100%'
-            });
-        }
-    });
-</script>
-{% endblock body %}
+{% endblock %}

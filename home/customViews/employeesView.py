@@ -7,6 +7,8 @@ from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+from django.views.generic import DetailView
+
 from home.models import Employee, OfficeDetails
 from home.forms import EmployeeForm
 import openpyxl
@@ -91,6 +93,7 @@ class EmployeeDeleteView(LoginRequiredMixin, View):
 
         return redirect(request.META.get('HTTP_REFERER', 'employee-view'))
 
+'''
 class ExportEmployeeView(LoginRequiredMixin, View):
         def get(self, request, *args, **kwargs):
             employees = get_filtered_employees(request)
@@ -151,6 +154,8 @@ class ExportEmployeeView(LoginRequiredMixin, View):
             wb.save(response)
 
             return response
+'''
+
 
 # Reusable to both export and employee view
 def get_filtered_employees(request):
@@ -195,3 +200,46 @@ def get_filtered_employees(request):
         employees = employees.filter(office_location_id=office)
 
     return employees.select_related('user', 'office_location').order_by('user__username')
+
+class EmployeeDetailView(DetailView):
+    model = Employee
+    template_name = 'employee_details.html'
+    context_object_name = 'employee'
+    pk_url_kwarg = 'id'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        employee = self.get_object()
+        user = employee.user
+
+        # Structured fields (like client_fields)
+        context['employee_fields'] = [
+            # USER INFO
+            {"label": "Username", "value": user.username},
+            {"label": "First Name", "value": user.first_name},
+            {"label": "Last Name", "value": user.last_name},
+            {"label": "Email", "value": user.email},
+
+            # EMPLOYEE INFO
+            {"label": "Designation", "value": employee.designation},
+            {"label": "Role", "value": employee.role},
+            {"label": "Office", "value": employee.office_location.office_name if employee.office_location else "-"},
+            {"label": "Supervisor", "value": employee.supervisor.get_full_name() if employee.supervisor else "-"},
+
+            # CONTACT
+            {"label": "Work Phone", "value": employee.work_phone},
+            {"label": "Personal Phone", "value": employee.personal_phone},
+            {"label": "Personal Email", "value": employee.personal_email},
+            {"label": "Address", "value": employee.address},
+
+            # SYSTEM
+            {"label": "Status", "value": "Active" if user.is_active else "Inactive"},
+            {"label": "Joined On", "value": user.date_joined},
+            {"label": "Created At", "value": employee.created_at},
+        ]
+
+        # Leave Summary
+        context['leave_summary'] = employee.get_leave_summary()
+
+        return context
