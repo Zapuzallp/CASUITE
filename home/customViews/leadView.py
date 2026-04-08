@@ -3,10 +3,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
 from datetime import timedelta
 from django.contrib.auth.models import User
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.utils import get_column_letter
 
 from home.models import Lead, LeadCallLog
 from home.forms import LeadForm
@@ -16,6 +19,7 @@ def get_accessible_leads(user):
     """
     Returns leads accessible to the user based on their role:
     - Admin/Superuser: All leads
+    - Partner: All leads (view-only)
     - Branch Manager: Leads from their branch + assigned to them + created by them
     - Staff: Leads assigned to them OR created by them
     """
@@ -28,6 +32,9 @@ def get_accessible_leads(user):
 
         if role == 'ADMIN':
             # Admin can see all leads
+            return Lead.objects.all()
+        elif role == 'PARTNER':
+            # Partner can see all leads (view-only access)
             return Lead.objects.all()
         elif role == 'BRANCH_MANAGER':
             # Branch manager can see leads from their branch + assigned to them + created by them
@@ -87,6 +94,11 @@ def lead_list_view(request):
     from django.contrib.auth.models import User
     assigned_users = User.objects.filter(is_active=True).order_by('username')
 
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(request.user, 'employee'):
+        is_partner = request.user.employee.role == 'PARTNER'
+
     context = {
         'leads': leads,
         'status_choices': Lead.STATUS_CHOICES,
@@ -94,6 +106,7 @@ def lead_list_view(request):
         'search_query': search_query,
         'status_filter': status_filter,
         'assigned_filter': assigned_filter,
+        'is_partner': is_partner,
     }
 
     return render(request, 'leads/lead_list.html', context)
@@ -126,6 +139,13 @@ def add_lead_view(request):
 def edit_lead_view(request, lead_id):
     """Edit an existing lead (only if status is New, Contacted, or Qualified)"""
     lead = get_object_or_404(Lead, id=lead_id)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can edit ONLY IF they onboarded the lead OR are assigned to the lead
+        if lead.created_by != request.user and request.user not in lead.assigned_to.all():
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("You are not allowed to perform this action")
 
     # Check if user has access to this lead
     accessible_leads = get_accessible_leads(request.user)
@@ -170,10 +190,22 @@ def lead_detail_view(request, lead_id):
     # Get call logs for this lead
     call_logs = lead.call_logs.select_related('called_by_user', 'called_to_user', 'created_by').all()
 
-    # Check if user can add call logs (creator, assigned users, branch manager, or admin)
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    can_edit_lead = True
+    if hasattr(request.user, 'employee'):
+        is_partner = request.user.employee.role == 'PARTNER'
+        if is_partner:
+            # Partner can edit ONLY IF they onboarded the lead OR are assigned to the lead
+            can_edit_lead = (lead.created_by == request.user or request.user in lead.assigned_to.all())
+
+    # Check if user can add call logs (creator, assigned users, branch manager, admin, and Partners with edit access)
     can_add_call_log = False
     if request.user.is_superuser:
         can_add_call_log = True
+    elif is_partner:
+        # Partners CAN add call logs if they have edit access to the lead
+        can_add_call_log = can_edit_lead
     elif lead.created_by == request.user or request.user in lead.assigned_to.all():
         can_add_call_log = True
     else:
@@ -213,6 +245,8 @@ def lead_detail_view(request, lead_id):
         'can_add_call_log': can_add_call_log,
         'authorized_users': sorted(authorized_users, key=lambda u: u.get_full_name() or u.username),
         'today': timezone.now().date(),
+        'is_partner': is_partner,
+        'can_edit_lead': can_edit_lead,
     }
     return render(request, 'leads/lead_detail.html', context)
 
@@ -221,6 +255,11 @@ def lead_detail_view(request, lead_id):
 @require_POST
 def mark_lead_contacted(request, lead_id):
     """Mark lead as Contacted"""
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to change lead status.')
+        return redirect('lead_detail', lead_id=lead_id)
+
     lead = get_object_or_404(Lead, id=lead_id)
 
     # Check if user has access to this lead
@@ -243,6 +282,11 @@ def mark_lead_contacted(request, lead_id):
 @require_POST
 def mark_lead_qualified(request, lead_id):
     """Mark lead as Qualified"""
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to change lead status.')
+        return redirect('lead_detail', lead_id=lead_id)
+
     lead = get_object_or_404(Lead, id=lead_id)
 
     # Check if user has access to this lead
@@ -265,6 +309,11 @@ def mark_lead_qualified(request, lead_id):
 @require_POST
 def mark_lead_lost(request, lead_id):
     """Mark lead as Lost with reason"""
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to change lead status.')
+        return redirect('lead_detail', lead_id=lead_id)
+
     lead = get_object_or_404(Lead, id=lead_id)
 
     # Check if user has access to this lead
@@ -295,6 +344,11 @@ def mark_lead_lost(request, lead_id):
 @login_required
 def convert_lead_view(request, lead_id):
     """Convert lead to client - redirect to onboarding with prefilled data"""
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to convert leads.')
+        return redirect('lead_detail', lead_id=lead_id)
+
     lead = get_object_or_404(Lead, id=lead_id)
 
     # Check if user has access to this lead
@@ -339,7 +393,10 @@ def add_lead_call_log(request, lead_id):
     else:
         try:
             employee = request.user.employee
-            if employee.role in ['ADMIN', 'BRANCH_MANAGER']:
+            # Partners can add call logs if they have edit access
+            if employee.role == 'PARTNER':
+                can_add = (lead.created_by == request.user or request.user in lead.assigned_to.all())
+            elif employee.role in ['ADMIN', 'BRANCH_MANAGER']:
                 if employee.role == 'BRANCH_MANAGER' and employee.office_location:
                     if lead.created_by and hasattr(lead.created_by, 'employee'):
                         if lead.created_by.employee.office_location == employee.office_location:
@@ -388,3 +445,154 @@ def add_lead_call_log(request, lead_id):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'Error creating call log: {str(e)}'}, status=500)
+
+
+
+@login_required
+def export_leads_to_excel(request):
+    """Export filtered leads to Excel with all details"""
+    # Get filtered leads using the same logic as lead_list_view
+    leads = get_accessible_leads(request.user).select_related('created_by', 'client').prefetch_related('assigned_to')
+
+    # Apply the same filters as in lead_list_view
+    search_query = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    assigned_filter = request.GET.get('assigned_to', '').strip()
+
+    if search_query:
+        leads = leads.filter(
+            Q(lead_name__icontains=search_query) |
+            Q(full_name__icontains=search_query) |
+            Q(phone_number__icontains=search_query) |
+            Q(email__icontains=search_query)
+        )
+
+    if status_filter:
+        leads = leads.filter(status=status_filter)
+
+    if assigned_filter:
+        leads = leads.filter(assigned_to__id=assigned_filter)
+
+    # Check if there are any leads to export
+    if not leads.exists():
+        messages.error(request, 'No leads to export.')
+        return redirect('lead_list')
+
+    # Create workbook and worksheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Leads Export'
+
+    # Define headers
+    headers = [
+        '#', 'Lead Name', 'Full Name', 'Email', 'Phone Number', 
+        'Requirements', 'Lead Value', 'Expected Closure Date', 
+        'Actual Closure Date', 'Status', 'Remarks', 
+        'Assigned To', 'Created By', 'Created At', 'Updated At',
+        'Converted Client'
+    ]
+
+    # Style for header row
+    header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+    header_font = Font(bold=True, color='FFFFFF', size=11)
+    header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+    # Write headers
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+
+    # Set column widths
+    column_widths = {
+        'A': 8,   # #
+        'B': 25,  # Lead Name
+        'C': 25,  # Full Name
+        'D': 30,  # Email
+        'E': 18,  # Phone Number
+        'F': 40,  # Requirements
+        'G': 15,  # Lead Value
+        'H': 20,  # Expected Closure Date
+        'I': 20,  # Actual Closure Date
+        'J': 15,  # Status
+        'K': 40,  # Remarks
+        'L': 30,  # Assigned To
+        'M': 20,  # Created By
+        'N': 20,  # Created At
+        'O': 20,  # Updated At
+        'P': 25,  # Converted Client
+    }
+
+    for col, width in column_widths.items():
+        ws.column_dimensions[col].width = width
+
+    # Write data rows
+    for idx, lead in enumerate(leads, start=1):
+        row_num = idx + 1
+        
+        # Get assigned users as comma-separated string
+        assigned_users = ', '.join([
+            user.get_full_name() or user.username 
+            for user in lead.assigned_to.all()
+        ]) if lead.assigned_to.exists() else 'Unassigned'
+
+        # Get created by user
+        created_by = lead.created_by.get_full_name() or lead.created_by.username if lead.created_by else 'N/A'
+
+        # Get converted client name
+        converted_client = lead.client.client_name if lead.client else 'N/A'
+
+        # Format dates
+        expected_closure = lead.expected_closure_date.strftime('%d-%m-%Y') if lead.expected_closure_date else 'N/A'
+        actual_closure = lead.actual_closure_date.strftime('%d-%m-%Y') if lead.actual_closure_date else 'N/A'
+        created_at = lead.created_at.strftime('%d-%m-%Y %H:%M') if lead.created_at else 'N/A'
+        updated_at = lead.updated_at.strftime('%d-%m-%Y %H:%M') if lead.updated_at else 'N/A'
+
+        # Format lead value
+        lead_value = f'₹{lead.lead_value:,.2f}' if lead.lead_value else 'N/A'
+
+        # Write row data
+        row_data = [
+            idx,
+            lead.lead_name or 'N/A',
+            lead.full_name or 'N/A',
+            lead.email or 'N/A',
+            lead.phone_number or 'N/A',
+            lead.requirements or 'N/A',
+            lead_value,
+            expected_closure,
+            actual_closure,
+            lead.status or 'N/A',
+            lead.remarks or 'N/A',
+            assigned_users,
+            created_by,
+            created_at,
+            updated_at,
+            converted_client,
+        ]
+
+        for col_num, value in enumerate(row_data, 1):
+            cell = ws.cell(row=row_num, column=col_num)
+            cell.value = value
+            cell.alignment = Alignment(vertical='top', wrap_text=True)
+
+    # Freeze the header row
+    ws.freeze_panes = 'A2'
+
+    # Prepare response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    
+    # Generate filename with timestamp
+    from datetime import datetime
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'Leads_Export_{timestamp}.xlsx'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # Save workbook to response
+    wb.save(response)
+
+    return response

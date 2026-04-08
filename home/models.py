@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import User
 from django.contrib.auth.models import User
 from django.db import models
+from home.utils import send_notification
+from django.urls import reverse
 from django.db.models import Q
 import re
 # -------------------------
@@ -730,6 +732,7 @@ class Attendance(models.Model):
     )
 
     remark = models.TextField(blank=True, null=True)
+    reason = models.TextField(blank=True, null=True)
 
     location_name = models.CharField(max_length=255, null=True, blank=True)
     clock_in_lat = models.DecimalField(
@@ -858,6 +861,7 @@ class Notification(models.Model):
 ROLES_CHOICE = [
     ('BRANCH_MANAGER', 'Branch Manager'),
     ('ADMIN', 'Administrator'),
+    ('PARTNER', 'Partner'),
     ('STAFF', 'Staff')
 ]
 
@@ -985,9 +989,51 @@ class Invoice(models.Model):
     invoice_status = models.CharField(max_length=20, choices=INVOICE_STATUS, default="DRAFT")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoices_created"
+    )
 
     def __str__(self):
         return f"Invoice #{self.id} - {self.client.client_name}"
+
+
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+
+        if is_new:
+            from django.contrib.auth.models import User
+
+            # Get all superusers
+            superusers = User.objects.filter(is_superuser=True)
+
+            # Get client assigned user (CA)
+            user = self.client.assigned_ca
+
+            users_to_notify = list(superusers)
+            if user:
+                users_to_notify.append(user)
+
+            # Creator
+            if self.created_by:
+                users_to_notify.append(self.created_by)
+            # Remove duplicates
+            users_to_notify = list(set(users_to_notify))
+
+            send_notification(
+                users_to_notify,
+                title="New Invoice Created",
+                message=f"Invoice #{self.id} has been created for {self.client.client_name}",
+                tag="info",
+                url=reverse('invoice_details', args=[self.id])
+            )
+
+
 
 from decimal import Decimal
 class InvoiceItem(models.Model):
@@ -1060,6 +1106,61 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Payment {self.id} for Invoice #{self.invoice.id}"
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        # Get old approval status (for update case)
+        old_status = None
+        if self.pk:
+            old_status = Payment.objects.get(pk=self.pk).approval_status
+
+        super().save(*args, **kwargs)
+
+        from django.contrib.auth.models import User
+
+        superusers = User.objects.filter(is_superuser=True)
+        user = self.invoice.client.assigned_ca
+
+        users_to_notify = list(superusers)
+        if user:
+            users_to_notify.append(user)
+
+        if self.created_by:
+            users_to_notify.append(self.created_by)
+
+        users_to_notify = list(set(users_to_notify))
+
+        # 1. Payment Created
+        if is_new:
+            send_notification(
+                users_to_notify,
+                title="Payment Initiated",
+                message=f"Payment of ₹{self.amount} created for Invoice #{self.invoice.id}",
+                tag="info",
+                url=reverse('payment_detail', args=[self.id])
+            )
+
+        # 2. Approval / Rejection
+        elif old_status != self.approval_status:
+
+            if self.approval_status == "APPROVED":
+                send_notification(
+                    users_to_notify,
+                    title="Payment Approved",
+                    message=f"Payment for Invoice #{self.invoice.id} has been approved",
+                    tag="success",
+                    url=reverse('payment_detail', args=[self.id])
+                )
+
+            elif self.approval_status == "REJECTED":
+                send_notification(
+                    users_to_notify,
+                    title="Payment Rejected",
+                    message=f"Payment for Invoice #{self.invoice.id} has been rejected",
+                    tag="error",
+                    url=reverse('payment_detail', args=[self.id])
+                )
 
 
 class Message(models.Model):
@@ -1330,4 +1431,59 @@ class Tutorial(models.Model):
             return drive_match.group(1)
 
         return None
+
+# -----------------------------------------
+# Phone Call Log Model
+# -----------------------------------------
+class PhoneCallLog(models.Model):
+    """
+    Tracks phone call interactions with clients.
+    Records call details, services discussed, feedback, and follow-up dates.
+    """
+    FEEDBACK_CHOICES = [
+        ('positive', 'Positive'),
+        ('negative', 'Negative'),
+    ]
+
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='phone_calls')
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='phone_calls_made')
+    services = models.ManyToManyField(Task, related_name='phone_call_logs', blank=True,
+                                      help_text="Services/Tasks discussed during the call")
+    
+    call_date = models.DateTimeField(help_text="Date and time when the call happened")
+    remarks = models.TextField(help_text="Discussion details and notes")
+    next_follow_up_date = models.DateField(null=True, blank=True, help_text="Next scheduled follow-up date")
+    feedback = models.CharField(max_length=10, choices=FEEDBACK_CHOICES, help_text="Client feedback")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-call_date', '-created_at']
+        verbose_name = 'Phone Call Log'
+        verbose_name_plural = 'Phone Call Logs'
+        indexes = [
+            models.Index(fields=['client', 'call_date']),
+            models.Index(fields=['employee', 'call_date']),
+            models.Index(fields=['next_follow_up_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.client.client_name} - {self.call_date} - {self.employee.get_full_name() or self.employee.username}"
+
+    def get_services_display(self):
+        """Returns comma-separated list of service types"""
+        return ", ".join([service.service_type for service in self.services.all()[:5]])
+
+    def is_follow_up_overdue(self):
+        """Check if follow-up date has passed"""
+        if self.next_follow_up_date:
+            return timezone.now().date() > self.next_follow_up_date
+        return False
+
+    def is_follow_up_today(self):
+        """Check if follow-up is scheduled for today"""
+        if self.next_follow_up_date:
+            return self.next_follow_up_date == timezone.now().date()
+        return False
 

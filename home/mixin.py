@@ -16,3 +16,22 @@ class AdminAccessMixin(UserPassesTestMixin):
         """Custom behavior when test_func returns False"""
         messages.error(self.request, "You don't have permission to view this page.")
         return redirect('/')
+
+
+class LeaveManagementMixin(UserPassesTestMixin):
+    """Mixin to restrict access to Admins, Branch Managers, and Partners for leave management"""
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_superuser or (
+                hasattr(user, 'employee') and (
+                    user.employee.role == 'ADMIN' or 
+                    user.employee.role == 'BRANCH_MANAGER' or 
+                    user.employee.role == 'PARTNER'
+                )
+        )
+
+    def handle_no_permission(self):
+        """Custom behavior when test_func returns False"""
+        messages.error(self.request, "You don't have permission to view this page.")
+        return redirect('/')

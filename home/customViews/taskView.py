@@ -88,6 +88,13 @@ def create_task_view(request, client_id):
                     task.client = client
                     task.created_by = request.user
 
+                    # ✅ ADD THIS BLOCK
+                    if not task.due_date:
+                        config = TASK_CONFIG.get(task.service_type, {})
+                        days = config.get('default_due_days')
+                        if days:
+                            task.due_date = timezone.now().date() + timedelta(days=days)
+
                     # Auto Title if empty: "GST Return Task"
                     if not task.task_title:
                         task.task_title = f"{task.get_service_type_display()} Task"
@@ -154,6 +161,7 @@ def task_list_view(request):
         # This ensures assignees always see their tasks, even if client visibility is not given to them
         Q(assignees=user)
     ).distinct()
+
 
     # 3. Apply UI Filters (GET parameters)
     search_query = request.GET.get('q')
@@ -290,6 +298,11 @@ def task_list_view(request):
         due_from,
         due_to,
     ])
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(user, 'employee'):
+        is_partner = user.employee.role == 'PARTNER'
+
     context = {
         'tasks': tasks_qs,
         'query_params': query_params.urlencode(),
@@ -306,6 +319,7 @@ def task_list_view(request):
         ),
 
         'status_choices': Task.STATUS_CHOICES,
+        'is_partner': is_partner,
     }
     return render(request, 'client/tasks.html', context)
 
@@ -339,6 +353,12 @@ def task_detail_view(request, task_id):
     """
     user = request.user
     is_admin = user.is_superuser
+
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(user, 'employee'):
+        is_partner = user.employee.role == 'PARTNER'
+
     # Universal client visibility
     #(Admin → all, Branch Manager → branch + assigned, Staff → assigned only)
     accessible_clients = get_accessible_clients(user)
@@ -393,6 +413,27 @@ def task_detail_view(request, task_id):
     # HANDLE POST ACTIONS
     # ==========================================================================
     if request.method == 'POST':
+        action = request.POST.get('action_type')
+        
+        # Check if Partner has edit access to this task
+        partner_can_edit = False
+        if hasattr(user, 'employee') and user.employee.role == 'PARTNER':
+            is_creator = task.created_by == user
+            is_assignee = user in task.assignees.all()
+            is_client_ca = task.client.assigned_ca == user
+            is_in_sequence = assignee_statuses.filter(user=user).exists()
+            partner_can_edit = (is_creator or is_assignee or is_client_ca or is_in_sequence)
+        
+        # Allow comments and document uploads for Partners with edit access
+        if action in ['add_comment', 'upload_document']:
+            if hasattr(user, 'employee') and user.employee.role == 'PARTNER' and not partner_can_edit:
+                messages.error(request, 'You do not have permission to modify this task.')
+                return redirect('task_detail', task_id=task.id)
+        # Block other actions for Partners without edit access
+        elif hasattr(user, 'employee') and user.employee.role == 'PARTNER' and not partner_can_edit:
+            messages.error(request, 'You do not have permission to modify this task.')
+            return redirect('task_detail', task_id=task.id)
+
         action = request.POST.get('action_type')
 
         # --- A. UPDATE SEQUENCE (Define User + Status Flow) ---
@@ -560,6 +601,19 @@ def task_detail_view(request, task_id):
                 if val: extended_fields.append(
                     {'label': field.verbose_name.title(), 'value': val, 'is_file': 'file' in field.name})
 
+    # Check if user is a partner and determine edit permissions
+    is_partner = False
+    can_edit_task = True
+    if hasattr(user, 'employee'):
+        is_partner = user.employee.role == 'PARTNER'
+        if is_partner:
+            # Partner can edit ONLY IF any of the following is true:
+            is_creator = task.created_by == user
+            is_assignee = user in task.assignees.all()
+            is_client_ca = task.client.assigned_ca == user
+            is_in_sequence = assignee_statuses.filter(user=user).exists()
+            can_edit_task = (is_creator or is_assignee or is_client_ca or is_in_sequence)
+
     context = {
         'task': task,
         'assignee_statuses': assignee_statuses,  # Full sequence
@@ -568,6 +622,8 @@ def task_detail_view(request, task_id):
         'my_status_entry': my_status_entry,
         'waiting_for_previous': waiting_for_previous,
         'is_admin': is_admin,
+        'is_partner': is_partner,
+        'can_edit_task': can_edit_task,
         'workflow_steps': workflow_steps,
         'aging_timeline': aging_timeline,
         'extended_fields': extended_fields,
@@ -587,6 +643,24 @@ def task_detail_view(request, task_id):
 @login_required()
 def edit_task_view(request, task_id):
     task = get_object_or_404(Task, id=task_id)
+    
+    # Check if user is a partner - apply restricted edit permissions
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        # Partner can edit ONLY IF any of the following is true:
+        # 1. Partner created the task
+        # 2. Partner is assigned to the task
+        # 3. Partner is assigned CA of the client related to the task
+        # 4. Partner is in manage sequence (TaskAssignmentStatus) of the task
+        from home.models import TaskAssignmentStatus
+        
+        is_creator = task.created_by == request.user
+        is_assignee = request.user in task.assignees.all()
+        is_client_ca = task.client.assigned_ca == request.user
+        is_in_sequence = TaskAssignmentStatus.objects.filter(task=task, user=request.user).exists()
+        
+        if not (is_creator or is_assignee or is_client_ca or is_in_sequence):
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("You are not allowed to perform this action")
     client = task.client  # <--- 1. GET CLIENT FROM TASK
 
     # 2. PREPARE CLIENT DATA (Needed for the JS Auto-fill to not crash)

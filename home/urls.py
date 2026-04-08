@@ -3,7 +3,7 @@ from django.urls import path
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView
+    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView, phoneCallView
 from home.customViews import resetPassword
 from home.customViews import tutorialView
 from home.customViews.attendanceView import (
@@ -19,6 +19,7 @@ from home.customViews.notificationView import (
     read_all_notifications,
     view_notification,
     all_notifications,
+    notification_count
 )
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
@@ -39,6 +40,7 @@ urlpatterns = [
     path('accounts/logout/', authView.LoginView.as_view(), name='logout'),
     # Client Details
     path('client/<int:client_id>/details/', clientView.client_details_view, name='client_details'),
+    path('client/<int:client_id>/phone-calls-ajax/', clientView.client_phone_calls_ajax, name='client_phone_calls_ajax'),
     path('client/<int:client_id>/upload-document/', documentsUploadView.upload_document_view,
          name='upload_client_document'),
     path('client/<int:client_id>/create-request/', documentsUploadView.create_document_request_view,
@@ -76,6 +78,7 @@ urlpatterns = [
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
+    path('notifications/count/',notification_count, name='notification_count'),
 
     # Attendance
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
@@ -121,6 +124,7 @@ urlpatterns = [
     path('leads/<int:lead_id>/mark-lost/', leadView.mark_lead_lost, name='mark_lead_lost'),
     path('leads/<int:lead_id>/convert/', leadView.convert_lead_view, name='convert_lead'),
     path('leads/<int:lead_id>/add-call-log/', leadView.add_lead_call_log, name='add_lead_call_log'),
+    path('leads/export/', leadView.export_leads_to_excel, name='export_leads_to_excel'),
     # Invoice URLs (using invoiceView)
     path('invoices/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_list'),
     path('invoice/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_all'),
@@ -133,6 +137,9 @@ urlpatterns = [
     path('invoices/bulk-status-update/', invoiceView.invoice_bulk_status_update, name="invoice_bulk_status_update"),
     #profile url
     path('upload-profile-pic/', profileView.upload_profile_pic, name='upload_profile_pic'),
+    path('profile/', profileView.profile_view, name='profile'),
+    path('profile/edit/', profileView.profile_edit, name='profile_edit'),
+
     # Portal Credentials
     path('client/<int:client_id>/credentials/add/', credentialsView.add_portal_credential,name='add_portal_credential'),
     path('credentials/<int:credential_id>/view/', credentialsView.view_portal_credential,name='view_portal_credential'),
@@ -156,5 +163,9 @@ urlpatterns = [
     path("tutorials/", tutorialView.tutorial_list, name="tutorial_list"),
     path("tutorials/add/", tutorialView.add_tutorial, name="add_tutorial"),
     path('tutorials/delete/<int:tutorial_id>/', tutorialView.delete_tutorial, name='delete_tutorial'),
+    # Phone Call Logs
+    path('client/<int:client_id>/phone-calls/add/', phoneCallView.add_phone_call_log, name='add_phone_call_log'),
+    path('client/<int:client_id>/phone-calls/ajax/', phoneCallView.get_client_phone_calls_ajax, name='get_client_phone_calls_ajax'),
+    path('phone-calls/', phoneCallView.phone_call_logs_list, name='phone_calls_list'),
 
 ]

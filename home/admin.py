@@ -54,6 +54,7 @@ class ClientResource(resources.ModelResource):
         import_id_fields = ('pan_no',)
         fields = (
             # Client fields
+            'file_number',
             'client_name',
             'primary_contact_name',
             'pan_no',
@@ -594,9 +595,9 @@ class GSTDetailsAdmin(admin.ModelAdmin):
 
     def import_gst_view(self, request):
         from django.shortcuts import render, redirect
-        from django.contrib import messages
         from django.db import transaction
         from django.db.models import Q
+        from django.contrib import messages
         import pandas as pd
         from home.models import Client, GSTDetails
 
@@ -846,6 +847,7 @@ class AttendanceAdmin(admin.ModelAdmin):
         "duration",
         "status",
         "location_name",
+        "reason",
         "remark",
     )
     list_filter = ("status", "date")
