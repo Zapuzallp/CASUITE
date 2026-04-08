@@ -336,17 +336,16 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
         if leave_summary:
             updated_choices = []
             for value, label in self.fields["leave_type"].choices:
-                if value == "" or value is None:
+                if value in ("", None):
+                    updated_choices.append((value, label))
+                    continue
+                if value == "extra_vacation":
+                    updated_choices.append((value, label))
+                    continue
 
-                    updated_choices.append(
-                        (value, label))
-                else:
-                    remaining = leave_summary.get(value, {}).get("remaining", 0)
-                    if remaining == 0:
-                        display_text = f"{label} (-)"
-                    else:
-                        display_text = f"{label} ({remaining})"
-                        updated_choices.append((value, display_text))
+                remaining = leave_summary.get(value, {}).get("remaining", 0)
+                display_text = f"{label} ({remaining})" if remaining else f"{label} (-)"
+                updated_choices.append((value, display_text))
 
             self.fields["leave_type"].choices = updated_choices
 
