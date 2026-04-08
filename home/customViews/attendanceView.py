@@ -55,8 +55,10 @@ class AttendanceLogsView(LoginRequiredMixin, View):
         first_of_month = today.replace(day=1)
         month_logs = logs.filter(date__gte=first_of_month)
 
-        full_days = month_logs.filter(status='full_day').count()
-        half_days = month_logs.filter(status='half_day').count()
+        full_days = month_logs.filter(status='approved').count()
+        half_days = month_logs.filter(
+            status__in=['first_half_present', 'second_half_present']
+        ).count()
 
         # Calculate Average Hours (Handling DurationField)
         avg_duration = month_logs.exclude(duration=None).aggregate(Avg('duration'))['duration__avg']
@@ -80,8 +82,8 @@ class AttendanceLogsView(LoginRequiredMixin, View):
         dist_data = month_logs.values('status').annotate(count=Count('id'))
         # Map DB status to Display Names and Colors
         status_map = {
-            'full_day': 'Full Day',
-            'half_day': 'Half Day',
+            'first_half_present': 'First Half Present',
+            'second_half_present': 'Second Half Present',
             'pending': 'Pending',
             'approved': 'Present',
             'rejected': 'Rejected'

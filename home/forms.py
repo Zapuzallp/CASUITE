@@ -322,7 +322,7 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
 class LeaveForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Leave
-        fields = ['leave_type', 'reason', 'start_date', 'end_date']
+        fields = ['leave_type','duration_type', 'reason', 'start_date', 'end_date']
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
