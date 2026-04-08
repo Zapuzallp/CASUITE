@@ -318,7 +318,7 @@
                                                 </span>
                                             </td>
                                             <td>{{ r.reason|default:"-" }}</td>
-                                            <td>{{ r.remark|default:"-" }}</td>
+                                            <td style="white-space: pre-line;">{{ r.remark|default:"-" }}</td>
                                         </tr>
                                         {% empty %}
                                         <tr>
@@ -821,23 +821,59 @@ function executeBulkAction() {
 
     Swal.fire({
         title: 'Type CONFIRM to proceed',
+        width: '650px',
+
         html: `
-            <p>You are about to update <b>${selectedRecords.length}</b> record(s).</p>
-            <input type="text" id="confirmInput" class="swal2-input" placeholder="Type CONFIRM">
+        <p style="margin-bottom:15px;">
+            You are about to update <b>${selectedRecords.length}</b> record(s).
+        </p>
+
+        <div style="text-align:left; margin-bottom:15px;">
+            <label style="font-weight:600; margin-bottom:5px; display:block;">
+                <i class="bi bi-pencil-square me-1"></i> Remarks
+            </label>
+            <textarea id="remarks"
+                class="swal2-textarea"
+                placeholder="Enter remarks (e.g., Meeting with client)"
+                style="width:70%; margin:0 auto; display:block; height:100px;">
+            </textarea>
+        </div>
+
+        <div style="text-align:left;">
+            <label style="font-weight:600; margin-bottom:5px; display:block;">
+                <i class="bi bi-shield-lock me-1"></i> Confirmation
+            </label>
+            <input type="text"
+                id="confirmInput"
+                class="swal2-input"
+                placeholder="Type CONFIRM to continue"
+                style="width:70%; margin:0 auto; display:block;">
+        </div>
         `,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Execute',
+
         preConfirm: () => {
             const value = document.getElementById('confirmInput').value;
-            if (value !== 'CONFIRM') {
+            const remarks = document.getElementById('remarks').value;
+            if (!remarks.trim()) {
+                Swal.showValidationMessage('Remarks is required.');
+                return false;
+            }
+
+             if (value !== 'CONFIRM') {
                 Swal.showValidationMessage('You must type CONFIRM exactly.');
                 return false;
             }
-            return true;
+
+            return { remarks: remarks }; // return remarks
         }
+
     }).then((result) => {
         if (result.isConfirmed) {
+            const remarks = result.value.remarks;
+
             let actionType, statusValue;
 
             if (bulkAction.startsWith('status_')) {
@@ -865,7 +901,12 @@ function executeBulkAction() {
                 input.classList.add("dynamic-record");
                 form.appendChild(input);
             });
-
+            const remarksInput = document.createElement("input");
+            remarksInput.type = "hidden";
+            remarksInput.name = "remarks";
+            remarksInput.value = remarks;
+            remarksInput.classList.add("dynamic-record");
+            form.appendChild(remarksInput);
             form.submit();
         }
     });

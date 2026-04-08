@@ -108,11 +108,9 @@
                             Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ paginator.count }} payments
                         </small>
                     </div>
-                    {% if not is_partner %}
                     <button class="btn btn-primary btn-sm" data-bs-target="#selectInvoiceModal" data-bs-toggle="modal">
                         <i class="bi bi-plus-circle me-1"></i> Collect Payment
                     </button>
-                    {% endif %}
                 </div>
 
                 {% if messages %}
