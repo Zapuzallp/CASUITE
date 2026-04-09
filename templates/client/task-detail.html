@@ -274,7 +274,7 @@
                                 </div><br>
                             {% endif %}
 
-                            <button type="submit" class="btn btn-success btn-lg shadow fw-bold px-5">
+                            <button type="submit" id="markDoneBtn" class="btn btn-success btn-lg shadow fw-bold px-5">
                                 <i class="bi bi-check-circle-fill me-2"></i> Mark as Done
                             </button>
                         </form>
@@ -658,20 +658,54 @@
         }
 
         addBtn.addEventListener('click', () => addRow());
+
+
     });
 </script>
 <!--Timesheet Tab-->
 {% if user_action_needed %}
 <script>
     let startTime, timerInterval;
-    let elapsedTime = 0; 
-    let sessionStartTimeStr = ""; 
+    let elapsedTime = 0;
+    let sessionStartTimeStr = "";
+    let isRunning = false;
 
     const clockDisplay = document.getElementById('liveClock');
     const startBtn = document.getElementById('startBtn');
     const activeControls = document.getElementById('activeControls');
     const pauseBtn = document.getElementById('pauseBtn');
     const stopBtn = document.getElementById('stopBtn');
+
+    function restoreTimerState() {
+        const savedState = localStorage.getItem('timerState');
+        if (!savedState) return;
+
+        const state = JSON.parse(savedState);
+        sessionStartTimeStr = state.sessionStartTimeStr || "";
+
+        if (state.isRunning) {
+            elapsedTime = Date.now() - state.runningStartTime;
+            startTimer();
+        } else if (state.elapsedTime > 0) {
+            elapsedTime = state.elapsedTime;
+            clockDisplay.textContent = formatTime(elapsedTime);
+            clockDisplay.classList.remove('d-none');
+            startBtn.innerHTML = '<i class="bi bi-play-fill"></i> <span>Resume</span>';
+        }
+    }
+
+    function saveTimerState(running) {
+        localStorage.setItem('timerState', JSON.stringify({
+            isRunning: running,
+            elapsedTime: elapsedTime,
+            runningStartTime: running ? Date.now() - elapsedTime : null,
+            sessionStartTimeStr: sessionStartTimeStr
+        }));
+    }
+
+    function clearTimerState() {
+        localStorage.removeItem('timerState');
+    }
 
     function formatTime(ms) {
         let hh = Math.floor(ms / 3600000);
@@ -685,27 +719,19 @@
     }
 
     function calculateDurationString(startObj, endObj) {
-    let diffMs = endObj - startObj;
-    
-    // Handle midnight rollover
-    if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
-
-    const totalSeconds = Math.floor(diffMs / 1000);
-    
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    
-    // Create an array to store parts of the string
-    let parts = [];
-
-    if (hours > 0) parts.push(`${hours} hr`);
-    if (minutes > 0) parts.push(`${minutes} m`);
-    if (seconds > 0 || parts.length === 0) parts.push(`${seconds} s`);
-
-    // Join with spaces (e.g., "1 hr 5 s" or "45 s")
-    return parts.join(' ');
+        let diffMs = endObj - startObj;
+        if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
+        const totalSeconds = Math.floor(diffMs / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        let parts = [];
+        if (hours > 0) parts.push(`${hours} hr`);
+        if (minutes > 0) parts.push(`${minutes} m`);
+        if (seconds > 0 || parts.length === 0) parts.push(`${seconds} s`);
+        return parts.join(' ');
     }
+
     function getWallClockTime() {
         const now = new Date();
         const yyyy = now.getFullYear();
@@ -717,10 +743,7 @@
         return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
     }
 
-    startBtn.addEventListener('click', () => {
-        if (elapsedTime === 0) {
-            sessionStartTimeStr = getWallClockTime();
-        }
+    function startTimer() {
         startTime = Date.now() - elapsedTime;
         clockDisplay.classList.remove('d-none');
         timerInterval = setInterval(() => {
@@ -729,65 +752,94 @@
         }, 1000);
         startBtn.classList.add('d-none');
         activeControls.classList.remove('d-none');
+        saveTimerState(true);
+    }
+
+    startBtn.addEventListener('click', () => {
+        if (elapsedTime === 0) {
+            sessionStartTimeStr = getWallClockTime();
+        }
+        startTimer();
     });
 
+   
     pauseBtn.addEventListener('click', () => {
         clearInterval(timerInterval);
+        saveTimerState(false);
         startBtn.innerHTML = '<i class="bi bi-play-fill"></i> <span>Resume</span>';
         startBtn.classList.remove('d-none');
         activeControls.classList.add('d-none');
     });
 
     stopBtn.addEventListener('click', () => {
-    clearInterval(timerInterval);
-    
-    const now = new Date(); 
-    const formatForInput = (dateObj) => {
-        let hours = dateObj.getHours();
-        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-        const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+        clearInterval(timerInterval);
+        saveTimerState(false);
 
-        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const now = new Date();
+        const formatForInput = (dateObj) => {
+            let hours = dateObj.getHours();
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+            const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            return `${String(hours).padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
+        };
 
-        hours = hours % 12;
-        hours = hours ? hours : 12; 
+        const startDateTime = new Date(sessionStartTimeStr.replace(' ', 'T'));
+        const modal = document.getElementById('startTimerModal');
+        const startInput = modal.querySelector('input[name="start_time"]');
+        const endInput = modal.querySelector('input[name="end_time"]');
+        const totalTimeInput = document.getElementById('exampleInput');
 
-        const hh = String(hours).padStart(2, '0');
+        if (startInput) { startInput.setAttribute('step', '1'); startInput.value = formatForInput(startDateTime); }
+        if (endInput) { endInput.setAttribute('step', '1'); endInput.value = formatForInput(now); }
+        if (totalTimeInput) { totalTimeInput.value = calculateDurationString(startDateTime, now); }
 
-        return `${hh}:${minutes}:${seconds} ${ampm}`;
-    };
-    const startDateTime = new Date(sessionStartTimeStr.replace(' ', 'T'));
-    
-    const modal = document.getElementById('startTimerModal');
-    const startInput = modal.querySelector('input[name="start_time"]');
-    const endInput = modal.querySelector('input[name="end_time"]');
-    const totalTimeInput = document.getElementById('exampleInput');
+        startBtn.innerHTML = '<i class="bi bi-play-fill"></i> <span>Resume</span>';
+        startBtn.classList.remove('d-none');
+        activeControls.classList.add('d-none');
+    });
 
-    // 1. Fill Start & End Time (Enable seconds support in the UI)
-    if (startInput) {
-        startInput.setAttribute('step', '1'); 
-        startInput.value = formatForInput(startDateTime);
+    // ── Resume timer when modal is closed/discarded without submitting ──
+    document.querySelectorAll('#startTimerModal [data-bs-dismiss="modal"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (elapsedTime > 0) {
+                startTimer();
+            }
+        });
+    });
+
+    // ── Full reset only on form submit ──
+    const modalForm = document.querySelector('#startTimerModal form');
+    if (modalForm) {
+        modalForm.addEventListener('submit', () => {
+            clearTimerState();
+            elapsedTime = 0;
+            clockDisplay.textContent = "00:00:00";
+            clockDisplay.classList.add('d-none');
+            startBtn.innerHTML = '<i class="bi bi-play"></i> <span>Start Timer</span>';
+            startBtn.classList.remove('d-none');
+            activeControls.classList.add('d-none');
+        });
     }
-    if (endInput) {
-        endInput.setAttribute('step', '1');
-        endInput.value = formatForInput(now);
+    const markAsDoneBtn = document.getElementById('markDoneBtn');
+
+    if (markAsDoneBtn) {
+    markAsDoneBtn.addEventListener('click', () => {
+        clearInterval(timerInterval);
+        clearTimerState();
+        elapsedTime = 0;
+        clockDisplay.textContent = "00:00:00";
+        clockDisplay.classList.add('d-none');
+        startBtn.innerHTML = '<i class="bi bi-play"></i> <span>Start Timer</span>';
+        startBtn.classList.remove('d-none');
+        activeControls.classList.add('d-none');
+    });
     }
-
-    // 2. Fill the "Total Time" field with the breakdown
-    if (totalTimeInput) {
-        totalTimeInput.value = calculateDurationString(startDateTime, now);
-    }
-
-    // Reset Timer UI
-    elapsedTime = 0;
-    clockDisplay.textContent = "00:00:00";
-    clockDisplay.classList.add('d-none');
-    startBtn.innerHTML = '<i class="bi bi-play"></i> <span>Start Timer</span>';
-    startBtn.classList.remove('d-none');
-    activeControls.classList.add('d-none');
-});
-
+    restoreTimerState();
 </script>
+
 {% endif %}
 
 {% endblock body %}
