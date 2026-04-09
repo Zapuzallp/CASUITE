@@ -146,7 +146,7 @@
                                         </div>
                                         <!--Due Date-->
                                         <div class="col-md-3">
-                                            <label class="form-label">Due Date</label>
+                                            <label class="form-label small fw-bold text-secondary">Due Date</label>
                                             <select name="due_filter" id="dueFilter" class="form-select js-task-filter-select"
                                                     data-placeholder="Search Due Date">
                                                 <option value="">All</option>
@@ -155,6 +155,20 @@
                                                 <option value="tomorrow" {% if request.GET.due_filter == "tomorrow" %}selected{% endif %}>Tomorrow</option>
                                                 <option value="no_due" {% if request.GET.due_filter == "no_due" %}selected{% endif %}>No Due Date</option>
                                                 <option value="range" {% if request.GET.due_filter == "range" %}selected{% endif %}>Date Range</option>
+                                            </select>
+                                        </div>
+                                        <!--Task Visibility-->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Task Visibility</label>
+                                            <select name="visibility" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Visibility">
+                                                <option value="">All</option>
+                                                <option value="with_workflow" {% if visibility_filter == "with_workflow" %}selected{% endif %}>
+                                                    With Workflow
+                                                </option>
+                                                <option value="without_workflow" {% if visibility_filter == "without_workflow" %}selected{% endif %}>
+                                                    Without Workflow
+                                                </option>
                                             </select>
                                         </div>
 
