@@ -1,23 +1,11 @@
 $(document).ready(function () {
     // Client Select Model Select2
-    $('#clientSelector').empty();
 
     $('#clientSelector').select2({
         dropdownParent: $('#selectClientModal'),
         placeholder: 'Client Name || PAN Number || Prospect',
         width: '100%',
         minimumInputLength: 0,
-        ajax: {
-            url: '/clients/search/',
-            dataType: 'json',
-            delay: 300,
-            data: function (params) {
-                return { q: params.term };
-            },
-            processResults: function (data) {
-                return { results: data };
-            }
-        }
     });
 
     // Listen for change event on Select2

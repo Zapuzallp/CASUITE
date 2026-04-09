@@ -352,13 +352,13 @@
                                                 </span>
                                             {% endif %}
                                         </td>
-                 <td class="text-end text-nowrap">
+                                         <td class="text-end text-nowrap">
 
-    <!-- View -->
-    <a href="{% url 'task_detail' task.id %}"
-       class="btn btn-sm btn-outline-primary">
-       <i class="bi bi-eye"></i>
-    </a>
+                                        <!-- View -->
+                                        <a href="{% url 'task_detail' task.id %}"
+                                           class="btn btn-sm btn-outline-primary">
+                                           <i class="bi bi-eye"></i>
+                                        </a>
 
     <!-- Edit - Check Partner Permissions -->
     {% if task|can_edit_task:request.user %}
@@ -368,19 +368,19 @@
     </a>
     {% endif %}
 
-    <!-- Delete (Only Superuser) -->
-    {% if request.user.is_superuser %}
-    <a href="#"
-       class="btn btn-sm btn-outline-danger"
-       data-bs-toggle="modal"
-       data-bs-target="#deleteTaskModal"
-       data-url="{% url 'delete_task' task.id %}"
-       data-title="{{ task.task_title }}">
-       <i class="bi bi-trash"></i>
-    </a>
-    {% endif %}
+                                        <!-- Delete (Only Superuser) -->
+                                        {% if request.user.is_superuser %}
+                                        <a href="#"
+                                           class="btn btn-sm btn-outline-danger"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#deleteTaskModal"
+                                           data-url="{% url 'delete_task' task.id %}"
+                                           data-title="{{ task.task_title }}">
+                                           <i class="bi bi-trash"></i>
+                                        </a>
+                                        {% endif %}
 
-</td>
+                                    </td>
                                     </tr>
                                 {% empty %}
                                     <tr>
@@ -393,21 +393,21 @@
                             </table>
                         </div>
 
-                        {% if tasks and per_page != 'all' %}
+                        {% if tasks.paginator.num_pages > 1 and per_page != 'all' %}
                         <div class="mt-4">
                             <nav aria-label="Task pagination">
                             <!-- Added flex-wrap to prevent pagination breaking on tiny screens -->
                             <ul class="pagination justify-content-center flex-wrap gap-1">
                             <!-- First -->
                             <li class="page-item {% if not tasks.has_previous %}disabled{% endif %}">
-                                <a class="page-link shadow-none" {% if tasks.has_previous %} href="?{{ query_params }}&page=1" {% endif %}>
+                                <a class="page-link shadow-none" {% if tasks.has_previous %} href="?{% if query_params %}{{ query_params }}&{% endif %}page=1" {% endif %}>
                                    <i class="bi bi-skip-backward-fill"></i>
                                 </a>
                             </li>
 
                             <!-- Previous -->
-                            <li class="page-item {% if tasks.has_previous %}{% else %}disabled{% endif %}">
-                                <a class="page-link shadow-none" {% if tasks.has_previous %} href="?{{ query_params }}&page={{ tasks.previous_page_number }}" {% endif %}>
+                            <li class="page-item {% if not tasks.has_previous %} disabled{% endif %}">
+                                <a class="page-link shadow-none" {% if tasks.has_previous %} href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ tasks.previous_page_number }}" {% endif %}>
                                    <i class="bi bi-arrow-left"></i>
                                 </a>
                             </li>
@@ -421,14 +421,14 @@
 
                             <!-- Next -->
                             <li class="page-item {% if not tasks.has_next %}disabled{% endif %}">
-                                <a class="page-link shadow-none" {% if tasks.has_next %} href="?{{ query_params }}&page={{ tasks.next_page_number }}" {% endif %}>
+                                <a class="page-link shadow-none" {% if tasks.has_next %} href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ tasks.next_page_number }}" {% endif %}>
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                             </li>
 
                             <!-- Last -->
                             <li class="page-item {% if not tasks.has_next %}disabled{% endif %}">
-                                <a class="page-link shadow-none" {% if tasks.has_next %} href="?{{ query_params }}&page={{ tasks.paginator.num_pages }}" {% endif %}>
+                                <a class="page-link shadow-none" {% if tasks.has_next %} href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ tasks.paginator.num_pages }}" {% endif %}>
                                    <i class="bi bi-skip-forward-fill"></i>
                                 </a>
                             </li>
