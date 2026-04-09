@@ -3,34 +3,41 @@
 {% load humanize %}
 
 
+{% block body %}
 
+<style>
+    .list-group-item.notification-item {
+     padding: 7px !important;}
+</style>
+<main id="main" class="main-content">
 
-
-{% block content %}
 <div class="container mt-4">
 
     <h4 class="mb-3">All Notifications</h4>
     <ul class="list-group">
-    {% for n in notifications %}
-    <li class="list-group-item notification-item {% if not n.is_read %}fw-bold{% endif %}">
-        <a href="{% url 'view_notification' n.id %}"
+    {% for leave in leaves_all %}
+    <li class=" list-group-item notification-item ">
+        <div 
            class="text-decoration-none text-dark d-block">
 
-            <div class="notification-content">
-                <div class="notification-title">
-                    {{ n.title }}
-                </div>
+            <div class="notification-content d-flex justify-content-center ">
+                <div class = "me-3 ">  
+                    <span class="icon-circle">
+                    <i class="bi bi-info-circle text-primary"></i>
+                </span></div>
+              <div>   
+                <h6 class="mb-1">Leave Approval</h6>
+                <p class="mb-1 small text-muted" style = "max-height: 16px;">Status - {{ leave.status|capfirst}}</p>
 
-                <div class="text-muted mb-1">
-                    {{ n.message }}
-                </div>
+                <small class="text-muted">{{ leave.start_date}} - {{leave.end_date}}</small><br>
 
-                <small class="notification-time">
-                    {{ n.created_at|timesince }} ago
-                </small>
+                <small class = "text-muted">{{leave.status|capfirst}} on {{leave.leave_approval_time}}</small>
+
+            </div>
+               
             </div>
 
-        </a>
+        </div>
     </li>
     {% empty %}
     <li class="list-group-item text-center text-muted">
@@ -41,4 +48,5 @@
 
 
 </div>
-{% endblock %}
+</main>
+{% endblock body %}

@@ -10,7 +10,10 @@ from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
     AttendanceLogsView,
+    
 )
+from home.customViews.read_button_View import mark_all_as_read
+
 from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
 from home.customViews.services import list_services, delete_service
@@ -56,6 +59,7 @@ urlpatterns = [
     path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
     path('gst/<int:gst_id>/edit/', clientView.edit_gst_details_view, name='edit_gst_details'),
     path('gst/<int:gst_id>/delete/', clientView.delete_gst_details_view, name='delete_gst_details'),
+    path('mark-all-notifications-read/', mark_all_as_read, name='mark_all_read'),
 
     # Client Management
     path('clients/', clientOnboardingView.ClientView.as_view(), name='clients'),
@@ -92,6 +96,7 @@ urlpatterns = [
 
     # apply-leave
     path('leave/apply/', leaveView.LeaveCreateView.as_view(), name='leave-apply'),
+    path('leave/apply/<int:pk>',leaveView.ManageView,name = 'manage-views'),
     # delete-leave
     path('leave/<int:leave_id>/', leaveView.LeaveDeleteView.as_view(), name='leave-delete'),
     # Leave re-apply URL

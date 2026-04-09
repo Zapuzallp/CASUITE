@@ -409,6 +409,7 @@ def client_search(request):
         })
     return JsonResponse(data, safe=False)
 
+
 # =========================================================
 # AJAX VIEW FOR DUE TASKS FILTERING
 # =========================================================

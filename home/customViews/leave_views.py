@@ -1,4 +1,4 @@
-
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
@@ -21,6 +21,7 @@ class ManageLeavesView(LoginRequiredMixin, LeaveManagementMixin, TemplateView):
         if leave_id and status in ['approved', 'rejected']:
             leave = get_object_or_404(Leave, id=leave_id)
             leave.status = status
+            leave.leave_approval_time = timezone.now().date()
             leave.save()
             messages.success(request, f'Leave {status} successfully!')
             return redirect('manage-leaves')
