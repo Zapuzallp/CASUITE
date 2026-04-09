@@ -755,6 +755,10 @@ class EmployeeForm(BootstrapFormMixin, forms.ModelForm):
             self.fields['last_name'].initial = user.last_name
             self.fields['email'].initial = user.email
             self.fields['is_active'].initial = user.is_active
+        else:
+            # If adding a new employee, we don't need the is_active checkbox
+            if 'is_active' in self.fields:
+                del self.fields['is_active']
 
     def clean(self):
         cleaned_data = super().clean()
