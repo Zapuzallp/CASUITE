@@ -661,42 +661,110 @@ def edit_task_view(request, task_id):
         if not (is_creator or is_assignee or is_client_ca or is_in_sequence):
             from django.http import HttpResponseForbidden
             return HttpResponseForbidden("You are not allowed to perform this action")
-    client = task.client  # <--- 1. GET CLIENT FROM TASK
+    
+    client = task.client
 
-    # 2. PREPARE CLIENT DATA (Needed for the JS Auto-fill to not crash)
+    # Prepare Client Data for Auto-Population
     client_data_map = {
         'pan_no': client.pan_no,
         'email': client.email,
         'phone': client.phone_number,
         'din_no': client.din_no,
-        # 'gst_number': client.gst_details.first().gst_number if ...
     }
+
+    # Prepare GST Details for Auto-Population
+    gst_details = client.gst_details.all()
+    gst_options = []
+    default_gst_id = None
+
+    for gst in gst_details:
+        gst_options.append({
+            'id': gst.id,
+            'gst_number': gst.gst_number,
+            'state': gst.get_state_display(),
+            'label': f"{gst.gst_number} - {gst.get_state_display()}"
+        })
+        if default_gst_id is None:
+            default_gst_id = gst.id
+
+    # Add validation message if no GST details found
+    gst_validation_message = None
+    if not gst_details.exists():
+        gst_validation_message = "No GST details found for this client. Add GST number for this client."
 
     if not hasattr(task, 'extended_attributes'):
         TaskExtendedAttributes.objects.create(task=task)
 
+    # Get existing file information for display
+    existing_files = {}
+    if hasattr(task, 'extended_attributes'):
+        attr = task.extended_attributes
+        file_fields = ['json_file', 'computation_file', 'ack_file', 'audit_report_file']
+        for field_name in file_fields:
+            file_field = getattr(attr, field_name, None)
+            if file_field:
+                existing_files[field_name] = {
+                    'url': file_field.url,
+                    'name': file_field.name.split('/')[-1]  # Get just the filename
+                }
+
     if request.method == 'POST':
         task_form = TaskForm(request.POST, instance=task)
-        extended_form = TaskExtendedForm(request.POST, request.FILES, instance=task.extended_attributes,client=task.client)
+        extended_form = TaskExtendedForm(request.POST, request.FILES, instance=task.extended_attributes, client=client)
+
+        # Filter gstin_number field to show only client's GST details
+        if hasattr(extended_form.fields, 'gstin_number'):
+            extended_form.fields['gstin_number'].queryset = client.gst_details.all()
 
         if task_form.is_valid() and extended_form.is_valid():
-            task = task_form.save()
-            extended = extended_form.save(commit=False)
-            extended.task = task
-            extended.save()
+            # Additional validation for GST Return Filing
+            if task_form.cleaned_data.get('service_type') == 'GST Return':
+                if not client.gst_details.exists():
+                    messages.error(
+                        request,
+                        "Cannot update to GST Return Filing task: No GST details found for this client. "
+                        "Please add GST number for this client first."
+                    )
+                    # Re-render form with error
+                    context = {
+                        'task': task,
+                        'client': client,
+                        'task_form': task_form,
+                        'extended_form': extended_form,
+                        'task_config': TASK_CONFIG,
+                        'client_data_json': client_data_map,
+                        'gst_options': gst_options,
+                        'default_gst_id': default_gst_id,
+                        'gst_validation_message': gst_validation_message,
+                        'is_edit_mode': True,
+                        'existing_files': existing_files
+                    }
+                    return render(request, 'client/create_task.html', context)
+
+            task_form.save()
+            extended_form.save()
             messages.success(request, "Task updated successfully.")
-            return redirect('task_list')
+            return redirect('task_detail', task_id=task.id)
     else:
         task_form = TaskForm(instance=task)
-        extended_form = TaskExtendedForm(instance=task.extended_attributes)
+        extended_form = TaskExtendedForm(instance=task.extended_attributes, client=client)
+
+        # Filter gstin_number field to show only client's GST details
+        if hasattr(extended_form.fields, 'gstin_number'):
+            extended_form.fields['gstin_number'].queryset = client.gst_details.all()
 
     context = {
         'task': task,
-        'client': client,  # <--- 3. PASS CLIENT TO TEMPLATE (Fixes NoReverseMatch)
+        'client': client,
         'task_form': task_form,
         'extended_form': extended_form,
         'task_config': TASK_CONFIG,
-        'client_data_json': json.dumps(client_data_map, cls=DjangoJSONEncoder)  # <--- 4. PASS JSON DATA
+        'client_data_json': client_data_map,
+        'gst_options': gst_options,
+        'default_gst_id': default_gst_id,
+        'gst_validation_message': gst_validation_message,
+        'is_edit_mode': True,
+        'existing_files': existing_files
     }
     return render(request, 'client/create_task.html', context)
 

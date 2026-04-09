@@ -548,6 +548,26 @@ class Task(models.Model):
                 remarks=remarks
             )
 
+    def get_team_members(self):
+        """
+        Returns all unique users assigned to this task.
+        Combines users from assignees M2M field and TaskAssignmentStatus records.
+        This ensures the team is displayed correctly even when manage sequence is used.
+        """
+        # Get users from assignees M2M field
+        assignee_users = set(self.assignees.all())
+        
+        # Get users from TaskAssignmentStatus (manage sequence)
+        sequence_users = set(
+            User.objects.filter(
+                id__in=self.assignment_statuses.values_list('user_id', flat=True)
+            )
+        )
+        
+        # Combine both sets and return as a list
+        all_users = assignee_users | sequence_users
+        return list(all_users)
+
     # Set `is_recurring` only when the task is first created.
     # Derived from `recurrence_period` to avoid auto-created
     # or copied tasks being incorrectly marked as recurring.

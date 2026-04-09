@@ -305,21 +305,23 @@
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                {% for user in task.assignees.all|slice:":3" %}
-                                                    <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
-                                                         style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};"
-                                                         title="{{ user.get_full_name|default:user.username }}">
-                                                        {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
-                                                    </div>
-                                                {% empty %}
-                                                    <span class="text-muted small fst-italic">Unassigned</span>
-                                                {% endfor %}
-                                                {% if task.assignees.count > 3 %}
-                                                    <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
-                                                         style="width: 28px; height: 28px; font-size: 10px; z-index: 0;">
-                                                        +{{ task.assignees.count|add:"-3" }}
-                                                    </div>
-                                                {% endif %}
+                                                {% with team_members=task.get_team_members %}
+                                                    {% for user in team_members|slice:":3" %}
+                                                        <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                             style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.revcounter }};"
+                                                             title="{{ user.get_full_name|default:user.username }}">
+                                                            {{ user.first_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
+                                                        </div>
+                                                    {% empty %}
+                                                        <span class="text-muted small fst-italic">Unassigned</span>
+                                                    {% endfor %}
+                                                    {% if team_members|length > 3 %}
+                                                        <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                             style="width: 28px; height: 28px; font-size: 10px; z-index: 0;">
+                                                            +{{ team_members|length|add:"-3" }}
+                                                        </div>
+                                                    {% endif %}
+                                                {% endwith %}
                                             </div>
                                         </td>
                                         <td class="text-nowrap">

@@ -45,15 +45,27 @@
             border: 2px solid #4caf50;
             background-color: #e8f5e9;
         }
+
+        .existing-file-info {
+            font-size: 0.875rem;
+        }
+
+        .existing-file-info a {
+            word-break: break-all;
+        }
+
+        .existing-file-info a:hover {
+            text-decoration: underline !important;
+        }
     </style>
 
     <main id="main" class="main">
         <div class="pagetitle mb-4">
-            <h1>Create Task</h1>
+            <h1>{% if is_edit_mode %}Edit Task{% else %}Create Task{% endif %}</h1>
             <nav>
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">Client</li>
-                    <li class="breadcrumb-item active">Task</li>
+                    <li class="breadcrumb-item active">{% if is_edit_mode %}Edit Task{% else %}Task{% endif %}</li>
                 </ol>
             </nav>
         </div>
@@ -97,13 +109,82 @@
                                     <div class="col-md-4 field-wrapper" data-field-name="{{ field.name }}"
                                          style="display:none;">
                                         <label class="form-label" id="label_{{ field.name }}">{{ field.label }}</label>
-                                        {{ field }} </div>
+                                        
+                                        {% if is_edit_mode and existing_files %}
+                                            {% if field.name == 'json_file' and 'json_file' in existing_files %}
+                                                <div class="existing-file-info mb-2 p-2 bg-light border rounded">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <i class="bi bi-file-earmark-check text-success me-1"></i>
+                                                        Current file:
+                                                    </small>
+                                                    <a href="{{ existing_files.json_file.url }}" target="_blank" class="text-primary text-decoration-none small d-block mb-1">
+                                                        <i class="bi bi-download me-1"></i>
+                                                        {{ existing_files.json_file.name }}
+                                                    </a>
+                                                    <small class="text-muted d-block">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        Upload a new file to replace
+                                                    </small>
+                                                </div>
+                                            {% elif field.name == 'computation_file' and 'computation_file' in existing_files %}
+                                                <div class="existing-file-info mb-2 p-2 bg-light border rounded">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <i class="bi bi-file-earmark-check text-success me-1"></i>
+                                                        Current file:
+                                                    </small>
+                                                    <a href="{{ existing_files.computation_file.url }}" target="_blank" class="text-primary text-decoration-none small d-block mb-1">
+                                                        <i class="bi bi-download me-1"></i>
+                                                        {{ existing_files.computation_file.name }}
+                                                    </a>
+                                                    <small class="text-muted d-block">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        Upload a new file to replace
+                                                    </small>
+                                                </div>
+                                            {% elif field.name == 'ack_file' and 'ack_file' in existing_files %}
+                                                <div class="existing-file-info mb-2 p-2 bg-light border rounded">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <i class="bi bi-file-earmark-check text-success me-1"></i>
+                                                        Current file:
+                                                    </small>
+                                                    <a href="{{ existing_files.ack_file.url }}" target="_blank" class="text-primary text-decoration-none small d-block mb-1">
+                                                        <i class="bi bi-download me-1"></i>
+                                                        {{ existing_files.ack_file.name }}
+                                                    </a>
+                                                    <small class="text-muted d-block">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        Upload a new file to replace
+                                                    </small>
+                                                </div>
+                                            {% elif field.name == 'audit_report_file' and 'audit_report_file' in existing_files %}
+                                                <div class="existing-file-info mb-2 p-2 bg-light border rounded">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <i class="bi bi-file-earmark-check text-success me-1"></i>
+                                                        Current file:
+                                                    </small>
+                                                    <a href="{{ existing_files.audit_report_file.url }}" target="_blank" class="text-primary text-decoration-none small d-block mb-1">
+                                                        <i class="bi bi-download me-1"></i>
+                                                        {{ existing_files.audit_report_file.name }}
+                                                    </a>
+                                                    <small class="text-muted d-block">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        Upload a new file to replace
+                                                    </small>
+                                                </div>
+                                            {% endif %}
+                                        {% endif %}
+                                        
+                                        {{ field }}
+                                    </div>
                                 {% endfor %}
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-end mt-4">
-                            <button type="submit" class="btn btn-primary px-5 fw-bold"  id="saveTaskBtn">Save Task</button>
+                            {% if is_edit_mode %}
+                            <a href="{% url 'task_detail' task.id %}" class="btn btn-secondary px-4 fw-bold me-2">Cancel</a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary px-5 fw-bold"  id="saveTaskBtn">{% if is_edit_mode %}Update Task{% else %}Save Task{% endif %}</button>
                         </div>
                     </form>
                 </div>
@@ -142,8 +223,9 @@
 
                 document.getElementById('hiddenDescription').value = quill.root.innerHTML;
                 const btn = document.getElementById('saveTaskBtn');
+                const originalText = btn.innerText;
                 btn.disabled = true;
-                btn.innerText = "Saving...";
+                btn.innerText = originalText.includes('Update') ? "Updating..." : "Saving...";
             });
 
             // 2. Logic

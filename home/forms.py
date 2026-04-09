@@ -323,7 +323,15 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
         cleaned_data = super().clean()
 
         if self.instance and self.instance.pk:
+            # List of file fields that should be handled separately
+            file_fields = ['json_file', 'computation_file', 'ack_file', 'audit_report_file']
+            
             for field in self.fields:
+                # Skip file fields - they're handled by request.FILES
+                if field in file_fields:
+                    continue
+                    
+                # For non-file fields, preserve existing values if not in POST data
                 if field not in self.data:
                     cleaned_data[field] = getattr(self.instance, field)
 
