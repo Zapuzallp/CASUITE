@@ -8,6 +8,7 @@ from django.db import transaction
 from django.views.decorators.http import require_POST
 from django.db.models import Q, Max
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta,datetime
 from home.clients.config import TASK_CONFIG, DEFAULT_WORKFLOW_STEPS
@@ -15,6 +16,7 @@ from home.forms import TaskForm, TaskExtendedForm
 from home.models import Client, TaskComment, Employee, Task, TaskExtendedAttributes, TaskDocument, TaskAssignmentStatus
 from home.clients.client_access import get_accessible_clients
 from home.tasks.task_copy import copy_task
+from home.utils import send_notification
 # Import of pagination
 from django.core.paginator import  Paginator
 
@@ -100,11 +102,32 @@ def create_task_view(request, client_id):
                         task.task_title = f"{task.get_service_type_display()} Task"
 
                     task.save()
+                    task_form.save_m2m()
 
                     # Save Extended Attributes
                     extended = extended_form.save(commit=False)
                     extended.task = task
                     extended.save()
+
+                    task_url = reverse('task_detail', args=[task.id])
+
+                    send_notification(
+                        [request.user],
+                        title="Task Created",
+                        message=f"Task '{task.task_title}' has been created for {client.client_name}.",
+                        tag="success",
+                        url=task_url
+                    )
+
+                    superusers = User.objects.filter(is_superuser=True).exclude(id=request.user.id)
+                    if superusers.exists():
+                        send_notification(
+                            superusers,
+                            title="New Task Created",
+                            message=f"Task '{task.task_title}' has been created for {client.client_name}.",
+                            tag="info",
+                            url=task_url
+                        )
 
                     messages.success(request, "Task created successfully!")
                     return redirect('task_list')
@@ -452,6 +475,11 @@ def task_detail_view(request, task_id):
             status_labels = request.POST.getlist('seq_statuses')
 
             if user_ids and status_labels and len(user_ids) == len(status_labels):
+                existing_user_ids = set(
+                    TaskAssignmentStatus.objects.filter(task=task, is_completed=False)
+                    .values_list('user_id', flat=True)
+                )
+
                 # 1. Determine starting order index (preserve completed history)
                 max_order = TaskAssignmentStatus.objects.filter(
                     task=task, is_completed=True
@@ -464,19 +492,23 @@ def task_detail_view(request, task_id):
 
                 # 3. Create new steps
                 new_users = []
+                added_entries = []
                 for i, uid in enumerate(user_ids):
                     status_label = status_labels[i]
                     try:
                         u_obj = User.objects.get(id=uid)
                         new_users.append(u_obj)
 
-                        TaskAssignmentStatus.objects.create(
+                        entry = TaskAssignmentStatus.objects.create(
                             task=task,
                             user=u_obj,
                             status_context=status_label,
                             order=start_order + i,
                             is_completed=False
                         )
+
+                        if u_obj.id not in existing_user_ids:
+                            added_entries.append(entry)
                     except User.DoesNotExist:
                         continue
 
@@ -499,6 +531,20 @@ def task_detail_view(request, task_id):
                         task.log_status_change(task.status, first_new_step.status_context, user, "Sequence Updated")
                         task.status = first_new_step.status_context
                         task.save()
+
+                if added_entries:
+                    task_url = reverse('task_detail', args=[task.id])
+                    for entry in added_entries:
+                        send_notification(
+                            [entry.user],
+                            title="Task Sequence Assigned",
+                            message=(
+                                f"You have been assigned to task '{task.task_title}' "
+                                f"at sequence {entry.order} ({entry.status_context})."
+                            ),
+                            tag="info",
+                            url=task_url
+                        )
 
                 messages.success(request, "Workflow sequence updated successfully.")
             else:

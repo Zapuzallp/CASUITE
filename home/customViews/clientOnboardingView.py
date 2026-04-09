@@ -7,12 +7,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.urls import reverse
 
 from home.clients.config import STRUCTURE_CONFIG
 from home.forms import ClientForm, ClientBusinessProfileForm
 # Import your models and forms
 from home.models import Client, ClientBusinessProfile, OfficeDetails, Task, Employee
 from home.clients.client_access import get_accessible_clients
+from home.utils import send_notification
 
 
 # -------------------------------------------------------------------
@@ -85,6 +87,39 @@ def onboard_client_view(request):
                     profile.client = client
                     profile.save()
                     profile_form.save_m2m()  # Important for ManyToMany
+
+                    client_url = reverse('client_details', args=[client.id])
+
+                    if client.assigned_ca and client.assigned_ca != request.user:
+                        send_notification(
+                            [client.assigned_ca],
+                            title="Client Assigned",
+                            message=f"Client {client.client_name} has been assigned to you.",
+                            tag="info",
+                            url=client_url
+                        )
+
+                    send_notification(
+                        [request.user],
+                        title="Client Created",
+                        message=f"Client {client.client_name} has been created successfully.",
+                            tag="success",
+                            url=client_url
+                        )
+
+                    excluded_superuser_ids = {request.user.id}
+                    if client.assigned_ca:
+                        excluded_superuser_ids.add(client.assigned_ca.id)
+
+                    superusers = User.objects.filter(is_superuser=True).exclude(id__in=excluded_superuser_ids)
+                    if superusers.exists():
+                        send_notification(
+                            superusers,
+                            title="New Client Created",
+                            message=f"Client {client.client_name} has been created by {request.user.username}.",
+                            tag="info",
+                            url=client_url
+                        )
 
                     # 3. If converting from lead, update lead status
                     if lead:
