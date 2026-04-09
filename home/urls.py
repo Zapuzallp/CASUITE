@@ -1,20 +1,21 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
-from home.customViews import resetPassword, leadView
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView, phoneCallView
-from home.customViews import resetPassword
+from home.customViews import (
+    authView, documentsUploadView, clientView, taskView, clientOnboardingView,
+    leaveView, leave_views, messageView, ReApplyLeaveViews, resetPassword,
+    leadView, invoiceView, profileView, credentialsView, clientExportView,
+    caAssignmentView, gstImportView, employeesView, phoneCallView
+)
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
     AttendanceLogsView,
 )
 from home.customViews.adminReportsView import AdminAttendanceReportView
-from home.customViews.notificationView import dashboard
 from home.customViews.services import list_services, delete_service
 from home.customViews.searchbarView import global_search
 from home.customViews.notificationView import (
+    dashboard,
     read_all_notifications,
     view_notification,
     all_notifications,
@@ -74,17 +75,12 @@ urlpatterns = [
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
     path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
-    path('', dashboard, name='dashboard'),
     # NOTIFICATIONS
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
     path('notifications/count/',notification_count, name='notification_count'),
 
-    # Attendance
-    path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
-    path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
-    path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
     path("admin-report/attendance/", AdminAttendanceReportView.as_view(), name="admin_attendance_report"),
 
     # apply-leave
@@ -160,9 +156,19 @@ urlpatterns = [
     path('data-management/bulk-import-gst/', gstImportView.bulk_import_gst, name='bulk_import_gst'),
     path('data-management/download-gst-template/', gstImportView.download_gst_template, name='download_gst_template'),
 
+
+    # Employees
+    path('employees/view/', employeesView.EmployeeView.as_view(), name='employee-view'),
+    path('employees/add/', employeesView.AddEmployeeView.as_view(), name='add-employee'),
+    path('employees/edit/<int:pk>/', employeesView.AddEmployeeView.as_view(), name='edit-employee'),
+    path('employees/delete/<int:pk>/', employeesView.EmployeeDeleteView.as_view(), name='delete_employee'),
+    #path('employees/export/', employeesView.ExportEmployeeView.as_view(), name='export-employees'),
+    path('employee/<int:id>/details/', employeesView.EmployeeDetailView.as_view(), name='employee-details'),
+
     # Phone Call Logs
     path('client/<int:client_id>/phone-calls/add/', phoneCallView.add_phone_call_log, name='add_phone_call_log'),
     path('client/<int:client_id>/phone-calls/ajax/', phoneCallView.get_client_phone_calls_ajax, name='get_client_phone_calls_ajax'),
     path('phone-calls/', phoneCallView.phone_call_logs_list, name='phone_calls_list'),
+
 
 ]

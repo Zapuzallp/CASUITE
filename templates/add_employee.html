@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body %}
+
+<main id="main" class="main">
+
+    <!-- Messages (client style) -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' or message.tags == 'warning' %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <!-- Page Title -->
+    <div class="pagetitle">
+        <h1>{% if is_edit %}Edit Employee{% else %}Add New Employee{% endif %}</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'employee-view' %}">Employees</a></li>
+                <li class="breadcrumb-item active">{% if is_edit %}Edit{% else %}Add{% endif %} Employee</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- CARD -->
+    <div class="card">
+        <div class="card-body">
+
+            <h5 class="card-title">
+                Employee Information
+                <small class="text-muted">(<span class="text-danger">*</span> indicates required field)</small>
+            </h5>
+
+            <form method="POST" novalidate>
+                {% csrf_token %}
+
+                <!-- ROW 1 -->
+                <div class="row mb-3">
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Username <span class="text-danger">*</span></label>
+                            {{ form.username }}
+                        </div>
+                    </div>
+
+                    {% if not is_edit %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            {{ form.password }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                <!-- ROW 2 -->
+                {% if not is_edit %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                            {{ form.confirm_password }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ROW 3 -->
+                <div class="row mb-3">
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">First Name <span class="text-danger">*</span></label>
+                            {{ form.first_name }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ROW 4 -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            {{ form.email }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 5 -->
+                <div class="row mb-3">
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Designation<span class="text-danger">*</span></label>
+                            {{ form.designation }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Role <span class="text-danger">*</span></label>
+                            {{ form.role }}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ROW 6 -->
+                <div class="row mb-3">
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Office Location</label>
+                            {{ form.office_location }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Supervisor</label>
+                            {{ form.supervisor }}
+                        </div>
+                    </div>
+
+                    {% if is_edit %}
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+
+                        <div class="form-check mt-2">
+                            {{ form.is_active }}
+                            <label class="form-check-label">
+                                Active
+                            </label>
+                        </div>
+
+                        {% if form.is_active.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.is_active.errors|join:", " }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                <!-- ROW 7 -->
+                <div class="row mb-3">
+
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Work Phone <span class="text-danger">*</span></label>
+                            {{ form.work_phone }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Personal Phone</label>
+                            {{ form.personal_phone }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Personal Email</label>
+                            {{ form.personal_email }}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ROW 8 -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            {{ form.address }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACTIONS -->
+                <div class="row mt-4">
+                    <div class="col-12 d-flex justify-content-between">
+                        <a href="{% url 'employee-view' %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if is_edit %}Update Employee{% else %}Add Employee{% endif %}
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</main>
+
+{% endblock %}
