@@ -1,22 +1,21 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
-from home.customViews import resetPassword, leadView
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-
-    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView, employeesView
-
-from home.customViews import resetPassword
+from home.customViews import (
+    authView, documentsUploadView, clientView, taskView, clientOnboardingView,
+    leaveView, leave_views, messageView, ReApplyLeaveViews, resetPassword,
+    leadView, invoiceView, profileView, credentialsView, clientExportView,
+    caAssignmentView, gstImportView, employeesView, phoneCallView
+)
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
     AttendanceLogsView,
 )
 from home.customViews.adminReportsView import AdminAttendanceReportView
-from home.customViews.notificationView import dashboard
 from home.customViews.services import list_services, delete_service
 from home.customViews.searchbarView import global_search
 from home.customViews.notificationView import (
+    dashboard,
     read_all_notifications,
     view_notification,
     all_notifications,
@@ -76,17 +75,12 @@ urlpatterns = [
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
     path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
     path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
-    path('', dashboard, name='dashboard'),
     # NOTIFICATIONS
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
     path('notifications/count/',notification_count, name='notification_count'),
 
-    # Attendance
-    path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
-    path("attendance/clock-out/", ClockOutView.as_view(), name="clock_out"),
-    path("attendance/logs/", AttendanceLogsView.as_view(), name="attendance_logs"),
     path("admin-report/attendance/", AdminAttendanceReportView.as_view(), name="admin_attendance_report"),
 
     # apply-leave
