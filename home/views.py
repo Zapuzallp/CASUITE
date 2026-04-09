@@ -130,7 +130,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         due_range = self.request.GET.get('due_range', 'overdue')  # Default to overdue
 
         # Base queryset with role-based visibility (same as all_tasks)
-        due_tasks_qs = all_tasks.exclude(status='Completed')
+        due_tasks_qs = all_tasks.filter(assignment_statuses__isnull=False).exclude(status='Completed').distinct()
 
         # Apply date range filter
         due_tasks_qs = due_tasks_qs.filter(due_date__lt=today)
@@ -423,7 +423,7 @@ def due_tasks_ajax(request):
     due_range = request.GET.get('due_range', 'overdue')
     
     # Base queryset
-    due_tasks_qs = all_tasks.exclude(status='Completed')
+    due_tasks_qs = all_tasks.filter(assignment_statuses__isnull=False).exclude(status='Completed').distinct()
     
     # Apply date range filter
     if due_range == 'overdue':

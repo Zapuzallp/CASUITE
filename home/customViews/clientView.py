@@ -205,6 +205,17 @@ def client_details_view(request, client_id):
     credential_form = ClientPortalCredentialsForm(client=client)
     # =================================
 
+    # === PHONE CALL LOGS LOGIC ===
+    from home.models import PhoneCallLog
+    from home.forms import PhoneCallLogForm
+    # For server-side pagination, we still need to pass phone_calls for the template structure
+    # but DataTables will fetch actual data via AJAX
+    phone_calls = PhoneCallLog.objects.filter(client=client).select_related(
+        'employee', 'employee__employee'
+    ).prefetch_related('services').order_by('-call_date', '-created_at')
+    phone_call_form = PhoneCallLogForm(client=client)
+    # =============================
+
     # Check if user is a partner (view-only access)
     is_partner = False
     can_edit_client = True
@@ -234,6 +245,8 @@ def client_details_view(request, client_id):
         'invoices_data': invoices_data,  # Include Invoices
         'portal_credentials': portal_credentials,  # Include Portal Credentials
         'credential_form': credential_form,  # Include Credential Form
+        'phone_calls': phone_calls,  # Include Phone Calls
+        'phone_call_form': phone_call_form,  # Include Phone Call Form
         'status_choices': status_choices,
         'is_partner': is_partner,  # Add partner flag
         'can_edit_client': can_edit_client,  # Add edit permission flag
@@ -400,3 +413,117 @@ def bulk_update_client_status(request):
         messages.success(request, f"{updated_count} client(s) updated successfully.")
 
     return redirect("clients")
+
+
+
+@login_required
+def client_phone_calls_ajax(request, client_id):
+    """
+    AJAX endpoint for server-side DataTables pagination of phone call logs.
+    Returns JSON data for DataTables with server-side processing.
+    """
+    from django.http import JsonResponse
+    from django.db.models import Q
+    
+    user = request.user
+    accessible_clients = get_accessible_clients(user)
+    client = get_object_or_404(accessible_clients, id=client_id)
+    
+    # DataTables parameters
+    draw = int(request.GET.get('draw', 1))
+    start = int(request.GET.get('start', 0))
+    length = int(request.GET.get('length', 25))
+    search_value = request.GET.get('search[value]', '')
+    order_column_index = int(request.GET.get('order[0][column]', 0))
+    order_direction = request.GET.get('order[0][dir]', 'desc')
+    
+    # Base queryset
+    queryset = PhoneCallLog.objects.filter(client=client).select_related(
+        'employee', 'employee__employee'
+    ).prefetch_related('services')
+    
+    # Search functionality
+    if search_value:
+        queryset = queryset.filter(
+            Q(employee__first_name__icontains=search_value) |
+            Q(employee__last_name__icontains=search_value) |
+            Q(employee__username__icontains=search_value) |
+            Q(remarks__icontains=search_value) |
+            Q(feedback__icontains=search_value) |
+            Q(services__service_type__icontains=search_value)
+        ).distinct()
+    
+    # Total records before filtering
+    total_records = PhoneCallLog.objects.filter(client=client).count()
+    filtered_records = queryset.count()
+    
+    # Ordering
+    order_columns = ['call_date', 'employee__first_name', 'services', 'remarks', 'next_follow_up_date', 'feedback']
+    if 0 <= order_column_index < len(order_columns):
+        order_field = order_columns[order_column_index]
+        # For call_date, add created_at as secondary sort
+        if order_field == 'call_date':
+            if order_direction == 'desc':
+                queryset = queryset.order_by('-call_date', '-created_at')
+            else:
+                queryset = queryset.order_by('call_date', 'created_at')
+        else:
+            if order_direction == 'desc':
+                order_field = f'-{order_field}'
+            queryset = queryset.order_by(order_field, '-call_date', '-created_at')
+    else:
+        # Default: Latest records first
+        queryset = queryset.order_by('-call_date', '-created_at')
+    
+    # Pagination
+    phone_calls = queryset[start:start + length]
+    
+    # Prepare data
+    data = []
+    today = timezone.now().date()
+    
+    for call in phone_calls:
+        # Get services
+        services_list = list(call.services.all()[:3])
+        services_html = ''.join([
+            f'<span class="badge bg-light text-dark border me-1">{s.service_type}</span>'
+            for s in services_list
+        ])
+        if call.services.count() > 3:
+            services_html += f'<span class="badge bg-secondary">+{call.services.count() - 3}</span>'
+        
+        # Next follow-up
+        if call.next_follow_up_date:
+            is_overdue = call.next_follow_up_date < today
+            is_today = call.next_follow_up_date == today
+            follow_up_class = 'text-danger fw-bold' if is_overdue else ('text-warning fw-bold' if is_today else '')
+            follow_up_icon = '<i class="bi bi-exclamation-triangle-fill text-danger"></i>' if is_overdue else (
+                '<i class="bi bi-clock-fill text-warning"></i>' if is_today else ''
+            )
+            follow_up_html = f'<span class="{follow_up_class}">{call.next_follow_up_date.strftime("%b %d, %Y")} {follow_up_icon}</span>'
+        else:
+            follow_up_html = '<span class="text-muted">-</span>'
+        
+        # Feedback badge
+        if call.feedback == 'positive':
+            feedback_html = '<span class="badge bg-success"><i class="bi bi-hand-thumbs-up me-1"></i>Positive</span>'
+        else:
+            feedback_html = '<span class="badge bg-danger"><i class="bi bi-hand-thumbs-down me-1"></i>Negative</span>'
+        
+        data.append([
+            call.call_date.strftime("%b %d, %Y %I:%M %p"),
+            f'<small>{call.employee.get_full_name() or call.employee.username}</small>',
+            services_html,
+            f'<span class="text-truncate d-inline-block" style="max-width: 200px;" title="{call.remarks}">{call.remarks[:50]}...</span>' if len(call.remarks) > 50 else call.remarks,
+            follow_up_html,
+            feedback_html
+        ])
+    
+    response = {
+        'draw': draw,
+        'recordsTotal': total_records,
+        'recordsFiltered': filtered_records,
+        'data': data
+    }
+    
+    return JsonResponse(response)
