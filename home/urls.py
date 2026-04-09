@@ -67,7 +67,6 @@ urlpatterns = [
     path('tasks/<int:task_id>/copy/', taskView.copy_task_view, name='task_copy'),
     path('tasks/<int:task_id>/delete/', taskView.delete_task_view, name='delete_task'),
     path('clients/search/', client_search, name='client_search'),
-
     # reset password
     path('password/change/', resetPassword.CustomPasswordChangeView.as_view(), name='password_change'),
     path('password/change/done/', resetPassword.CustomPasswordChangeDoneView.as_view(), name='password_change_done'),
@@ -159,6 +158,8 @@ urlpatterns = [
     path('data-management/search-clients-gst/', gstImportView.search_clients_for_gst_ajax, name='search_clients_gst_ajax'),
     path('data-management/bulk-import-gst/', gstImportView.bulk_import_gst, name='bulk_import_gst'),
     path('data-management/download-gst-template/', gstImportView.download_gst_template, name='download_gst_template'),
+    # Timesheet-Task_detail
+    path('timesheet/save/<int:task_id>', taskView.save_timesheet, name='save_timesheet_url'),
 
     # Phone Call Logs
     path('client/<int:client_id>/phone-calls/add/', phoneCallView.add_phone_call_log, name='add_phone_call_log'),
