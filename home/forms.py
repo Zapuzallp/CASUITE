@@ -363,12 +363,6 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
                     "End date cannot be before start date."
                 )
 
-            # Check if dates are in the past
-            from datetime import date
-            if start_date < date.today():
-                raise forms.ValidationError(
-                    "Cannot apply for leaves in the past."
-                )
 
         return cleaned_data
 
@@ -938,3 +932,84 @@ class ClientPortalCredentialsForm(BootstrapFormMixin, forms.ModelForm):
                 )
 
         return cleaned_data
+
+
+# ---------------------------------------------------------
+# 6. Phone Call Log Form
+# ---------------------------------------------------------
+from home.models import PhoneCallLog
+
+
+class PhoneCallLogForm(BootstrapFormMixin, forms.ModelForm):
+    services = forms.ModelMultipleChoiceField(
+        queryset=Task.objects.none(),
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select select2-multiple',
+            'style': 'height: 120px;',
+            'multiple': 'multiple'
+        }),
+        required=True,
+        label="Services Discussed",
+        help_text="Select one or more services/tasks discussed during the call"
+    )
+
+    class Meta:
+        model = PhoneCallLog
+        fields = ['call_date', 'services', 'remarks', 'next_follow_up_date', 'feedback']
+        widgets = {
+            'call_date': forms.DateTimeInput(attrs={
+                'type': 'datetime-local',
+                'class': 'form-control',
+                'required': 'required'
+            }),
+            'remarks': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Enter discussion details, notes, and key points...',
+                'required': 'required'
+            }),
+            'feedback': forms.Select(attrs={
+                'class': 'form-select',
+                'required': 'required'
+            }),
+            'next_follow_up_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.client = kwargs.pop('client', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filter services to show only this client's tasks
+        if self.client:
+            self.fields['services'].queryset = Task.objects.filter(
+                client=self.client
+            ).order_by('-created_at')
+            
+            # Custom label showing service type and title
+            self.fields['services'].label_from_instance = lambda obj: \
+                f"{obj.service_type} - {obj.task_title}"
+        
+        # Set current datetime in Asia/Kolkata timezone as default for call_date
+        if not self.instance.pk:
+            from django.utils import timezone
+            import pytz
+            kolkata_tz = pytz.timezone('Asia/Kolkata')
+            current_time = timezone.now().astimezone(kolkata_tz)
+            self.fields['call_date'].initial = current_time.strftime('%Y-%m-%dT%H:%M')
+
+    def clean_call_date(self):
+        """Validate call date - cannot be in the future"""
+        call_date = self.cleaned_data.get('call_date')
+        if call_date and call_date > timezone.now():
+            raise forms.ValidationError('Call date cannot be in the future.')
+        return call_date
+
+    def clean_next_follow_up_date(self):
+        """Validate follow-up date - must be in the future if provided"""
+        follow_up_date = self.cleaned_data.get('next_follow_up_date')
+        if follow_up_date and follow_up_date < timezone.now().date():
+            raise forms.ValidationError('Follow-up date must be today or in the future.')
+        return follow_up_date

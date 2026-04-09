@@ -8,7 +8,6 @@ from django.contrib import messages
 
 from home.models import Attendance, OfficeDetails, Leave
 
-
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "admin_reports/attendance_report.html"
 
@@ -58,13 +57,19 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         year = request.GET.get("year")
         office_id = request.GET.get("office")
         status_filter = request.GET.get("status")
+        from_date = request.GET.get("from_date")
+        to_date = request.GET.get("to_date")
+
+        if from_date or to_date:
+            month = None
+            year = None
 
         # Default to today's records for initial load
         today = date.today()
         records = Attendance.objects.select_related("user").filter(date=today)
 
         # Apply filters if provided
-        if employee_id or month or year or office_id or status_filter:
+        if employee_id or month or year or office_id or status_filter or from_date or to_date:
             records = Attendance.objects.select_related("user").all()
 
             if employee_id:
@@ -87,6 +92,18 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
         if status_filter:
             records = records.filter(status=status_filter)
 
+        # Date range filter
+        if from_date and to_date:
+            try:
+                from_date_obj = datetime.strptime(from_date, "%Y-%m-%d").date()
+                to_date_obj = datetime.strptime(to_date, "%Y-%m-%d").date()
+
+                if from_date_obj <= to_date_obj:
+                    records = records.filter(date__range=[from_date_obj, to_date_obj])
+
+            except ValueError:
+                pass
+              
         # Apply branch manager restriction to attendance records
         if hasattr(user, 'employee') and user.employee.role == 'BRANCH_MANAGER':
             branch_manager_office = user.employee.office_location
@@ -170,40 +187,33 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                 
                 # Only count days up to today if viewing current month
                 today = date.today()
-                max_day = days_in_month
-                if year_int == today.year and month_int == today.month:
-                    max_day = today.day
                 
                 for day in calendar_days:
                     current_date = date(year_int, month_int, day)
-                    
-                    # Only process days up to today for current month
-                    if day <= max_day:
-                        total_days_till_today += 1
-                    
+
+                    if current_date > today:
+                        daily_status.append('future')
+                        continue
+                    total_days_till_today += 1
+
                     # Check if it's a day off according to shift
                     if current_date.weekday() in days_off_list:
-                        daily_status.append('sunday')
-                        if day <= max_day:
-                            total_week_offs += 1
+                        daily_status.append('week_off')
+                        total_week_offs += 1
                         continue
                     
                     # Check for approved leave
-                    try:
-                        leave = Leave.objects.filter(
-                            employee__user=emp,
-                            status='approved',
-                            start_date__lte=current_date,
-                            end_date__gte=current_date
-                        ).first()
+                    leave = Leave.objects.filter(
+                        employee__user=emp,
+                        status='approved',
+                        start_date__lte=current_date,
+                        end_date__gte=current_date
+                    ).first()
                         
-                        if leave:
-                            daily_status.append('leave')
-                            if day <= max_day:
-                                total_leaves += 1
-                            continue
-                    except Exception:
-                        pass
+                    if leave:
+                        daily_status.append('leave')
+                        total_leaves += 1
+                        continue
                     
                     # Check attendance
                     try:
@@ -216,12 +226,10 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                             daily_status.append('absent')
                         elif attendance.status in ['approved', 'full_day']:
                             daily_status.append('present')
-                            if day <= max_day:
-                                total_present += 1
+                            total_present += 1
                         elif attendance.status == 'half_day':
                             daily_status.append('half_day')
-                            if day <= max_day:
-                                total_present += 0.5
+                            total_present += 0.5
                         else:  # pending
                             daily_status.append('pending')
                     except Attendance.DoesNotExist:
@@ -277,6 +285,8 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request):
         action_type = request.POST.get('action_type')
         selected_records = request.POST.getlist('selected_records')
+        new_remark = request.POST.get('remarks')
+        user_name = request.user.username
 
         if not selected_records:
             messages.error(request, 'Please select records.')
@@ -355,12 +365,13 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                         attendance.duration = attendance.clock_out - attendance.clock_in
 
                     # Append remark
-                    new_remark = "Auto clock out"
+                    new_remark = request.POST.get("remarks") or "Auto clock out"
+                    formatted_remark = f"clocked out by {user_name} : {new_remark}"
 
                     if attendance.remark:
-                        attendance.remark = f"{attendance.remark} | {new_remark}"
+                        attendance.remark += " | " + formatted_remark
                     else:
-                        attendance.remark = new_remark
+                        attendance.remark = formatted_remark
 
                     attendance._skip_auto_status = True
                     attendance.save()
@@ -380,17 +391,52 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                 for error in errors[:5]:  # Show first 5 errors
                     messages.warning(request, error)
 
+
         elif action_type == 'status':
-            # Handle bulk status update
             new_status = request.POST.get('bulk_status')
+
             if new_status:
-                updated_count = Attendance.objects.filter(
-                    id__in=selected_records
-                ).update(status=new_status)
-                messages.success(request, f'Successfully updated {updated_count} attendance records to {new_status}.')
+                updated_count = 0
+                action_map = {
+                    'pending': 'pending by',
+                    'approved': 'approved by',
+                    'rejected': 'rejected by',
+                    'half_day': 'marked as half-day by',
+                    'full_day': 'marked as full-day by'
+                }
+
+                for record_id in selected_records:
+                    try:
+                        attendance = Attendance.objects.get(id=record_id)
+
+                        attendance.status = new_status
+
+                        # Append remark
+                        if new_remark:
+                            distance_text = f"{attendance.distance}m away" if hasattr(attendance,
+                                                                                      'distance') and attendance.distance else ""
+
+                            action_text = action_map.get(new_status, "updated by")
+                            formatted_remark = f"{distance_text} | {action_text} {user_name} : {new_remark}"
+
+                            if attendance.remark:
+                                # ✅ Prevent duplicate append
+                                if formatted_remark not in attendance.remark:
+                                    attendance.remark += " | " + formatted_remark
+                            else:
+                                attendance.remark = formatted_remark
+
+
+                        attendance.save()
+                        updated_count += 1
+
+                    except Attendance.DoesNotExist:
+                        continue
+
+                messages.success(request, f'Successfully updated {updated_count} attendance records.')
             else:
                 messages.error(request, 'Please select a status to update.')
+
         else:
             messages.error(request, 'Invalid action type.')
-
         return redirect(request.get_full_path())

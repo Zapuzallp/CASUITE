@@ -2,8 +2,78 @@
 {% load static %}
 
 {% block head %}
-    <!-- DataTables Responsive CSS -->
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
+    <style>
+        /* Custom Select2 styling for phone call services multi-select */
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple {
+            min-height: 120px !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            padding: 0.25rem !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+            background-color: #0d6efd !important;
+            border: 1px solid #0d6efd !important;
+            color: white !important;
+            padding: 0.35rem 0.65rem !important;
+            border-radius: 0.25rem !important;
+            margin: 0.25rem !important;
+            font-size: 0.875rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+            color: white !important;
+            margin-right: 0.35rem !important;
+            font-weight: bold !important;
+            font-size: 1rem !important;
+            line-height: 1 !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #ffdddd !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-search--inline .select2-search__field {
+            margin-top: 0.25rem !important;
+            padding: 0.375rem !important;
+            min-width: 200px !important;
+        }
+
+        /* Dropdown styling */
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-dropdown {
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option {
+            padding: 0.5rem 0.75rem !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option--selected {
+            background-color: #e7f1ff !important;
+            color: #0d6efd !important;
+            font-weight: 500 !important;
+        }
+
+        /* Add icon to selected items */
+        #addPhoneCallModal .select2-selection__choice::before {
+            content: "\f0b1";
+            font-family: "bootstrap-icons";
+            margin-right: 0.25rem;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
@@ -284,7 +354,7 @@
             </div>
 
             <div class="d-flex gap-2 flex-wrap">
-                {% if not is_partner %}
+                {% if can_edit_client %}
                 {% if request.user.is_superuser %}
                     <a href="{% url 'edit_client' client.id %}"
                        class="btn btn-outline-primary btn-sm" title="Edit Client">
@@ -322,6 +392,11 @@
                         <li>
                             <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addPasswordModal">
                                 <i class="bi bi-key-fill me-2"></i>Add Password
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addPhoneCallModal">
+                                <i class="bi bi-telephone-fill me-2"></i>Add Phone Call
                             </a>
                         </li>
                         <li>
@@ -386,6 +461,11 @@
                             </li>
                         {% endif %}
                         <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-phone-calls" style="white-space: nowrap;">
+                                <i class="bi bi-telephone me-2"></i>Phone Calls
+                            </button>
+                        </li>
+                        <li class="nav-item">
                             <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-linked" style="white-space: nowrap;">
                                 <i class="bi bi-link-45deg me-2"></i>
                                 {% if link_type == 'businesses' %}Linked{% else %}Partners{% endif %}
@@ -419,7 +499,7 @@
                         <div class="tab-pane fade" id="profile-gst">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="card-title text-primary"><i class="bi bi-receipt me-2"></i>All GST Data</h5>
-                                {% if not is_partner %}
+                                {% if can_edit_client %}
                                 <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#addGSTModal">
                                     <i class="bi bi-plus-lg"></i> Add New GST
@@ -436,8 +516,10 @@
                                         <th>Scheme</th>
                                         <th>Status</th>
                                         <th>Created By</th>
-                                        {% if not is_partner and request.user.is_superuser or request.user == client.assigned_ca %}
+                                        {% if can_edit_client %}
+                                            {% if request.user.is_superuser or request.user == client.assigned_ca %}
                                             <th class="text-end">Action</th>
+                                            {% endif %}
                                         {% endif %}
                                     </tr>
                                     </thead>
@@ -460,13 +542,15 @@
                                                 <small class="text-muted">{{ gst.created_by.first_name|default:gst.created_by.username }}</small>
                                             </td>
 
-                                            {% if not is_partner and request.user.is_superuser or request.user == client.assigned_ca %}
+                                            {% if can_edit_client %}
+                                                {% if request.user.is_superuser or request.user == client.assigned_ca %}
                                                 <td class="text-end">
                                                     <a href="{% url 'edit_gst_details' gst.id %}"
                                                        class="btn btn-sm btn-outline-secondary">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                 </td>
+                                                {% endif %}
                                             {% endif %}
                                         </tr>
                                     {% empty %}
@@ -545,7 +629,7 @@
                             <h5 class="card-title text-primary"><i class="bi bi-briefcase-fill me-2"></i>Active Services
                             </h5>
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle border">
+                                <table class="table table-hover align-middle border datatable1" id="clientServicesTable">
                                     <thead class="table-light">
                                     <tr>
                                         <th>Title</th>
@@ -633,7 +717,7 @@
                             <form method="post" action="{% url 'invoice_bulk_status_update' %}" id="clientInvoiceBulkStatusForm">
                               {% csrf_token %}
                               <div class="table-responsive">
-                                <table class="table table-hover align-middle border" id="clientInvoicesTable">
+                                <table class="table table-hover align-middle border datatable1" id="clientInvoicesTable">
                                     <thead class="table-light">
                                     <tr>
                                         <th>Invoice #</th>
@@ -719,7 +803,7 @@
                                                         <i class="bi bi-eye"></i>
                                                     </a>
 
-                                                    {% if not is_partner and item.balance > 0 and item.payment_status != 'DRAFT' %}
+                                                    {% if can_edit_client and item.balance > 0 and item.payment_status != 'DRAFT' %}
                                                         <a class="btn btn-sm btn-success"
                                                            href="{% url 'payment_collect' item.invoice.id %}"
                                                            title="Collect Payment">
@@ -740,8 +824,8 @@
                                 </table>
                               </div>
 
-                              <!-- Save Button at Bottom - Hidden for Partners -->
-                              {% if not is_partner %}
+                              <!-- Save Button at Bottom -->
+                              {% if can_edit_client %}
                               <div class="d-flex justify-content-end mt-3">
                                 <button type="submit" class="btn btn-primary px-4" id="saveClientInvoiceStatusBtn">
                                   <i class="bi bi-check-circle me-1"></i> Save Status Changes
@@ -785,7 +869,7 @@
                                                        title="View Credential">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    {% if not is_partner %}
+                                                    {% if can_edit_client %}
                                                     <button type="button"
                                                             class="btn btn-sm btn-outline-danger"
                                                             data-bs-toggle="modal"
@@ -828,6 +912,85 @@
                                         <tr>
                                             <td colspan="4" class="text-center text-muted py-4">
                                                 No portal credentials found for this client.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Phone Calls Tab -->
+                        <div class="tab-pane fade" id="profile-phone-calls">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title text-primary m-0"><i class="bi bi-telephone me-2"></i>Phone Call Logs</h5>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addPhoneCallModal">
+                                    <i class="bi bi-plus-lg"></i> Add Phone Call
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle border datatable1" id="clientPhoneCallsTable">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Call Date & Time</th>
+                                        <th>Employee</th>
+                                        <th>Services</th>
+                                        <th>Remarks</th>
+                                        <th>Next Follow-up</th>
+                                        <th>Feedback</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for call in phone_calls %}
+                                        <tr>
+                                            <td class="fw-bold">{{ call.call_date|date:"M d, Y h:i A" }}</td>
+                                            <td>
+                                                <small>{{ call.employee.get_full_name|default:call.employee.username }}</small>
+                                            </td>
+                                            <td>
+                                                {% for service in call.services.all|slice:":3" %}
+                                                    <span class="badge bg-light text-dark border me-1">{{ service.service_type }}</span>
+                                                {% endfor %}
+                                                {% if call.services.count > 3 %}
+                                                    <span class="badge bg-secondary">+{{ call.services.count|add:"-3" }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ call.remarks }}">
+                                                    {{ call.remarks|truncatewords:10 }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if call.next_follow_up_date %}
+                                                    <span class="{% if call.is_follow_up_overdue %}text-danger fw-bold{% elif call.is_follow_up_today %}text-warning fw-bold{% endif %}">
+                                                        {{ call.next_follow_up_date|date:"M d, Y" }}
+                                                        {% if call.is_follow_up_overdue %}
+                                                            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                                                        {% elif call.is_follow_up_today %}
+                                                            <i class="bi bi-clock-fill text-warning"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if call.feedback == 'positive' %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-hand-thumbs-up me-1"></i>Positive
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="bi bi-hand-thumbs-down me-1"></i>Negative
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-4">
+                                                No phone call logs found for this client.
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -1126,6 +1289,81 @@
                 </div>
             </div>
         </div>
+
+        <!-- Add Phone Call Modal -->
+        <div class="modal fade" id="addPhoneCallModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-telephone-plus me-2"></i>Add Phone Call Log
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <form action="{% url 'add_phone_call_log' client.id %}" method="post" id="phoneCallForm">
+                        {% csrf_token %}
+                        <div class="modal-body p-4">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-bold">Call Date & Time <span class="text-danger">*</span></label>
+                                    {{ phone_call_form.call_date }}
+                                    {% if phone_call_form.call_date.errors %}
+                                        <div class="text-danger small">{{ phone_call_form.call_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Services Discussed <span class="text-danger">*</span></label>
+                                <select name="services" class="form-select" id="id_services" multiple="multiple" required>
+                                    {% for service in phone_call_form.fields.services.queryset %}
+                                        <option value="{{ service.id }}">{{ service.service_type }} - {{ service.task_title }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text small">Select one or more services discussed during the call</div>
+                                {% if phone_call_form.services.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.services.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Discussion / Remarks <span class="text-danger">*</span></label>
+                                {{ phone_call_form.remarks }}
+                                {% if phone_call_form.remarks.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.remarks.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Next Follow-up Date</label>
+                                {{ phone_call_form.next_follow_up_date }}
+                                <div class="form-text small">Optional: Schedule next follow-up call</div>
+                                {% if phone_call_form.next_follow_up_date.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.next_follow_up_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Feedback <span class="text-danger">*</span></label>
+                                {{ phone_call_form.feedback }}
+                                {% if phone_call_form.feedback.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.feedback.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle me-1"></i>Save Phone Call
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <form method="post" action="{% url 'update_single_client_status' client.id %}" id="clientStatusForm">
         {% csrf_token %}
         <input type="hidden" name="new_status" id="profileNewStatus">
@@ -1141,6 +1379,64 @@
                 selectBox.value = requestedDocId;
             }
         }
+
+        // Initialize Select2 for Phone Call Services
+        $(document).ready(function() {
+            // Initialize Select2 for services multi-select with better styling
+            function initializeServicesSelect2() {
+                $('#id_services').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select services discussed during the call',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#addPhoneCallModal'),
+                    closeOnSelect: false,
+                    templateResult: formatService,
+                    templateSelection: formatServiceSelection,
+                    language: {
+                        noResults: function() {
+                            return "No services found";
+                        }
+                    }
+                });
+            }
+
+            // Custom formatting for service options
+            function formatService(service) {
+                if (!service.id) {
+                    return service.text;
+                }
+                var $service = $(
+                    '<div class="d-flex align-items-center">' +
+                    '<i class="bi bi-briefcase-fill me-2 text-primary"></i>' +
+                    '<span>' + service.text + '</span>' +
+                    '</div>'
+                );
+                return $service;
+            }
+
+            function formatServiceSelection(service) {
+                if (!service.id) {
+                    return service.text;
+                }
+                return service.text;
+            }
+
+            // Initialize on page load
+            initializeServicesSelect2();
+
+            // Reset form when modal is closed
+            $('#addPhoneCallModal').on('hidden.bs.modal', function () {
+                $('#phoneCallForm')[0].reset();
+                $('#id_services').val(null).trigger('change');
+            });
+
+            // Reinitialize when modal is shown to ensure proper rendering
+            $('#addPhoneCallModal').on('shown.bs.modal', function () {
+                $('#id_services').select2('destroy');
+                initializeServicesSelect2();
+            });
+        });
 
         // Toggle password visibility in modal
         document.addEventListener('DOMContentLoaded', function() {
@@ -1277,66 +1573,18 @@
             }
         });
 
-        // Initialize DataTable for client invoices if the table exists and has data
-        document.addEventListener('DOMContentLoaded', function() {
-            // Load DataTables Responsive extension
-            if (typeof $.fn.dataTable !== 'undefined') {
-                // Add responsive extension script
-                var script = document.createElement('script');
-                script.src = 'https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js';
-                document.head.appendChild(script);
-                
-                var script2 = document.createElement('script');
-                script2.src = 'https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js';
-                document.head.appendChild(script2);
-                
-                // Wait for scripts to load
-                script2.onload = function() {
-                    initializeInvoiceTable();
-                };
-            } else {
-                initializeInvoiceTable();
-            }
-            
-            function initializeInvoiceTable() {
-                var invoiceTable = document.getElementById('clientInvoicesTable');
-                if (invoiceTable) {
-                    // Check if table has data rows (not just the empty state)
-                    var hasData = invoiceTable.querySelector('tbody tr td:not([colspan])');
-                    if (hasData) {
-                        $('#clientInvoicesTable').DataTable({
-                            "pageLength": 10,
-                            "order": [[0, "desc"]], // Sort by Invoice # descending
-                            "responsive": true,
-                            "language": {
-                                "search": "Search:",
-                                "lengthMenu": "Show _MENU_ entries",
-                                "info": "Showing _START_ to _END_ of _TOTAL_ invoices",
-                                "infoEmpty": "No invoices available",
-                                "paginate": {
-                                    "first": "First",
-                                    "last": "Last",
-                                    "next": "Next",
-                                    "previous": "Previous"
-                                }
-                            },
-                            "columnDefs": [
-                                { "orderable": false, "targets": [9] }, // Disable sorting on Action column
-                                { "responsivePriority": 1, "targets": [0, 1, 9] }, // Keep Invoice#, Subject, and Action visible
-                                { "responsivePriority": 2, "targets": [4, 7] } // Keep Total Amount and Payment Status visible
-                            ],
-                            "dom": "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
-                                   "<'row'<'col-sm-12'tr>>" +
-                                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
-                            "initComplete": function() {
-                                // Add mobile-friendly classes
-                                $('.dataTables_length select').addClass('form-select form-select-sm');
-                                $('.dataTables_filter input').addClass('form-control form-control-sm');
-                            }
-                        });
-                    }
-                }
-            }
+        });
+    </script>
+
+    <!-- Fix for DataTables in Bootstrap Tabs -->
+    <script>
+        $(document).ready(function() {
+            // Adjust DataTable columns when tab is shown (fixes hidden tab issue)
+            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                setTimeout(function() {
+                    $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+                }, 100);
+            });
         });
     </script>
 
