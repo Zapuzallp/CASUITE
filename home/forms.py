@@ -763,25 +763,29 @@ class PhoneCallLogForm(BootstrapFormMixin, forms.ModelForm):
         if follow_up_date and follow_up_date < timezone.now().date():
             raise forms.ValidationError('Follow-up date must be today or in the future.')
         return follow_up_date
-
+        
+#Timesheet Form
 class TimesheetForm(forms.ModelForm):
+
+    start_time = forms.TimeField(
+        input_formats=['%I:%M:%S %p'],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+        })
+    )
+    end_time = forms.TimeField(
+        input_formats=['%I:%M:%S %p'],
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+        })
+    )
+
     class Meta:
         model = Timesheet
         fields = ['start_time', 'end_time', 'memo']
         widgets = {
-            
             'memo': forms.Textarea(attrs={
-                'class': 'form-control', 
+                'class': 'form-control',
                 'placeholder': 'What did you work on?'
             }),
-            'start_time': forms.TimeInput(attrs={
-                'class': 'form-control', 
-            }),
-            'end_time': forms.TimeInput(attrs={
-                'class': 'form-control', 
-
-            }),
         }
-
-
-        

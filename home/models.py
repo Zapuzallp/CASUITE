@@ -1455,7 +1455,7 @@ class PhoneCallLog(models.Model):
 class Timesheet(models.Model):
     employee = models.ForeignKey(User, on_delete=models.CASCADE,related_name = 'timesheet_employee')
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='timesheet_task')
-    memo = models.TextField(blank=True, null=True)
+    memo = models.TextField(null=True)
     start_time = models.TimeField(null=True)
     end_time = models.TimeField(null=True) 
     date = models.DateField(auto_now_add=True)

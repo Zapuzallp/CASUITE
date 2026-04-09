@@ -58,6 +58,17 @@
         
         /* Modal Table */
         .seq-table td { vertical-align: middle; }
+        
+       /* 1. The Tooltip Body */
+        .custom-tooltip .tooltip-inner {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #000000;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: left;
+        }
+
 
 </style>
 
@@ -72,7 +83,6 @@
                 <li class="breadcrumb-item active">{{ task.task_title }}</li>
             </ol>
         </nav>
-        {% if can_edit_task %}
         <div class="d-flex gap-2">
         <!--Start timer-->
         {% if user_action_needed %}
@@ -105,7 +115,7 @@
         </div>
         {% endif %}
         <!--end Start timer-->
-        {% if not is_partner %}
+        {% if can_edit_task %}
             <a href="{% url 'edit_task' task.id %}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-pencil me-1"></i> Edit</a>
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
@@ -380,7 +390,7 @@
                                             </td>
                                         <td class="text-nowrap px-4">{{entry.date}} {{ entry.start_time }}</td>
                                         <td class="text-nowrap px-4">{{entry.date}} {{ entry.end_time }}</td>
-                                        <td title="{{entry.memo}}" class="text-nowrap text-center px-4">{{entry.total_hours}}</td>
+                                        <td title="{{entry.memo}}" data-bs-custom-class="custom-tooltip" data-bs-toggle="tooltip" data-bs-placement="bottom" class="text-nowrap text-center px-4">{{entry.total_hours}}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -675,23 +685,27 @@
     }
 
     function calculateDurationString(startObj, endObj) {
-    // Calculate difference in total milliseconds
     let diffMs = endObj - startObj;
     
-    // Handle midnight rollover (if end time is '00:05:00' and start was '23:55:00')
+    // Handle midnight rollover
     if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
 
-    // Convert to total seconds
     const totalSeconds = Math.floor(diffMs / 1000);
     
-    // Breakdown logic
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
     
-    // Returns the string for your input field
-    return `${hours} hr ${minutes} m ${seconds} s`;
-}
+    // Create an array to store parts of the string
+    let parts = [];
+
+    if (hours > 0) parts.push(`${hours} hr`);
+    if (minutes > 0) parts.push(`${minutes} m`);
+    if (seconds > 0 || parts.length === 0) parts.push(`${seconds} s`);
+
+    // Join with spaces (e.g., "1 hr 5 s" or "45 s")
+    return parts.join(' ');
+    }
     function getWallClockTime() {
         const now = new Date();
         const yyyy = now.getFullYear();
@@ -723,20 +737,25 @@
         startBtn.classList.remove('d-none');
         activeControls.classList.add('d-none');
     });
+
     stopBtn.addEventListener('click', () => {
     clearInterval(timerInterval);
     
-    const now = new Date(); // The exact moment they click "Stop"
-    
-    // Helper to format Date object into HH:MM:SS for the input fields
+    const now = new Date(); 
     const formatForInput = (dateObj) => {
-        const hh = String(dateObj.getHours()).padStart(2, '0');
-        const min = String(dateObj.getMinutes()).padStart(2, '0');
-        const sec = String(dateObj.getSeconds()).padStart(2, '0');
-        return `${hh}:${min}:${sec}`;
-    };
+        let hours = dateObj.getHours();
+        const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+        const seconds = String(dateObj.getSeconds()).padStart(2, '0');
 
-    // Parse the session start time string back into a Date object
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+
+        hours = hours % 12;
+        hours = hours ? hours : 12; 
+
+        const hh = String(hours).padStart(2, '0');
+
+        return `${hh}:${minutes}:${seconds} ${ampm}`;
+    };
     const startDateTime = new Date(sessionStartTimeStr.replace(' ', 'T'));
     
     const modal = document.getElementById('startTimerModal');
@@ -746,7 +765,7 @@
 
     // 1. Fill Start & End Time (Enable seconds support in the UI)
     if (startInput) {
-        startInput.setAttribute('step', '1'); // Allows seconds to show in HTML input
+        startInput.setAttribute('step', '1'); 
         startInput.value = formatForInput(startDateTime);
     }
     if (endInput) {
@@ -759,15 +778,6 @@
         totalTimeInput.value = calculateDurationString(startDateTime, now);
     }
 
-    // 3. Fill Employee and Task (Existing logic)
-    const employeeInput = modal.querySelector('input[name="employee"]');
-    const taskInput = modal.querySelector('input[name="task"]');
-    if (employeeInput) employeeInput.value = "{{ request.user.get_full_name}}";
-    if (taskInput) {
-        const titleElem = document.querySelector('h3.fw-bold');
-        if (titleElem) taskInput.value = titleElem.textContent.trim();
-    }
-
     // Reset Timer UI
     elapsedTime = 0;
     clockDisplay.textContent = "00:00:00";
@@ -776,6 +786,7 @@
     startBtn.classList.remove('d-none');
     activeControls.classList.add('d-none');
 });
+
 </script>
 {% endif %}
 
