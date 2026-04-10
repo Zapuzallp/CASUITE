@@ -287,7 +287,6 @@
                 padding: 1rem;
             }
 
-            z
             .pagetitle .d-flex {
                 flex-direction: column;
                 align-items: flex-start !important;
@@ -300,11 +299,351 @@
             }
         }
 
-        .leave-scroll{
-    max-height: 340px;
-    overflow-y: auto;
+        .leave-scroll {
+            max-height: 340px;
+            overflow-y: auto;
         }
 
+
+        /* MATCH DATATABLE EXACTLY */
+        #due-leads-section .dt-like {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #212529;
+        }
+
+        #due-leads-section .dt-like select {
+            height: 34px !important;
+            padding: 4px 6px !important;
+            font-size: 14px !important;
+        }
+
+        <
+        style >
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #7c3aed;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --bg-body: #f8fafc;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
+        }
+
+        .main-content {
+            padding: 1.5rem;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* Header Styling */
+        .pagetitle h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+
+        .breadcrumb-item {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Card Modernization with Gradients */
+        .card {
+            border: none;
+            border-radius: 1.25rem;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Subtle Gradient Backgrounds for Stats Cards */
+        .card-stats-indigo {
+            background: linear-gradient(180deg, #ffffff 0%, #f0f3ff 100%);
+        }
+
+        .card-stats-emerald {
+            background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%);
+        }
+
+        .card-stats-amber {
+            background: linear-gradient(180deg, #ffffff 0%, #fffbeb 100%);
+        }
+
+        .card-stats-rose {
+            background: linear-gradient(180deg, #ffffff 0%, #fff1f1 100%);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 1.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .card-title span {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #94a3b8;
+            text-transform: none;
+        }
+
+        /* Stats & Icons */
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            flex-shrink: 0;
+            z-index: 2;
+        }
+
+        .bg-indigo-light {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        .bg-emerald-light {
+            background: #dcfce7;
+            color: #059669;
+        }
+
+        .bg-amber-light {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .bg-rose-light {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Attendance Card with Particles */
+        .attendance-gradient {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .attendance-gradient .card-title {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .attendance-gradient .text-muted {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+
+        /* Particle Elements */
+        .attendance-gradient .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(5px);
+            z-index: 1;
+        }
+
+        .attendance-gradient .p-1 {
+            width: 120px;
+            height: 120px;
+            top: -30px;
+            left: -20px;
+            animation: floatParticle 8s infinite ease-in-out;
+        }
+
+        .attendance-gradient .p-2 {
+            width: 80px;
+            height: 80px;
+            bottom: -20px;
+            right: -10px;
+            animation: floatParticle 12s infinite ease-in-out reverse;
+        }
+
+        .attendance-gradient .p-3 {
+            width: 50px;
+            height: 50px;
+            top: 15%;
+            right: 10%;
+            animation: floatParticle 10s infinite ease-in-out;
+            opacity: 0.2;
+        }
+
+        @keyframes floatParticle {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                transform: translate(20px, -20px) scale(1.1);
+            }
+        }
+
+        /* Tables & Lists */
+        .table thead th {
+            background-color: #f8fafc;
+            color: #444;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+
+        .table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .avatar-stack {
+            display: flex;
+            align-items: center;
+        }
+
+        .avatar-item {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid white;
+            background: #6366f1;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: -10px;
+        }
+
+        .avatar-item:first-child {
+            margin-left: 0;
+        }
+
+        /* Charts Height */
+        .chart-box {
+            height: 280px;
+            width: 100%;
+        }
+
+        /* Map Placeholder / Loader */
+        .map-loader {
+            background: #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            color: #64748b;
+        }
+
+        /* Allow dropdown to escape card for the due tasks table */
+        #due-tasks-section .card {
+            overflow: visible !important;
+        }
+
+        /* DataTable styling for due tasks */
+        #due-tasks-table {
+            width: 100% !important;
+        }
+
+        #due-tasks-table_wrapper .dataTables_filter {
+            float: right;
+            margin-bottom: 1rem;
+        }
+
+        #due-tasks-table_wrapper .dataTables_length {
+            float: left;
+            margin-bottom: 1rem;
+        }
+
+        #due-tasks-table_wrapper .dataTables_info {
+            float: left;
+            margin-top: 1rem;
+        }
+
+        #due-tasks-table_wrapper .dataTables_paginate {
+            float: right;
+            margin-top: 1rem;
+        }
+
+        /* Fix dropdown positioning */
+        .due-range-dropdown {
+            position: relative;
+            z-index: 1050;
+        }
+
+        .due-range-dropdown .dropdown-menu {
+            z-index: 1051;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            .pagetitle .d-flex {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 1rem;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        .leave-scroll {
+            max-height: 340px;
+            overflow-y: auto;
+        }
+
+
+        /* MATCH DATATABLE EXACTLY */
+        #due-leads-section .dt-like {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #212529;
+        }
+
+        #due-leads-section .dt-like select {
+            height: 36px !important;
+            padding: 4px 6px !important;
+            font-size: 14px !important;
+        }
+
+        #due-leads-section .dt-like input {
+            width: 160px !important;
+            height: 35px !important;
+            padding: 4px 8px !important;
+            font-size: 14px !important;
+        }
     </style>
 
     <main id="main" class="main-content">
@@ -328,37 +667,44 @@
             </div>
 
             <!-- Top Performer Carousel -->
-            <div id="performerCarousel" class="carousel slide flex-grow-1" data-bs-ride="carousel" style="min-width: 250px;">
+            <div id="performerCarousel" class="carousel slide flex-grow-1" data-bs-ride="carousel"
+                 style="min-width: 250px;">
                 <div class="carousel-inner bg-white border rounded-pill shadow-sm pe-3">
                     {% for performer in top_performers %}
-                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        <div class="d-flex align-items-center justify-content-between py-2 px-3" style="min-height: 56px;">
-                            <div class="d-flex align-items-center gap-3 overflow-hidden" style="min-width: 0;">
-                                <!-- Avatar -->
-                                {% if performer.photo %}
-                                <img src="{{ performer.photo }}" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;">
-                                {% else %}
-                                <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold" style="width:40px;height:40px;font-size:18px; background-color: #6162E6;">
-                                    {{ performer.name|slice:":1"|upper }}
-                                </div>
-                                {% endif %}
-                                
-                                <!-- Name + Title -->
-                                <div class="d-flex align-items-baseline gap-2 text-truncate">
-                                    <span class="fw-bold text-dark fs-6">{{ performer.name }}</span>
-                                    <span class="text-muted small">{{ performer.title }}</span>
-                                </div>
-                            </div>
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <div class="d-flex align-items-center justify-content-between py-2 px-3"
+                                 style="min-height: 56px;">
+                                <div class="d-flex align-items-center gap-3 overflow-hidden" style="min-width: 0;">
+                                    <!-- Avatar -->
+                                    {% if performer.photo %}
+                                        <img src="{{ performer.photo }}" class="rounded-circle"
+                                             style="width:40px;height:40px;object-fit:cover;">
+                                    {% else %}
+                                        <div class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold"
+                                             style="width:40px;height:40px;font-size:18px; background-color: #6162E6;">
+                                            {{ performer.name|slice:":1"|upper }}
+                                        </div>
+                                    {% endif %}
 
-                            <!-- Value + Next -->
-                            <div class="d-flex align-items-center gap-3 ms-3 flex-shrink-0">
-                                <span class="fw-bold text-primary" style="color: #0d6efd !important;">{{ performer.value }}</span>
-                                <a href="#" data-bs-target="#performerCarousel" data-bs-slide="next" class="text-muted d-flex align-items-center justify-content-center text-decoration-none" style="width: 24px;">
-                                    <i class="bi bi-chevron-right fs-5"></i>
-                                </a>
+                                    <!-- Name + Title -->
+                                    <div class="d-flex align-items-baseline gap-2 text-truncate">
+                                        <span class="fw-bold text-dark fs-6">{{ performer.name }}</span>
+                                        <span class="text-muted small">{{ performer.title }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Value + Next -->
+                                <div class="d-flex align-items-center gap-3 ms-3 flex-shrink-0">
+                            <span class="fw-bold text-primary"
+                                  style="color: #0d6efd !important;">{{ performer.value }}</span>
+                                    <a href="#" data-bs-target="#performerCarousel" data-bs-slide="next"
+                                       class="text-muted d-flex align-items-center justify-content-center text-decoration-none"
+                                       style="width: 24px;">
+                                        <i class="bi bi-chevron-right fs-5"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
                     {% endfor %}
                 </div>
             </div>
@@ -504,7 +850,7 @@
 
             <!-- Row 3: Action Required -->
             <div class="row g-4 mb-4" id="actions-section">
-                <div class="col-12 col-xl-8">
+                <div class="col-6 col-xl-6">
                     <div class="card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -545,46 +891,49 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Employees On Leave and Top Collectors -->
-            <div class="row g-4 mb-4">
-                <div class="col-12 col-xl-8">
+
+                <!-- Employees On Leave and Top Collectors -->
+                <div class="col-6 col-xl-6">
                     <div class="card h-100">
                         <div class="card-body">
                             <h5 class="card-title">Employees On Leave <span>| Today</span></h5>
                             <div class="leave-scroll">
-                            <ul class="list-group list-group-flush">
-                                {% for leave in employees_on_leave_today %}
+                                <ul class="list-group list-group-flush">
+                                    {% for leave in employees_on_leave_today %}
 
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3">
-                                            {% if leave.employee.profile_pic %}
-                                                <img src="{{ leave.employee.profile_pic.url }}" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;">
-                                            {% else %}
-                                            <div class="avatar-item" style="width:45px;height:45px;">
-                                            {{ leave.employee.user.username|slice:":1"|upper }}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3">
+                                                    {% if leave.employee.profile_pic %}
+                                                        <img src="{{ leave.employee.profile_pic.url }}"
+                                                             class="rounded-circle"
+                                                             style="width:45px;height:45px;object-fit:cover;">
+                                                    {% else %}
+                                                        <div class="avatar-item" style="width:45px;height:45px;">
+                                                            {{ leave.employee.user.username|slice:":1"|upper }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <strong>{{
+                                                            leave.employee.user.get_full_name|default:leave.employee.user.username
+                                                            }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">{{ leave.get_leave_type_display }}</small>
+                                                </div>
                                             </div>
-                                            {% endif %}
-                                        </div>
-                                        <div>
-                                            <strong>{{ leave.employee.user.get_full_name|default:leave.employee.user.username }}</strong>
-                                            <br>
-                                            <small class="text-muted">{{ leave.get_leave_type_display }}</small>
-                                        </div>
-                                    </div>
-                                    <span class="badge bg-warning text-dark">
+                                            <span class="badge bg-warning text-dark">
                                         {{ leave.total_days }} Days
                                     </span>
-                                </li>
+                                        </li>
 
-                                {% empty %}
-                                <li class="list-group-item text-muted text-center">
-                                     All Employees Available Today
-                                </li>
-                                {% endfor %}
-                            </ul>
+                                    {% empty %}
+                                        <li class="list-group-item text-muted text-center">
+                                            All Employees Available Today
+                                        </li>
+                                    {% endfor %}
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -616,7 +965,8 @@
                                                 <div class="d-flex align-items-center" style="margin-left: 10px;">
                                                     {% for user in task.assignees.all|slice:":3" %}
                                                         <div class="avatar-item"
-                                                             style="margin-left: -10px;">{{ user.first_name|slice:":1"|upper }}</div>
+                                                             style="margin-left: -10px;">{{ user.first_name|slice:":1"|upper }}
+                                                        </div>
                                                     {% endfor %}
                                                 </div>
                                             </td>
@@ -647,7 +997,8 @@
                                             class="bi bi-calendar-event me-1"></i> Overdue Tasks</span>
                                 </div>
                                 <div class="due-range-dropdown dropdown mt-2 mt-md-0">
-                                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"><i
+                                    <button class="btn btn-secondary dropdown-toggle" type="button"
+                                            data-bs-toggle="dropdown"><i
                                             class="bi bi-funnel me-1"></i> Filter Range
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
@@ -660,7 +1011,8 @@
                                             </button>
                                         </li>
                                         <li>
-                                            <button class="dropdown-item" type="button" data-range="tomorrow">Due Tomorrow
+                                            <button class="dropdown-item" type="button" data-range="tomorrow">Due
+                                                Tomorrow
                                             </button>
                                         </li>
                                         <li>
@@ -674,7 +1026,7 @@
                                 </div>
                             </div>
                             <div class="table-responsive">
-                                <table id="due-tasks-table" class="table table-hover align-middle" >
+                                <table id="due-tasks-table" class="table table-hover align-middle">
                                     <thead class="table-light">
                                     <tr>
                                         <th>#</th>
@@ -691,7 +1043,7 @@
                                         <tr>
                                             <td>{{ forloop.counter }}</td>
                                             <td class="fw-bold"><a
-                                                    href="{% url 'task_detail' task.id %}">{{ task.task_title }}</a>
+                                                    href="{% url 'task_detail' task.id %}"> {{ task.task_title }} </a>
                                             </td>
                                             <td>{{ task.client.client_name }}</td>
                                             <td>{{ task.service_type|default:"N/A" }}</td>
@@ -701,8 +1053,11 @@
                                                     {% for assignee in task.assignees.all|slice:":3" %}
                                                         <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
                                                              style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: {{ forloop.counter }};"
-                                                             data-bs-toggle="tooltip" title="{{ assignee.get_full_name|default:assignee.username }}">
-                                                            {{ assignee.first_name|slice:":1"|upper|default:assignee.username|slice:":1"|upper }}
+                                                             data-bs-toggle="tooltip"
+                                                             title="{{ assignee.get_full_name|default:assignee.username }}">
+                                                            {{
+                                                                    assignee.first_name|slice:":1"|upper|default:assignee.username|slice:":1"|upper
+                                                                    }}
                                                         </div>
                                                     {% empty %}
                                                         <span class="text-muted small fst-italic">Unassigned</span>
@@ -710,7 +1065,8 @@
                                                     {% if task.assignees.count > 3 %}
                                                         <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
                                                              style="width: 28px; height: 28px; font-size: 10px;"
-                                                             data-bs-toggle="tooltip" title="{{ task.assignees.count }} assignees total">
+                                                             data-bs-toggle="tooltip"
+                                                             title="{{ task.assignees.count }} assignees total">
                                                             +{{ task.assignees.count|add:"-3" }}
                                                         </div>
                                                     {% endif %}
@@ -733,139 +1089,265 @@
                 </div>
             </div>
 
-            <!--Top Performance Widgets-->
-            <div class="row g-4 mb-4">
-                <div class="col-12 col-md-6 col-xl-3">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Top Solvers <span>| Lifetime Completed</span></h5>
-                            <div class="mt-2">
-                                {% for solver in top_solvers %}
-                                    <div class="d-flex align-items-center justify-content-between mb-4">
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-3">
+            <!--Due Leads-->
+            <div class="card mt-3" id="due-leads-section">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+
+                        <!-- LEFT -->
+                        <div class="d-flex align-items-center gap-3">
+                            <h5 class="card-title m-0">
+                                Due Leads
+                                <span id="due-leads-count" class="text-muted fw-normal">
+                | {{ due_leads|length }} Items
+            </span>
+                            </h5>
+
+                            <span id="due-leads-badge" class="badge rounded-pill px-3 py-2"
+                                  style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <i class="bi bi-calendar-event me-1"></i> Overdue Leads
+        </span>
+                        </div>
+
+                        <!-- RIGHT -->
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bi bi-funnel me-1"></i> Filter Range
+                            </button>
+
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <button class="dropdown-item lead-filter" data-range="overdue">Overdue</button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item lead-filter" data-range="today">Due Today</button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item lead-filter" data-range="tomorrow">Due Tomorrow
+                                    </button>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <button class="dropdown-item lead-filter" data-range="7days">Next 7 Days</button>
+                                </li>
+                            </ul>
+                        </div>
+
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+
+                        <!-- LEFT -->
+                        <div class="dt-like">
+                            <span>Show</span>
+                            <select id="lead-limit">
+                                <option>5</option>
+                                <option selected>10</option>
+                                <option>25</option>
+                                <option>50</option>
+                            </select>
+                            <span>leads</span>
+                        </div>
+                        <!-- RIGHT -->
+                        <div class="dt-like">
+                            <span>Search leads:</span>
+                            <input type="text" id="lead-search">
+                        </div>
+
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Lead Name</th>
+                                <th>Contact Person</th>
+                                <th>Assigned to</th>
+                                <th>Expected Closure Date</th>
+                                <th>Status</th>
+                            </tr>
+                            </thead>
+
+
+                            <tbody id="due-leads-tbody">
+
+                            {% for lead in due_leads %}
+                                <!-- prettier-ignore -->
+                                <tr {% if lead.expected_closure_date < today %}
+                                    style="background:#ffe5e5;"
+                                {% elif lead.expected_closure_date == today %}
+                                    style="background:#fff3cd;"
+                                {% else %}
+                                    style="background:#e6ffed;"
+                                {% endif %}>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <a href="{% url 'lead_detail' lead_id=lead.id %}"
+                                           class="text-primary text-decoration-none fw-bold">
+                                            {{ lead.lead_name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ lead.full_name }}</td>
+                                    <td>
+                                        {% for u in lead.assigned_to.all %}
+                                            {{ u.username }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>{{ lead.expected_closure_date|date:"M d, Y" }}</td>
+                                    <td>{{ lead.status }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5">No due leads</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+        </section>
+        <div class="row g-4 mb-4">
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Top Solvers <span>| Lifetime Completed</span></h5>
+                        <div class="mt-2">
+                            {% for solver in top_solvers %}
+                                <div class="d-flex align-items-center justify-content-between mb-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
                                             {% if solver.employee.profile_pic %}
-                                                <img src="{{ solver.employee.profile_pic.url }}" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;" alt="">
+                                                <img src="{{ solver.employee.profile_pic.url }}" class="rounded-circle"
+                                                     style="width:45px;height:45px;object-fit:cover;" alt="">
                                             {% else %}
                                                 <div class="avatar-item" style="width:45px;height:45px;">
                                                     {{ solver.first_name|slice:":1"|upper }}
                                                 </div>
                                             {% endif %}
                                         </div>
-                                            <div>
-                                                <h6 class="mb-0 fw-bold">{{ solver.first_name }}</h6>
-                                                <small class="text-muted">@{{ solver.username }}</small>
-                                            </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">{{ solver.first_name }}</h6>
+                                            <small class="text-muted">@{{ solver.username }}</small>
                                         </div>
-                                        <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">{{ solver.solved_count }} Steps</span>
                                     </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-md-6 col-xl-3">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Top Client Onboards</h5>
-                            {% for creator in top_client_creators %}
-                                <div class="d-flex align-items-center justify-content-between mb-4">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3">
-                                            {% if creator.created_by__employee__profile_pic %}
-                                                <img src="/media/{{ creator.created_by__employee__profile_pic }}" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;" alt="">
-                                            {% else %}
-                                                <div class="avatar-item" style="width:45px;height:45px;">
-                                                    {{ creator.created_by__username|slice:":1"|upper }}
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                        <div><h6 class="mb-0 fw-bold">{{ creator.created_by__username }}</h6><small
-                                                class="text-muted">@{{ creator.created_by__username }}</small></div>
-                                    </div>
-                                    <span class="badge bg-success rounded-pill px-3 py-2 fw-bold">{{ creator.client_count }}</span>
+                                    <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">{{ solver.solved_count }} Steps</span>
                                 </div>
-                            {% empty %}
-                                    <P class="text-muted">No clients yet</P>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="col-12 col-md-6 col-xl-3">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Top Lead Generators</h5>
-                            {% for leadgen in top_lead_generators %}
-                                <div class="d-flex align-items-center justify-content-between mb-4">
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-3">
-                                            {% if leadgen.created_by__employee__profile_pic %}
-                                            <img src="/media/{{ leadgen.created_by__employee__profile_pic }}" alt="" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;">
-                                            {% else %}
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Top Client Onboards</h5>
+                        {% for creator in top_client_creators %}
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        {% if creator.created_by__employee__profile_pic %}
+                                            <img src="/media/{{ creator.created_by__employee__profile_pic }}"
+                                                 class="rounded-circle" style="width:45px;height:45px;object-fit:cover;"
+                                                 alt="">
+                                        {% else %}
+                                            <div class="avatar-item" style="width:45px;height:45px;">
+                                                {{ creator.created_by__username|slice:":1"|upper }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div><h6 class="mb-0 fw-bold">{{ creator.created_by__username }}</h6><small
+                                            class="text-muted">@{{ creator.created_by__username }}</small></div>
+                                </div>
+                                <span class="badge bg-success rounded-pill px-3 py-2 fw-bold">{{ creator.client_count }}</span>
+                            </div>
+                        {% empty %}
+                            <P class="text-muted">No clients yet</P>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Top Lead Generators</h5>
+                        {% for leadgen in top_lead_generators %}
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        {% if leadgen.created_by__employee__profile_pic %}
+                                            <img src="/media/{{ leadgen.created_by__employee__profile_pic }}" alt=""
+                                                 class="rounded-circle"
+                                                 style="width:45px;height:45px;object-fit:cover;">
+                                        {% else %}
                                             <div class="avatar-item" style="width:45px;height:45px;">
                                                 {{ leadgen.created_by__username|slice:":1"|upper }}
                                             </div>
-                                            {% endif %}
-                                        </div>
-                                        <div><h6 class="mb-0 fw-bold">{{ leadgen.created_by__username }}</h6><small
-                                                class="text-muted">@{{ leadgen.created_by__username }}</small></div>
+                                        {% endif %}
                                     </div>
-                                    <span class="badge bg-primary rounded-pill px-3 py-2 fw-bold">{{ leadgen.lead_count }}</span>
+                                    <div><h6 class="mb-0 fw-bold">{{ leadgen.created_by__username }}</h6><small
+                                            class="text-muted">@{{ leadgen.created_by__username }}</small></div>
                                 </div>
-                            {% empty %}
-                                    <P class="text-muted">No leads yet</P>
-                            {% endfor %}
-                        </div>
+                                <span class="badge bg-primary rounded-pill px-3 py-2 fw-bold">{{ leadgen.lead_count }}</span>
+                            </div>
+                        {% empty %}
+                            <P class="text-muted">No leads yet</P>
+                        {% endfor %}
                     </div>
                 </div>
+            </div>
 
-                <div class="col-12 col-md-6 col-xl-3">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                Top Collections <span>| Employees</span>
-                            </h5>
-                            <div class="mt-2">
-                                {% for user in top_collectors %}
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            Top Collections <span>| Employees</span>
+                        </h5>
+                        <div class="mt-2">
+                            {% for user in top_collectors %}
                                 <div class="d-flex align-items-center justify-content-between mb-4">
                                     <div class="d-flex align-items-center">
                                         <!-- Avatar -->
                                         <div class="me-3">
                                             {% if user.created_by__employee__profile_pic %}
-                                            <img src="/media/{{ user.created_by__employee__profile_pic }}" alt="" class="rounded-circle" style="width:45px;height:45px;object-fit:cover;">
+                                                <img src="/media/{{ user.created_by__employee__profile_pic }}" alt=""
+                                                     class="rounded-circle"
+                                                     style="width:45px;height:45px;object-fit:cover;">
                                             {% else %}
-                                            <div class="avatar-item" style="width:45px;height:45px;">
-                                                {{ user.created_by__username|slice:":1"|upper }}
-                                            </div>
+                                                <div class="avatar-item" style="width:45px;height:45px;">
+                                                    {{ user.created_by__username|slice:":1"|upper }}
+                                                </div>
                                             {% endif %}
                                         </div>
 
                                         <!-- Employee Name -->
                                         <div>
-                                        <h6 class="mb-0 fw-bold">
-                                            {{ user.created_by__username }}
-                                        </h6>
-                                        <small class="text-muted">
-                                            Rank #{{ forloop.counter }}
-                                        </small>
+                                            <h6 class="mb-0 fw-bold">
+                                                {{ user.created_by__username }}
+                                            </h6>
+                                            <small class="text-muted">
+                                                Rank #{{ forloop.counter }}
+                                            </small>
                                         </div>
                                     </div>
-                                        <!-- Amount -->
-                                        <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">
+                                    <!-- Amount -->
+                                    <span class="badge badge-soft-success rounded-pill px-3 py-2 fw-bold">
                                             ₹{{ user.total_collection|floatformat:0 }}
                                         </span>
                                 </div>
-                                {% empty %}
-                                    <P class="text-muted">No collections yet</P>
-                                {% endfor %}
-                            </div>
+                            {% empty %}
+                                <P class="text-muted">No collections yet</P>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
     </main>
 
     <!-- Enhanced Attendance Modals -->
@@ -900,6 +1382,12 @@
                         <div id="locationErrorMessage" class="alert alert-danger d-none small">
                             <i class="bi bi-exclamation-triangle me-2"></i>
                             Location access is required to clock in. Please enable GPS and refresh.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Reason (Optional)</label>
+                            <textarea name="reason" class="form-control" rows="2"
+                                      placeholder="e.g. Working outside office, client visit"></textarea>
                         </div>
                     </div>
 
@@ -979,7 +1467,63 @@
             initCharts();
             initAttendance();
             initDueTasksTable();
+            document.querySelectorAll('.lead-filter').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    loadDueLeads(this.dataset.range);
+                });
+            });
         });
+
+        // ===============================
+        // DUE LEADS AJAX FILTER
+        // ===============================
+        function loadDueLeads(range) {
+            fetch(`/api/due-leads/?range=${range}`)
+                .then(res => res.json())
+                .then(data => {
+
+                    document.getElementById('due-leads-count').innerText = `| ${data.count} Items`;
+                    document.getElementById('due-leads-badge').innerHTML =
+                        `<i class="bi bi-calendar-event me-1"></i> ${data.label}`;
+
+                    const tbody = document.getElementById('due-leads-tbody');
+
+                    if (data.leads.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="text-center">No due leads</td></tr>`;
+                        return;
+                    }
+
+                    let html = '';
+
+                    data.leads.forEach((lead, index) => {
+
+                        let bgColor = '';
+
+                        if (lead.type === 'overdue') bgColor = '#ffe5e5';
+                        else if (lead.type === 'today') bgColor = '#fff3cd';
+                        else bgColor = '#e6ffed';
+
+                        html += `
+    <tr style="background:${bgColor}">
+        <td>${index + 1}</td>
+        <td>
+            <a href="/leads/${lead.id}/" class="fw-bold text-primary">
+                ${lead.name}
+            </a>
+        </td>
+        <td>${lead.contact}</td>
+        <td>${lead.assigned}</td>
+        <td>${lead.date}</td>
+        <td>${lead.status}</td>
+    </tr>`;
+                    });
+
+                    tbody.innerHTML = html;
+                });
+        }
+
+
+        // CLICK HANDLER
 
         function initDueTasksTable() {
             // Initialize DataTable for due tasks
@@ -990,8 +1534,8 @@
                     lengthMenu: [[5, 10, 25, 50], [5, 10, 25, 50]],
                     order: [[4, 'asc']], // Sort by due date
                     columnDefs: [
-                        { orderable: false, targets: [0, 5] }, // Disable sorting for # and Assignees columns
-                        { searchable: false, targets: [0] } // Disable search for # column
+                        {orderable: false, targets: [0, 5]}, // Disable sorting for # and Assignees columns
+                        {searchable: false, targets: [0]} // Disable search for # column
                     ],
                     language: {
                         search: "Search tasks:",
@@ -1152,7 +1696,8 @@
                 .split(' ')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
-            }
+        }
+
         function loadDueTasks(selectedRange) {
             fetch(`/api/due-tasks/?due_range=${selectedRange}`)
                 .then(response => response.json())
@@ -1182,40 +1727,40 @@
                     let html = '';
                     data.tasks.forEach((task, index) => {
                         html += `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td class="fw-bold"><a href="/tasks/${task.id}/">${titleCase(task.title)}</a></td>
-                                <td>${task.client}</td>
-                                <td>${task.service || 'N/A'}</td>
-                                <td>${task.due_date}</td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        ${
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td class="fw-bold"><a href="/tasks/${task.id}/">${titleCase(task.title)}</a></td>
+                            <td>${task.client}</td>
+                            <td>${task.service || 'N/A'}</td>
+                            <td>${task.due_date}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    ${
                             task.assignees && task.assignees.length > 0
                                 ? task.assignees.slice(0, 3).map((name, i) => `
-                                                <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
-                                                     style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: ${3 - i};"
-                                                     data-bs-toggle="tooltip" title="${name}">
-                                                    ${name.charAt(0).toUpperCase()}
-                                                </div>
-                                            `).join('')
+                                            <div class="rounded-circle bg-secondary text-white d-flex justify-content-center align-items-center border border-white"
+                                                 style="width: 28px; height: 28px; font-size: 10px; margin-right: -8px; z-index: ${3 - i};"
+                                                 data-bs-toggle="tooltip" title="${name}">
+                                                ${name.charAt(0).toUpperCase()}
+                                            </div>
+                                        `).join('')
                                 : `<span class="text-muted small fst-italic">Unassigned</span>`
                         }
-                                        ${
+                                    ${
                             task.assignees && task.assignees.length > 3
                                 ? `
-                                                <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
-                                                     style="width: 28px; height: 28px; font-size: 10px;"
-                                                     data-bs-toggle="tooltip" title="${task.assignees.length} assignees total">
-                                                    +${task.assignees.length - 3}
-                                                </div>
-                                              `
+                                            <div class="rounded-circle bg-light text-dark border d-flex justify-content-center align-items-center ms-2"
+                                                 style="width: 28px; height: 28px; font-size: 10px;"
+                                                 data-bs-toggle="tooltip" title="${task.assignees.length} assignees total">
+                                                +${task.assignees.length - 3}
+                                            </div>
+                                          `
                                 : ''
                         }
-                                    </div>
-                                </td>
-                                <td><span class="badge bg-light text-dark border rounded-pill">${task.status}</span></td>
-                            </tr>`;
+                                </div>
+                            </td>
+                            <td><span class="badge bg-light text-dark border rounded-pill">${task.status}</span></td>
+                        </tr>`;
                     });
                     tbody.innerHTML = html;
 
@@ -1249,7 +1794,7 @@
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
                 new bootstrap.Tooltip(el);
             });
-             document.querySelectorAll('#due-tasks-tbody a').forEach(el => {
+            document.querySelectorAll('#due-tasks-tbody a').forEach(el => {
                 el.textContent = titleCase(el.textContent);
             });
         });
@@ -1268,4 +1813,34 @@
             }
         });
     </script>
-{% endblock body %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const searchInput = document.getElementById("lead-search");
+            const limitSelect = document.getElementById("lead-limit");
+            const rows = document.querySelectorAll("#due-leads-tbody tr");
+
+            function filterLeads() {
+                const searchValue = searchInput.value.toLowerCase();
+                const limit = parseInt(limitSelect.value);
+
+                let visibleCount = 0;
+
+                rows.forEach((row) => {
+                    const text = row.innerText.toLowerCase();
+
+                    if (text.includes(searchValue) && visibleCount < limit) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+            }
+
+            searchInput.addEventListener("keyup", filterLeads);
+            limitSelect.addEventListener("change", filterLeads);
+
+        });
+    </script>
+{% endblock body %}1
