@@ -47,15 +47,26 @@ def copy_task(original_task, created_at= None,created_by=None, is_auto=False,nex
         is_recurring = original_task.is_recurring
 
     # Calculate due_date for auto-recurring tasks based on config
+    # calculated_due_date = None
+    # if is_auto and original_task.service_type in TASK_CONFIG:
+    #     config = TASK_CONFIG[original_task.service_type]
+    #     default_due_days = config.get('default_due_days')
+    #
+    #     if default_due_days:
+    #         # Calculate due date from the created_at timestamp
+    #         calculated_due_date = (created_at + timedelta(days=default_due_days)).date()
+
+
     calculated_due_date = None
-    if is_auto and original_task.service_type in TASK_CONFIG:
+
+    if original_task.service_type in TASK_CONFIG:
         config = TASK_CONFIG[original_task.service_type]
         default_due_days = config.get('default_due_days')
-        
-        if default_due_days:
-            # Calculate due date from the created_at timestamp
-            calculated_due_date = (created_at + timedelta(days=default_due_days)).date()
 
+        if default_due_days:
+            # 🔥 Key difference
+            base_date = next_due_date if (is_auto and next_due_date) else created_at
+            calculated_due_date = (base_date + timedelta(days=default_due_days)).date()
     new_task = Task.objects.create(
         client=original_task.client,
         created_by=created_by or original_task.created_by,
