@@ -493,7 +493,7 @@
             const remainingAfter = document.getElementById("remaining-after");
             const balanceWarning = document.getElementById("balance-warning");
             const submitBtn = document.getElementById("submit-btn");
-
+            endInput.required = false;
             const sickBalance = parseInt(document.getElementById("sick-balance").textContent) || 0;
             const casualBalance = parseInt(document.getElementById("casual-balance").textContent) || 0;
             const earnedBalance = parseInt(document.getElementById("earned-balance").textContent) || 0;
@@ -577,7 +577,8 @@
                 endInput.parentElement.style.display = "block";
                 endInput.required = true;
             } else {
-                endInput.parentElement.style.display = "none";
+                endInput.closest('.col-md-6').style.display = "none";
+                endInput.disabled = true;
                 endInput.required = false;
                 endInput.value = startInput.value;
             }
