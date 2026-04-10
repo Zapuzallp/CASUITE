@@ -13,7 +13,8 @@ from home.customViews.attendanceView import (
     ClockOutView,
     AttendanceLogsView,
 )
-from home.customViews.adminReportsView import AdminAttendanceReportView, PaymentCollectionDetailView
+from home.customViews.paymentReportView import PaymentCollectionReportView, PaymentCollectionDetailView
+from home.customViews.adminReportsView import AdminAttendanceReportView
 from home.customViews.notificationView import dashboard
 from home.customViews.services import list_services, delete_service
 from home.customViews.searchbarView import global_search
@@ -177,7 +178,7 @@ urlpatterns = [
     path('client/<int:client_id>/phone-calls/ajax/', phoneCallView.get_client_phone_calls_ajax, name='get_client_phone_calls_ajax'),
     path('phone-calls/', phoneCallView.phone_call_logs_list, name='phone_calls_list'),
 
-    # Admin Reports
-    path('payment-collection-report/', payment_collection_report, name='payment_collection_report'),
-    path('admin-reports/payment-collection/<int:client_id>/', PaymentCollectionDetailView.as_view(), name='payment_collection_detail'),
+# Admin Reports
+    path('payment-collection-report/',PaymentCollectionReportView.as_view(),name='payment_collection_report'),
+    path('admin-reports/payment-collection/<int:client_id>/',PaymentCollectionDetailView.as_view(),name='payment_collection_detail'),
 ]
