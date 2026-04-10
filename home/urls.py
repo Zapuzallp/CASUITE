@@ -174,5 +174,8 @@ urlpatterns = [
     path('client/<int:client_id>/phone-calls/add/', phoneCallView.add_phone_call_log, name='add_phone_call_log'),
     path('client/<int:client_id>/phone-calls/ajax/', phoneCallView.get_client_phone_calls_ajax, name='get_client_phone_calls_ajax'),
     path('phone-calls/', phoneCallView.phone_call_logs_list, name='phone_calls_list'),
+    path('phone-calls/add/', phoneCallView.add_phone_call_from_list, name='add_phone_call_from_list'),
+    path('phone-calls/search-clients/', phoneCallView.search_clients_for_phone_call, name='search_clients_for_phone_call'),
+    path('phone-calls/get-client-services/', phoneCallView.get_client_services_for_phone_call, name='get_client_services_for_phone_call'),
 
 ]

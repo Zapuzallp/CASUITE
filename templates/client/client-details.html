@@ -642,6 +642,7 @@
                                     </tr>
                                     </thead>
                                     <tbody>
+                                    {% if services %}
                                     {% for service in services %}
                                         <tr>
 
@@ -706,6 +707,7 @@
                                             </td>
                                         </tr>
                                     {% endfor %}
+                                    {% endif %}
                                     </tbody>
                                 </table>
                             </div>
@@ -733,6 +735,7 @@
                                     </tr>
                                     </thead>
                                     <tbody>
+                                    {% if invoices_data %}
                                     {% for item in invoices_data %}
                                         <tr>
                                             <td class="fw-bold">#{{ item.invoice.id }}</td>
@@ -820,6 +823,7 @@
                                             </td>
                                         </tr>
                                     {% endfor %}
+                                    {% endif %}
                                     </tbody>
                                 </table>
                               </div>
@@ -942,6 +946,7 @@
                                     </tr>
                                     </thead>
                                     <tbody>
+                                    {% if phone_calls %}
                                     {% for call in phone_calls %}
                                         <tr>
                                             <td class="fw-bold">{{ call.call_date|date:"M d, Y h:i A" }}</td>
@@ -987,13 +992,9 @@
                                                 {% endif %}
                                             </td>
                                         </tr>
-                                    {% empty %}
-                                        <tr>
-                                            <td colspan="6" class="text-center text-muted py-4">
-                                                No phone call logs found for this client.
-                                            </td>
-                                        </tr>
+
                                     {% endfor %}
+                                    {% endif %}
                                     </tbody>
                                 </table>
                             </div>
@@ -1573,7 +1574,7 @@
             }
         });
 
-        });
+
     </script>
 
     <!-- Fix for DataTables in Bootstrap Tabs -->
