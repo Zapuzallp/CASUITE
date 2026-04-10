@@ -347,8 +347,10 @@
                 if (currentPath === href || currentPath.startsWith(href) && href !== '/') {
                     navLinks.forEach(l => l.classList.remove('active'));
                     link.classList.add('active');
-                }
-            }
-        });
-    });
+                    link.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
+                });}}
+         });
+     });
 </script>

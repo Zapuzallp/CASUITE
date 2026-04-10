@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from cryptography.fernet import Fernet
-
+from datetime import datetime, date
 # Create your models here.
 
 # -----------------------------------------
@@ -1469,3 +1469,34 @@ class PhoneCallLog(models.Model):
             return self.next_follow_up_date == timezone.now().date()
         return False
 
+# Timesheet model
+class Timesheet(models.Model):
+    employee = models.ForeignKey(User, on_delete=models.CASCADE,related_name = 'timesheet_employee')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='timesheet_task')
+    memo = models.TextField(null=True)
+    start_time = models.TimeField(null=True)
+    end_time = models.TimeField(null=True) 
+    date = models.DateField(auto_now_add=True)
+
+    def total_hours(self):
+        if self.start_time and self.end_time and self.date:
+            start = datetime.combine(self.date, self.start_time)
+            end = datetime.combine(self.date, self.end_time)
+            diff = end - start
+            total_seconds = int(diff.total_seconds())
+
+            if total_seconds <= 0:
+                return "0s"
+
+            hh = total_seconds // 3600
+            mm = (total_seconds % 3600) // 60
+            ss = total_seconds % 60
+
+            parts = []
+            if hh: parts.append(f"{hh}h")
+            if mm: parts.append(f"{mm}m")
+            if ss: parts.append(f"{ss}s")
+
+            return " ".join(parts)
+        else:
+            return "-"
