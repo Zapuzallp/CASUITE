@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block head %}
     <!-- Include Select2 CSS -->
@@ -71,10 +72,13 @@
                                         <!-- Client Filter -->
                                         <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Client</label>
-                                            <select name="client" class="form-select">
+                                            <select name="client" id="clientFilter" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Client / PAN / Status">
                                                 <option value="">All Clients</option>
                                                 {% for client in filter_clients %}
                                                     <option value="{{ client.id }}"
+                                                            data-pan="{{ client.pan_no|default_if_none:'' }}"
+                                                            data-status="{{ client.status|default_if_none:'' }}"
                                                             {% if request.GET.client == client.id|stringformat:"i" %}selected{% endif %}>
                                                         {{ client.client_name }}
                                                     </option>
@@ -85,7 +89,8 @@
                                         <!-- Service Type -->
                                         <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Service Type</label>
-                                            <select name="service_type" class="form-select">
+                                            <select name="service_type" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Service Type">
                                                 <option value="">All Services</option>
                                                 {% for code, name in service_type_choices %}
                                                     <option value="{{ code }}"
@@ -99,7 +104,8 @@
                                         <!-- Status -->
                                         <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Status</label>
-                                            <select name="status" class="form-select">
+                                            <select name="status" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Status">
                                                 <option value="">All Statuses</option>
                                                 {% for code, name in status_choices %}
                                                     <option value="{{ code }}"
@@ -116,6 +122,7 @@
                                                 Consultancy Type
                                             </label>
                                             <select name="consultancy_type" id="consultancyFilter"
+                                                    data-placeholder="Search Consultancy Type"
                                                     class="form-select js-consultancy-select">
                                                 <option value="">All Consultancy Types</option>
                                                 {% for code, name in consultancy_type_choices %}
@@ -130,11 +137,56 @@
                                         <!-- Invoice Status -->
                                         <div class="col-12 col-sm-6 col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Invoice Status</label>
-                                            <select name="invoice_status" class="form-select">
+                                            <select name="invoice_status" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Invoice Status">
                                                 <option value="">All</option>
                                                 <option value="invoiced" {% if request.GET.invoice_status == 'invoiced' %}selected{% endif %}>Invoiced</option>
                                                 <option value="not_invoiced" {% if request.GET.invoice_status == 'not_invoiced' %}selected{% endif %}>Not Invoiced</option>
                                             </select>
+                                        </div>
+                                        <!--Due Date-->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Due Date</label>
+                                            <select name="due_filter" id="dueFilter" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Due Date">
+                                                <option value="">All</option>
+                                                <option value="overdue" {% if request.GET.due_filter == "overdue" %}selected{% endif %}>Overdue</option>
+                                                <option value="today" {% if request.GET.due_filter == "today" %}selected{% endif %}>Today</option>
+                                                <option value="tomorrow" {% if request.GET.due_filter == "tomorrow" %}selected{% endif %}>Tomorrow</option>
+                                                <option value="no_due" {% if request.GET.due_filter == "no_due" %}selected{% endif %}>No Due Date</option>
+                                                <option value="range" {% if request.GET.due_filter == "range" %}selected{% endif %}>Date Range</option>
+                                            </select>
+                                        </div>
+                                        <!--Task Visibility-->
+                                        <div class="col-md-3">
+                                            <label class="form-label small fw-bold text-secondary">Task Visibility</label>
+                                            <select name="visibility" class="form-select js-task-filter-select"
+                                                    data-placeholder="Search Visibility">
+                                                <option value="">All</option>
+                                                <option value="with_workflow" {% if visibility_filter == "with_workflow" %}selected{% endif %}>
+                                                    With Workflow
+                                                </option>
+                                                <option value="without_workflow" {% if visibility_filter == "without_workflow" %}selected{% endif %}>
+                                                    Without Workflow
+                                                </option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Date Range (Visible when "Date Range" selected) -->
+                                        <div class="col-md-3" id="dueFromWrapper" style="display:none;">
+                                            <label class="form-label small fw-bold text-secondary">From</label>
+                                            <input type="date"
+                                                   name="due_from"
+                                                   class="form-control"
+                                                   value="{{ request.GET.due_from }}">
+                                        </div>
+
+                                        <div class="col-md-3" id="dueToWrapper" style="display:none;">
+                                            <label class="form-label small fw-bold text-secondary">To</label>
+                                            <input type="date"
+                                                   name="due_to"
+                                                   class="form-control"
+                                                   value="{{ request.GET.due_to }}">
                                         </div>
 
                                         <!-- Filter Actions -->
@@ -300,12 +352,35 @@
                                                 </span>
                                             {% endif %}
                                         </td>
-                                        <td class="text-end text-nowrap">
-                                            <a href="{% url 'task_detail' task.id %}"
-                                               class="btn btn-sm btn-outline-primary">
-                                               <i class="bi bi-eye"></i>
-                                            </a>
-                                        </td>
+                                         <td class="text-end text-nowrap">
+
+                                        <!-- View -->
+                                        <a href="{% url 'task_detail' task.id %}"
+                                           class="btn btn-sm btn-outline-primary">
+                                           <i class="bi bi-eye"></i>
+                                        </a>
+
+    <!-- Edit - Check Partner Permissions -->
+    {% if task|can_edit_task:request.user %}
+    <a href="{% url 'edit_task' task.id %}"
+       class="btn btn-sm btn-outline-warning">
+       <i class="bi bi-pencil"></i>
+    </a>
+    {% endif %}
+
+                                        <!-- Delete (Only Superuser) -->
+                                        {% if request.user.is_superuser %}
+                                        <a href="#"
+                                           class="btn btn-sm btn-outline-danger"
+                                           data-bs-toggle="modal"
+                                           data-bs-target="#deleteTaskModal"
+                                           data-url="{% url 'delete_task' task.id %}"
+                                           data-title="{{ task.task_title }}">
+                                           <i class="bi bi-trash"></i>
+                                        </a>
+                                        {% endif %}
+
+                                    </td>
                                     </tr>
                                 {% empty %}
                                     <tr>
@@ -318,21 +393,21 @@
                             </table>
                         </div>
 
-                        {% if tasks and per_page != 'all' %}
+                        {% if tasks.paginator.num_pages > 1 and per_page != 'all' %}
                         <div class="mt-4">
                             <nav aria-label="Task pagination">
                             <!-- Added flex-wrap to prevent pagination breaking on tiny screens -->
                             <ul class="pagination justify-content-center flex-wrap gap-1">
                             <!-- First -->
                             <li class="page-item {% if not tasks.has_previous %}disabled{% endif %}">
-                                <a class="page-link shadow-none" {% if tasks.has_previous %} href="?{{ query_params }}&page=1" {% endif %}>
+                                <a class="page-link shadow-none" {% if tasks.has_previous %} href="?{% if query_params %}{{ query_params }}&{% endif %}page=1" {% endif %}>
                                    <i class="bi bi-skip-backward-fill"></i>
                                 </a>
                             </li>
 
                             <!-- Previous -->
-                            <li class="page-item {% if tasks.has_previous %}{% else %}disabled{% endif %}">
-                                <a class="page-link shadow-none" {% if tasks.has_previous %} href="?{{ query_params }}&page={{ tasks.previous_page_number }}" {% endif %}>
+                            <li class="page-item {% if not tasks.has_previous %} disabled{% endif %}">
+                                <a class="page-link shadow-none" {% if tasks.has_previous %} href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ tasks.previous_page_number }}" {% endif %}>
                                    <i class="bi bi-arrow-left"></i>
                                 </a>
                             </li>
@@ -346,14 +421,14 @@
 
                             <!-- Next -->
                             <li class="page-item {% if not tasks.has_next %}disabled{% endif %}">
-                                <a class="page-link shadow-none" {% if tasks.has_next %} href="?{{ query_params }}&page={{ tasks.next_page_number }}" {% endif %}>
+                                <a class="page-link shadow-none" {% if tasks.has_next %} href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ tasks.next_page_number }}" {% endif %}>
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                             </li>
 
                             <!-- Last -->
                             <li class="page-item {% if not tasks.has_next %}disabled{% endif %}">
-                                <a class="page-link shadow-none" {% if tasks.has_next %} href="?{{ query_params }}&page={{ tasks.paginator.num_pages }}" {% endif %}>
+                                <a class="page-link shadow-none" {% if tasks.has_next %} href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ tasks.paginator.num_pages }}" {% endif %}>
                                    <i class="bi bi-skip-forward-fill"></i>
                                 </a>
                             </li>
@@ -379,15 +454,15 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <p class="text-muted small mb-3">Choose a client to start a new task for.</p>
+                    <p class="text-muted small mb-3">Search by Client Name, PAN Number, or Prospect status.</p>
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Client Name</label>
                         <!-- Select2 dropdown -->
                         <select id="clientSelector" class="form-select form-select-lg" style="width: 100%;">
-                            <option value="" selected disabled>-- Search Client --</option>
+                            <option value="" selected disabled>-- Search Client || PAN Number || Prospect --</option>
                             {% for client in clients %}
-                                <option value="{{ client.id }}">{{ client.client_name }} ({{ client.status }})</option>
+                                <option value="{{ client.id }}">{{ client.client_name }}{% if client.pan_no %} - {{ client.pan_no }}{% endif %}</option>
                             {% empty %}
                                 <option disabled>No active clients found.</option>
                             {% endfor %}
@@ -404,7 +479,43 @@
             </div>
         </div>
     </div>
+<!-- Delete Task Modal -->
+<div class="modal fade" id="deleteTaskModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
 
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirm Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to delete this task?</p>
+                <strong id="deleteTaskTitle"></strong>
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button" class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <form method="POST" id="deleteTaskForm">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
 </main>
 
 <!-- jQuery (Required for Select2) -->
@@ -412,6 +523,6 @@
 <!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<script src="{% static 'assets/js/tasks.js' %}"></script>
+<script src="{% static 'assets/js/tasks.js' %}?v=20260323-3"></script>
 
 {% endblock body %}

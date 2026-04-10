@@ -11,6 +11,11 @@ from home.clients.client_access import get_accessible_clients
 @login_required
 def add_portal_credential(request, client_id):
     """Add new portal credential for a client"""
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to add portal credentials.')
+        return redirect('client_details', client_id=client_id)
+
     client = get_object_or_404(Client, id=client_id)
 
     # Check access
@@ -68,9 +73,15 @@ def view_portal_credential(request, credential_id):
     # Decrypt password
     decrypted_password = credential.get_decrypted_password()
 
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    if hasattr(request.user, 'employee'):
+        is_partner = request.user.employee.role == 'PARTNER'
+
     return render(request, 'client/view_portal_credential.html', {
         'credential': credential,
-        'decrypted_password': decrypted_password
+        'decrypted_password': decrypted_password,
+        'is_partner': is_partner,
     })
 
 
@@ -79,6 +90,11 @@ def delete_portal_credential(request, credential_id):
     """Delete portal credential"""
     credential = get_object_or_404(ClientPortalCredentials, id=credential_id)
     client_id = credential.client.id
+
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to delete portal credentials.')
+        return redirect('client_details', client_id=client_id)
 
     # Check access
     if not request.user.is_superuser:

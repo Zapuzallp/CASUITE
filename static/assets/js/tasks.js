@@ -1,23 +1,11 @@
 $(document).ready(function () {
     // Client Select Model Select2
-    $('#clientSelector').empty();
 
     $('#clientSelector').select2({
         dropdownParent: $('#selectClientModal'),
         placeholder: 'Client Name || PAN Number || Prospect',
         width: '100%',
         minimumInputLength: 0,
-        ajax: {
-            url: '/clients/search/',
-            dataType: 'json',
-            delay: 300,
-            data: function (params) {
-                return { q: params.term };
-            },
-            processResults: function (data) {
-                return { results: data };
-            }
-        }
     });
 
     // Listen for change event on Select2
@@ -131,5 +119,106 @@ $(document).ready(function () {
     $('select[name="service_type"]').on('change', function () {
         toggleConsultancyFilter();
     });
+
+});
+
+
+//Add JS to Show Date Range Inputs
+document.addEventListener("DOMContentLoaded", function () {
+
+    const dueFilter = document.getElementById("dueFilter");
+    const dueFromWrapper = document.getElementById("dueFromWrapper");
+    const dueToWrapper = document.getElementById("dueToWrapper");
+
+    function toggleDueRange() {
+        if (!dueFilter) return;
+
+        if (dueFilter.value === "range") {
+            dueFromWrapper.style.display = "block";
+            dueToWrapper.style.display = "block";
+        } else {
+            dueFromWrapper.style.display = "none";
+            dueToWrapper.style.display = "none";
+        }
+    }
+
+    toggleDueRange();
+    dueFilter.addEventListener("change", toggleDueRange);
+
+});
+
+//Prevent Invalid Date Range (Frontend)
+// Custom Validation for Due Date Range (Instant)
+document.addEventListener("DOMContentLoaded", function () {
+
+    const dueFrom = document.querySelector("input[name='due_from']");
+    const dueTo = document.querySelector("input[name='due_to']");
+
+    if (!dueFrom || !dueTo) return;
+
+    // When user edits Due From
+    dueFrom.addEventListener("input", function () {
+
+        if (dueTo.value && dueFrom.value > dueTo.value) {
+
+            const formattedDate = new Date(dueTo.value).toLocaleDateString();
+
+            dueFrom.setCustomValidity(
+                "Due From date cannot be after Due To date (" + formattedDate + ")."
+            );
+
+            dueFrom.reportValidity(); // show message instantly
+
+        } else {
+            dueFrom.setCustomValidity("");
+        }
+
+    });
+
+    // When user edits Due To
+    dueTo.addEventListener("input", function () {
+
+        if (dueFrom.value && dueTo.value < dueFrom.value) {
+
+            const formattedDate = new Date(dueFrom.value).toLocaleDateString();
+
+            dueTo.setCustomValidity(
+                "Due To date cannot be before Due From date (" + formattedDate + ")."
+            );
+
+            dueTo.reportValidity(); // show message instantly
+
+        } else {
+            dueTo.setCustomValidity("");
+        }
+
+    });
+
+});
+
+
+// Delete Task Modal Handler
+document.addEventListener("DOMContentLoaded", function () {
+
+    const deleteModal = document.getElementById("deleteTaskModal");
+
+    if (deleteModal) {
+
+        deleteModal.addEventListener("show.bs.modal", function (event) {
+
+            const button = event.relatedTarget;
+
+            const deleteUrl = button.getAttribute("data-url");
+            const taskTitle = button.getAttribute("data-title");
+
+            const form = document.getElementById("deleteTaskForm");
+            const title = document.getElementById("deleteTaskTitle");
+
+            form.action = deleteUrl;
+            title.textContent = taskTitle;
+
+        });
+
+    }
 
 });

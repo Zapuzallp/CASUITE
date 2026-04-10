@@ -1,10 +1,11 @@
 from django.urls import path
 
-from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, leave_views,messageView , ReApplyLeaveViews
+from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
+    leave_views, messageView, ReApplyLeaveViews
 from home.customViews import resetPassword, leadView
 from home.customViews import authView, documentsUploadView, clientView, taskView, clientOnboardingView, leaveView, \
-    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, caAssignmentView, gstImportView
-from home.customViews import resetPassword
+    leave_views, messageView, ReApplyLeaveViews, invoiceView, profileView, credentialsView, clientExportView, \
+    caAssignmentView, gstImportView, phoneCallView
 from home.customViews.attendanceView import (
     ClockInView,
     ClockOutView,
@@ -18,9 +19,9 @@ from home.customViews.notificationView import (
     read_all_notifications,
     view_notification,
     all_notifications,
+    notification_count
 )
-from home.customViews.client_details_status_change_View import update_single_client_status
-from home.customViews.update_client_status_view import bulk_update_client_status
+
 # from home.customViews.serviceViews import (
 #     ServiceAssignmentStep1View, ServiceAssignmentStep2View, ServiceAssignmentStep3View,
 #     EditServiceAssignmentView, ClientSuggestionsView, AvailableServicesView, ServiceDetailView,
@@ -33,6 +34,8 @@ from home.customViews.payment_views import (
     reject_payment, payment_detail, cancel_payment, bulk_payment_action
 )
 from home.views import client_search
+from home.customViews.leadView import due_leads_api
+
 urlpatterns = [
     path('', HomeView.as_view(), name='dashboard'),
     path('api/due-tasks/', due_tasks_ajax, name='due_tasks_ajax'),
@@ -40,14 +43,15 @@ urlpatterns = [
     path('accounts/logout/', authView.LoginView.as_view(), name='logout'),
     # Client Details
     path('client/<int:client_id>/details/', clientView.client_details_view, name='client_details'),
+    path('client/<int:client_id>/phone-calls-ajax/', clientView.client_phone_calls_ajax, name='client_phone_calls_ajax'),
     path('client/<int:client_id>/upload-document/', documentsUploadView.upload_document_view,
          name='upload_client_document'),
     path('client/<int:client_id>/create-request/', documentsUploadView.create_document_request_view,
          name='create_client_doc_request'),
     path('client/<int:client_id>/create-task/', taskView.create_task_view, name='create_service_task'),
-    path("clients/bulk-update-status/",bulk_update_client_status,name="bulk_update_client_status"),
-    path("client/<int:client_id>/update-status/",update_single_client_status,name="update_single_client_status"),
-
+    path("clients/bulk-update-status/", clientView.bulk_update_client_status, name="bulk_update_client_status", ),
+    path("client/<int:client_id>/update-status/", clientView.update_single_client_status,
+         name="update_single_client_status", ),
     # GST Management
     path('client/<int:client_id>/add-gst/', clientView.add_gst_details_view, name='add_gst_details'),
     path('gst/<int:gst_id>/edit/', clientView.edit_gst_details_view, name='edit_gst_details'),
@@ -65,8 +69,8 @@ urlpatterns = [
     path('tasks/<int:task_id>/', taskView.task_detail_view, name='task_detail'),
     path('tasks/<int:task_id>/edit/', taskView.edit_task_view, name='edit_task'),
     path('tasks/<int:task_id>/copy/', taskView.copy_task_view, name='task_copy'),
+    path('tasks/<int:task_id>/delete/', taskView.delete_task_view, name='delete_task'),
     path('clients/search/', client_search, name='client_search'),
-
     # reset password
     path('password/change/', resetPassword.CustomPasswordChangeView.as_view(), name='password_change'),
     path('password/change/done/', resetPassword.CustomPasswordChangeDoneView.as_view(), name='password_change_done'),
@@ -78,6 +82,7 @@ urlpatterns = [
     path("notifications/read-all/", read_all_notifications, name="read_all_notifications"),
     path("notifications/<int:notification_id>/", view_notification, name="view_notification"),
     path("notifications/", all_notifications, name="all_notifications"),
+    path('notifications/count/', notification_count, name='notification_count'),
 
     # Attendance
     path("attendance/clock-in/", ClockInView.as_view(), name="clock_in"),
@@ -110,7 +115,7 @@ urlpatterns = [
     path('payments/<int:payment_id>/', payment_detail, name='payment_detail'),
     path('payments/bulk-action/', bulk_payment_action, name='bulk_payment_action'),
 
-    #search-bar
+    # search-bar
     path('global-search/', global_search, name='global_search'),
 
     # Lead Management
@@ -123,6 +128,8 @@ urlpatterns = [
     path('leads/<int:lead_id>/mark-lost/', leadView.mark_lead_lost, name='mark_lead_lost'),
     path('leads/<int:lead_id>/convert/', leadView.convert_lead_view, name='convert_lead'),
     path('leads/<int:lead_id>/add-call-log/', leadView.add_lead_call_log, name='add_lead_call_log'),
+    path('api/due-leads/', due_leads_api, name='due_leads_api'),
+    path('leads/export/', leadView.export_leads_to_excel, name='export_leads_to_excel'),
     # Invoice URLs (using invoiceView)
     path('invoices/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_list'),
     path('invoice/', invoiceView.InvoiceListCreateView.as_view(), name='invoice_all'),
@@ -133,12 +140,18 @@ urlpatterns = [
     path('invoice/<int:invoice_id>/approve/', invoiceView.approve_invoice, name="invoice_approve"),
     path('invoice/<int:invoice_id>/change-status/', invoiceView.change_invoice_status, name="invoice_change_status"),
     path('invoices/bulk-status-update/', invoiceView.invoice_bulk_status_update, name="invoice_bulk_status_update"),
-    #profile url
+    # profile url
     path('upload-profile-pic/', profileView.upload_profile_pic, name='upload_profile_pic'),
+    path('profile/', profileView.profile_view, name='profile'),
+    path('profile/edit/', profileView.profile_edit, name='profile_edit'),
+
     # Portal Credentials
-    path('client/<int:client_id>/credentials/add/', credentialsView.add_portal_credential,name='add_portal_credential'),
-    path('credentials/<int:credential_id>/view/', credentialsView.view_portal_credential,name='view_portal_credential'),
-    path('credentials/<int:credential_id>/delete/', credentialsView.delete_portal_credential,name='delete_portal_credential'),
+    path('client/<int:client_id>/credentials/add/', credentialsView.add_portal_credential,
+         name='add_portal_credential'),
+    path('credentials/<int:credential_id>/view/', credentialsView.view_portal_credential,
+         name='view_portal_credential'),
+    path('credentials/<int:credential_id>/delete/', credentialsView.delete_portal_credential,
+         name='delete_portal_credential'),
 
     # Data Management - CA Assignment
     path('data-management/assign-ca/', caAssignmentView.assign_ca_view, name='assign_ca'),
@@ -150,8 +163,16 @@ urlpatterns = [
 
     # Data Management - GST Import
     path('data-management/import-gst/', gstImportView.import_gst_view, name='import_gst_details'),
-    path('data-management/search-clients-gst/', gstImportView.search_clients_for_gst_ajax, name='search_clients_gst_ajax'),
+    path('data-management/search-clients-gst/', gstImportView.search_clients_for_gst_ajax,
+         name='search_clients_gst_ajax'),
     path('data-management/bulk-import-gst/', gstImportView.bulk_import_gst, name='bulk_import_gst'),
     path('data-management/download-gst-template/', gstImportView.download_gst_template, name='download_gst_template'),
+    # Timesheet-Task_detail
+    path('timesheet/save/<int:task_id>', taskView.save_timesheet, name='save_timesheet_url'),
+
+    # Phone Call Logs
+    path('client/<int:client_id>/phone-calls/add/', phoneCallView.add_phone_call_log, name='add_phone_call_log'),
+    path('client/<int:client_id>/phone-calls/ajax/', phoneCallView.get_client_phone_calls_ajax, name='get_client_phone_calls_ajax'),
+    path('phone-calls/', phoneCallView.phone_call_logs_list, name='phone_calls_list'),
 
 ]

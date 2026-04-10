@@ -1,6 +1,81 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block head %}
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
+    <style>
+        /* Custom Select2 styling for phone call services multi-select */
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple {
+            min-height: 120px !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            padding: 0.25rem !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+            background-color: #0d6efd !important;
+            border: 1px solid #0d6efd !important;
+            color: white !important;
+            padding: 0.35rem 0.65rem !important;
+            border-radius: 0.25rem !important;
+            margin: 0.25rem !important;
+            font-size: 0.875rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+            color: white !important;
+            margin-right: 0.35rem !important;
+            font-weight: bold !important;
+            font-size: 1rem !important;
+            line-height: 1 !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #ffdddd !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-search--inline .select2-search__field {
+            margin-top: 0.25rem !important;
+            padding: 0.375rem !important;
+            min-width: 200px !important;
+        }
+
+        /* Dropdown styling */
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-dropdown {
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option {
+            padding: 0.5rem 0.75rem !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option--selected {
+            background-color: #e7f1ff !important;
+            color: #0d6efd !important;
+            font-weight: 500 !important;
+        }
+
+        /* Add icon to selected items */
+        #addPhoneCallModal .select2-selection__choice::before {
+            content: "\f0b1";
+            font-family: "bootstrap-icons";
+            margin-right: 0.25rem;
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
     <style>
         /* Scope styles to this page */
@@ -31,6 +106,25 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr); /* 3 Columns on PC */
             gap: 15px;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 992px) {
+            .detail-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns on tablet */
+            }
+        }
+
+        @media (max-width: 576px) {
+            .detail-grid {
+                grid-template-columns: 1fr; /* 1 column on mobile */
+            }
+
+            .profile-avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
         }
 
         .detail-item {
@@ -80,6 +174,125 @@
             color: #4154f1;
             border-bottom: 2px solid #4154f1;
         }
+
+        /* Hide scrollbar for horizontal scrolling tabs */
+        .mobile-scroll-tabs {
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .mobile-scroll-tabs::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+
+        /* Mobile responsive tables */
+        @media (max-width: 768px) {
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+
+            .table thead th {
+                font-size: 0.75rem;
+                padding: 0.5rem;
+            }
+
+            .table tbody td {
+                padding: 0.5rem;
+            }
+
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+
+            .badge {
+                font-size: 0.7rem;
+            }
+
+            /* Hide less important columns on mobile */
+            .table .d-none-mobile {
+                display: none;
+            }
+
+            /* DataTables mobile responsive fixes */
+            .dataTables_wrapper .dataTables_length,
+            .dataTables_wrapper .dataTables_filter {
+                margin-bottom: 0.5rem;
+            }
+
+            .dataTables_wrapper .dataTables_length select {
+                width: auto;
+                display: inline-block;
+            }
+
+            .dataTables_wrapper .dataTables_filter input {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .dataTables_wrapper .dataTables_info,
+            .dataTables_wrapper .dataTables_paginate {
+                margin-top: 0.5rem;
+            }
+
+            /* Fix button alignment in action columns */
+            .table td .d-flex {
+                flex-wrap: nowrap;
+                gap: 0.25rem;
+            }
+
+            /* Ensure action buttons stay aligned */
+            .table td .btn-group,
+            .table td .d-flex {
+                justify-content: flex-end;
+            }
+
+            /* DataTables responsive improvements */
+            .dataTables_wrapper .row {
+                margin: 0;
+            }
+
+            .dataTables_wrapper .col-sm-12,
+            .dataTables_wrapper .col-md-6,
+            .dataTables_wrapper .col-md-5,
+            .dataTables_wrapper .col-md-7 {
+                padding: 0.25rem;
+            }
+
+            /* Mobile pagination improvements */
+            .dataTables_wrapper .dataTables_paginate .paginate_button {
+                padding: 0.25rem 0.5rem;
+                margin: 0 0.1rem;
+            }
+
+            /* Search input full width on mobile */
+            .dataTables_wrapper .dataTables_filter {
+                text-align: left;
+            }
+
+            .dataTables_wrapper .dataTables_filter label {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .dataTables_wrapper .dataTables_filter input {
+                flex: 1;
+            }
+
+            /* Length menu improvements */
+            .dataTables_wrapper .dataTables_length label {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+        }
+        }
     </style>
 
     <main id="main" class="main">
@@ -117,12 +330,12 @@
 
         <div class="profile-header-card d-flex flex-column flex-md-row align-items-md-center justify-content-between">
             <div class="d-flex align-items-center mb-3 mb-md-0">
-                <div class="profile-avatar me-4">
+                <div class="profile-avatar me-3 me-md-4">
                     {{ client.client_name|slice:":1"|upper }}
                 </div>
                 <div>
-                    <h2 class="mb-1 text-primary fw-bold" style="font-size: 1.75rem;">{{ client.client_name }}</h2>
-                    <div class="d-flex align-items-center gap-3 text-muted">
+                    <h2 class="mb-1 text-primary fw-bold" style="font-size: 1.5rem;">{{ client.client_name }}</h2>
+                    <div class="d-flex flex-wrap align-items-center gap-2 gap-md-3 text-muted">
                     <span class="badge bg-light text-secondary border">
                         <i class="bi bi-briefcase me-1"></i>
                         {% if client.business_structure %}{{ client.business_structure }}{% else %}
@@ -130,7 +343,7 @@
                     </span>
 
                         {% if client.email %}
-                            <small><i class="bi bi-envelope me-1"></i> {{ client.email }}</small>
+                            <small class="d-none d-md-inline"><i class="bi bi-envelope me-1"></i> {{ client.email }}</small>
                         {% endif %}
 
                         {% if client.phone_number %}
@@ -140,18 +353,19 @@
                 </div>
             </div>
 
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
+                {% if can_edit_client %}
                 {% if request.user.is_superuser %}
                     <a href="{% url 'edit_client' client.id %}"
-                       class="btn btn-outline-primary" title="Edit Client">
-                        <i class="bi bi-pencil"></i> Edit Client
+                       class="btn btn-outline-primary btn-sm" title="Edit Client">
+                        <i class="bi bi-pencil"></i> <span class="d-none d-md-inline">Edit Client</span>
                     </a>
                 {% endif %}
 
                 <!-- Actions Dropdown Button -->
                 <div class="btn-group">
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-three-dots-vertical me-1"></i> Actions
+                    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical me-1"></i> <span class="d-none d-md-inline">Actions</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
@@ -181,6 +395,11 @@
                             </a>
                         </li>
                         <li>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addPhoneCallModal">
+                                <i class="bi bi-telephone-fill me-2"></i>Add Phone Call
+                            </a>
+                        </li>
+                        <li>
                             <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
                                 <i class="bi bi-cloud-upload me-2"></i>Upload Document
                             </a>
@@ -193,6 +412,7 @@
                         </li>
                     </ul>
                 </div>
+                {% endif %}
             </div>
         </div>
 
@@ -200,56 +420,61 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body pt-3">
 
-                    <ul class="nav nav-tabs nav-tabs-bordered w-100 mb-4">
+                    <!-- Updated Tab Navigation with hidden scrollbar class -->
+                    <ul class="nav nav-tabs nav-tabs-bordered w-100 mb-4 mobile-scroll-tabs">
                         <li class="nav-item">
                             <button class="nav-link active fw-bold" data-bs-toggle="tab"
-                                    data-bs-target="#profile-overview">
+                                    data-bs-target="#profile-overview" style="white-space: nowrap;">
                                 <i class="bi bi-grid me-2"></i>Overview
                             </button>
                         </li>
 
                         {% if gst_details_list %}
                             <li class="nav-item">
-                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-gst">
-                                    <i class="bi bi-receipt me-2"></i>GST Details
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-gst" style="white-space: nowrap;">
+                                    <i class="bi bi-receipt me-2"></i>GST
                                 </button>
                             </li>
                         {% endif %}
                         <li class="nav-item">
-                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-documents">
-                                <i class="bi bi-file-earmark-text me-2"></i>Documents
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-documents" style="white-space: nowrap;">
+                                <i class="bi bi-file-earmark-text me-2"></i>Docs
                             </button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-services">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-services" style="white-space: nowrap;">
                                 <i class="bi bi-briefcase me-2"></i>Services
                             </button>
                         </li>
                         {% if invoices_data %}
                             <li class="nav-item">
-                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-invoices">
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-invoices" style="white-space: nowrap;">
                                     <i class="bi bi-receipt-cutoff me-2"></i>Invoices
                                 </button>
                             </li>
                         {% endif %}
                         {% if portal_credentials %}
                             <li class="nav-item">
-                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-passwords">
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-passwords" style="white-space: nowrap;">
                                     <i class="bi bi-key me-2"></i>Passwords
                                 </button>
                             </li>
                         {% endif %}
                         <li class="nav-item">
-                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-linked">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-phone-calls" style="white-space: nowrap;">
+                                <i class="bi bi-telephone me-2"></i>Phone Calls
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-linked" style="white-space: nowrap;">
                                 <i class="bi bi-link-45deg me-2"></i>
-                                {% if link_type == 'businesses' %}Linked Businesses{% else %}Partners /
-                                    Directors{% endif %}
+                                {% if link_type == 'businesses' %}Linked{% else %}Partners{% endif %}
                             </button>
                         </li>
                         {% if client.client_type == 'Entity' %}
                             <li class="nav-item">
-                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-entity">
-                                    <i class="bi bi-building me-2"></i>Entity Details
+                                <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#profile-entity" style="white-space: nowrap;">
+                                    <i class="bi bi-building me-2"></i>Entity
                                 </button>
                             </li>
                         {% endif %}
@@ -274,10 +499,12 @@
                         <div class="tab-pane fade" id="profile-gst">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="card-title text-primary"><i class="bi bi-receipt me-2"></i>All GST Data</h5>
+                                {% if can_edit_client %}
                                 <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#addGSTModal">
                                     <i class="bi bi-plus-lg"></i> Add New GST
                                 </button>
+                                {% endif %}
                             </div>
 
                             <div class="table-responsive">
@@ -289,8 +516,10 @@
                                         <th>Scheme</th>
                                         <th>Status</th>
                                         <th>Created By</th>
-                                        {% if request.user.is_superuser or request.user == client.assigned_ca %}
+                                        {% if can_edit_client %}
+                                            {% if request.user.is_superuser or request.user == client.assigned_ca %}
                                             <th class="text-end">Action</th>
+                                            {% endif %}
                                         {% endif %}
                                     </tr>
                                     </thead>
@@ -313,13 +542,15 @@
                                                 <small class="text-muted">{{ gst.created_by.first_name|default:gst.created_by.username }}</small>
                                             </td>
 
-                                            {% if request.user.is_superuser or request.user == client.assigned_ca %}
+                                            {% if can_edit_client %}
+                                                {% if request.user.is_superuser or request.user == client.assigned_ca %}
                                                 <td class="text-end">
                                                     <a href="{% url 'edit_gst_details' gst.id %}"
                                                        class="btn btn-sm btn-outline-secondary">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                 </td>
+                                                {% endif %}
                                             {% endif %}
                                         </tr>
                                     {% empty %}
@@ -398,7 +629,7 @@
                             <h5 class="card-title text-primary"><i class="bi bi-briefcase-fill me-2"></i>Active Services
                             </h5>
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle border">
+                                <table class="table table-hover align-middle border datatable1" id="clientServicesTable">
                                     <thead class="table-light">
                                     <tr>
                                         <th>Title</th>
@@ -486,7 +717,7 @@
                             <form method="post" action="{% url 'invoice_bulk_status_update' %}" id="clientInvoiceBulkStatusForm">
                               {% csrf_token %}
                               <div class="table-responsive">
-                                <table class="table table-hover align-middle border" id="clientInvoicesTable">
+                                <table class="table table-hover align-middle border datatable1" id="clientInvoicesTable">
                                     <thead class="table-light">
                                     <tr>
                                         <th>Invoice #</th>
@@ -514,7 +745,17 @@
                                                 ₹{{ item.balance|floatformat:0 }}
                                             </td>
                                             <td>
-                                                {% if item.has_payments %}
+                                                {% if is_partner %}
+                                                  <!-- Partner: View-only - always show badge -->
+                                                  <span class="badge
+                                                    {% if item.payment_status == 'PAID' %}bg-success
+                                                    {% elif item.payment_status == 'PARTIALLY_PAID' %}bg-warning text-dark
+                                                    {% elif item.payment_status == 'OPEN' %}bg-info
+                                                    {% elif item.payment_status == 'DRAFT' %}bg-secondary
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ item.payment_status_display }}
+                                                  </span>
+                                                {% elif item.has_payments %}
                                                   <!-- Status locked - payment received - show badge only -->
                                                   <span class="badge
                                                     {% if item.payment_status == 'PAID' %}bg-success
@@ -562,7 +803,7 @@
                                                         <i class="bi bi-eye"></i>
                                                     </a>
 
-                                                    {% if item.balance > 0 and item.payment_status != 'DRAFT' %}
+                                                    {% if can_edit_client and item.balance > 0 and item.payment_status != 'DRAFT' %}
                                                         <a class="btn btn-sm btn-success"
                                                            href="{% url 'payment_collect' item.invoice.id %}"
                                                            title="Collect Payment">
@@ -584,11 +825,13 @@
                               </div>
 
                               <!-- Save Button at Bottom -->
+                              {% if can_edit_client %}
                               <div class="d-flex justify-content-end mt-3">
                                 <button type="submit" class="btn btn-primary px-4" id="saveClientInvoiceStatusBtn">
                                   <i class="bi bi-check-circle me-1"></i> Save Status Changes
                                 </button>
                               </div>
+                              {% endif %}
                             </form>
                         </div>
 
@@ -620,18 +863,22 @@
                                             </td>
                                             <td>{{ credential.username }}</td>
                                             <td class="text-end">
-                                                <a href="{% url 'view_portal_credential' credential.id %}"
-                                                   class="btn btn-sm btn-outline-primary"
-                                                   title="View Credential">
-                                                    <i class="bi bi-eye"></i> View
-                                                </a>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-danger"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#deleteCredentialModal{{ credential.id }}"
-                                                        title="Delete Credential">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
+                                                <div class="d-flex gap-1 justify-content-end">
+                                                    <a href="{% url 'view_portal_credential' credential.id %}"
+                                                       class="btn btn-sm btn-outline-primary"
+                                                       title="View Credential">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    {% if can_edit_client %}
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#deleteCredentialModal{{ credential.id }}"
+                                                            title="Delete Credential">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                </div>
                                             </td>
                                         </tr>
 
@@ -665,6 +912,85 @@
                                         <tr>
                                             <td colspan="4" class="text-center text-muted py-4">
                                                 No portal credentials found for this client.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Phone Calls Tab -->
+                        <div class="tab-pane fade" id="profile-phone-calls">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title text-primary m-0"><i class="bi bi-telephone me-2"></i>Phone Call Logs</h5>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addPhoneCallModal">
+                                    <i class="bi bi-plus-lg"></i> Add Phone Call
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle border datatable1" id="clientPhoneCallsTable">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Call Date & Time</th>
+                                        <th>Employee</th>
+                                        <th>Services</th>
+                                        <th>Remarks</th>
+                                        <th>Next Follow-up</th>
+                                        <th>Feedback</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for call in phone_calls %}
+                                        <tr>
+                                            <td class="fw-bold">{{ call.call_date|date:"M d, Y h:i A" }}</td>
+                                            <td>
+                                                <small>{{ call.employee.get_full_name|default:call.employee.username }}</small>
+                                            </td>
+                                            <td>
+                                                {% for service in call.services.all|slice:":3" %}
+                                                    <span class="badge bg-light text-dark border me-1">{{ service.service_type }}</span>
+                                                {% endfor %}
+                                                {% if call.services.count > 3 %}
+                                                    <span class="badge bg-secondary">+{{ call.services.count|add:"-3" }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ call.remarks }}">
+                                                    {{ call.remarks|truncatewords:10 }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if call.next_follow_up_date %}
+                                                    <span class="{% if call.is_follow_up_overdue %}text-danger fw-bold{% elif call.is_follow_up_today %}text-warning fw-bold{% endif %}">
+                                                        {{ call.next_follow_up_date|date:"M d, Y" }}
+                                                        {% if call.is_follow_up_overdue %}
+                                                            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                                                        {% elif call.is_follow_up_today %}
+                                                            <i class="bi bi-clock-fill text-warning"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if call.feedback == 'positive' %}
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-hand-thumbs-up me-1"></i>Positive
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="bi bi-hand-thumbs-down me-1"></i>Negative
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-4">
+                                                No phone call logs found for this client.
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -963,6 +1289,81 @@
                 </div>
             </div>
         </div>
+
+        <!-- Add Phone Call Modal -->
+        <div class="modal fade" id="addPhoneCallModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-telephone-plus me-2"></i>Add Phone Call Log
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <form action="{% url 'add_phone_call_log' client.id %}" method="post" id="phoneCallForm">
+                        {% csrf_token %}
+                        <div class="modal-body p-4">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-bold">Call Date & Time <span class="text-danger">*</span></label>
+                                    {{ phone_call_form.call_date }}
+                                    {% if phone_call_form.call_date.errors %}
+                                        <div class="text-danger small">{{ phone_call_form.call_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Services Discussed <span class="text-danger">*</span></label>
+                                <select name="services" class="form-select" id="id_services" multiple="multiple" required>
+                                    {% for service in phone_call_form.fields.services.queryset %}
+                                        <option value="{{ service.id }}">{{ service.service_type }} - {{ service.task_title }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text small">Select one or more services discussed during the call</div>
+                                {% if phone_call_form.services.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.services.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Discussion / Remarks <span class="text-danger">*</span></label>
+                                {{ phone_call_form.remarks }}
+                                {% if phone_call_form.remarks.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.remarks.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Next Follow-up Date</label>
+                                {{ phone_call_form.next_follow_up_date }}
+                                <div class="form-text small">Optional: Schedule next follow-up call</div>
+                                {% if phone_call_form.next_follow_up_date.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.next_follow_up_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Feedback <span class="text-danger">*</span></label>
+                                {{ phone_call_form.feedback }}
+                                {% if phone_call_form.feedback.errors %}
+                                    <div class="text-danger small">{{ phone_call_form.feedback.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-check-circle me-1"></i>Save Phone Call
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <form method="post" action="{% url 'update_single_client_status' client.id %}" id="clientStatusForm">
         {% csrf_token %}
         <input type="hidden" name="new_status" id="profileNewStatus">
@@ -978,6 +1379,64 @@
                 selectBox.value = requestedDocId;
             }
         }
+
+        // Initialize Select2 for Phone Call Services
+        $(document).ready(function() {
+            // Initialize Select2 for services multi-select with better styling
+            function initializeServicesSelect2() {
+                $('#id_services').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select services discussed during the call',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#addPhoneCallModal'),
+                    closeOnSelect: false,
+                    templateResult: formatService,
+                    templateSelection: formatServiceSelection,
+                    language: {
+                        noResults: function() {
+                            return "No services found";
+                        }
+                    }
+                });
+            }
+
+            // Custom formatting for service options
+            function formatService(service) {
+                if (!service.id) {
+                    return service.text;
+                }
+                var $service = $(
+                    '<div class="d-flex align-items-center">' +
+                    '<i class="bi bi-briefcase-fill me-2 text-primary"></i>' +
+                    '<span>' + service.text + '</span>' +
+                    '</div>'
+                );
+                return $service;
+            }
+
+            function formatServiceSelection(service) {
+                if (!service.id) {
+                    return service.text;
+                }
+                return service.text;
+            }
+
+            // Initialize on page load
+            initializeServicesSelect2();
+
+            // Reset form when modal is closed
+            $('#addPhoneCallModal').on('hidden.bs.modal', function () {
+                $('#phoneCallForm')[0].reset();
+                $('#id_services').val(null).trigger('change');
+            });
+
+            // Reinitialize when modal is shown to ensure proper rendering
+            $('#addPhoneCallModal').on('shown.bs.modal', function () {
+                $('#id_services').select2('destroy');
+                initializeServicesSelect2();
+            });
+        });
 
         // Toggle password visibility in modal
         document.addEventListener('DOMContentLoaded', function() {
@@ -1114,34 +1573,18 @@
             }
         });
 
-        // Initialize DataTable for client invoices if the table exists and has data
-        document.addEventListener('DOMContentLoaded', function() {
-            var invoiceTable = document.getElementById('clientInvoicesTable');
-            if (invoiceTable) {
-                // Check if table has data rows (not just the empty state)
-                var hasData = invoiceTable.querySelector('tbody tr td:not([colspan])');
-                if (hasData) {
-                    $('#clientInvoicesTable').DataTable({
-                        "pageLength": 10,
-                        "order": [[0, "desc"]], // Sort by Invoice # descending
-                        "language": {
-                            "search": "Search:",
-                            "lengthMenu": "Show _MENU_ entries",
-                            "info": "Showing _START_ to _END_ of _TOTAL_ invoices",
-                            "infoEmpty": "No invoices available",
-                            "paginate": {
-                                "first": "First",
-                                "last": "Last",
-                                "next": "Next",
-                                "previous": "Previous"
-                            }
-                        },
-                        "columnDefs": [
-                            { "orderable": false, "targets": [8] } // Disable sorting on Action column
-                        ]
-                    });
-                }
-            }
+        });
+    </script>
+
+    <!-- Fix for DataTables in Bootstrap Tabs -->
+    <script>
+        $(document).ready(function() {
+            // Adjust DataTable columns when tab is shown (fixes hidden tab issue)
+            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                setTimeout(function() {
+                    $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+                }, 100);
+            });
         });
     </script>
 

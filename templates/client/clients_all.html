@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block body %}
 <main id="main" class="main">
@@ -62,7 +63,8 @@
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Branch /
                                                 Office</label>
-                                            <select name="office" class="form-select">
+                                            <select name="office" class="form-select js-client-filter-select"
+                                                    data-placeholder="Search Branch / Office">
                                                 <option value="">All Branches</option>
                                                 {% for office in offices %}
                                                     <option value="{{ office.id }}"
@@ -78,7 +80,8 @@
                                             <div class="col-md-3">
                                                 <label class="form-label small fw-bold text-secondary">Assigned
                                                     Employee</label>
-                                                <select name="assigned_to" class="form-select">
+                                                <select name="assigned_to" class="form-select js-client-filter-select"
+                                                        data-placeholder="Search Assigned Employee">
                                                     <option value="">All Employees</option>
                                                     {% for emp_user in assigned_employee_choices %}
                                                         <option value="{{ emp_user.id }}"
@@ -94,7 +97,8 @@
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Task / Service
                                                 Type</label>
-                                            <select name="service_type" class="form-select border-primary bg-white">
+                                            <select name="service_type" class="form-select border-primary bg-white js-client-filter-select"
+                                                    data-placeholder="Search Task / Service Type">
                                                 <option value="">All Services</option>
                                                 {% for code, name in service_type_choices %}
                                                     <option value="{{ code }}"
@@ -109,7 +113,8 @@
                                         <!-- Status -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Status</label>
-                                            <select name="status" class="form-select">
+                                            <select name="status" class="form-select js-client-filter-select"
+                                                    data-placeholder="Search Status">
                                                 <option value="">All Statuses</option>
                                                 {% for code, name in status_choices %}
                                                     <option value="{{ code }}"
@@ -123,7 +128,8 @@
                                         <!-- Client Type -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Client Type</label>
-                                            <select name="client_type" class="form-select">
+                                            <select name="client_type" class="form-select js-client-filter-select"
+                                                    data-placeholder="Search Client Type">
                                                 <option value="">All Types</option>
                                                 {% for code, name in client_type_choices %}
                                                     <option value="{{ code }}"
@@ -137,7 +143,8 @@
                                         <!-- Business Structure -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Structure</label>
-                                            <select name="business_structure" class="form-select">
+                                            <select name="business_structure" class="form-select js-client-filter-select"
+                                                    data-placeholder="Search Structure">
                                                 <option value="">All Structures</option>
                                                 {% for code, name in business_structure_choices %}
                                                     <option value="{{ code }}"
@@ -152,7 +159,8 @@
                                         <!-- Custom View -->
                                         <div class="col-md-3">
                                             <label class="form-label small fw-bold text-secondary">Custom Filter</label>
-                                            <select name="custom_view" class="form-select">
+                                            <select name="custom_view" class="form-select js-client-filter-select"
+                                                    data-placeholder="Search Custom Filter">
                                                 <option value="">All Clients</option>
                                                 <option value="aadhaar_mobile_linked"
                                                         {% if request.GET.custom_view == 'aadhaar_mobile_linked' %}selected{% endif %}>
@@ -216,7 +224,8 @@
                                     <small class="text-muted">Showing {{ clients|length }} result(s)</small>
                                 {% endif %}
                             </div>
-                            <div>
+                            <!-- Client Action Buttons --> 
+                            <div class = "d-flex flex-column flex-sm-row gap-2">
                                 <a href="{% url 'client_export_select_columns' %}?{{ request.GET.urlencode }}" class="btn btn-success btn-sm me-2">
                                     <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
                                 </a>
@@ -231,7 +240,7 @@
                         <div class="d-flex gap-2 align-items-center mb-3 justify-content-end">
                             <select id="bulkActionClients" class="form-select form-select-sm" style="width:auto;">
                                 <option value="">Select Action</option>
-                                <option disabled>── Update Status ──</option>
+                                <option disabled>-- Update Status --</option>
                                 {% for code, name in status_choices %}
                                     <option value="{{ code }}">{{ name }}</option>
                                 {% endfor %}
@@ -368,11 +377,13 @@
                                                class="btn btn-sm btn-outline-secondary" title="View Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <!-- Edit Client -->
+                                            <!-- Edit Client - Check Partner Permissions -->
+                                            {% if client|can_edit_client:request.user %}
                                             <a href="{% url 'edit_client' client.id %}"
                                                class="btn btn-sm btn-outline-primary" title="Edit Client">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -397,8 +408,7 @@
                                     <!-- Previous Page -->
                                     {% if page_obj.has_previous %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page=
-                                                    {{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key|urlencode }}={{ value|urlencode }}{% endif %}{% endfor %}"
                                                aria-label="Previous">
                                                 <span aria-hidden="true">&laquo; Previous</span>
                                             </a>
@@ -419,8 +429,7 @@
                                     <!-- Next Page -->
                                     {% if page_obj.has_next %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page=
-                                                    {{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key|urlencode }}={{ value|urlencode }}{% endif %}{% endfor %}"
                                                aria-label="Next">
                                                 <span aria-hidden="true">Next &raquo;</span>
                                             </a>
@@ -516,8 +525,7 @@
         }
     </script>
 
-    --SCRIPT FOR THE CHECKBOX TOGGLE AND THE BULK SELECTION---
-     <script>
+    <script>
 
         function toggleSelectAll(source) {
             let checkboxes = document.querySelectorAll('.client-checkbox');
@@ -567,17 +575,46 @@
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Set hidden input dynamically
-                    let hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'hidden';
-                    hiddenInput.name = 'new_status';
-                    hiddenInput.value = selectedAction;
-                    document.getElementById('bulkStatusForm').appendChild(hiddenInput);
+                    const form = document.getElementById('bulkStatusForm');
+                    let hiddenInput = document.getElementById('bulkStatusValue');
 
-                    document.getElementById('bulkStatusForm').submit();
+                    if (!hiddenInput) {
+                        hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'new_status';
+                        hiddenInput.id = 'bulkStatusValue';
+                        form.appendChild(hiddenInput);
+                    }
+
+                    hiddenInput.value = selectedAction;
+                    form.submit();
                 }
             });
         }
         </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (!window.jQuery || !$.fn.select2) {
+                return;
+            }
+
+            $('.js-client-filter-select').each(function () {
+                const $select = $(this);
+
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+
+                $select.select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    allowClear: $select.find('option[value=""]').length > 0,
+                    placeholder: $select.data('placeholder') || 'Search...',
+                    minimumResultsForSearch: 0
+                });
+            });
+        });
+    </script>
 
 {% endblock body %}

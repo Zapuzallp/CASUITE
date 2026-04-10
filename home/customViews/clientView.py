@@ -205,6 +205,26 @@ def client_details_view(request, client_id):
     credential_form = ClientPortalCredentialsForm(client=client)
     # =================================
 
+    # === PHONE CALL LOGS LOGIC ===
+    from home.models import PhoneCallLog
+    from home.forms import PhoneCallLogForm
+    # For server-side pagination, we still need to pass phone_calls for the template structure
+    # but DataTables will fetch actual data via AJAX
+    phone_calls = PhoneCallLog.objects.filter(client=client).select_related(
+        'employee', 'employee__employee'
+    ).prefetch_related('services').order_by('-call_date', '-created_at')
+    phone_call_form = PhoneCallLogForm(client=client)
+    # =============================
+
+    # Check if user is a partner (view-only access)
+    is_partner = False
+    can_edit_client = True
+    if hasattr(user, 'employee'):
+        is_partner = user.employee.role == 'PARTNER'
+        if is_partner:
+            # Partner can edit ONLY IF they onboarded the client OR are assigned to the client
+            can_edit_client = (client.created_by == user or client.assigned_ca == user)
+
     # === STATUS CHOICES FOR SWEETALERT ===
     status_choices = Client.STATUS_CHOICES
 
@@ -225,7 +245,11 @@ def client_details_view(request, client_id):
         'invoices_data': invoices_data,  # Include Invoices
         'portal_credentials': portal_credentials,  # Include Portal Credentials
         'credential_form': credential_form,  # Include Credential Form
+        'phone_calls': phone_calls,  # Include Phone Calls
+        'phone_call_form': phone_call_form,  # Include Phone Call Form
         'status_choices': status_choices,
+        'is_partner': is_partner,  # Add partner flag
+        'can_edit_client': can_edit_client,  # Add edit permission flag
     }
 
     return render(request, 'client/client-details.html', context)
@@ -238,6 +262,11 @@ def client_details_view(request, client_id):
 @login_required
 def add_gst_details_view(request, client_id):
     client = get_object_or_404(Client, id=client_id)
+
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to add GST details.')
+        return redirect('client_details', client_id=client.id)
 
     if request.method == 'POST':
         form = GSTDetailsForm(request.POST)
@@ -259,6 +288,11 @@ def add_gst_details_view(request, client_id):
 def edit_gst_details_view(request, gst_id):
     gst_instance = get_object_or_404(GSTDetails, id=gst_id)
     client_id = gst_instance.client.id
+
+    # Check if user is a partner - deny access
+    if hasattr(request.user, 'employee') and request.user.employee.role == 'PARTNER':
+        messages.error(request, 'You do not have permission to edit GST details.')
+        return redirect('client_details', client_id=client_id)
 
     # Permission Check
     if not (request.user.is_superuser or request.user == gst_instance.client.assigned_ca):
@@ -289,3 +323,207 @@ def delete_gst_details_view(request, gst_id):
         return redirect('client_details', client_id=client_id)
 
     return redirect('client_details', client_id=client_id)
+
+@login_required
+def update_single_client_status(request, client_id):
+
+    client = get_object_or_404(Client, id=client_id)
+
+    user = request.user
+    employee = getattr(user, "employee", None)
+
+    # ---- PERMISSION LOGIC ----
+
+    allowed = False
+
+    # Superuser always allowed
+    if user.is_superuser:
+        allowed = True
+
+    # Branch Manager logic
+    elif employee and employee.role == "BRANCH_MANAGER" and employee.office_location == client.office_location:
+        allowed = True
+
+    if not allowed:
+        messages.error(request, "You do not have permission to update this client.")
+        return redirect("client_details", client_id=client.id)
+
+    if request.method == "POST":
+        new_status = request.POST.get("new_status")
+
+        if new_status:
+            client.status = new_status
+            client.save()
+
+            messages.success(request, "Client status updated successfully.")
+
+    return redirect("client_details", client_id=client.id)
+
+
+@login_required
+def bulk_update_client_status(request):
+
+    if request.method != "POST":
+        return redirect("clients")
+
+    client_ids = request.POST.getlist("client_ids")
+    new_status = request.POST.get("new_status")
+
+    if not client_ids:
+        messages.error(request, "No clients selected.")
+        return redirect("clients")
+
+    if not new_status:
+        messages.error(request, "Please select a status.")
+        return redirect("clients")
+
+    valid_statuses = [choice[0] for choice in Client.STATUS_CHOICES]
+
+    if new_status not in valid_statuses:
+        messages.error(request, "Invalid status selected.")
+        return redirect("clients")
+
+    user = request.user
+    employee = getattr(user, "employee", None)
+
+    clients = Client.objects.filter(id__in=client_ids)
+
+    updated_count = 0
+
+    for client in clients:
+
+        allowed = False
+
+        if user.is_superuser:
+            allowed = True
+
+
+        elif employee and employee.role == "BRANCH_MANAGER" and employee.office_location == client.office_location:
+            allowed = True
+
+        if allowed:
+            client.status = new_status
+            client.save()
+            updated_count += 1
+
+    if updated_count == 0:
+        messages.warning(request, "No clients were updated.")
+
+    else:
+        messages.success(request, f"{updated_count} client(s) updated successfully.")
+
+    return redirect("clients")
+
+
+
+@login_required
+def client_phone_calls_ajax(request, client_id):
+    """
+    AJAX endpoint for server-side DataTables pagination of phone call logs.
+    Returns JSON data for DataTables with server-side processing.
+    """
+    from django.http import JsonResponse
+    from django.db.models import Q
+    
+    user = request.user
+    accessible_clients = get_accessible_clients(user)
+    client = get_object_or_404(accessible_clients, id=client_id)
+    
+    # DataTables parameters
+    draw = int(request.GET.get('draw', 1))
+    start = int(request.GET.get('start', 0))
+    length = int(request.GET.get('length', 25))
+    search_value = request.GET.get('search[value]', '')
+    order_column_index = int(request.GET.get('order[0][column]', 0))
+    order_direction = request.GET.get('order[0][dir]', 'desc')
+    
+    # Base queryset
+    queryset = PhoneCallLog.objects.filter(client=client).select_related(
+        'employee', 'employee__employee'
+    ).prefetch_related('services')
+    
+    # Search functionality
+    if search_value:
+        queryset = queryset.filter(
+            Q(employee__first_name__icontains=search_value) |
+            Q(employee__last_name__icontains=search_value) |
+            Q(employee__username__icontains=search_value) |
+            Q(remarks__icontains=search_value) |
+            Q(feedback__icontains=search_value) |
+            Q(services__service_type__icontains=search_value)
+        ).distinct()
+    
+    # Total records before filtering
+    total_records = PhoneCallLog.objects.filter(client=client).count()
+    filtered_records = queryset.count()
+    
+    # Ordering
+    order_columns = ['call_date', 'employee__first_name', 'services', 'remarks', 'next_follow_up_date', 'feedback']
+    if 0 <= order_column_index < len(order_columns):
+        order_field = order_columns[order_column_index]
+        # For call_date, add created_at as secondary sort
+        if order_field == 'call_date':
+            if order_direction == 'desc':
+                queryset = queryset.order_by('-call_date', '-created_at')
+            else:
+                queryset = queryset.order_by('call_date', 'created_at')
+        else:
+            if order_direction == 'desc':
+                order_field = f'-{order_field}'
+            queryset = queryset.order_by(order_field, '-call_date', '-created_at')
+    else:
+        # Default: Latest records first
+        queryset = queryset.order_by('-call_date', '-created_at')
+    
+    # Pagination
+    phone_calls = queryset[start:start + length]
+    
+    # Prepare data
+    data = []
+    today = timezone.now().date()
+    
+    for call in phone_calls:
+        # Get services
+        services_list = list(call.services.all()[:3])
+        services_html = ''.join([
+            f'<span class="badge bg-light text-dark border me-1">{s.service_type}</span>'
+            for s in services_list
+        ])
+        if call.services.count() > 3:
+            services_html += f'<span class="badge bg-secondary">+{call.services.count() - 3}</span>'
+        
+        # Next follow-up
+        if call.next_follow_up_date:
+            is_overdue = call.next_follow_up_date < today
+            is_today = call.next_follow_up_date == today
+            follow_up_class = 'text-danger fw-bold' if is_overdue else ('text-warning fw-bold' if is_today else '')
+            follow_up_icon = '<i class="bi bi-exclamation-triangle-fill text-danger"></i>' if is_overdue else (
+                '<i class="bi bi-clock-fill text-warning"></i>' if is_today else ''
+            )
+            follow_up_html = f'<span class="{follow_up_class}">{call.next_follow_up_date.strftime("%b %d, %Y")} {follow_up_icon}</span>'
+        else:
+            follow_up_html = '<span class="text-muted">-</span>'
+        
+        # Feedback badge
+        if call.feedback == 'positive':
+            feedback_html = '<span class="badge bg-success"><i class="bi bi-hand-thumbs-up me-1"></i>Positive</span>'
+        else:
+            feedback_html = '<span class="badge bg-danger"><i class="bi bi-hand-thumbs-down me-1"></i>Negative</span>'
+        
+        data.append([
+            call.call_date.strftime("%b %d, %Y %I:%M %p"),
+            f'<small>{call.employee.get_full_name() or call.employee.username}</small>',
+            services_html,
+            f'<span class="text-truncate d-inline-block" style="max-width: 200px;" title="{call.remarks}">{call.remarks[:50]}...</span>' if len(call.remarks) > 50 else call.remarks,
+            follow_up_html,
+            feedback_html
+        ])
+    
+    response = {
+        'draw': draw,
+        'recordsTotal': total_records,
+        'recordsFiltered': filtered_records,
+        'data': data
+    }
+    
+    return JsonResponse(response)
