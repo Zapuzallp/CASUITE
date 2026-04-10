@@ -322,16 +322,23 @@ class TaskExtendedForm(BootstrapFormMixin, forms.ModelForm):
 class LeaveForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Leave
-        fields = ['leave_type', 'reason', 'start_date', 'end_date']
+        fields = ['leave_type','duration_type', 'reason', 'start_date', 'end_date']
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
             'reason': forms.Textarea(attrs={'rows': 5}),
         }
 
+
+
+
+
     def __init__(self, *args, **kwargs):
         leave_summary = kwargs.pop("leave_summary", None)
         super().__init__(*args, **kwargs)
+
+        # FORCE remove required at Django level
+        self.fields['end_date'].required = False
 
         if leave_summary:
             updated_choices = []
@@ -356,13 +363,18 @@ class LeaveForm(BootstrapFormMixin, forms.ModelForm):
         start_date = cleaned_data.get('start_date')
         end_date = cleaned_data.get('end_date')
 
-        if start_date and end_date:
-            # Check if end date is before start date
-            if end_date < start_date:
+        duration_type = cleaned_data.get('duration_type')
+
+        # Auto-set end_date for non-multiple types
+        if duration_type in ['single', 'first_half', 'second_half']:
+            cleaned_data['end_date'] = start_date
+
+        # validate
+        if start_date and cleaned_data.get('end_date'):
+            if cleaned_data['end_date'] < start_date:
                 raise forms.ValidationError(
                     "End date cannot be before start date."
                 )
-
 
         return cleaned_data
 

@@ -312,7 +312,17 @@
                                                     to {{ item.end_date|date:"d M Y" }}</div>
                                             </td>
                                             <td><span
-                                                    class="badge bg-light text-dark border">{{ item.duration }} Days</span>
+                                                    class="badge bg-light text-dark border">
+                                                {% if item.duration == 0.5 %}
+                                                    {% if item.duration_type == 'first_half' %}
+                                                        First Half
+                                                    {% else %}
+                                                        Second Half
+                                                    {% endif %}
+                                                    {% else %}
+                                                        {{ item.duration }} Days
+                                                {% endif %}
+                                            </span>
                                             </td>
                                             <td class="text-start small"
                                                 style="max-width: 200px;">{{ item.reason|truncatechars:50 }}</td>
@@ -402,6 +412,11 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label fw-bold small">Duration</label>
+                            {{ form.duration_type }}
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label fw-bold small">Reason</label>
                             {{ form.reason }}
                         </div>
@@ -470,6 +485,7 @@
     <!-- Logic Script -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const durationType = document.getElementById("id_duration_type");
             const startInput = document.getElementById("id_start_date");
             const endInput = document.getElementById("id_end_date");
             const leaveTypeSelect = document.getElementById("id_leave_type");
@@ -477,13 +493,13 @@
             const remainingAfter = document.getElementById("remaining-after");
             const balanceWarning = document.getElementById("balance-warning");
             const submitBtn = document.getElementById("submit-btn");
-
+            endInput.required = false;
             const sickBalance = parseInt(document.getElementById("sick-balance").textContent) || 0;
             const casualBalance = parseInt(document.getElementById("casual-balance").textContent) || 0;
             const earnedBalance = parseInt(document.getElementById("earned-balance").textContent) || 0;
 
             function calculateDays() {
-                if (!startInput.value || !endInput.value) {
+               if (!startInput.value || (durationType.value === "multiple" && !endInput.value)) {
                     output.textContent = "0 Days";
                     updateRemainingBalance();
                     return;
@@ -498,10 +514,21 @@
                     return;
                 }
 
-                const diffTime = endDate - startDate;
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                let diffDays = 0;
+                if (durationType.value === "first_half" || durationType.value === "second_half") {
+                    diffDays = 0.5;
+                } else if (durationType.value === "single") {
+                    diffDays = 1;
+                } else {
+                    const diffTime = endDate - startDate;
+                    diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                }
 
-                output.textContent = `${diffDays} Days`;
+                if (diffDays === 0.5) {
+                    output.textContent = "Half Day";
+                } else {
+                    output.textContent = `${diffDays} Days`;
+                }
                 updateRemainingBalance(diffDays);
             }
 
@@ -543,13 +570,35 @@
                     balanceWarning.style.display = "none";
                 }
             }
+            function toggleDateFields() {
+            const type = durationType.value;
+
+            if (type === "multiple") {
+                endInput.parentElement.style.display = "block";
+                endInput.required = true;
+            } else {
+                endInput.closest('.col-md-6').style.display = "none";
+                endInput.disabled = true;
+                endInput.required = false;
+                endInput.value = startInput.value;
+            }
+            }
+
+            durationType.addEventListener("change", function () {
+                toggleDateFields();
+                calculateDays();
+            });
 
             startInput.addEventListener("change", calculateDays);
             endInput.addEventListener("change", calculateDays);
             leaveTypeSelect.addEventListener("change", calculateDays);
 
+             toggleDateFields();
+             calculateDays();
             
             
         });
+
+
     </script>
 {% endblock body %}

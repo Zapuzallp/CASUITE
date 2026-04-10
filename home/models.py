@@ -724,8 +724,8 @@ class Attendance(models.Model):
             ("pending", "Pending"),
             ("approved", "Approved"),
             ("rejected", "Rejected"),
-            ("half_day", "Half Day Present"),
-            ("full_day", "Full Day Present")
+            ("first_half_present", "First Half Present"),
+            ("second_half_present", "Second Half Present"),
         ],
         default="approved"
     )
@@ -935,6 +935,19 @@ class Leave(models.Model):
         ("rejected", "Rejected"),
     ]
 
+    DURATION_CHOICES = [
+        ('single', 'Single'),
+        ('multiple', 'Multiple'),
+        ('first_half', 'First Half'),
+        ('second_half', 'Second Half'),
+    ]
+
+    duration_type = models.CharField(
+        max_length=20,
+        choices=DURATION_CHOICES,
+        default='single'
+    )
+
     employee = models.ForeignKey(
         Employee, on_delete=models.CASCADE, related_name="leave_records"
     )
@@ -949,7 +962,12 @@ class Leave(models.Model):
 
     @property
     def duration(self):
-        return (self.end_date - self.start_date).days + 1
+        if self.duration_type in ['first_half', 'second_half']:
+            return 0.5
+        elif self.duration_type == 'single':
+            return 1
+        elif self.duration_type == 'multiple':
+            return (self.end_date - self.start_date).days + 1
 
     def total_days(self):
         return self.duration

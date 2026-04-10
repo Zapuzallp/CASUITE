@@ -178,10 +178,14 @@
                                 <td class="text-muted">{{ log.clock_out|date:"h:i A"|default:"-" }}</td>
                                 <td><span class="badge bg-light text-dark border px-3 rounded-pill">{{ log.formatted_duration }}</span></td>
                                 <td>
-                                    {% if log.status == 'approved' or log.status == 'full_day' %}
+                                    {% if log.status == 'approved' %}
                                         <span class="badge badge-soft-success rounded-pill px-3">Present</span>
-                                    {% elif log.status == 'half_day' %}
-                                        <span class="badge badge-soft-warning rounded-pill px-3">Half Day</span>
+                                    {% elif log.status == 'first_half_present' %}
+                                        <span class="badge badge-soft-warning rounded-pill px-3">First Half Present</span>
+
+                                    {% elif log.status == 'second_half_present' %}
+                                        <span class="badge badge-soft-warning rounded-pill px-3">Second Half Present</span>
+
                                     {% else %}
                                         <span class="badge badge-soft-primary rounded-pill px-3">{{ log.status|title }}</span>
                                     {% endif %}

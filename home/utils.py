@@ -432,6 +432,24 @@ def process_clock_in(user, lat=None, long=None, location_name=None, device_type=
 
     # Set flag to prevent model save from overriding status
     attendance._skip_auto_status = True
+    #  APPLY LEAVE LOGIC FOR (HALF DAY SUPPORT)
+    from home.models import Leave
+
+    today = timezone.localdate()
+
+    leave = Leave.objects.filter(
+        employee=user.employee,
+        start_date__lte=today,
+        end_date__gte=today,
+        status='approved'
+    ).first()
+
+    if leave:
+        if leave.duration_type == 'first_half':
+            attendance.status = 'second_half_present'
+
+        elif leave.duration_type == 'second_half':
+            attendance.status = 'first_half_present'
     attendance.save()
     return {'success': success, 'message': message}
 
@@ -551,6 +569,21 @@ def process_clock_out(user, lat=None, long=None, location_name=None, device_type
 
     # Set flag to prevent model save from overriding status
     attendance._skip_auto_status = True
+    #  APPLY LEAVE LOGIC
+    from home.models import Leave
+    leave = Leave.objects.filter(
+        employee=user.employee,
+        start_date__lte=attendance.date,
+        end_date__gte=attendance.date,
+        status='approved'
+    ).first()
+
+    if leave:
+        if leave.duration_type == 'first_half':
+            attendance.status = 'second_half_present'
+
+        elif leave.duration_type == 'second_half':
+            attendance.status = 'first_half_present'
     attendance.save()
     return {'success': success, 'message': message}
 
