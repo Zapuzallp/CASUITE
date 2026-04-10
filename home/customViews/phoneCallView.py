@@ -76,10 +76,9 @@ def phone_call_logs_list(request):
         pass
     elif hasattr(user, 'employee'):
         employee = user.employee
-        if employee.role == 'PARTNER':
-            # Partners see logs for their assigned clients only
-            accessible_clients = get_accessible_clients(user)
-            queryset = queryset.filter(client__in=accessible_clients)
+        if employee.role in ['ADMIN', 'PARTNER']:
+            # Admin and Partner see all logs
+            pass
         elif employee.role == 'BRANCH_MANAGER':
             # Branch managers see logs from their branch employees
             branch_users = Employee.objects.filter(
@@ -89,8 +88,11 @@ def phone_call_logs_list(request):
         elif employee.role == 'STAFF':
             # Staff see only their own logs
             queryset = queryset.filter(employee=user)
+        else:
+            # Default: only own logs
+            queryset = queryset.filter(employee=user)
     else:
-        # Default: only own logs
+        # Users without employee profile: only own logs
         queryset = queryset.filter(employee=user)
     
     # Apply filters
@@ -167,23 +169,29 @@ def phone_call_logs_list(request):
         phone_calls = paginator.page(paginator.num_pages)
     
     # Get accessible clients for filter dropdown
-    accessible_clients = get_accessible_clients(user)
+    if user.is_superuser:
+        accessible_clients = Client.objects.all()
+    elif hasattr(user, 'employee') and user.employee.role in ['ADMIN', 'PARTNER']:
+        # Admin and Partner see all clients
+        accessible_clients = Client.objects.all()
+    else:
+        # Others see clients based on get_accessible_clients
+        accessible_clients = get_accessible_clients(user)
     
     # Get unique employees for filter dropdown based on role
     if user.is_superuser:
         employees = Employee.objects.select_related('user').all()
     elif hasattr(user, 'employee'):
-        if user.employee.role == 'PARTNER':
-            # Partners see only employees assigned to their accessible clients
-            assigned_user_ids = accessible_clients.values_list('assigned_ca_id', flat=True).distinct()
-            employees = Employee.objects.filter(
-                user_id__in=assigned_user_ids
-            ).select_related('user')
+        if user.employee.role in ['ADMIN', 'PARTNER']:
+            # Admin and Partner see all employees
+            employees = Employee.objects.select_related('user').all()
         elif user.employee.role == 'BRANCH_MANAGER':
+            # Branch managers see employees in their branch
             employees = Employee.objects.filter(
                 office_location=user.employee.office_location
             ).select_related('user')
         else:
+            # Staff see only themselves
             employees = Employee.objects.filter(user=user).select_related('user')
     else:
         employees = Employee.objects.filter(user=user).select_related('user')
@@ -275,3 +283,139 @@ def get_client_phone_calls_ajax(request, client_id):
         'success': True,
         'data': data
     })
+
+
+@login_required
+def add_phone_call_from_list(request):
+    """
+    Add a phone call log from the phone calls list page.
+    Includes client selection field.
+    """
+    if request.method == 'POST':
+        client_id = request.POST.get('client')
+        
+        if not client_id:
+            messages.error(request, 'Please select a client.')
+            return redirect('phone_calls_list')
+        
+        # Ensure client exists (no restrictions - anyone can add for any client)
+        client = get_object_or_404(Client, id=client_id)
+        
+        # Create form with client context
+        form = PhoneCallLogForm(request.POST, client=client)
+        
+        if form.is_valid():
+            phone_call = form.save(commit=False)
+            phone_call.client = client
+            phone_call.employee = request.user
+            
+            # Ensure call_date is timezone-aware (Asia/Kolkata)
+            if phone_call.call_date and timezone.is_naive(phone_call.call_date):
+                import pytz
+                kolkata_tz = pytz.timezone('Asia/Kolkata')
+                phone_call.call_date = kolkata_tz.localize(phone_call.call_date)
+            
+            phone_call.save()
+            
+            # Save many-to-many relationship for services
+            form.save_m2m()
+            
+            messages.success(request, f'Phone call log added successfully for {client.client_name}!')
+            return redirect('phone_calls_list')
+        else:
+            messages.error(request, 'Please correct the errors in the form.')
+            return redirect('phone_calls_list')
+    
+    return redirect('phone_calls_list')
+
+
+@login_required
+def search_clients_for_phone_call(request):
+    """
+    AJAX endpoint to search clients for phone call modal.
+    Returns clients in format: client_name || file_no || status
+    No restrictions - returns all clients.
+    """
+    search_term = request.GET.get('q', '').strip()
+    page = int(request.GET.get('page', 1))
+    page_size = 30
+    
+    # Base queryset - all clients, ordered by name
+    queryset = Client.objects.all().order_by('client_name')
+    
+    # Apply search filter if search term provided
+    if search_term:
+        queryset = queryset.filter(
+            Q(client_name__icontains=search_term) |
+            Q(file_number__icontains=search_term) |
+            Q(status__icontains=search_term) |
+            Q(pan_no__icontains=search_term)
+        )
+    
+    # Pagination
+    start = (page - 1) * page_size
+    end = start + page_size
+    total_count = queryset.count()
+    clients = queryset[start:end]
+    
+    # Format results
+    results = []
+    for client in clients:
+        # Format: Client Name || File No || Status
+        display_text = client.client_name
+        if client.file_number:
+            display_text += f" || {client.file_number}"
+        if client.status:
+            display_text += f" || {client.status}"
+            
+        results.append({
+            'id': client.id,
+            'text': display_text,
+            'client_name': client.client_name,
+            'file_no': client.file_number or 'N/A',
+            'status': client.status or 'N/A'
+        })
+    
+    return JsonResponse({
+        'results': results,
+        'pagination': {
+            'more': end < total_count
+        }
+    })
+
+
+@login_required
+def get_client_services_for_phone_call(request):
+    """
+    AJAX endpoint to get services/tasks for a selected client.
+    Used when adding phone call from list page.
+    """
+    client_id = request.GET.get('client_id')
+    
+    if not client_id:
+        return JsonResponse({
+            'success': False,
+            'error': 'Client ID is required'
+        }, status=400)
+    
+    # Get client (no restrictions)
+    client = get_object_or_404(Client, id=client_id)
+    
+    # Get client's tasks/services
+    services = Task.objects.filter(
+        client=client
+    ).order_by('-created_at')
+    
+    # Format results
+    results = []
+    for service in services:
+        results.append({
+            'id': service.id,
+            'text': f"{service.service_type} - {service.task_title}"
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'services': results
+    })
+

@@ -250,6 +250,12 @@
                                         </form>
                                     </div>
                                 </div>
+                                
+                                <div>
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPhoneCallModal">
+                                        <i class="bi bi-plus-lg me-1"></i>Add Phone Call
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="table-responsive">
@@ -379,6 +385,139 @@
         </section>
     </main>
 
+    <!-- Add Phone Call Modal -->
+    <div class="modal fade" id="addPhoneCallModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-telephone-plus me-2"></i>Add Phone Call Log
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form action="{% url 'add_phone_call_from_list' %}" method="post" id="phoneCallForm">
+                    {% csrf_token %}
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Client <span class="text-danger">*</span></label>
+                            <select name="client" class="form-select" id="id_client" required>
+                                <option value="">Select a client...</option>
+                            </select>
+                            <div class="form-text small">Search by client name, file number, or status</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">Call Date & Time <span class="text-danger">*</span></label>
+                                <input type="datetime-local" name="call_date" class="form-control" id="id_call_date" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Services Discussed <span class="text-danger">*</span></label>
+                            <select name="services" class="form-select" id="id_services" multiple="multiple" required>
+                            </select>
+                            <div class="form-text small">Select one or more services discussed during the call</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Discussion / Remarks <span class="text-danger">*</span></label>
+                            <textarea name="remarks" class="form-control" id="id_remarks" rows="4" 
+                                      placeholder="Enter discussion details, notes, and key points..." required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Next Follow-up Date</label>
+                            <input type="date" name="next_follow_up_date" class="form-control" id="id_next_follow_up_date">
+                            <div class="form-text small">Optional: Schedule next follow-up call</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Feedback <span class="text-danger">*</span></label>
+                            <select name="feedback" class="form-select" id="id_feedback" required>
+                                <option value="">Select feedback...</option>
+                                <option value="positive">Positive</option>
+                                <option value="negative">Negative</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-circle me-1"></i>Save Phone Call
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Custom Select2 styling for phone call modal */
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple {
+            min-height: 120px !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+        }
+        
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+            background-color: #0d6efd !important;
+            border: 1px solid #0d6efd !important;
+            color: white !important;
+            padding: 0.25rem 0.5rem !important;
+            border-radius: 0.25rem !important;
+            margin: 0.25rem !important;
+            font-size: 0.875rem !important;
+        }
+        
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
+            color: white !important;
+            margin-right: 0.25rem !important;
+            font-weight: bold !important;
+        }
+        
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #ffdddd !important;
+        }
+        
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-search--inline .select2-search__field {
+            margin-top: 0.25rem !important;
+            padding: 0.25rem !important;
+        }
+        
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-dropdown {
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+        }
+        
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+            color: white !important;
+        }
+        
+        #addPhoneCallModal .select2-container--bootstrap-5 .select2-results__option--selected {
+            background-color: #e7f1ff !important;
+            color: #0d6efd !important;
+        }
+        
+        /* Client dropdown styling */
+        .select2-client-result {
+            padding: 0.25rem 0;
+        }
+        
+        .select2-client-result strong {
+            font-size: 0.95rem;
+            color: #212529;
+        }
+        
+        .select2-client-result .text-muted {
+            font-size: 0.85rem;
+            color: #6c757d !important;
+        }
+    </style>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (!window.jQuery || !$.fn.select2) {
@@ -475,5 +614,278 @@
                 });
             });
         });
+    </script>
+
+    <script>
+        // Ensure jQuery and Select2 are loaded before initializing
+        (function() {
+            // Wait for jQuery to be available
+            function initPhoneCallModal() {
+                if (typeof jQuery === 'undefined' || typeof $.fn.select2 === 'undefined') {
+                    setTimeout(initPhoneCallModal, 100);
+                    return;
+                }
+                
+                // Phone Call Modal JavaScript
+                $(document).ready(function() {
+                    // Set current datetime in Asia/Kolkata timezone
+                    function setCurrentDateTime() {
+                        const now = new Date();
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        const datetime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                        $('#id_call_date').val(datetime);
+                    }
+
+                    // Custom formatting for modal client dropdown (different from filter)
+                    function formatModalClient(client) {
+                        if (!client.id) {
+                            return client.text;
+                        }
+                        
+                        // Parse the display text which is in format: Name || File No || Status
+                        var parts = client.text.split(' || ');
+                        var clientName = parts[0] || client.text;
+                        var fileNo = parts[1] || '';
+                        var status = parts[2] || '';
+                        
+                        var html = '<div class="select2-client-result">';
+                        html += '<div><strong>' + clientName + '</strong></div>';
+                        if (fileNo || status) {
+                            html += '<div class="small text-muted">';
+                            if (fileNo && fileNo !== 'N/A') {
+                                html += 'File No: ' + fileNo;
+                            }
+                            if (status && status !== 'N/A') {
+                                if (fileNo && fileNo !== 'N/A') html += ' | ';
+                                html += 'Status: ' + status;
+                            }
+                            html += '</div>';
+                        }
+                        html += '</div>';
+                        
+                        return $(html);
+                    }
+
+                    function formatModalClientSelection(client) {
+                        if (!client.id) {
+                            return client.text;
+                        }
+                        // Show just the client name in the selection
+                        var parts = client.text.split(' || ');
+                        return parts[0] || client.text;
+                    }
+
+                    // Initialize Client Select2 with AJAX search
+                    function initializeClientSelect2() {
+                        // Get CSRF token
+                        var csrftoken = $('[name=csrfmiddlewaretoken]').val();
+                        
+                        $('#id_client').select2({
+                            theme: 'bootstrap-5',
+                            placeholder: 'Click to search clients...',
+                            allowClear: true,
+                            width: '100%',
+                            dropdownParent: $('#addPhoneCallModal'),
+                            minimumInputLength: 0,
+                            ajax: {
+                                url: '{% url "search_clients_for_phone_call" %}',
+                                dataType: 'json',
+                                delay: 250,
+                                headers: {
+                                    'X-CSRFToken': csrftoken
+                                },
+                                data: function(params) {
+                                    return {
+                                        q: params.term || '',
+                                        page: params.page || 1
+                                    };
+                                },
+                                processResults: function(data, params) {
+                                    params.page = params.page || 1;
+                                    
+                                    return {
+                                        results: data.results || [],
+                                        pagination: {
+                                            more: (params.page * 30) < (data.total_count || 0)
+                                        }
+                                    };
+                                },
+                                error: function(xhr, status, error) {
+                                    // Ignore abort errors (normal Select2 behavior when typing fast)
+                                    if (status === 'abort') {
+                                        return;
+                                    }
+                                    
+                                    // Only log real errors
+                                    console.error('AJAX error:', error);
+                                    console.error('Status:', status);
+                                    console.error('Status Code:', xhr.status);
+                                    console.error('Response:', xhr.responseText);
+                                    console.error('URL:', '{% url "search_clients_for_phone_call" %}');
+                                },
+                                cache: true
+                            },
+                            templateResult: formatModalClient,
+                            templateSelection: formatModalClientSelection,
+                            language: {
+                                searching: function() {
+                                    return "Searching clients...";
+                                },
+                                noResults: function() {
+                                    return "No clients found";
+                                },
+                                loadingMore: function() {
+                                    return "Loading more results...";
+                                },
+                                errorLoading: function() {
+                                    return "Error loading results. Please try again.";
+                                }
+                            }
+                        });
+                    }
+
+                    // Initialize Services Select2
+                    function initializeServicesSelect2() {
+                        $('#id_services').select2({
+                            theme: 'bootstrap-5',
+                            placeholder: 'First select a client to load services',
+                            allowClear: true,
+                            width: '100%',
+                            dropdownParent: $('#addPhoneCallModal'),
+                            closeOnSelect: false,
+                            templateResult: formatModalService,
+                            templateSelection: formatModalServiceSelection,
+                            language: {
+                                noResults: function() {
+                                    return "No services found for this client";
+                                }
+                            }
+                        });
+                    }
+
+                    // Custom formatting for service options
+                    function formatModalService(service) {
+                        if (!service.id) {
+                            return service.text;
+                        }
+                        var $service = $(
+                            '<div class="d-flex align-items-center">' +
+                            '<i class="bi bi-briefcase-fill me-2 text-primary"></i>' +
+                            '<span>' + service.text + '</span>' +
+                            '</div>'
+                        );
+                        return $service;
+                    }
+
+                    function formatModalServiceSelection(service) {
+                        return service.text;
+                    }
+
+                    // Load services when client is selected
+                    $('#id_client').on('change', function() {
+                        try {
+                            var clientId = $(this).val();
+                            var $servicesSelect = $('#id_services');
+                            
+                            // Clear existing options
+                            $servicesSelect.empty().trigger('change');
+                            
+                            if (clientId) {
+                                // Show loading state
+                                $servicesSelect.prop('disabled', true);
+                                
+                                // Fetch services for selected client
+                                $.ajax({
+                                    url: '{% url "get_client_services_for_phone_call" %}',
+                                    data: { client_id: clientId },
+                                    dataType: 'json',
+                                    success: function(data) {
+                                        $servicesSelect.prop('disabled', false);
+                                        
+                                        if (data.success && data.services.length > 0) {
+                                            data.services.forEach(function(service) {
+                                                var option = new Option(service.text, service.id, false, false);
+                                                $servicesSelect.append(option);
+                                            });
+                                            $servicesSelect.trigger('change');
+                                            
+                                            // Update placeholder
+                                            if ($servicesSelect.data('select2')) {
+                                                try {
+                                                    $servicesSelect.data('select2').$container.find('.select2-selection__placeholder').text('Select services discussed during the call');
+                                                } catch(e) {
+                                                    // Silently ignore placeholder update errors
+                                                }
+                                            }
+                                        } else {
+                                            // No services found
+                                            var option = new Option('No services/tasks found for this client', '', false, false);
+                                            option.disabled = true;
+                                            $servicesSelect.append(option);
+                                            $servicesSelect.trigger('change');
+                                        }
+                                    },
+                                    error: function(xhr, status, error) {
+                                        $servicesSelect.prop('disabled', false);
+                                        
+                                        // Ignore abort errors
+                                        if (status === 'abort') {
+                                            return;
+                                        }
+                                        
+                                        console.error('Error loading services:', error);
+                                        alert('Error loading services. Please try again.');
+                                    }
+                                });
+                            } else {
+                                // Reset placeholder when no client selected
+                                if ($servicesSelect.data('select2')) {
+                                    try {
+                                        $servicesSelect.data('select2').$container.find('.select2-selection__placeholder').text('First select a client to load services');
+                                    } catch(e) {
+                                        // Silently ignore placeholder update errors
+                                    }
+                                }
+                            }
+                        } catch(error) {
+                            console.error('Error in client change handler:', error);
+                        }
+                    });
+
+                    // Initialize when modal is shown
+                    $('#addPhoneCallModal').on('shown.bs.modal', function() {
+                        // Destroy and reinitialize Select2
+                        if ($('#id_client').hasClass('select2-hidden-accessible')) {
+                            $('#id_client').select2('destroy');
+                        }
+                        if ($('#id_services').hasClass('select2-hidden-accessible')) {
+                            $('#id_services').select2('destroy');
+                        }
+                        
+                        initializeClientSelect2();
+                        initializeServicesSelect2();
+                        setCurrentDateTime();
+                    });
+
+                    // Reset form when modal is closed
+                    $('#addPhoneCallModal').on('hidden.bs.modal', function() {
+                        $('#phoneCallForm')[0].reset();
+                        if ($('#id_client').hasClass('select2-hidden-accessible')) {
+                            $('#id_client').val(null).trigger('change');
+                        }
+                        if ($('#id_services').hasClass('select2-hidden-accessible')) {
+                            $('#id_services').empty().trigger('change');
+                        }
+                    });
+                });
+            }
+            
+            // Start initialization
+            initPhoneCallModal();
+        })();
     </script>
 {% endblock body %}
