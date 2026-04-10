@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 from datetime import datetime, date, timedelta
 import calendar
 from django.contrib import messages
-
 from home.models import Attendance, OfficeDetails, Leave
 
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
