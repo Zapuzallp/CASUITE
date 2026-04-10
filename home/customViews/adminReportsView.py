@@ -6,9 +6,6 @@ from datetime import datetime, date, timedelta
 import calendar
 from django.contrib import messages
 from home.models import Attendance, OfficeDetails, Leave
-from django.db.models import Sum, Q
-from django.shortcuts import get_object_or_404
-from home.models import Client, Payment
 
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "admin_reports/attendance_report.html"
