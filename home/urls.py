@@ -161,8 +161,6 @@ urlpatterns = [
     path('employees/view/', employeesView.EmployeeView.as_view(), name='employee-view'),
     path('employees/add/', employeesView.AddEmployeeView.as_view(), name='add-employee'),
     path('employees/edit/<int:pk>/', employeesView.AddEmployeeView.as_view(), name='edit-employee'),
-    path('employees/delete/<int:pk>/', employeesView.EmployeeDeleteView.as_view(), name='delete_employee'),
-    #path('employees/export/', employeesView.ExportEmployeeView.as_view(), name='export-employees'),
     path('employee/<int:id>/details/', employeesView.EmployeeDetailView.as_view(), name='employee-details'),
 
     # Phone Call Logs

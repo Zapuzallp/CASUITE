@@ -242,7 +242,7 @@
                                             <form method="get" action=".">
                                                 <div class="row g-3">
 
-                                                    <!-- 🔍 Search -->
+                                                    <!-- Search -->
                                                     <div class="col-md-3">
                                                         <label class="form-label small fw-bold text-secondary">Search</label>
                                                         <input type="text" name="q" class="form-control"
@@ -250,7 +250,7 @@
                                                                value="{{ request.GET.q }}">
                                                     </div>
 
-                                                    <!-- 🎭 Role -->
+                                                    <!-- Role -->
                                                     <div class="col-md-3">
                                                         <label class="form-label small fw-bold text-secondary">Role</label>
                                                         <select name="role" class="form-select">
@@ -261,7 +261,7 @@
                                                         </select>
                                                     </div>
 
-                                                    <!-- 🏢 Branch -->
+                                                    <!-- Branch -->
                                                     <div class="col-md-3">
                                                         <label class="form-label small fw-bold text-secondary">Branch</label>
                                                         <select name="office" class="form-select">
@@ -275,7 +275,7 @@
                                                         </select>
                                                     </div>
 
-                                                    <!-- 🎯 Actions -->
+                                                    <!-- Actions -->
                                                     <div class="col-md-6 d-flex align-items-end">
                                                         <button type="submit" class="btn btn-primary me-2">
                                                             <i class="bi bi-search"></i> Apply Filters
@@ -387,10 +387,7 @@
                                                         <a href="{% url 'edit-employee' employee.id %}" class="btn btn-outline-primary rounded-pill px-3 shadow-sm fw-bold">
                                                             <i class="bi bi-pencil"></i>
                                                         </a>
-                                                        <button class="btn btn-outline-danger rounded-pill px-3 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#deleteEmployeeModal"
-                                                                data-id="{{ employee.id }}" data-name="{{ employee.user.username }}">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
+
                                                     </div>
                                                 </td>
                                             {% endif %}
