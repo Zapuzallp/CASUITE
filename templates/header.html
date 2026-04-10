@@ -81,7 +81,7 @@
                             </div>
                             <div>
                                 <h6 class="mb-1 {% if not n.is_read %}fw-bold{% endif %}">{{ n.title }}</h6>
-                                <p class="mb-1 small text-muted">{{ n.message }}</p>
+                                <p class="mb-1 small text-muted">{{ n.message|safe }}</p>
                                 <small class="text-muted">{{ n.created_at|timesince }} ago</small>
                             </div>
                         </a>

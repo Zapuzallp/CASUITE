@@ -1,3 +1,4 @@
+from django.urls import reverse
 from django.views import View
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -6,7 +7,8 @@ from datetime import datetime, date, timedelta
 import calendar
 from django.contrib import messages
 
-from home.models import Attendance, OfficeDetails, Leave
+from home.models import Attendance, OfficeDetails, Leave,Notification
+
 
 class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = "admin_reports/attendance_report.html"
@@ -285,8 +287,6 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request):
         action_type = request.POST.get('action_type')
         selected_records = request.POST.getlist('selected_records')
-        new_remark = request.POST.get('remarks')
-        user_name = request.user.username
 
         if not selected_records:
             messages.error(request, 'Please select records.')
@@ -365,13 +365,12 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                         attendance.duration = attendance.clock_out - attendance.clock_in
 
                     # Append remark
-                    new_remark = request.POST.get("remarks") or "Auto clock out"
-                    formatted_remark = f"clocked out by {user_name} : {new_remark}"
+                    new_remark = "Auto clock out"
 
                     if attendance.remark:
-                        attendance.remark += " | " + formatted_remark
+                        attendance.remark = f"{attendance.remark} | {new_remark}"
                     else:
-                        attendance.remark = formatted_remark
+                        attendance.remark = new_remark
 
                     attendance._skip_auto_status = True
                     attendance.save()
@@ -391,52 +390,38 @@ class AdminAttendanceReportView(LoginRequiredMixin, UserPassesTestMixin, View):
                 for error in errors[:5]:  # Show first 5 errors
                     messages.warning(request, error)
 
-
         elif action_type == 'status':
             new_status = request.POST.get('bulk_status')
 
-            if new_status:
-                updated_count = 0
-                action_map = {
-                    'pending': 'pending by',
-                    'approved': 'approved by',
-                    'rejected': 'rejected by',
-                    'half_day': 'marked as half-day by',
-                    'full_day': 'marked as full-day by'
-                }
+            if not new_status:
+                messages.error(request, 'Please select a status.')
+                return redirect(request.get_full_path())
+             # Optimize query to get user details for the notifications
+            records = Attendance.objects.filter(id__in=selected_records).select_related('user')
+            success_count = 0
 
-                for record_id in selected_records:
-                    try:
-                        attendance = Attendance.objects.get(id=record_id)
+            for record in records:
 
-                        attendance.status = new_status
+                # Only notify if the status is actually changing
+                if record.status != new_status:
+                    record.status = new_status
+                    record.save()
+                    display_status = record.get_status_display()
+                    title = "Attendance Updated"
 
-                        # Append remark
-                        if new_remark:
-                            distance_text = f"{attendance.distance}m away" if hasattr(attendance,
-                                                                                      'distance') and attendance.distance else ""
+                    msg = f"Your Attendance on {record.date.strftime('%B %d, %Y')} has been {display_status} by {request.user.username}"
 
-                            action_text = action_map.get(new_status, "updated by")
-                            formatted_remark = f"{distance_text} | {action_text} {user_name} : {new_remark}"
+                    Notification.objects.create(
+                        user=record.user,
+                        title=title,
+                        message=msg,
+                        target_url=reverse('attendance_logs'),
+                        is_read=False,
+                    )
+                    success_count += 1
 
-                            if attendance.remark:
-                                # ✅ Prevent duplicate append
-                                if formatted_remark not in attendance.remark:
-                                    attendance.remark += " | " + formatted_remark
-                            else:
-                                attendance.remark = formatted_remark
-
-
-                        attendance.save()
-                        updated_count += 1
-
-                    except Attendance.DoesNotExist:
-                        continue
-
-                messages.success(request, f'Successfully updated {updated_count} attendance records.')
+            if success_count > 0:
+                messages.success(request, f"Successfully updated {success_count} records and notified users.")
             else:
-                messages.error(request, 'Please select a status to update.')
-
-        else:
-            messages.error(request, 'Invalid action type.')
+                messages.info(request, "No changes were made.")
         return redirect(request.get_full_path())
